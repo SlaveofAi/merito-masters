@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { User, Mail, Lock, AlertCircle } from "lucide-react";
+import { User, Mail, Lock } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterFormValues } from "@/lib/schemas";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -31,15 +32,64 @@ const Register = () => {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
 
-    // Simulate registration delay
-    setTimeout(() => {
-      console.log("Register with:", data);
-      toast.success("Registrácia úspešná! Môžete sa prihlásiť.", {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            name: data.name,
+          }
+        }
+      });
+
+      if (error) {
+        toast.error(error.message, {
+          duration: 5000,
+        });
+        return;
+      }
+
+      toast.success("Registrácia úspešná! Skontrolujte svoj email na potvrdenie.", {
         duration: 5000,
       });
-      setIsLoading(false);
+      
+      // Redirect to login page after successful registration
       navigate("/login");
-    }, 1500);
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.error("Pri registrácii nastala chyba", {
+        duration: 5000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) {
+        toast.error(error.message, {
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Google signup error:", error);
+      toast.error("Pri registrácii cez Google nastala chyba", {
+        duration: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -190,7 +240,12 @@ const Register = () => {
               </div>
 
               <div className="grid grid-cols-1 gap-3">
-                <Button variant="outline" className="bg-white">
+                <Button 
+                  variant="outline" 
+                  className="bg-white"
+                  onClick={handleGoogleSignUp}
+                  disabled={isLoading}
+                >
                   <svg
                     className="mr-2 h-4 w-4"
                     aria-hidden="true"

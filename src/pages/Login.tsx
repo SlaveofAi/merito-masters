@@ -11,6 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginFormValues } from "@/lib/schemas";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -27,21 +28,59 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
 
-    // Simulate login delay
-    setTimeout(() => {
-      console.log("Login with:", data);
-      
-      // Simulate successful login
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (error) {
+        toast.error(error.message, {
+          duration: 3000,
+        });
+        return;
+      }
+
       toast.success("Prihlásenie úspešné!", {
         duration: 3000,
       });
       
+      // Redirect to home page after successful login
+      navigate("/");
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Pri prihlásení nastala chyba", {
+        duration: 3000,
+      });
+    } finally {
       setIsLoading(false);
-      
-      // In a real app with Supabase, you would redirect after successful login
-      // For now, we'll just show the success message
-      // navigate("/profile");
-    }, 1000);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) {
+        toast.error(error.message, {
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+      toast.error("Pri prihlásení cez Google nastala chyba", {
+        duration: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -130,7 +169,12 @@ const Login = () => {
               </div>
 
               <div className="grid grid-cols-1 gap-3">
-                <Button variant="outline" className="bg-white">
+                <Button 
+                  variant="outline" 
+                  className="bg-white" 
+                  onClick={handleGoogleLogin}
+                  disabled={isLoading}
+                >
                   <svg
                     className="mr-2 h-4 w-4"
                     aria-hidden="true"
