@@ -1,13 +1,14 @@
-
-import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, Phone, Mail, Calendar, MessageSquare, Clock, ThumbsUp } from "lucide-react";
+import { Star, MapPin, Phone, Mail, Calendar, MessageSquare, Clock, ThumbsUp, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import EditProfileForm from "@/components/EditProfileForm";
 
-// Mock data for demonstration
 const craftsman = {
   id: "1",
   name: "Martin Kováč",
@@ -15,7 +16,7 @@ const craftsman = {
   location: "Bratislava",
   rating: 4.8,
   reviewCount: 24,
-  description: "Profesionálny stolár s 15 ročnou praxou. Špecializujem sa na výrobu nábytku na mieru, kuchynské linky, vstavané skrine a drevené obklady. Používam kvalitné materiály a moderné technológie pre dosiahnutie najlepších výsledkov.",
+  description: "Profesionálny stolár s 15 ročnou praxou. Špecializujem sa na výrobe nábytku na mieru, kuchynské linky, vstavané skrine a drevené obklady. Používam kvalitné materiály a moderné technológie pre dosiahnutie najlepších výsledkov.",
   contact: {
     email: "martin.kovac@example.sk",
     phone: "+421 903 123 456",
@@ -56,9 +57,15 @@ const craftsman = {
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [rating, setRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<{id: string, name: string | null} | null>(null);
+  const [isCurrentUser, setIsCurrentUser] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleImageClick = (index: number) => {
     setActiveImageIndex(index);
@@ -70,17 +77,81 @@ const Profile = () => {
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
-    // Logic to submit review would go here
     console.log("Review submitted:", { rating, comment: reviewComment });
-    // Reset form
     setRating(0);
     setReviewComment("");
   };
 
+  const handleProfileUpdate = (updatedProfile: {id: string, name: string | null}) => {
+    setUserProfile(updatedProfile);
+    setIsEditing(false);
+  };
+
+  useEffect(() => {
+    async function fetchUserData() {
+      try {
+        setLoading(true);
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          toast({
+            title: "Nie ste prihlásený",
+            description: "Pre zobrazenie profilu sa musíte prihlásiť",
+            variant: "destructive",
+          });
+          navigate("/login");
+          return;
+        }
+
+        const currentUserId = session.user.id;
+        
+        const profileId = id || currentUserId;
+        
+        const { data: profileData, error } = await supabase
+          .from("profiles")
+          .select("id, name")
+          .eq("id", profileId)
+          .single();
+
+        if (error) {
+          console.error("Error fetching profile:", error);
+          toast({
+            title: "Chyba",
+            description: "Nastala chyba pri načítaní profilu",
+            variant: "destructive",
+          });
+          if (error.code === "PGRST116") {
+            navigate("/");
+          }
+          return;
+        }
+
+        setUserProfile(profileData);
+        setIsCurrentUser(currentUserId === profileId);
+      } catch (error) {
+        console.error("Error in profile page:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUserData();
+  }, [id, navigate, toast]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="min-h-screen bg-secondary/30">
-        {/* Hero Section */}
         <div className="bg-white border-b border-border/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
             <div className="flex flex-col md:flex-row gap-8">
@@ -88,53 +159,80 @@ const Profile = () => {
                 <div className="relative w-48 h-48 mx-auto md:mx-0 rounded-full overflow-hidden border-4 border-white shadow-md">
                   <img
                     src="https://images.unsplash.com/photo-1552058544-f2b08422138a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80"
-                    alt={craftsman.name}
+                    alt={userProfile?.name || craftsman.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
               </div>
               
               <div className="w-full md:w-2/3 text-center md:text-left">
-                <div className="inline-block mb-3 px-3 py-1 bg-black/5 backdrop-blur-sm text-sm font-medium rounded-full">
-                  {craftsman.profession}
-                </div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                  {craftsman.name}
-                </h1>
-                <div className="flex items-center justify-center md:justify-start mb-4">
-                  <div className="flex items-center mr-4">
-                    <Star className="w-5 h-5 fill-current text-yellow-500 mr-1" />
-                    <span className="font-semibold">{craftsman.rating.toFixed(1)}</span>
-                    <span className="text-muted-foreground ml-1">
-                      ({craftsman.reviewCount} hodnotení)
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-1 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      {craftsman.location}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-muted-foreground mb-6 max-w-2xl mx-auto md:mx-0">
-                  {craftsman.description}
-                </p>
-                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                  <Button className="flex items-center">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Kontaktovať
+                {isCurrentUser && !isEditing && (
+                  <Button 
+                    variant="outline" 
+                    className="mb-4"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Upraviť profil
                   </Button>
-                  <Button variant="outline">
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Správa
-                  </Button>
-                </div>
+                )}
+                
+                {isEditing && userProfile ? (
+                  <div className="mb-6">
+                    <EditProfileForm 
+                      profile={userProfile} 
+                      onUpdate={handleProfileUpdate} 
+                    />
+                    <Button 
+                      variant="outline" 
+                      className="mt-2"
+                      onClick={() => setIsEditing(false)}
+                    >
+                      Zrušiť
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="inline-block mb-3 px-3 py-1 bg-black/5 backdrop-blur-sm text-sm font-medium rounded-full">
+                      {craftsman.profession}
+                    </div>
+                    <h1 className="text-3xl md:text-4xl font-bold mb-2">
+                      {userProfile?.name || craftsman.name}
+                    </h1>
+                    <div className="flex items-center justify-center md:justify-start mb-4">
+                      <div className="flex items-center mr-4">
+                        <Star className="w-5 h-5 fill-current text-yellow-500 mr-1" />
+                        <span className="font-semibold">{craftsman.rating.toFixed(1)}</span>
+                        <span className="text-muted-foreground ml-1">
+                          ({craftsman.reviewCount} hodnotení)
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <MapPin className="w-4 h-4 mr-1 text-muted-foreground" />
+                        <span className="text-muted-foreground">
+                          {craftsman.location}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground mb-6 max-w-2xl mx-auto md:mx-0">
+                      {craftsman.description}
+                    </p>
+                    <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                      <Button className="flex items-center">
+                        <Phone className="mr-2 h-4 w-4" />
+                        Kontaktovať
+                      </Button>
+                      <Button variant="outline">
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Správa
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Content Tabs */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <Tabs defaultValue="portfolio" className="w-full">
             <TabsList className="grid w-full max-w-md mx-auto md:grid-cols-3 mb-8">
