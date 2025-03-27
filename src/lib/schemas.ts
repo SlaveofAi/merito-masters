@@ -15,3 +15,10 @@ export const registerSchema = z.object({
 });
 
 export type RegisterFormValues = z.infer<typeof registerSchema>;
+
+export const loginSchema = z.object({
+  email: z.string().email({ message: "Neplatný email" }),
+  password: z.string().min(1, { message: "Heslo je povinné" }),
+});
+
+export type LoginFormValues = z.infer<typeof loginSchema>;
