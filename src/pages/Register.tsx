@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -74,7 +75,7 @@ const Register = () => {
     tradeCategory: z.string().min(1, { message: "Vyberte kategóriu remesla" }),
     description: z.string().optional(),
     yearsExperience: z.string().optional()
-      .transform(val => val ? parseInt(val, 10) : undefined)
+      .transform(val => val ? parseInt(val, 10) : null)
   }).refine(
     (data) => data.password === data.confirmPassword,
     {
@@ -115,6 +116,7 @@ const Register = () => {
     setIsLoading(true);
 
     try {
+      // 1. Register the user with Supabase Auth
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -143,7 +145,24 @@ const Register = () => {
       }
 
       console.log("User registered successfully:", authData.user.id);
+      
+      // 2. Sign in immediately after registration to get an active session
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password
+      });
+      
+      if (signInError) {
+        console.error("Error signing in after registration:", signInError);
+        toast.error("Registrácia bola úspešná, ale nastala chyba pri prihlásení", {
+          duration: 5000,
+        });
+        navigate("/login");
+        setIsLoading(false);
+        return;
+      }
 
+      // 3. Now we have an active session, insert the user type
       const { error: userTypeError } = await supabase
         .from('user_types')
         .insert({
@@ -156,12 +175,11 @@ const Register = () => {
         toast.error("Nastala chyba pri ukladaní typu užívateľa", {
           duration: 5000,
         });
-        setIsLoading(false);
-        return;
+      } else {
+        console.log("User type stored successfully");
       }
 
-      console.log("User type stored successfully");
-
+      // 4. Insert profile data based on user type
       if (userType === 'craftsman') {
         const craftsmanData = {
           id: authData.user.id,
@@ -184,11 +202,9 @@ const Register = () => {
           toast.error("Nastala chyba pri ukladaní profilu remeselníka", {
             duration: 5000,
           });
-          setIsLoading(false);
-          return;
+        } else {
+          console.log("Craftsman profile stored successfully");
         }
-        
-        console.log("Craftsman profile stored successfully");
       } else {
         const customerData = {
           id: authData.user.id,
@@ -208,11 +224,9 @@ const Register = () => {
           toast.error("Nastala chyba pri ukladaní profilu zákazníka", {
             duration: 5000,
           });
-          setIsLoading(false);
-          return;
+        } else {
+          console.log("Customer profile stored successfully");
         }
-        
-        console.log("Customer profile stored successfully");
       }
 
       toast.success("Registrácia úspešná!", {
@@ -220,22 +234,8 @@ const Register = () => {
       });
       
       sessionStorage.setItem("userType", userType);
+      navigate("/profile");
       
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password
-      });
-      
-      if (signInError) {
-        console.error("Error signing in after registration:", signInError);
-        toast.error("Registrácia bola úspešná, ale nastala chyba pri prihlásení", {
-          duration: 5000,
-        });
-        navigate("/login");
-      } else {
-        console.log("User signed in successfully after registration");
-        navigate("/profile");
-      }
     } catch (error) {
       console.error("Registration error:", error);
       toast.error("Pri registrácii nastala chyba", {
