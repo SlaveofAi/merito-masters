@@ -4,12 +4,52 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Star, MapPin, Phone, Mail, Calendar, MessageSquare, Clock, ThumbsUp, Loader2, Image, UploadCloud } from "lucide-react";
+import { Star, MapPin, Phone, Mail, Calendar, MessageSquare, Clock, ThumbsUp, Loader2, Image, UploadCloud, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import EditProfileForm from "@/components/EditProfileForm";
 import { useAuth } from "@/hooks/useAuth";
+
+const TABLES = {
+  CRAFTSMAN_PROFILES: 'craftsman_profiles' as const,
+  CUSTOMER_PROFILES: 'customer_profiles' as const,
+  USER_TYPES: 'user_types' as const,
+  PORTFOLIO_IMAGES: 'portfolio_images' as const
+};
+
+type UserTypeRecord = {
+  user_type: string;
+  user_id: string;
+  created_at: string;
+};
+
+type CraftsmanProfile = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  profile_image_url: string | null;
+  description: string | null;
+  trade_category: string;
+  location: string;
+  created_at: string;
+  updated_at: string;
+  years_experience: number | null;
+};
+
+type CustomerProfile = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  location: string;
+  created_at: string;
+  updated_at: string;
+  profile_image_url?: string | null;
+};
+
+type ProfileData = CraftsmanProfile | CustomerProfile;
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,7 +61,7 @@ const Profile = () => {
   const [rating, setRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
   const [loading, setLoading] = useState(true);
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [userType, setUserType] = useState<string | null>(null);
   const [isCurrentUser, setIsCurrentUser] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -65,7 +105,6 @@ const Profile = () => {
       const fileName = `${user?.id}-profile-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${fileName}`;
       
-      // Upload file to storage
       const { error: uploadError } = await supabase.storage
         .from('profile_images')
         .upload(filePath, file);
@@ -74,16 +113,14 @@ const Profile = () => {
         throw uploadError;
       }
       
-      // Get public URL
       const { data } = supabase.storage
         .from('profile_images')
         .getPublicUrl(filePath);
       
-      // Update profile with the new image URL
-      let updateTable = userType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
+      const tableToUpdate = userType === 'craftsman' ? TABLES.CRAFTSMAN_PROFILES : TABLES.CUSTOMER_PROFILES;
       
       const { error: updateError } = await supabase
-        .from(updateTable)
+        .from(tableToUpdate)
         .update({ profile_image_url: data.publicUrl })
         .eq('id', user?.id);
         
@@ -98,7 +135,6 @@ const Profile = () => {
       toast.error("Nastala chyba pri nahrávaní obrázka");
     } finally {
       setUploading(false);
-      // Reset the input
       event.target.value = '';
     }
   };
@@ -117,7 +153,6 @@ const Profile = () => {
         const fileName = `${user?.id}-portfolio-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `portfolio/${fileName}`;
         
-        // Upload file to storage
         const { error: uploadError } = await supabase.storage
           .from('profile_images')
           .upload(filePath, file);
@@ -126,14 +161,12 @@ const Profile = () => {
           throw uploadError;
         }
         
-        // Get public URL
         const { data } = supabase.storage
           .from('profile_images')
           .getPublicUrl(filePath);
           
-        // Insert into portfolio_images table
         const { error: insertError } = await supabase
-          .from('portfolio_images')
+          .from(TABLES.PORTFOLIO_IMAGES)
           .insert({
             craftsman_id: user?.id,
             image_url: data.publicUrl,
@@ -145,15 +178,15 @@ const Profile = () => {
         }
       }
       
-      // Refresh portfolio images
-      fetchPortfolioImages(user?.id as string);
+      if (user?.id) {
+        fetchPortfolioImages(user.id);
+      }
       toast.success("Obrázky boli pridané do portfólia");
     } catch (error) {
       console.error('Error uploading portfolio images:', error);
       toast.error("Nastala chyba pri nahrávaní obrázkov");
     } finally {
       setUploading(false);
-      // Reset the input
       event.target.value = '';
     }
   };
@@ -161,7 +194,7 @@ const Profile = () => {
   const fetchPortfolioImages = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('portfolio_images')
+        .from(TABLES.PORTFOLIO_IMAGES)
         .select('*')
         .eq('craftsman_id', userId);
         
@@ -180,17 +213,17 @@ const Profile = () => {
   const fetchUserType = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('user_types')
+        .from(TABLES.USER_TYPES)
         .select('user_type')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
         
       if (error) {
         console.error('Error fetching user type:', error);
         return null;
       }
       
-      return data.user_type;
+      return data?.user_type || null;
     } catch (error) {
       console.error('Error in fetchUserType:', error);
       return null;
@@ -199,7 +232,7 @@ const Profile = () => {
 
   const fetchProfileData = async (userId: string, type: string) => {
     try {
-      const table = type === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
+      const table = type === 'craftsman' ? TABLES.CRAFTSMAN_PROFILES : TABLES.CUSTOMER_PROFILES;
       
       const { data, error } = await supabase
         .from(table)
@@ -213,7 +246,9 @@ const Profile = () => {
       }
       
       setProfileData(data);
-      setProfileImageUrl(data.profile_image_url);
+      if ('profile_image_url' in data) {
+        setProfileImageUrl(data.profile_image_url);
+      }
       
       if (type === 'craftsman') {
         fetchPortfolioImages(userId);
@@ -244,12 +279,10 @@ const Profile = () => {
         
         setIsCurrentUser(currentUserId === profileId);
         
-        // Fetch user type
         const type = await fetchUserType(profileId);
         setUserType(type);
         
         if (type) {
-          // Fetch profile data based on user type
           await fetchProfileData(profileId, type);
         } else {
           uiToast({
@@ -363,7 +396,7 @@ const Profile = () => {
                   <>
                     {userType === 'craftsman' && (
                       <div className="inline-block mb-3 px-3 py-1 bg-black/5 backdrop-blur-sm text-sm font-medium rounded-full">
-                        {profileData.trade_category}
+                        {(profileData as CraftsmanProfile).trade_category}
                       </div>
                     )}
                     <h1 className="text-3xl md:text-4xl font-bold mb-2">
@@ -386,9 +419,9 @@ const Profile = () => {
                         </span>
                       </div>
                     </div>
-                    {userType === 'craftsman' && profileData.description && (
+                    {userType === 'craftsman' && (profileData as CraftsmanProfile).description && (
                       <p className="text-muted-foreground mb-6 max-w-2xl mx-auto md:mx-0">
-                        {profileData.description}
+                        {(profileData as CraftsmanProfile).description}
                       </p>
                     )}
                     <div className="flex flex-wrap gap-3 justify-center md:justify-start">
@@ -521,11 +554,11 @@ const Profile = () => {
                         <h3 className="text-xl font-semibold mb-4">Špecializácia</h3>
                         <div className="flex flex-wrap gap-2">
                           <div className="bg-secondary px-3 py-1 rounded-full text-sm">
-                            {profileData.trade_category}
+                            {(profileData as CraftsmanProfile).trade_category}
                           </div>
-                          {profileData.years_experience && (
+                          {(profileData as CraftsmanProfile).years_experience && (
                             <div className="bg-secondary px-3 py-1 rounded-full text-sm">
-                              {profileData.years_experience} rokov skúseností
+                              {(profileData as CraftsmanProfile).years_experience} rokov skúseností
                             </div>
                           )}
                         </div>
