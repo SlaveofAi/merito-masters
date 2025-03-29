@@ -43,8 +43,7 @@ const Register = () => {
     }
   }, []);
 
-  // Define schema based on user type
-  // Create the base schema without the refine at first
+  // Common fields for both user types
   const baseSchemaObject = {
     name: z.string().min(2, { message: "Meno musí mať aspoň 2 znaky" }),
     email: z.string().email({ message: "Neplatný email" }),
@@ -57,32 +56,39 @@ const Register = () => {
     }),
   };
 
-  // Create the base schema object
-  const baseSchema = z.object(baseSchemaObject);
-  
-  // Add the password validation refinement
-  const customerSchema = baseSchema.refine((data) => data.password === data.confirmPassword, {
-    message: "Heslá sa nezhodujú",
-    path: ["confirmPassword"],
-  });
+  // Customer schema - just the base schema with password validation
+  const customerSchema = z.object(baseSchemaObject).refine(
+    (data) => data.password === data.confirmPassword,
+    {
+      message: "Heslá sa nezhodujú",
+      path: ["confirmPassword"],
+    }
+  );
 
-  // For craftsman schema, first create the extended object schema, then add refinement
-  const craftsmanSchemaObject = {
+  // Craftsman schema - extended schema with additional fields
+  const craftsmanSchema = z.object({
     ...baseSchemaObject,
     tradeCategory: z.string().min(1, { message: "Vyberte kategóriu remesla" }),
     description: z.string().optional(),
     yearsExperience: z.string().optional()
       .transform(val => val ? parseInt(val, 10) : undefined)
-  };
-  
-  const craftsmanSchema = z.object(craftsmanSchemaObject).refine((data) => data.password === data.confirmPassword, {
-    message: "Heslá sa nezhodujú",
-    path: ["confirmPassword"],
-  });
+  }).refine(
+    (data) => data.password === data.confirmPassword,
+    {
+      message: "Heslá sa nezhodujú",
+      path: ["confirmPassword"],
+    }
+  );
 
+  // Select appropriate schema based on user type
   const schema = userType === 'craftsman' ? craftsmanSchema : customerSchema;
-  type FormValues = z.infer<typeof schema>;
+  
+  // Define dynamic types based on the schema
+  type CustomerFormValues = z.infer<typeof customerSchema>;
+  type CraftsmanFormValues = z.infer<typeof craftsmanSchema>;
+  type FormValues = userType extends 'craftsman' ? CraftsmanFormValues : CustomerFormValues;
 
+  // Initialize form with the correct schema
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -94,7 +100,7 @@ const Register = () => {
       confirmPassword: "",
       acceptTerms: false,
       ...(userType === 'craftsman' ? { tradeCategory: "", description: "", yearsExperience: "" } : {})
-    },
+    } as any, // Cast to any to handle the conditional fields
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -157,9 +163,9 @@ const Register = () => {
           email: data.email,
           phone: data.phone || null,
           location: data.location,
-          trade_category: (data as any).tradeCategory,
-          description: (data as any).description || null,
-          years_experience: (data as any).yearsExperience || null
+          trade_category: (data as CraftsmanFormValues).tradeCategory,
+          description: (data as CraftsmanFormValues).description || null,
+          years_experience: (data as CraftsmanFormValues).yearsExperience || null
         };
 
         const { error: craftsmanError } = await supabase
@@ -398,7 +404,7 @@ const Register = () => {
                   <>
                     <FormField
                       control={form.control}
-                      name="tradeCategory"
+                      name={"tradeCategory" as any}
                       render={({ field }) => (
                         <FormItem className="space-y-2">
                           <FormLabel>Kategória remesla</FormLabel>
@@ -407,7 +413,7 @@ const Register = () => {
                             <FormControl>
                               <Select
                                 onValueChange={field.onChange}
-                                defaultValue={field.value}
+                                defaultValue={field.value as string}
                               >
                                 <SelectTrigger className="pl-10">
                                   <SelectValue placeholder="Vyberte kategóriu" />
@@ -429,7 +435,7 @@ const Register = () => {
 
                     <FormField
                       control={form.control}
-                      name="yearsExperience"
+                      name={"yearsExperience" as any}
                       render={({ field }) => (
                         <FormItem className="space-y-2">
                           <FormLabel>Roky skúseností (voliteľné)</FormLabel>
@@ -438,6 +444,7 @@ const Register = () => {
                               type="number"
                               placeholder="5"
                               {...field}
+                              value={field.value as string}
                             />
                           </FormControl>
                           <FormMessage />
@@ -447,7 +454,7 @@ const Register = () => {
 
                     <FormField
                       control={form.control}
-                      name="description"
+                      name={"description" as any}
                       render={({ field }) => (
                         <FormItem className="space-y-2">
                           <FormLabel>Popis služieb (voliteľné)</FormLabel>
@@ -456,6 +463,7 @@ const Register = () => {
                               placeholder="Popis vašich služieb a skúseností..."
                               className="min-h-[100px]"
                               {...field}
+                              value={field.value as string}
                             />
                           </FormControl>
                           <FormMessage />
