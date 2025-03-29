@@ -171,7 +171,7 @@ const Register = () => {
           location: data.location,
           trade_category: (data as CraftsmanFormValues).tradeCategory,
           description: (data as CraftsmanFormValues).description || null,
-          years_experience: (data as CraftsmanFormValues).yearsExperience ? parseInt((data as CraftsmanFormValues).yearsExperience as string, 10) : null
+          years_experience: (data as CraftsmanFormValues).yearsExperience || null
         };
 
         console.log("Storing craftsman profile:", craftsmanData);
