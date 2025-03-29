@@ -39,19 +39,16 @@ const Register = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    // If user is already logged in, redirect to profile
     if (user) {
       navigate("/profile");
     }
     
-    // Get the user type from session storage
     const storedUserType = sessionStorage.getItem("userType");
     if (storedUserType === 'customer' || storedUserType === 'craftsman') {
       setUserType(storedUserType);
     }
   }, [user, navigate]);
 
-  // Common fields for both user types
   const baseSchemaObject = {
     name: z.string().min(2, { message: "Meno musí mať aspoň 2 znaky" }),
     email: z.string().email({ message: "Neplatný email" }),
@@ -64,7 +61,6 @@ const Register = () => {
     }),
   };
 
-  // Customer schema - just the base schema with password validation
   const customerSchema = z.object(baseSchemaObject).refine(
     (data) => data.password === data.confirmPassword,
     {
@@ -73,7 +69,6 @@ const Register = () => {
     }
   );
 
-  // Craftsman schema - extended schema with additional fields
   const craftsmanSchema = z.object({
     ...baseSchemaObject,
     tradeCategory: z.string().min(1, { message: "Vyberte kategóriu remesla" }),
@@ -88,17 +83,13 @@ const Register = () => {
     }
   );
 
-  // Define dynamic types based on the schema
   type CustomerFormValues = z.infer<typeof customerSchema>;
   type CraftsmanFormValues = z.infer<typeof craftsmanSchema>;
   
-  // Fix: Use a conditional type instead of using userType directly as a type
   type FormValues = UserType extends 'craftsman' ? CraftsmanFormValues : CustomerFormValues;
 
-  // Select appropriate schema based on user type
   const schema = userType === 'craftsman' ? craftsmanSchema : customerSchema;
 
-  // Initialize form with the correct schema
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -110,7 +101,7 @@ const Register = () => {
       confirmPassword: "",
       acceptTerms: false,
       ...(userType === 'craftsman' ? { tradeCategory: "", description: "", yearsExperience: "" } : {})
-    } as any, // Cast to any to handle the conditional fields
+    } as any,
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -124,7 +115,6 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      // Register user in Supabase Auth
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -136,6 +126,7 @@ const Register = () => {
       });
 
       if (error) {
+        console.error("Authentication error:", error);
         toast.error(error.message, {
           duration: 5000,
         });
@@ -151,7 +142,8 @@ const Register = () => {
         return;
       }
 
-      // Store user type
+      console.log("User registered successfully:", authData.user.id);
+
       const { error: userTypeError } = await supabase
         .from('user_types')
         .insert({
@@ -168,7 +160,8 @@ const Register = () => {
         return;
       }
 
-      // Store profile information based on user type
+      console.log("User type stored successfully");
+
       if (userType === 'craftsman') {
         const craftsmanData = {
           id: authData.user.id,
@@ -178,9 +171,10 @@ const Register = () => {
           location: data.location,
           trade_category: (data as CraftsmanFormValues).tradeCategory,
           description: (data as CraftsmanFormValues).description || null,
-          years_experience: (data as CraftsmanFormValues).yearsExperience || null
+          years_experience: (data as CraftsmanFormValues).yearsExperience ? parseInt((data as CraftsmanFormValues).yearsExperience as string, 10) : null
         };
 
+        console.log("Storing craftsman profile:", craftsmanData);
         const { error: craftsmanError } = await supabase
           .from('craftsman_profiles')
           .insert(craftsmanData);
@@ -193,6 +187,8 @@ const Register = () => {
           setIsLoading(false);
           return;
         }
+        
+        console.log("Craftsman profile stored successfully");
       } else {
         const customerData = {
           id: authData.user.id,
@@ -202,6 +198,7 @@ const Register = () => {
           location: data.location
         };
 
+        console.log("Storing customer profile:", customerData);
         const { error: customerError } = await supabase
           .from('customer_profiles')
           .insert(customerData);
@@ -214,13 +211,16 @@ const Register = () => {
           setIsLoading(false);
           return;
         }
+        
+        console.log("Customer profile stored successfully");
       }
 
       toast.success("Registrácia úspešná!", {
         duration: 5000,
       });
       
-      // Sign in the user after registration
+      sessionStorage.setItem("userType", userType);
+      
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password
@@ -233,7 +233,7 @@ const Register = () => {
         });
         navigate("/login");
       } else {
-        // Redirect to profile page
+        console.log("User signed in successfully after registration");
         navigate("/profile");
       }
     } catch (error) {
@@ -258,7 +258,6 @@ const Register = () => {
         return;
       }
 
-      // Store the user type for retrieving after OAuth
       sessionStorage.setItem("pendingUserType", userType);
       
       const { error } = await supabase.auth.signInWithOAuth({
