@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/useAuth";
 
 const craftCategories = [
   'Stolár',
@@ -36,14 +36,20 @@ const Register = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [userType, setUserType] = useState<UserType>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
+    // If user is already logged in, redirect to profile
+    if (user) {
+      navigate("/profile");
+    }
+    
     // Get the user type from session storage
     const storedUserType = sessionStorage.getItem("userType");
     if (storedUserType === 'customer' || storedUserType === 'craftsman') {
       setUserType(storedUserType);
     }
-  }, []);
+  }, [user, navigate]);
 
   // Common fields for both user types
   const baseSchemaObject = {
@@ -133,6 +139,7 @@ const Register = () => {
         toast.error(error.message, {
           duration: 5000,
         });
+        setIsLoading(false);
         return;
       }
 
@@ -140,6 +147,7 @@ const Register = () => {
         toast.error("Nastala chyba pri registrácii užívateľa", {
           duration: 5000,
         });
+        setIsLoading(false);
         return;
       }
 
@@ -156,6 +164,7 @@ const Register = () => {
         toast.error("Nastala chyba pri ukladaní typu užívateľa", {
           duration: 5000,
         });
+        setIsLoading(false);
         return;
       }
 
@@ -181,6 +190,7 @@ const Register = () => {
           toast.error("Nastala chyba pri ukladaní profilu remeselníka", {
             duration: 5000,
           });
+          setIsLoading(false);
           return;
         }
       } else {
@@ -201,19 +211,31 @@ const Register = () => {
           toast.error("Nastala chyba pri ukladaní profilu zákazníka", {
             duration: 5000,
           });
+          setIsLoading(false);
           return;
         }
       }
 
-      toast.success("Registrácia úspešná! Skontrolujte svoj email na potvrdenie.", {
+      toast.success("Registrácia úspešná!", {
         duration: 5000,
       });
       
-      // Sign out after registration
-      await supabase.auth.signOut();
+      // Sign in the user after registration
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password
+      });
       
-      // Redirect to login page
-      navigate("/login");
+      if (signInError) {
+        console.error("Error signing in after registration:", signInError);
+        toast.error("Registrácia bola úspešná, ale nastala chyba pri prihlásení", {
+          duration: 5000,
+        });
+        navigate("/login");
+      } else {
+        // Redirect to profile page
+        navigate("/profile");
+      }
     } catch (error) {
       console.error("Registration error:", error);
       toast.error("Pri registrácii nastala chyba", {
