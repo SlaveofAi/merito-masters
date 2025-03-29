@@ -1,6 +1,6 @@
 
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = React.useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -24,6 +25,76 @@ const Login = () => {
       password: "",
     },
   });
+
+  // Handle user type from query params (for Google Auth redirect)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const userType = params.get('userType');
+    
+    if (userType) {
+      // Check if we have a session already (from OAuth redirect)
+      const checkSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          // Store the user type for this user
+          try {
+            const pendingUserType = userType === 'craftsman' ? 'craftsman' : 'customer';
+            
+            // Check if user type exists
+            const { data: existingType } = await supabase
+              .from('user_types')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .single();
+              
+            if (!existingType) {
+              // Insert user type
+              await supabase.from('user_types').insert({
+                user_id: session.user.id,
+                user_type: pendingUserType
+              });
+              
+              // Insert profile based on user type
+              if (pendingUserType === 'craftsman') {
+                await supabase.from('craftsman_profiles').insert({
+                  id: session.user.id,
+                  name: session.user.user_metadata.full_name || session.user.user_metadata.name || 'User',
+                  email: session.user.email || '',
+                  location: 'Please update',
+                  trade_category: 'Please update'
+                });
+              } else {
+                await supabase.from('customer_profiles').insert({
+                  id: session.user.id,
+                  name: session.user.user_metadata.full_name || session.user.user_metadata.name || 'User',
+                  email: session.user.email || '',
+                  location: 'Please update'
+                });
+              }
+              
+              toast.success("Profil bol vytvorený", {
+                duration: 3000,
+              });
+            }
+            
+            // Clean up the URL
+            window.history.replaceState({}, document.title, '/login');
+            
+            // Redirect to home
+            navigate('/home');
+          } catch (error) {
+            console.error("Error processing OAuth user:", error);
+            toast.error("Nastala chyba pri spracovaní prihlásenia", {
+              duration: 3000,
+            });
+          }
+        }
+      };
+      
+      checkSession();
+    }
+  }, [location, navigate]);
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
@@ -46,7 +117,7 @@ const Login = () => {
       });
       
       // Redirect to home page after successful login
-      navigate("/");
+      navigate("/home");
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Pri prihlásení nastala chyba", {
@@ -64,7 +135,7 @@ const Login = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/home`,
         },
       });
 

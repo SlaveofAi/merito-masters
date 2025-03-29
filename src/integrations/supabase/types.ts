@@ -9,6 +9,113 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      craftsman_profiles: {
+        Row: {
+          created_at: string
+          description: string | null
+          email: string
+          id: string
+          location: string
+          name: string
+          phone: string | null
+          profile_image_url: string | null
+          trade_category: string
+          updated_at: string
+          years_experience: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          email: string
+          id: string
+          location: string
+          name: string
+          phone?: string | null
+          profile_image_url?: string | null
+          trade_category: string
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          email?: string
+          id?: string
+          location?: string
+          name?: string
+          phone?: string | null
+          profile_image_url?: string | null
+          trade_category?: string
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Relationships: []
+      }
+      customer_profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          location: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          location: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          location?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      portfolio_images: {
+        Row: {
+          craftsman_id: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string
+          title: string | null
+        }
+        Insert: {
+          craftsman_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url: string
+          title?: string | null
+        }
+        Update: {
+          craftsman_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_images_craftsman_id_fkey"
+            columns: ["craftsman_id"]
+            isOneToOne: false
+            referencedRelation: "craftsman_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -27,6 +134,24 @@ export type Database = {
           id?: string
           name?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_types: {
+        Row: {
+          created_at: string
+          user_id: string
+          user_type: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+          user_type: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+          user_type?: string
         }
         Relationships: []
       }
