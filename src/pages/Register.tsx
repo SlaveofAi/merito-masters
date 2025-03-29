@@ -30,10 +30,12 @@ const craftCategories = [
   'Sklenár'
 ];
 
+type UserType = 'customer' | 'craftsman' | null;
+
 const Register = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [userType, setUserType] = useState<'customer' | 'craftsman' | null>(null);
+  const [userType, setUserType] = useState<UserType>(null);
 
   useEffect(() => {
     // Get the user type from session storage
@@ -80,13 +82,15 @@ const Register = () => {
     }
   );
 
-  // Select appropriate schema based on user type
-  const schema = userType === 'craftsman' ? craftsmanSchema : customerSchema;
-  
   // Define dynamic types based on the schema
   type CustomerFormValues = z.infer<typeof customerSchema>;
   type CraftsmanFormValues = z.infer<typeof craftsmanSchema>;
-  type FormValues = userType extends 'craftsman' ? CraftsmanFormValues : CustomerFormValues;
+  
+  // Fix: Use a conditional type instead of using userType directly as a type
+  type FormValues = UserType extends 'craftsman' ? CraftsmanFormValues : CustomerFormValues;
+
+  // Select appropriate schema based on user type
+  const schema = userType === 'craftsman' ? craftsmanSchema : customerSchema;
 
   // Initialize form with the correct schema
   const form = useForm<FormValues>({
@@ -404,7 +408,7 @@ const Register = () => {
                   <>
                     <FormField
                       control={form.control}
-                      name={"tradeCategory" as any}
+                      name={"tradeCategory" as keyof FormValues}
                       render={({ field }) => (
                         <FormItem className="space-y-2">
                           <FormLabel>Kategória remesla</FormLabel>
@@ -435,7 +439,7 @@ const Register = () => {
 
                     <FormField
                       control={form.control}
-                      name={"yearsExperience" as any}
+                      name={"yearsExperience" as keyof FormValues}
                       render={({ field }) => (
                         <FormItem className="space-y-2">
                           <FormLabel>Roky skúseností (voliteľné)</FormLabel>
@@ -454,7 +458,7 @@ const Register = () => {
 
                     <FormField
                       control={form.control}
-                      name={"description" as any}
+                      name={"description" as keyof FormValues}
                       render={({ field }) => (
                         <FormItem className="space-y-2">
                           <FormLabel>Popis služieb (voliteľné)</FormLabel>
