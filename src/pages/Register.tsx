@@ -44,7 +44,8 @@ const Register = () => {
   }, []);
 
   // Define schema based on user type
-  const baseSchema = z.object({
+  // Create the base schema without the refine at first
+  const baseSchemaObject = {
     name: z.string().min(2, { message: "Meno musí mať aspoň 2 znaky" }),
     email: z.string().email({ message: "Neplatný email" }),
     phone: z.string().optional(),
@@ -54,18 +55,29 @@ const Register = () => {
     acceptTerms: z.boolean().refine(val => val === true, {
       message: "Musíte súhlasiť s podmienkami používania"
     }),
-  }).refine((data) => data.password === data.confirmPassword, {
+  };
+
+  // Create the base schema object
+  const baseSchema = z.object(baseSchemaObject);
+  
+  // Add the password validation refinement
+  const customerSchema = baseSchema.refine((data) => data.password === data.confirmPassword, {
     message: "Heslá sa nezhodujú",
     path: ["confirmPassword"],
   });
 
-  const customerSchema = baseSchema;
-
-  const craftsmanSchema = baseSchema.extend({
+  // For craftsman schema, first create the extended object schema, then add refinement
+  const craftsmanSchemaObject = {
+    ...baseSchemaObject,
     tradeCategory: z.string().min(1, { message: "Vyberte kategóriu remesla" }),
     description: z.string().optional(),
     yearsExperience: z.string().optional()
       .transform(val => val ? parseInt(val, 10) : undefined)
+  };
+  
+  const craftsmanSchema = z.object(craftsmanSchemaObject).refine((data) => data.password === data.confirmPassword, {
+    message: "Heslá sa nezhodujú",
+    path: ["confirmPassword"],
   });
 
   const schema = userType === 'craftsman' ? craftsmanSchema : customerSchema;
