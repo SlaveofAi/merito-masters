@@ -14,11 +14,13 @@ export const useProfileData = (id?: string) => {
   const [profileNotFound, setProfileNotFound] = useState(false);
   const [portfolioImages, setPortfolioImages] = useState<any[]>([]);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const fetchProfileData = async () => {
+  const fetchProfileData = useCallback(async () => {
     setLoading(true);
     setProfileNotFound(false);
+    setError(null);
 
     try {
       if (!userType) {
@@ -43,6 +45,7 @@ export const useProfileData = (id?: string) => {
 
       if (error) {
         console.error("Error fetching profile:", error);
+        setError(error.message);
         setProfileNotFound(true);
       }
 
@@ -56,13 +59,14 @@ export const useProfileData = (id?: string) => {
         console.log("No profile data found for:", userId);
         setProfileNotFound(true);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in fetchProfileData:", error);
+      setError(error.message);
       setProfileNotFound(true);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, user, userType]);
 
   const fetchPortfolioImages = async (userId: string) => {
     try {
@@ -121,7 +125,7 @@ export const useProfileData = (id?: string) => {
   };
 
   const {
-    data: reviews,
+    data: reviews = [],
     isLoading: isLoadingReviews,
     refetch: refetchReviews
   } = useQuery({
@@ -155,6 +159,7 @@ export const useProfileData = (id?: string) => {
 
         if (error) {
           console.error("Error fetching user type:", error);
+          setError(`Error fetching user type: ${error.message}`);
           return;
         }
 
@@ -165,8 +170,9 @@ export const useProfileData = (id?: string) => {
           console.log("No valid user type found");
           setUserType(null);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching user type:", error);
+        setError(error.message);
       }
     };
 
@@ -177,7 +183,7 @@ export const useProfileData = (id?: string) => {
     if (userType) {
       fetchProfileData();
     }
-  }, [userType, user, id]);
+  }, [userType, fetchProfileData]);
 
   useEffect(() => {
     if (profileData && userType === 'craftsman') {
@@ -186,81 +192,112 @@ export const useProfileData = (id?: string) => {
   }, [profileData, userType]);
 
   const createDefaultProfileIfNeeded = useCallback(async () => {
+    setError(null);
+    
     if (!user || !userType || !isCurrentUser) {
-      throw new Error("Nemožno vytvoriť profil: používateľ nie je prihlásený alebo typ používateľa nie je nastavený");
+      const errorMsg = "Nemožno vytvoriť profil: používateľ nie je prihlásený alebo typ používateľa nie je nastavený";
+      setError(errorMsg);
+      throw new Error(errorMsg);
     }
     
     try {
-      console.log("Checking if we need to create a default profile");
-      const table = userType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
-      
-      const { data: existingProfile, error: checkError } = await supabase
-        .from(table)
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
-        
-      if (checkError) {
-        console.error("Error checking for existing profile:", checkError);
-        throw new Error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
-      }
-      
-      if (existingProfile) {
-        console.log("Profile already exists, no need to create a default one");
-        fetchProfileData();
-        return;
-      }
-      
-      console.log("Creating default profile for user:", user.id);
+      console.log("Creating default profile for user:", user.id, "userType:", userType);
       
       const email = user.email || '';
       const name = user.user_metadata?.name || user.user_metadata?.full_name || 'User';
       
       if (userType === 'craftsman') {
+        // First check if profile already exists
+        const { data: existingProfile, error: checkError } = await supabase
+          .from('craftsman_profiles')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
+          
+        if (checkError) {
+          console.error("Error checking for existing profile:", checkError);
+          throw new Error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
+        }
+        
+        if (existingProfile) {
+          console.log("Craftsman profile already exists, fetching it");
+          await fetchProfileData();
+          return;
+        }
+        
+        console.log("Creating new craftsman profile for user:", user.id);
+        
         const { error: insertError } = await supabase
           .from('craftsman_profiles')
           .insert({
             id: user.id,
             name,
             email,
-            location: 'Please update',
-            trade_category: 'Please update',
+            location: 'Bratislava',
+            trade_category: 'Stolár',
             phone: null,
-            description: null,
+            description: 'Zadajte popis vašich služieb',
             profile_image_url: null
           });
           
         if (insertError) {
           console.error("Error creating craftsman profile:", insertError);
+          setError(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
           throw new Error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
         } else {
           console.log("Default craftsman profile created successfully");
           toast.success("Profil bol vytvorený", { duration: 3000 });
-          await fetchProfileData();
+          setTimeout(() => {
+            fetchProfileData();
+          }, 1000);
         }
       } else {
+        // First check if profile already exists
+        const { data: existingProfile, error: checkError } = await supabase
+          .from('customer_profiles')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
+          
+        if (checkError) {
+          console.error("Error checking for existing profile:", checkError);
+          throw new Error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
+        }
+        
+        if (existingProfile) {
+          console.log("Customer profile already exists, fetching it");
+          await fetchProfileData();
+          return;
+        }
+        
+        console.log("Creating new customer profile for user:", user.id);
+        
         const { error: insertError } = await supabase
           .from('customer_profiles')
           .insert({
             id: user.id,
             name,
             email,
-            location: 'Please update',
+            location: 'Bratislava',
             phone: null,
             profile_image_url: null
           });
           
         if (insertError) {
           console.error("Error creating customer profile:", insertError);
+          setError(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
           throw new Error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
         } else {
           console.log("Default customer profile created successfully");
           toast.success("Profil bol vytvorený", { duration: 3000 });
-          await fetchProfileData();
+          setTimeout(() => {
+            fetchProfileData();
+          }, 1000);
         }
       }
     } catch (error: any) {
       console.error("Error in createDefaultProfileIfNeeded:", error);
+      setError(error.message || "Neznáma chyba");
       toast.error("Nastala chyba pri vytváraní profilu", {
         description: error.message || "Neznáma chyba"
       });
@@ -282,6 +319,7 @@ export const useProfileData = (id?: string) => {
     setProfileData,
     setProfileImageUrl,
     fetchPortfolioImages,
-    createDefaultProfileIfNeeded
+    createDefaultProfileIfNeeded,
+    error
   };
 };

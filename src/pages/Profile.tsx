@@ -25,7 +25,6 @@ const Profile = () => {
   const [reviewComment, setReviewComment] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
 
   const {
     loading,
@@ -41,15 +40,21 @@ const Profile = () => {
     setProfileData,
     setProfileImageUrl,
     fetchPortfolioImages,
-    createDefaultProfileIfNeeded
+    createDefaultProfileIfNeeded,
+    error
   } = useProfileData(id);
 
   useEffect(() => {
     if (user && isCurrentUser && profileNotFound) {
-      createDefaultProfileIfNeeded().catch(error => {
-        console.error("Error creating profile:", error);
-        setProfileError(error.message || "Nastala chyba pri vytváraní profilu");
-      });
+      console.log("Profile not found for current user, attempting to create default profile");
+      setTimeout(() => {
+        createDefaultProfileIfNeeded().catch(err => {
+          console.error("Error creating profile:", err);
+          toast.error("Nastala chyba pri vytváraní profilu", {
+            description: err.message || "Neočakávaná chyba"
+          });
+        });
+      }, 500);
     }
   }, [user, isCurrentUser, profileNotFound, createDefaultProfileIfNeeded]);
 
@@ -60,10 +65,12 @@ const Profile = () => {
   };
 
   const handleCreateProfile = () => {
-    setProfileError(null);
+    console.log("Manual profile creation initiated by user");
     createDefaultProfileIfNeeded().catch(error => {
       console.error("Error creating profile:", error);
-      setProfileError(error.message || "Nastala chyba pri vytváraní profilu");
+      toast.error("Nastala chyba pri vytváraní profilu", {
+        description: error.message || "Neočakávaná chyba"
+      });
     });
   };
 
@@ -156,7 +163,7 @@ const Profile = () => {
         <ProfileNotFound 
           isCurrentUser={isCurrentUser} 
           onCreateProfile={handleCreateProfile}
-          error={profileError || undefined}
+          error={error || undefined}
         />
       </Layout>
     );
@@ -168,7 +175,7 @@ const Profile = () => {
         <ProfileNotFound 
           isCurrentUser={isCurrentUser} 
           onCreateProfile={handleCreateProfile}
-          error={profileError || "Profil nebol nájdený alebo nemáte k nemu prístup. Možno je potrebné nastaviť oprávnenia v databáze."}
+          error={error || "Profil nebol nájdený alebo nemáte k nemu prístup. Možno je potrebné skontrolovať nastavenia Row Level Security v databáze."}
         />
       </Layout>
     );
