@@ -24,7 +24,12 @@ export const useProfileCore = (id?: string) => {
         return;
       }
       
-      const userId = id || user?.id;
+      // Fix for handling URL parameters by checking if the ID is ":id"
+      let userId = id;
+      if (!userId || userId === ":id") {
+        userId = user?.id;
+      }
+      
       if (!userId) {
         setProfileNotFound(true);
         setLoading(false);
@@ -63,7 +68,12 @@ export const useProfileCore = (id?: string) => {
 
   useEffect(() => {
     if (user && id) {
-      setIsCurrentUser(user.id === id);
+      // Fix for handling URL parameters by checking if the ID is ":id"
+      if (id === ":id") {
+        setIsCurrentUser(true);
+      } else {
+        setIsCurrentUser(user.id === id);
+      }
     } else if (user && !id) {
       setIsCurrentUser(true);
     } else {
@@ -76,7 +86,14 @@ export const useProfileCore = (id?: string) => {
       if (!user && !id) return;
 
       try {
-        const userId = id || user?.id;
+        // Fix for handling URL parameters
+        let userId = id;
+        if (!userId || userId === ":id") {
+          userId = user?.id;
+        }
+        
+        if (!userId) return;
+        
         console.log("Fetching user type for:", userId);
         const { data, error } = await supabase
           .from('user_types')

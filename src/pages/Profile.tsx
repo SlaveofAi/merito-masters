@@ -16,6 +16,7 @@ import { useImageUploader } from "@/components/profile/ImageUploader";
 import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
+  // Ensure we get the id parameter correctly
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -26,6 +27,9 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  // Only pass id to useProfileData if it's not the literal ":id" string
+  const profileId = id === ":id" ? undefined : id;
+  
   const {
     loading,
     profileData,
@@ -42,9 +46,10 @@ const Profile = () => {
     fetchPortfolioImages,
     createDefaultProfileIfNeeded,
     error
-  } = useProfileData(id);
+  } = useProfileData(profileId);
 
   useEffect(() => {
+    // If we're on the current user's profile and it doesn't exist, try to create it
     if (user && isCurrentUser && profileNotFound) {
       console.log("Profile not found for current user, attempting to create default profile");
       setTimeout(() => {

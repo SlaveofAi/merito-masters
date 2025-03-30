@@ -9,6 +9,12 @@ export const useProfileReviews = (id?: string) => {
   
   const fetchReviews = async (userId: string): Promise<CraftsmanReview[]> => {
     try {
+      // Ensure we have a valid userId
+      if (!userId || userId === ":id") {
+        console.log("Invalid userId for fetching reviews:", userId);
+        return [];
+      }
+      
       console.log("Fetching reviews for craftsman:", userId);
       
       const { data, error } = await supabase
@@ -44,14 +50,17 @@ export const useProfileReviews = (id?: string) => {
     }
   };
 
+  // Fix for handling URL parameters by resolving id to user.id when needed
+  const userId = (!id || id === ":id") ? user?.id : id;
+
   const {
     data: reviews = [],
     isLoading: isLoadingReviews,
     refetch: refetchReviews
   } = useQuery({
-    queryKey: ['reviews', id || user?.id],
-    queryFn: () => fetchReviews(id || user?.id || ''),
-    enabled: !!id || !!user?.id,
+    queryKey: ['reviews', userId],
+    queryFn: () => fetchReviews(userId || ''),
+    enabled: !!userId,
   });
 
   return {
