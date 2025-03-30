@@ -11,7 +11,7 @@ export const useProfileCore = (id?: string) => {
   const [isCurrentUser, setIsCurrentUser] = useState(false);
   const [profileNotFound, setProfileNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, userType: authUserType } = useAuth();
 
   const fetchProfileData = useCallback(async () => {
     setLoading(true);
@@ -36,41 +36,50 @@ export const useProfileCore = (id?: string) => {
         return;
       }
 
-      // First, fetch user type for the userId
-      console.log("Fetching user type for:", userId);
-      const { data: userTypeData, error: userTypeError } = await supabase
-        .from('user_types')
-        .select('user_type')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (userTypeError) {
-        console.error("Error fetching user type:", userTypeError);
-        setError(`Error fetching user type: ${userTypeError.message}`);
-        setProfileNotFound(true);
-        setLoading(false);
-        return;
-      }
-
-      console.log("User type data:", userTypeData);
+      // Use the userType from Auth context if it's for the current user
+      let fetchedUserType = null;
       
-      if (!userTypeData) {
-        console.log("No user type found for:", userId);
-        setUserType(null);
-        setProfileNotFound(true);
-        setLoading(false);
-        return;
-      }
-
-      const fetchedUserType = userTypeData.user_type;
-      if (fetchedUserType === 'customer' || fetchedUserType === 'craftsman') {
-        setUserType(fetchedUserType);
+      if (isCurrentUser && authUserType) {
+        console.log("Using userType from auth context:", authUserType);
+        fetchedUserType = authUserType;
+        setUserType(authUserType);
       } else {
-        console.log("Invalid user type:", fetchedUserType);
-        setUserType(null);
-        setProfileNotFound(true);
-        setLoading(false);
-        return;
+        // First, fetch user type for the userId
+        console.log("Fetching user type for:", userId);
+        const { data: userTypeData, error: userTypeError } = await supabase
+          .from('user_types')
+          .select('user_type')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (userTypeError) {
+          console.error("Error fetching user type:", userTypeError);
+          setError(`Error fetching user type: ${userTypeError.message}`);
+          setProfileNotFound(true);
+          setLoading(false);
+          return;
+        }
+
+        console.log("User type data:", userTypeData);
+        
+        if (!userTypeData) {
+          console.log("No user type found for:", userId);
+          setUserType(null);
+          setProfileNotFound(true);
+          setLoading(false);
+          return;
+        }
+
+        fetchedUserType = userTypeData.user_type;
+        if (fetchedUserType === 'customer' || fetchedUserType === 'craftsman') {
+          setUserType(fetchedUserType);
+        } else {
+          console.log("Invalid user type:", fetchedUserType);
+          setUserType(null);
+          setProfileNotFound(true);
+          setLoading(false);
+          return;
+        }
       }
 
       // Now fetch the profile data based on user type
@@ -102,7 +111,7 @@ export const useProfileCore = (id?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [id, user]);
+  }, [id, user, isCurrentUser, authUserType]);
 
   useEffect(() => {
     if (user) {
