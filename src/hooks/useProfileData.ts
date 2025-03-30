@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +15,6 @@ export const useProfileData = (id?: string) => {
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const { user } = useAuth();
 
-  // Fetch profile data
   const fetchProfileData = async () => {
     setLoading(true);
     setProfileNotFound(false);
@@ -50,7 +48,6 @@ export const useProfileData = (id?: string) => {
       if (data) {
         console.log("Profile data found:", data);
         setProfileData(data as ProfileData);
-        // Set profile image URL if it exists on the data object
         if ('profile_image_url' in data) {
           setProfileImageUrl(data.profile_image_url || null);
         }
@@ -66,7 +63,6 @@ export const useProfileData = (id?: string) => {
     }
   };
 
-  // Fetch portfolio images
   const fetchPortfolioImages = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -86,12 +82,12 @@ export const useProfileData = (id?: string) => {
     }
   };
 
-  // Fetch reviews - new function
   const fetchReviews = async (userId: string): Promise<CraftsmanReview[]> => {
     try {
-      // Using any type to work around TypeScript errors with the craftsman_reviews table
+      console.log("Fetching reviews for craftsman:", userId);
+      
       const { data, error } = await supabase
-        .from('craftsman_reviews' as any)
+        .from('craftsman_reviews')
         .select('*')
         .eq('craftsman_id', userId)
         .order('created_at', { ascending: false });
@@ -101,14 +97,26 @@ export const useProfileData = (id?: string) => {
         return [];
       }
       
-      return (data || []) as CraftsmanReview[];
+      if (!data) {
+        console.log("No reviews found for craftsman:", userId);
+        return [];
+      }
+      
+      return (data as any[]).map(review => ({
+        id: review.id,
+        craftsman_id: review.craftsman_id,
+        customer_id: review.customer_id,
+        customer_name: review.customer_name,
+        rating: review.rating,
+        comment: review.comment,
+        created_at: review.created_at
+      }));
     } catch (error) {
       console.error("Error in fetchReviews:", error);
       return [];
     }
   };
 
-  // Use React Query to handle reviews fetching
   const {
     data: reviews,
     isLoading: isLoadingReviews,
@@ -148,7 +156,6 @@ export const useProfileData = (id?: string) => {
         }
 
         console.log("User type data:", data);
-        // Make sure to only set user type if it's one of the allowed values
         if (data?.user_type === 'customer' || data?.user_type === 'craftsman') {
           setUserType(data.user_type);
         } else {
@@ -182,7 +189,6 @@ export const useProfileData = (id?: string) => {
       console.log("Checking if we need to create a default profile");
       const table = userType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
       
-      // Check if profile exists
       const { data: existingProfile, error: checkError } = await supabase
         .from(table)
         .select('id')
@@ -201,12 +207,10 @@ export const useProfileData = (id?: string) => {
       
       console.log("Creating default profile for user:", user.id);
       
-      // Get user's email and name from auth metadata
       const email = user.email || '';
       const name = user.user_metadata?.name || user.user_metadata?.full_name || 'User';
       
       if (userType === 'craftsman') {
-        // Create a default craftsman profile
         const { error: insertError } = await supabase
           .from('craftsman_profiles')
           .insert({
@@ -225,11 +229,9 @@ export const useProfileData = (id?: string) => {
         } else {
           console.log("Default craftsman profile created successfully");
           toast.success("Profil bol vytvorený", { duration: 3000 });
-          // Refresh profile data
           fetchProfileData();
         }
       } else {
-        // Create a default customer profile
         const { error: insertError } = await supabase
           .from('customer_profiles')
           .insert({
@@ -246,7 +248,6 @@ export const useProfileData = (id?: string) => {
         } else {
           console.log("Default customer profile created successfully");
           toast.success("Profil bol vytvorený", { duration: 3000 });
-          // Refresh profile data
           fetchProfileData();
         }
       }
