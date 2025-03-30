@@ -13,6 +13,7 @@ import ContactTab from "@/components/profile/ContactTab";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import { useProfileData } from "@/hooks/useProfileData";
 import { useImageUploader } from "@/components/profile/ImageUploader";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +34,9 @@ const Profile = () => {
     profileNotFound,
     portfolioImages,
     profileImageUrl,
+    reviews,
+    isLoadingReviews,
+    refetchReviews,
     setProfileData,
     setProfileImageUrl,
     fetchPortfolioImages
@@ -59,13 +63,57 @@ const Profile = () => {
     setRating(value);
   };
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.info("Hodnotenie bolo odoslané", {
-      description: "Ďakujeme za vaše hodnotenie",
-    });
-    setRating(0);
-    setReviewComment("");
+    
+    if (!user) {
+      toast.error("Pre pridanie hodnotenia sa musíte prihlásiť", {
+        description: "Prosím, prihláste sa pre pridanie hodnotenia",
+      });
+      return;
+    }
+    
+    if (rating === 0) {
+      toast.error("Prosím, vyberte hodnotenie", {
+        description: "Pridajte aspoň jednu hviezdičku",
+      });
+      return;
+    }
+    
+    try {
+      const newReview = {
+        craftsman_id: id || profileData?.id,
+        customer_id: user.id,
+        customer_name: user.user_metadata?.name || "Anonymný používateľ",
+        rating,
+        comment: reviewComment,
+      };
+      
+      const { error } = await supabase
+        .from('craftsman_reviews')
+        .insert(newReview);
+      
+      if (error) {
+        console.error("Error submitting review:", error);
+        toast.error("Nastala chyba pri odosielaní hodnotenia", {
+          description: error.message,
+        });
+        return;
+      }
+      
+      toast.success("Hodnotenie bolo pridané", {
+        description: "Ďakujeme za vaše hodnotenie",
+      });
+      
+      // Reset form and refresh reviews
+      setRating(0);
+      setReviewComment("");
+      refetchReviews();
+      
+    } catch (error) {
+      console.error("Error in handleSubmitReview:", error);
+      toast.error("Nastala chyba pri odosielaní hodnotenia");
+    }
   };
 
   if (loading) {
@@ -99,7 +147,7 @@ const Profile = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-secondary/30">
+      <div className="min-h-screen bg-gray-50">
         <ProfileHeader 
           profileData={profileData}
           userType={userType}
@@ -136,11 +184,14 @@ const Profile = () => {
             <TabsContent value="reviews" className="animate-fade-in">
               <ReviewsTab 
                 userType={userType}
+                profileId={id || profileData.id}
                 rating={rating}
                 reviewComment={reviewComment}
                 handleStarClick={handleStarClick}
                 setReviewComment={setReviewComment}
                 handleSubmitReview={handleSubmitReview}
+                reviews={reviews || []}
+                isLoadingReviews={isLoadingReviews}
               />
             </TabsContent>
             

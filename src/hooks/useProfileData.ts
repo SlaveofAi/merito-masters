@@ -1,144 +1,149 @@
-
 import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ProfileData } from "@/types/profile";
-import { fetchPortfolioImages as fetchPortfolioImagesUtil, TABLES } from "@/utils/imageUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
-export const useProfileData = (profileId: string | undefined) => {
-  const { toast: uiToast } = useToast();
-  const { user, userType: authUserType } = useAuth();
-  
+export const useProfileData = (id?: string) => {
   const [loading, setLoading] = useState(true);
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [userType, setUserType] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [userType, setUserType] = useState<'customer' | 'craftsman' | null>(null);
   const [isCurrentUser, setIsCurrentUser] = useState(false);
+  const [profileNotFound, setProfileNotFound] = useState(false);
   const [portfolioImages, setPortfolioImages] = useState<any[]>([]);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
-  const [profileNotFound, setProfileNotFound] = useState(false);
+  const { user } = useAuth();
 
-  const fetchUserType = async (userId: string) => {
+  // Fetch profile data
+  const fetchProfileData = async () => {
+    setLoading(true);
+    setProfileNotFound(false);
+
     try {
-      if (authUserType && userId === user?.id) {
-        console.log("Using user type from auth context:", authUserType);
-        return authUserType;
-      }
-
-      const { data, error } = await supabase
-        .from(TABLES.USER_TYPES)
-        .select('user_type')
-        .eq('user_id', userId)
-        .maybeSingle();
-        
-      if (error) {
-        console.error('Error fetching user type:', error);
-        return null;
-      }
-      
-      return data?.user_type || null;
-    } catch (error) {
-      console.error('Error in fetchUserType:', error);
-      return null;
-    }
-  };
-
-  const fetchPortfolioImages = async (userId: string) => {
-    const images = await fetchPortfolioImagesUtil(userId);
-    setPortfolioImages(images);
-  };
-
-  const fetchProfileData = async (userId: string, type: string) => {
-    try {
-      const table = type === 'craftsman' ? TABLES.CRAFTSMAN_PROFILES : TABLES.CUSTOMER_PROFILES;
-      
+      const table = userType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
       const { data, error } = await supabase
         .from(table)
         .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-        
+        .eq('id', id || user?.id)
+        .single();
+
       if (error) {
-        console.error(`Error fetching ${type} profile:`, error);
-        
-        if (userId === user?.id) {
-          setProfileNotFound(true);
-        } else {
-          throw error;
-        }
+        console.error("Error fetching profile:", error);
+        setProfileNotFound(true);
       }
-      
+
       if (data) {
-        setProfileData(data as ProfileData);
-        
-        if ('profile_image_url' in data) {
-          setProfileImageUrl(data.profile_image_url);
-        }
-        
-        if (type === 'craftsman') {
-          fetchPortfolioImages(userId);
-        }
+        setProfileData(data);
+        setProfileImageUrl(data.profile_image_url || null);
+      } else {
+        setProfileNotFound(true);
       }
     } catch (error) {
-      console.error('Error in fetchProfileData:', error);
-      toast.error("Nastala chyba pri načítaní profilu");
+      console.error("Error in fetchProfileData:", error);
+      setProfileNotFound(true);
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    async function fetchUserData() {
-      try {
-        setLoading(true);
-        
-        if (!user) {
-          uiToast({
-            title: "Nie ste prihlásený",
-            description: "Pre zobrazenie profilu sa musíte prihlásiť",
-            variant: "destructive",
-          });
-          return null;
-        }
+  // Fetch portfolio images
+  const fetchPortfolioImages = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('portfolio_images')
+        .select('*')
+        .eq('craftsman_id', userId)
+        .order('created_at', { ascending: false });
 
-        const currentUserId = user.id;
-        const userId = profileId || currentUserId;
-        
-        setIsCurrentUser(currentUserId === userId);
-        
-        const type = await fetchUserType(userId);
-        setUserType(type);
-        
-        if (type) {
-          await fetchProfileData(userId, type);
-        } else if (isCurrentUser) {
-          setProfileNotFound(true);
-          uiToast({
-            title: "Upozornenie",
-            description: "Váš profil nie je úplný. Prosím, dokončite registráciu.",
-            variant: "destructive",
-          });
-        } else {
-          uiToast({
-            title: "Chyba",
-            description: "Nepodarilo sa načítať typ užívateľa",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error("Error in profile page:", error);
-        uiToast({
-          title: "Chyba",
-          description: "Nastala chyba pri načítaní profilu",
-          variant: "destructive",
-        });
-        return null;
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error("Error fetching portfolio images:", error);
+        return;
       }
-    }
 
-    fetchUserData();
-  }, [profileId, user, uiToast, authUserType, isCurrentUser]);
+      setPortfolioImages(data || []);
+    } catch (error) {
+      console.error("Error in fetchPortfolioImages:", error);
+    }
+  };
+
+  // Fetch reviews - new function
+  const fetchReviews = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('craftsman_reviews')
+        .select('*')
+        .eq('craftsman_id', userId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error("Error fetching reviews:", error);
+        return [];
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error("Error in fetchReviews:", error);
+      return [];
+    }
+  };
+
+  // Use React Query to handle reviews fetching
+  const {
+    data: reviews,
+    isLoading: isLoadingReviews,
+    refetch: refetchReviews
+  } = useQuery({
+    queryKey: ['reviews', id || user?.id],
+    queryFn: () => fetchReviews(id || user?.id || ''),
+    enabled: !!id || !!user?.id,
+  });
+
+  useEffect(() => {
+    if (user && id) {
+      setIsCurrentUser(user.id === id);
+    } else if (user && !id) {
+      setIsCurrentUser(true);
+    } else {
+      setIsCurrentUser(false);
+    }
+  }, [user, id]);
+
+  useEffect(() => {
+    const fetchUserType = async () => {
+      if (!user && !id) return;
+
+      try {
+        const userId = id || user?.id;
+        const { data, error } = await supabase
+          .from('user_types')
+          .select('user_type')
+          .eq('user_id', userId)
+          .single();
+
+        if (error) {
+          console.error("Error fetching user type:", error);
+          return;
+        }
+
+        setUserType(data?.user_type || null);
+      } catch (error) {
+        console.error("Error fetching user type:", error);
+      }
+    };
+
+    fetchUserType();
+  }, [user, id]);
+
+  useEffect(() => {
+    if (userType) {
+      fetchProfileData();
+    }
+  }, [userType, user, id]);
+
+  useEffect(() => {
+    if (profileData && userType === 'craftsman') {
+      fetchPortfolioImages(profileData.id);
+    }
+  }, [profileData, userType]);
 
   return {
     loading,
@@ -148,8 +153,10 @@ export const useProfileData = (profileId: string | undefined) => {
     profileNotFound,
     portfolioImages,
     profileImageUrl,
+    reviews,
+    isLoadingReviews,
+    refetchReviews,
     setProfileData,
-    setPortfolioImages,
     setProfileImageUrl,
     fetchPortfolioImages
   };

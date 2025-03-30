@@ -23,28 +23,28 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white py-6 px-4 sm:px-6 border-b border-gray-200">
+    <div className="min-h-screen flex flex-col bg-white">
+      <header className="py-6 px-4 sm:px-6 border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="text-2xl font-bold text-primary">Majstri.sk</div>
+          <div className="text-2xl font-bold text-black">Majstri.sk</div>
           <Link to="/login" className="text-sm font-medium hover:underline">
-            Log in
+            Prihlásenie
           </Link>
         </div>
       </header>
 
       <main className="flex-grow flex flex-col items-center justify-center p-4">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Welcome to Majstri.sk</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            The platform connecting skilled craftsmen with customers needing professional services
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Vitajte na Majstri.sk</h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Platforma spájajúca profesionálnych remeselníkov s ľuďmi, ktorí hľadajú ich služby
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl w-full">
           <div 
             className={`relative cursor-pointer group overflow-hidden rounded-lg border-2 transition-all h-80 
-              ${userType === 'craftsman' ? 'border-primary' : 'border-transparent hover:border-gray-300'}`}
+              ${userType === 'craftsman' ? 'border-black' : 'border-transparent hover:border-gray-300'}`}
             onClick={() => handleUserTypeSelection('craftsman')}
           >
             <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-colors z-10"></div>
@@ -54,19 +54,19 @@ const Landing = () => {
               className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
             />
             <div className="absolute inset-0 flex flex-col items-center justify-center z-20 p-6">
-              <h2 className="text-3xl font-bold text-white mb-3">I am a Craftsman</h2>
+              <h2 className="text-3xl font-bold text-white mb-3">Som remeselník</h2>
               <p className="text-white/90 text-center mb-6">
-                Showcase your skills and find new clients in your area
+                Prezentujte svoje zručnosti a nájdite nových klientov vo vašom okolí
               </p>
-              <Button variant="outline" className="bg-white/90 hover:bg-white">
-                Get Started
+              <Button variant="outline" className="bg-white/90 hover:bg-white text-black">
+                Začať
               </Button>
             </div>
           </div>
 
           <div 
             className={`relative cursor-pointer group overflow-hidden rounded-lg border-2 transition-all h-80
-              ${userType === 'customer' ? 'border-primary' : 'border-transparent hover:border-gray-300'}`}
+              ${userType === 'customer' ? 'border-black' : 'border-transparent hover:border-gray-300'}`}
             onClick={() => handleUserTypeSelection('customer')}
           >
             <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-colors z-10"></div>
@@ -76,21 +76,21 @@ const Landing = () => {
               className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
             />
             <div className="absolute inset-0 flex flex-col items-center justify-center z-20 p-6">
-              <h2 className="text-3xl font-bold text-white mb-3">I am a Customer</h2>
+              <h2 className="text-3xl font-bold text-white mb-3">Som zákazník</h2>
               <p className="text-white/90 text-center mb-6">
-                Find reliable craftsmen for your projects and home improvements
+                Nájdite spoľahlivých remeselníkov pre vaše projekty a vylepšenia domácnosti
               </p>
-              <Button variant="outline" className="bg-white/90 hover:bg-white">
-                Get Started
+              <Button variant="outline" className="bg-white/90 hover:bg-white text-black">
+                Začať
               </Button>
             </div>
           </div>
         </div>
       </main>
 
-      <footer className="bg-secondary py-6 px-4 text-center text-sm text-muted-foreground">
+      <footer className="bg-gray-100 py-6 px-4 text-center text-sm text-gray-600">
         <div className="max-w-7xl mx-auto">
-          <p>© {new Date().getFullYear()} Majstri.sk - Connecting craftsmen and customers</p>
+          <p>© {new Date().getFullYear()} Majstri.sk - Spájame remeselníkov a zákazníkov</p>
         </div>
       </footer>
     </div>
