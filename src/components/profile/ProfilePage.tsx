@@ -10,8 +10,10 @@ import ContactTab from "@/components/profile/ContactTab";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { useProfile } from "@/contexts/ProfileContext";
+import { useAuth } from "@/hooks/useAuth";
 
 const ProfilePage: React.FC = () => {
+  const { user } = useAuth(); // Import user from useAuth
   const {
     loading,
     profileData,
