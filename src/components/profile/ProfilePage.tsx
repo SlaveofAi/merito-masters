@@ -45,6 +45,37 @@ const ProfilePage: React.FC = () => {
     );
   }
 
+  // Handle case where the profile not found might be due to RLS policies
+  if (error && error.includes("row-level security policy")) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex flex-col items-center justify-center p-4">
+          <div className="max-w-md bg-white rounded-lg shadow-sm p-6 text-center">
+            <h1 className="text-xl font-bold mb-4">Chyba prístupu k profilu</h1>
+            <p className="mb-4">
+              Nemáte oprávnenie na zobrazenie tohto profilu. Toto môže byť spôsobené 
+              nastaveniami Row Level Security (RLS) v databáze.
+            </p>
+            {isCurrentUser && (
+              <p className="text-sm text-amber-600 mb-4">
+                Hoci ste prihlásený ako vlastník profilu, RLS pravidlá môžu blokovať prístup.
+                Skúste sa odhlásiť a znova prihlásiť.
+              </p>
+            )}
+            {createDefaultProfileIfNeeded && isCurrentUser && (
+              <button 
+                onClick={() => createDefaultProfileIfNeeded()}
+                className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
+              >
+                Vytvoriť profil znova
+              </button>
+            )}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   if (profileNotFound && !isCurrentUser) {
     return (
       <Layout>
