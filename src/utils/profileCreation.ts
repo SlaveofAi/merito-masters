@@ -100,7 +100,7 @@ export const createDefaultProfile = async (
           email,
           location: 'Bratislava',
           phone: null,
-          profile_image_url: null
+          profile_image_url: null  // Now this column exists in the database
         });
         
       if (insertError) {

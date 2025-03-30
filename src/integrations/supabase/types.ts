@@ -97,6 +97,7 @@ export type Database = {
           location: string
           name: string
           phone: string | null
+          profile_image_url: string | null
           updated_at: string
         }
         Insert: {
@@ -106,6 +107,7 @@ export type Database = {
           location: string
           name: string
           phone?: string | null
+          profile_image_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -115,6 +117,7 @@ export type Database = {
           location?: string
           name?: string
           phone?: string | null
+          profile_image_url?: string | null
           updated_at?: string
         }
         Relationships: []

@@ -62,6 +62,10 @@ export const useProfileData = (id?: string) => {
         () => {
           console.log("Profile created successfully, fetching data");
           fetchProfileData();
+          // Wait a moment before clearing the creating state to give time for UI updates
+          setTimeout(() => {
+            setIsCreatingProfile(false);
+          }, 2000);
         }
       );
     } catch (error: any) {
@@ -70,9 +74,8 @@ export const useProfileData = (id?: string) => {
       toast.error("Chyba pri vytváraní profilu", {
         description: error.message
       });
-      throw error;
-    } finally {
       setIsCreatingProfile(false);
+      throw error;
     }
   }, [user, userType, isCurrentUser, fetchProfileData, isCreatingProfile]);
 

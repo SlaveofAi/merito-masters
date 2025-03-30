@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -34,11 +33,12 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
       toast.info("Pokúšam sa vytvoriť profil...");
       console.log("Attempting to create profile...");
       await onCreateProfile();
+      // Don't set isCreating to false here as we want to keep the button disabled
+      // until the profile creation process completes or fails
     } catch (error) {
       console.error("Error in handleCreateProfile:", error);
+      setIsCreating(false); // Only set back to false if there's an error
       // Error is already handled by the createDefaultProfile function
-    } finally {
-      setIsCreating(false);
     }
   };
 
@@ -49,6 +49,14 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
   };
 
   const getErrorExplanation = () => {
+    if (error?.includes("Could not find the 'profile_image_url' column")) {
+      return (
+        <div className="space-y-2 mt-2">
+          <p>Chyba súvisí s chýbajúcim stĺpcom v databáze, no už sme ju opravili. Skúste to znova.</p>
+        </div>
+      );
+    }
+    
     if (error?.includes("row-level security policy")) {
       return (
         <div className="space-y-2 mt-2">
