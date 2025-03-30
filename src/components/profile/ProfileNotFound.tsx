@@ -2,9 +2,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ArrowLeft, AlertTriangle } from "lucide-react";
+import { RefreshCw, ArrowLeft, AlertTriangle, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface ProfileNotFoundProps {
   isCurrentUser: boolean;
@@ -18,13 +19,19 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
   error 
 }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   const handleCreateProfile = () => {
     if (onCreateProfile) {
       toast.info("Pokúšam sa vytvoriť profil...");
       onCreateProfile();
     }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("Boli ste odhlásení");
+    navigate("/login");
   };
 
   if (!isCurrentUser) {
@@ -42,11 +49,18 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="mb-6">
+        <Avatar className="h-20 w-20">
+          <AvatarFallback className="bg-primary/10">
+            <User className="h-10 w-10 text-primary/80" />
+          </AvatarFallback>
+        </Avatar>
+      </div>
       <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
       <h1 className="text-2xl font-bold mb-4">Váš profil nie je úplný</h1>
       <p className="text-muted-foreground mb-6 text-center max-w-md">
         Zdá sa, že registrácia nebola úplne dokončená. Kliknite na tlačidlo nižšie pre vytvorenie profilu,
-        alebo obnovte stránku.
+        alebo sa odhláste a znova prihláste.
       </p>
       
       {error && (
@@ -76,6 +90,13 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
         >
           <RefreshCw className="h-4 w-4" />
           Vytvoriť profil
+        </Button>
+        <Button 
+          onClick={handleLogout}
+          variant="secondary"
+          className="flex items-center gap-2"
+        >
+          Odhlásiť sa
         </Button>
       </div>
     </div>

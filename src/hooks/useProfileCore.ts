@@ -19,39 +19,77 @@ export const useProfileCore = (id?: string) => {
     setError(null);
 
     try {
-      if (!userType) {
-        setLoading(false);
-        return;
-      }
-      
-      // Fix for handling URL parameters by checking if the ID is ":id"
+      // Determine whose profile to fetch
       let userId = id;
-      if (!userId || userId === ":id") {
+      
+      // If no ID provided or ID is the literal string ":id" or empty, use current user's ID
+      if (!userId || userId === ":id" || userId === "") {
         userId = user?.id;
+        console.log("Using current user ID:", userId);
       }
       
+      // Exit early if we still don't have a userId to query
       if (!userId) {
-        console.log("No user ID available for fetching profile");
+        console.log("No user ID available, can't fetch profile");
         setProfileNotFound(true);
         setLoading(false);
         return;
       }
 
-      console.log(`Fetching ${userType} profile for user: ${userId}`);
-      const table = userType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
-      const { data, error } = await supabase
+      // First, fetch user type for the userId
+      console.log("Fetching user type for:", userId);
+      const { data: userTypeData, error: userTypeError } = await supabase
+        .from('user_types')
+        .select('user_type')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (userTypeError) {
+        console.error("Error fetching user type:", userTypeError);
+        setError(`Error fetching user type: ${userTypeError.message}`);
+        setProfileNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      console.log("User type data:", userTypeData);
+      
+      if (!userTypeData) {
+        console.log("No user type found for:", userId);
+        setUserType(null);
+        setProfileNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      const fetchedUserType = userTypeData.user_type;
+      if (fetchedUserType === 'customer' || fetchedUserType === 'craftsman') {
+        setUserType(fetchedUserType);
+      } else {
+        console.log("Invalid user type:", fetchedUserType);
+        setUserType(null);
+        setProfileNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      // Now fetch the profile data based on user type
+      const table = fetchedUserType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
+      console.log(`Fetching ${table} profile for user:`, userId);
+      
+      const { data: profileData, error: profileError } = await supabase
         .from(table)
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) {
-        console.error("Error fetching profile:", error);
-        setError(error.message);
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        setError(`Error fetching profile: ${profileError.message}`);
         setProfileNotFound(true);
-      } else if (data) {
-        console.log("Profile data found:", data);
-        setProfileData(data as ProfileData);
+      } else if (profileData) {
+        console.log("Profile data found:", profileData);
+        setProfileData(profileData as ProfileData);
         setProfileNotFound(false);
       } else {
         console.log("No profile data found for:", userId);
@@ -64,73 +102,25 @@ export const useProfileCore = (id?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [id, user, userType]);
+  }, [id, user]);
 
   useEffect(() => {
-    if (user && id) {
-      // Fix for handling URL parameters by checking if the ID is ":id"
-      if (id === ":id" || !id) {
+    if (user) {
+      // Determine if the profile being viewed belongs to the current user
+      if (!id || id === ":id" || id === "") {
         setIsCurrentUser(true);
       } else {
         setIsCurrentUser(user.id === id);
       }
-    } else if (user && !id) {
-      setIsCurrentUser(true);
     } else {
       setIsCurrentUser(false);
     }
   }, [user, id]);
 
   useEffect(() => {
-    const fetchUserType = async () => {
-      if (!user && !id) return;
-
-      try {
-        // Fix for handling URL parameters
-        let userId = id;
-        if (!userId || userId === ":id") {
-          userId = user?.id;
-        }
-        
-        if (!userId) {
-          console.log("No user ID available for fetching user type");
-          return;
-        }
-        
-        console.log("Fetching user type for:", userId);
-        const { data, error } = await supabase
-          .from('user_types')
-          .select('user_type')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-        if (error) {
-          console.error("Error fetching user type:", error);
-          setError(`Error fetching user type: ${error.message}`);
-          return;
-        }
-
-        console.log("User type data:", data);
-        if (data?.user_type === 'customer' || data?.user_type === 'craftsman') {
-          setUserType(data.user_type);
-        } else {
-          console.log("No valid user type found");
-          setUserType(null);
-        }
-      } catch (error: any) {
-        console.error("Error fetching user type:", error);
-        setError(error.message);
-      }
-    };
-
-    fetchUserType();
-  }, [user, id]);
-
-  useEffect(() => {
-    if (userType) {
-      fetchProfileData();
-    }
-  }, [userType, fetchProfileData]);
+    // Fetch profile data whenever the dependencies change
+    fetchProfileData();
+  }, [fetchProfileData]);
 
   return {
     loading,
