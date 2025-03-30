@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -14,6 +13,7 @@ import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import { useProfileData } from "@/hooks/useProfileData";
 import { useImageUploader } from "@/components/profile/ImageUploader";
 import { supabase } from "@/integrations/supabase/client";
+import { CraftsmanReview } from "@/types/profile";
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
@@ -81,7 +81,7 @@ const Profile = () => {
     }
     
     try {
-      const newReview = {
+      const newReview: Omit<CraftsmanReview, 'id' | 'created_at'> = {
         craftsman_id: id || profileData?.id,
         customer_id: user.id,
         customer_name: user.user_metadata?.name || "Anonymný používateľ",
@@ -90,8 +90,8 @@ const Profile = () => {
       };
       
       const { error } = await supabase
-        .from('craftsman_reviews')
-        .insert(newReview);
+        .from('craftsman_reviews' as any)
+        .insert(newReview as any);
       
       if (error) {
         console.error("Error submitting review:", error);
@@ -105,12 +105,11 @@ const Profile = () => {
         description: "Ďakujeme za vaše hodnotenie",
       });
       
-      // Reset form and refresh reviews
       setRating(0);
       setReviewComment("");
       refetchReviews();
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in handleSubmitReview:", error);
       toast.error("Nastala chyba pri odosielaní hodnotenia");
     }

@@ -40,3 +40,13 @@ export type PortfolioImage = {
   description: string | null;
   created_at: string;
 };
+
+export type CraftsmanReview = {
+  id: string;
+  craftsman_id: string;
+  customer_id: string;
+  customer_name: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+};

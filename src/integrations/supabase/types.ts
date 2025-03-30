@@ -51,6 +51,44 @@ export type Database = {
         }
         Relationships: []
       }
+      craftsman_reviews: {
+        Row: {
+          comment: string | null
+          craftsman_id: string
+          created_at: string
+          customer_id: string
+          customer_name: string
+          id: string
+          rating: number
+        }
+        Insert: {
+          comment?: string | null
+          craftsman_id: string
+          created_at?: string
+          customer_id: string
+          customer_name: string
+          id?: string
+          rating: number
+        }
+        Update: {
+          comment?: string | null
+          craftsman_id?: string
+          created_at?: string
+          customer_id?: string
+          customer_name?: string
+          id?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "craftsman_reviews_craftsman_id_fkey"
+            columns: ["craftsman_id"]
+            isOneToOne: false
+            referencedRelation: "craftsman_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_profiles: {
         Row: {
           created_at: string

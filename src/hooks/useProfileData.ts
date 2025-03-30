@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { CraftsmanReview } from "@/types/profile";
 
 export const useProfileData = (id?: string) => {
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,10 @@ export const useProfileData = (id?: string) => {
 
       if (data) {
         setProfileData(data);
-        setProfileImageUrl(data.profile_image_url || null);
+        // Only set profile image URL if the property exists on the data object
+        if ('profile_image_url' in data) {
+          setProfileImageUrl(data.profile_image_url || null);
+        }
       } else {
         setProfileNotFound(true);
       }
@@ -66,10 +71,12 @@ export const useProfileData = (id?: string) => {
   };
 
   // Fetch reviews - new function
-  const fetchReviews = async (userId: string) => {
+  const fetchReviews = async (userId: string): Promise<CraftsmanReview[]> => {
     try {
+      // Using explicit any type to avoid TypeScript errors with the craftsman_reviews table
+      // that's not in the auto-generated types yet
       const { data, error } = await supabase
-        .from('craftsman_reviews')
+        .from('craftsman_reviews' as any)
         .select('*')
         .eq('craftsman_id', userId)
         .order('created_at', { ascending: false });
@@ -124,7 +131,12 @@ export const useProfileData = (id?: string) => {
           return;
         }
 
-        setUserType(data?.user_type || null);
+        // Make sure to only set user type if it's one of the allowed values
+        if (data?.user_type === 'customer' || data?.user_type === 'craftsman') {
+          setUserType(data.user_type);
+        } else {
+          setUserType(null);
+        }
       } catch (error) {
         console.error("Error fetching user type:", error);
       }
