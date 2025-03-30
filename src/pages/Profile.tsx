@@ -146,6 +146,16 @@ const Profile = () => {
     }
   };
 
+  console.log("Profile render state:", { 
+    loading, 
+    profileData, 
+    userType, 
+    isCurrentUser, 
+    profileNotFound, 
+    error,
+    user: user?.id
+  });
+
   if (loading) {
     return (
       <Layout>
@@ -167,7 +177,7 @@ const Profile = () => {
       <Layout>
         <ProfileNotFound 
           isCurrentUser={isCurrentUser} 
-          onCreateProfile={handleCreateProfile}
+          onCreateProfile={createDefaultProfileIfNeeded}
           error={error || undefined}
         />
       </Layout>
@@ -179,7 +189,7 @@ const Profile = () => {
       <Layout>
         <ProfileNotFound 
           isCurrentUser={isCurrentUser} 
-          onCreateProfile={handleCreateProfile}
+          onCreateProfile={createDefaultProfileIfNeeded}
           error={error || "Profil nebol nájdený alebo nemáte k nemu prístup. Možno je potrebné skontrolovať nastavenia Row Level Security v databáze."}
         />
       </Layout>
@@ -198,7 +208,11 @@ const Profile = () => {
           profileImageUrl={profileImageUrl}
           handleProfileImageUpload={handleProfileImageUpload}
           uploading={uploading}
-          handleProfileUpdate={handleProfileUpdate}
+          handleProfileUpdate={(updatedProfile) => {
+            setProfileData({...profileData, ...updatedProfile});
+            setIsEditing(false);
+            toast.success("Profil bol aktualizovaný");
+          }}
         />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

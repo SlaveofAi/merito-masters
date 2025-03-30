@@ -11,6 +11,7 @@ export const createDefaultProfile = async (
 ) => {
   if (!user || !userType || !isCurrentUser) {
     const errorMsg = "Nemožno vytvoriť profil: používateľ nie je prihlásený alebo typ používateľa nie je nastavený";
+    console.error(errorMsg);
     throw new Error(errorMsg);
   }
   

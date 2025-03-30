@@ -31,6 +31,7 @@ export const useProfileCore = (id?: string) => {
       }
       
       if (!userId) {
+        console.log("No user ID available for fetching profile");
         setProfileNotFound(true);
         setLoading(false);
         return;
@@ -48,11 +49,10 @@ export const useProfileCore = (id?: string) => {
         console.error("Error fetching profile:", error);
         setError(error.message);
         setProfileNotFound(true);
-      }
-
-      if (data) {
+      } else if (data) {
         console.log("Profile data found:", data);
         setProfileData(data as ProfileData);
+        setProfileNotFound(false);
       } else {
         console.log("No profile data found for:", userId);
         setProfileNotFound(true);
@@ -69,7 +69,7 @@ export const useProfileCore = (id?: string) => {
   useEffect(() => {
     if (user && id) {
       // Fix for handling URL parameters by checking if the ID is ":id"
-      if (id === ":id") {
+      if (id === ":id" || !id) {
         setIsCurrentUser(true);
       } else {
         setIsCurrentUser(user.id === id);
@@ -92,7 +92,10 @@ export const useProfileCore = (id?: string) => {
           userId = user?.id;
         }
         
-        if (!userId) return;
+        if (!userId) {
+          console.log("No user ID available for fetching user type");
+          return;
+        }
         
         console.log("Fetching user type for:", userId);
         const { data, error } = await supabase

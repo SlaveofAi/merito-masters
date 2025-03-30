@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserType = async (userId: string) => {
     try {
+      console.log("Fetching user type for:", userId);
       const { data, error } = await supabase
         .from('user_types')
         .select('user_type')
@@ -34,6 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data) {
+        console.log("User type found:", data.user_type);
         setUserType(data.user_type as 'customer' | 'craftsman');
       } else {
         console.log("No user type found for user:", userId);
@@ -56,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Use setTimeout to avoid potential Supabase deadlocks
           setTimeout(() => {
             fetchUserType(session.user.id);
-          }, 0);
+          }, 100);
         } else {
           setUserType(null);
         }
@@ -71,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -94,8 +97,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const contextValue = {
+    session,
+    user,
+    loading,
+    userType,
+    signOut
+  };
+
+  console.log("Auth context state:", { 
+    userId: user?.id, 
+    userType, 
+    loading 
+  });
+
   return (
-    <AuthContext.Provider value={{ session, user, loading, userType, signOut }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
