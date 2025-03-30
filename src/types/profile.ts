@@ -27,7 +27,7 @@ export type CustomerProfile = {
   location: string;
   created_at: string;
   updated_at: string;
-  profile_image_url?: string | null;
+  profile_image_url: string | null; // Add this field to match the actual data
 };
 
 export type ProfileData = CraftsmanProfile | CustomerProfile;

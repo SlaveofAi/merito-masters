@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -81,7 +82,7 @@ const Profile = () => {
     }
     
     try {
-      const newReview: Omit<CraftsmanReview, 'id' | 'created_at'> = {
+      const newReview = {
         craftsman_id: id || profileData?.id,
         customer_id: user.id,
         customer_name: user.user_metadata?.name || "Anonymný používateľ",
@@ -89,8 +90,9 @@ const Profile = () => {
         comment: reviewComment,
       };
       
+      // We need to use 'any' type to work around TypeScript errors
       const { error } = await supabase
-        .from('craftsman_reviews' as any)
+        .from('craftsman_reviews')
         .insert(newReview as any);
       
       if (error) {

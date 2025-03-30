@@ -3,11 +3,11 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { CraftsmanReview } from "@/types/profile";
+import { CraftsmanReview, ProfileData, CustomerProfile, CraftsmanProfile } from "@/types/profile";
 
 export const useProfileData = (id?: string) => {
   const [loading, setLoading] = useState(true);
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [userType, setUserType] = useState<'customer' | 'craftsman' | null>(null);
   const [isCurrentUser, setIsCurrentUser] = useState(false);
   const [profileNotFound, setProfileNotFound] = useState(false);
@@ -34,7 +34,7 @@ export const useProfileData = (id?: string) => {
       }
 
       if (data) {
-        setProfileData(data);
+        setProfileData(data as ProfileData);
         // Only set profile image URL if the property exists on the data object
         if ('profile_image_url' in data) {
           setProfileImageUrl(data.profile_image_url || null);
@@ -73,10 +73,9 @@ export const useProfileData = (id?: string) => {
   // Fetch reviews - new function
   const fetchReviews = async (userId: string): Promise<CraftsmanReview[]> => {
     try {
-      // Using explicit any type to avoid TypeScript errors with the craftsman_reviews table
-      // that's not in the auto-generated types yet
+      // Using any type to work around TypeScript errors with the craftsman_reviews table
       const { data, error } = await supabase
-        .from('craftsman_reviews' as any)
+        .from('craftsman_reviews')
         .select('*')
         .eq('craftsman_id', userId)
         .order('created_at', { ascending: false });
@@ -86,7 +85,7 @@ export const useProfileData = (id?: string) => {
         return [];
       }
       
-      return data || [];
+      return (data || []) as CraftsmanReview[];
     } catch (error) {
       console.error("Error in fetchReviews:", error);
       return [];
