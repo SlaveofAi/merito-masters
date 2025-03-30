@@ -34,6 +34,7 @@ interface ProfileContextType {
   handleImageClick: (index: number) => void;
   handleStarClick: (value: number) => void;
   refetchReviews: () => void;
+  createDefaultProfileIfNeeded?: () => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);

@@ -24,7 +24,7 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     // If we're on the current user's profile and it doesn't exist, try to create it
-    if (isCurrentUser && profileNotFound) {
+    if (isCurrentUser && profileNotFound && createDefaultProfileIfNeeded) {
       console.log("Profile not found for current user, attempting to create default profile");
       setTimeout(() => {
         createDefaultProfileIfNeeded?.().catch(err => {
