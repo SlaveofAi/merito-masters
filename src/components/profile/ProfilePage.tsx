@@ -76,6 +76,67 @@ const ProfilePage: React.FC = () => {
     );
   }
 
+  // Handle the case where the user type is not set
+  if (isCurrentUser && (!userType || userType === null)) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex flex-col items-center justify-center p-4">
+          <div className="max-w-md bg-white rounded-lg shadow-sm p-6 text-center">
+            <h1 className="text-xl font-bold mb-4">Typ používateľa nie je nastavený</h1>
+            <p className="mb-4">
+              Váš typ používateľa (zákazník alebo remeselník) nie je nastavený. 
+              Toto je potrebné pre správne fungovanie profilu.
+            </p>
+            <div className="space-y-4">
+              <p className="text-sm text-amber-600">
+                Skúste sa odhlásiť a znova prihlásiť. Ak problém pretrváva, 
+                možno budete musieť registráciu vykonať znova.
+              </p>
+              {user && (
+                <div className="bg-gray-50 p-3 rounded text-left text-sm">
+                  <p className="font-medium">Aktuálne informácie:</p>
+                  <ul className="list-disc list-inside mt-1">
+                    <li>ID používateľa: {user.id.substring(0, 8)}...</li>
+                    <li>Email: {user.email}</li>
+                    <li>Typ používateľa: <span className="text-red-500">Nenastavený</span></li>
+                  </ul>
+                </div>
+              )}
+              <button 
+                onClick={() => window.location.href = "/register"}
+                className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors w-full"
+              >
+                Prejsť na registráciu
+              </button>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Handle database connection errors
+  if (error && error.includes("database function names")) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex flex-col items-center justify-center p-4">
+          <div className="max-w-md bg-white rounded-lg shadow-sm p-6 text-center">
+            <h1 className="text-xl font-bold mb-4">Nastala chyba pripojenia k databáze</h1>
+            <p className="mb-4">
+              Nepodarilo sa spojiť s databázou. Skúste stránku obnoviť alebo to skúste znova neskôr.
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
+            >
+              Obnoviť stránku
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   if (profileNotFound && !isCurrentUser) {
     return (
       <Layout>
