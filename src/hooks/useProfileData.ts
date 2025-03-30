@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,6 +87,7 @@ export const useProfileData = (id?: string) => {
     try {
       console.log("Fetching reviews for craftsman:", userId);
       
+      // Use type assertion to avoid TypeScript errors
       const { data, error } = await supabase
         .from('craftsman_reviews')
         .select('*')
@@ -97,12 +99,13 @@ export const useProfileData = (id?: string) => {
         return [];
       }
       
-      if (!data) {
+      if (!data || !Array.isArray(data)) {
         console.log("No reviews found for craftsman:", userId);
         return [];
       }
       
-      return (data as any[]).map(review => ({
+      // Explicitly map the data to ensure it matches the CraftsmanReview type
+      return data.map(review => ({
         id: review.id,
         craftsman_id: review.craftsman_id,
         customer_id: review.customer_id,
@@ -211,6 +214,7 @@ export const useProfileData = (id?: string) => {
       const name = user.user_metadata?.name || user.user_metadata?.full_name || 'User';
       
       if (userType === 'craftsman') {
+        // Add profile_image_url field to match the database schema
         const { error: insertError } = await supabase
           .from('craftsman_profiles')
           .insert({
@@ -220,7 +224,8 @@ export const useProfileData = (id?: string) => {
             location: 'Please update',
             trade_category: 'Please update',
             phone: null,
-            description: null
+            description: null,
+            profile_image_url: null
           });
           
         if (insertError) {
@@ -232,6 +237,7 @@ export const useProfileData = (id?: string) => {
           fetchProfileData();
         }
       } else {
+        // Add profile_image_url field to match the database schema
         const { error: insertError } = await supabase
           .from('customer_profiles')
           .insert({
@@ -239,7 +245,8 @@ export const useProfileData = (id?: string) => {
             name,
             email,
             location: 'Please update',
-            phone: null
+            phone: null,
+            profile_image_url: null
           });
           
         if (insertError) {

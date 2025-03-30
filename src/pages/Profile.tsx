@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,7 +13,6 @@ import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { useProfileData } from "@/hooks/useProfileData";
 import { useImageUploader } from "@/components/profile/ImageUploader";
 import { supabase } from "@/integrations/supabase/client";
-import { CraftsmanReview } from "@/types/profile";
 
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,7 +42,6 @@ const Profile = () => {
     createDefaultProfileIfNeeded
   } = useProfileData(id);
 
-  // Try to create a default profile if needed
   useEffect(() => {
     if (user && isCurrentUser && profileNotFound) {
       createDefaultProfileIfNeeded();
@@ -100,8 +96,8 @@ const Profile = () => {
       };
       
       const { error } = await supabase
-        .from('craftsman_reviews' as any)
-        .insert(newReview as any);
+        .from('craftsman_reviews')
+        .insert(newReview);
       
       if (error) {
         console.error("Error submitting review:", error);
@@ -144,26 +140,10 @@ const Profile = () => {
   if (profileNotFound && isCurrentUser) {
     return (
       <Layout>
-        <div className="min-h-screen flex flex-col items-center justify-center p-4">
-          <h1 className="text-2xl font-bold mb-4">Váš profil sa vytvára</h1>
-          <p className="text-muted-foreground mb-6 text-center max-w-md">
-            Prosím, vyčkajte chvíľu, kým sa váš profil dokončí. Ak problém pretrváva, skúste obnoviť stránku.
-          </p>
-          <div className="flex gap-4">
-            <button 
-              onClick={() => createDefaultProfileIfNeeded()}
-              className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
-            >
-              Vytvoriť profil
-            </button>
-            <button 
-              onClick={() => window.location.reload()}
-              className="bg-secondary text-foreground px-4 py-2 rounded hover:bg-secondary/90 transition-colors"
-            >
-              Obnoviť stránku
-            </button>
-          </div>
-        </div>
+        <ProfileNotFound 
+          isCurrentUser={isCurrentUser} 
+          onCreateProfile={createDefaultProfileIfNeeded}
+        />
       </Layout>
     );
   }
@@ -184,10 +164,10 @@ const Profile = () => {
               Späť na domovskú stránku
             </button>
             <button 
-              onClick={() => window.location.reload()}
+              onClick={() => createDefaultProfileIfNeeded()}
               className="bg-secondary text-foreground px-4 py-2 rounded hover:bg-secondary/90 transition-colors"
             >
-              Obnoviť stránku
+              Vytvoriť profil
             </button>
           </div>
         </div>
