@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -25,7 +24,7 @@ const Profile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast: uiToast } = useToast();
-  const { user } = useAuth();
+  const { user, userType: authUserType } = useAuth();
   
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [rating, setRating] = useState(0);
@@ -38,6 +37,7 @@ const Profile = () => {
   const [portfolioImages, setPortfolioImages] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [profileNotFound, setProfileNotFound] = useState(false);
 
   const handleImageClick = (index: number) => {
     setActiveImageIndex(index);
@@ -107,6 +107,11 @@ const Profile = () => {
 
   const fetchUserType = async (userId: string) => {
     try {
+      if (authUserType && userId === user?.id) {
+        console.log("Using user type from auth context:", authUserType);
+        return authUserType;
+      }
+
       const { data, error } = await supabase
         .from(TABLES.USER_TYPES)
         .select('user_type')
@@ -133,21 +138,28 @@ const Profile = () => {
         .from(table)
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
         
       if (error) {
         console.error(`Error fetching ${type} profile:`, error);
-        throw error;
+        
+        if (userId === user?.id) {
+          setProfileNotFound(true);
+        } else {
+          throw error;
+        }
       }
       
-      setProfileData(data as ProfileData);
-      
-      if ('profile_image_url' in data) {
-        setProfileImageUrl(data.profile_image_url);
-      }
-      
-      if (type === 'craftsman') {
-        fetchPortfolioImages(userId);
+      if (data) {
+        setProfileData(data as ProfileData);
+        
+        if ('profile_image_url' in data) {
+          setProfileImageUrl(data.profile_image_url);
+        }
+        
+        if (type === 'craftsman') {
+          fetchPortfolioImages(userId);
+        }
       }
     } catch (error) {
       console.error('Error in fetchProfileData:', error);
@@ -180,6 +192,13 @@ const Profile = () => {
         
         if (type) {
           await fetchProfileData(profileId, type);
+        } else if (isCurrentUser) {
+          setProfileNotFound(true);
+          uiToast({
+            title: "Upozornenie",
+            description: "Váš profil nie je úplný. Prosím, dokončite registráciu.",
+            variant: "destructive",
+          });
         } else {
           uiToast({
             title: "Chyba",
@@ -200,13 +219,38 @@ const Profile = () => {
     }
 
     fetchUserData();
-  }, [id, user, navigate, uiToast]);
+  }, [id, user, navigate, uiToast, authUserType, isCurrentUser]);
 
   if (loading) {
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (profileNotFound && isCurrentUser) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex flex-col items-center justify-center p-4">
+          <h1 className="text-2xl font-bold mb-4">Váš profil nie je úplný</h1>
+          <p className="text-muted-foreground mb-6 text-center max-w-md">
+            Zdá sa, že registrácia nebola úplne dokončená. Môžete sa skúsiť odhlásiť a prihlásiť znova, 
+            alebo sa obrátiť na podporu.
+          </p>
+          <div className="flex gap-4">
+            <Button 
+              onClick={() => navigate("/")}
+              variant="outline"
+            >
+              Späť na domovskú stránku
+            </Button>
+            <Button onClick={() => window.location.reload()}>
+              Obnoviť stránku
+            </Button>
+          </div>
         </div>
       </Layout>
     );
