@@ -3,13 +3,13 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Phone, Mail, Clock, MapPin } from "lucide-react";
+import { useProfile } from "@/contexts/ProfileContext";
 
-interface ContactTabProps {
-  profileData: any;
-  userType: string | null;
-}
+const ContactTab: React.FC = () => {
+  const { profileData, userType } = useProfile();
 
-const ContactTab: React.FC<ContactTabProps> = ({ profileData, userType }) => {
+  if (!profileData) return null;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       <Card className="border border-border/50">

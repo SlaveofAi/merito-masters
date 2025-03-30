@@ -1,38 +1,24 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star, StarIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/contexts/ProfileContext";
 
-interface ReviewsTabProps {
-  userType: 'craftsman' | 'customer' | null;
-  profileId: string;
-  rating: number;
-  reviewComment: string;
-  handleStarClick: (value: number) => void;
-  setReviewComment: (comment: string) => void;
-  handleSubmitReview: (e: React.FormEvent) => void;
-  reviews: any[];
-  isLoadingReviews: boolean;
-}
-
-const ReviewsTab: React.FC<ReviewsTabProps> = ({
-  userType,
-  profileId,
-  rating,
-  reviewComment,
-  handleStarClick,
-  setReviewComment,
-  handleSubmitReview,
-  reviews,
-  isLoadingReviews
-}) => {
+const ReviewsTab: React.FC = () => {
   const { user } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    userType,
+    rating,
+    reviewComment,
+    handleStarClick,
+    setReviewComment,
+    handleSubmitReview,
+    reviews,
+    isLoadingReviews
+  } = useProfile();
 
   // Only customers can leave reviews for craftsmen
   const canLeaveReview = user && userType !== 'craftsman';
@@ -90,9 +76,9 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({
               <Button 
                 type="submit" 
                 className="w-full sm:w-auto"
-                disabled={isSubmitting || rating === 0}
+                disabled={rating === 0}
               >
-                {isSubmitting ? "Odosielam..." : "Odoslať hodnotenie"}
+                Odoslať hodnotenie
               </Button>
             </form>
           </CardContent>

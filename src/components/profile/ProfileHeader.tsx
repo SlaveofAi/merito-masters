@@ -3,30 +3,21 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { User, UploadCloud, MapPin, Phone, MessageSquare, Star } from "lucide-react";
 import EditProfileForm from "@/components/EditProfileForm";
+import { useProfile } from "@/contexts/ProfileContext";
 
-interface ProfileHeaderProps {
-  profileData: any;
-  userType: string | null;
-  isCurrentUser: boolean;
-  isEditing: boolean;
-  setIsEditing: (value: boolean) => void;
-  profileImageUrl: string | null;
-  handleProfileImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  uploading: boolean;
-  handleProfileUpdate: (updatedProfile: any) => void;
-}
+const ProfileHeader: React.FC = () => {
+  const {
+    profileData,
+    userType,
+    isCurrentUser,
+    isEditing,
+    setIsEditing,
+    profileImageUrl,
+    handleProfileImageUpload,
+    uploading,
+    handleProfileUpdate
+  } = useProfile();
 
-const ProfileHeader: React.FC<ProfileHeaderProps> = ({
-  profileData,
-  userType,
-  isCurrentUser,
-  isEditing,
-  setIsEditing,
-  profileImageUrl,
-  handleProfileImageUpload,
-  uploading,
-  handleProfileUpdate,
-}) => {
   if (!profileData) return null;
 
   return (

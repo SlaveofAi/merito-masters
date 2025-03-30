@@ -2,28 +2,20 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Image, UploadCloud } from "lucide-react";
+import { useProfile } from "@/contexts/ProfileContext";
 
-interface PortfolioTabProps {
-  userType: string | null;
-  isCurrentUser: boolean;
-  portfolioImages: any[];
-  profileData: any;
-  activeImageIndex: number;
-  handleImageClick: (index: number) => void;
-  handlePortfolioImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  uploading: boolean;
-}
+const PortfolioTab: React.FC = () => {
+  const {
+    userType,
+    isCurrentUser,
+    portfolioImages,
+    profileData,
+    activeImageIndex,
+    handleImageClick,
+    handlePortfolioImageUpload,
+    uploading
+  } = useProfile();
 
-const PortfolioTab: React.FC<PortfolioTabProps> = ({
-  userType,
-  isCurrentUser,
-  portfolioImages,
-  profileData,
-  activeImageIndex,
-  handleImageClick,
-  handlePortfolioImageUpload,
-  uploading,
-}) => {
   if (userType !== 'craftsman') {
     return (
       <div className="text-center p-8">
