@@ -21,6 +21,7 @@ interface ProfileContextType {
   activeImageIndex: number;
   isEditing: boolean;
   uploading: boolean;
+  isCreatingProfile: boolean;
   rating: number;
   reviewComment: string;
   setActiveImageIndex: (index: number) => void;
@@ -34,7 +35,7 @@ interface ProfileContextType {
   handleImageClick: (index: number) => void;
   handleStarClick: (value: number) => void;
   refetchReviews: () => void;
-  createDefaultProfileIfNeeded?: () => Promise<void>;
+  createDefaultProfileIfNeeded: () => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -69,6 +70,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setProfileImageUrl,
     fetchPortfolioImages,
     createDefaultProfileIfNeeded,
+    isCreatingProfile,
     error
   } = useProfileData(profileId);
 
@@ -160,6 +162,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     activeImageIndex,
     isEditing,
     uploading,
+    isCreatingProfile,
     rating,
     reviewComment,
     setActiveImageIndex,
@@ -172,7 +175,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     handleSubmitReview,
     handleImageClick,
     handleStarClick,
-    refetchReviews
+    refetchReviews,
+    createDefaultProfileIfNeeded
   };
 
   return (

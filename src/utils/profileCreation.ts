@@ -11,7 +11,8 @@ export const createDefaultProfile = async (
 ) => {
   if (!user || !userType || !isCurrentUser) {
     const errorMsg = "Nemožno vytvoriť profil: používateľ nie je prihlásený alebo typ používateľa nie je nastavený";
-    console.error(errorMsg);
+    console.error(errorMsg, { user: !!user, userType, isCurrentUser });
+    toast.error(errorMsg);
     throw new Error(errorMsg);
   }
   
@@ -31,11 +32,13 @@ export const createDefaultProfile = async (
         
       if (checkError) {
         console.error("Error checking for existing profile:", checkError);
+        toast.error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
         throw new Error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
       }
       
       if (existingProfile) {
         console.log("Craftsman profile already exists, fetching it");
+        toast.success("Profil už existuje, načítavam ho");
         onSuccess();
         return;
       }
@@ -57,6 +60,7 @@ export const createDefaultProfile = async (
         
       if (insertError) {
         console.error("Error creating craftsman profile:", insertError);
+        toast.error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
         throw new Error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
       } else {
         console.log("Default craftsman profile created successfully");
@@ -75,11 +79,13 @@ export const createDefaultProfile = async (
         
       if (checkError) {
         console.error("Error checking for existing profile:", checkError);
+        toast.error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
         throw new Error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
       }
       
       if (existingProfile) {
         console.log("Customer profile already exists, fetching it");
+        toast.success("Profil už existuje, načítavam ho");
         onSuccess();
         return;
       }
@@ -99,6 +105,7 @@ export const createDefaultProfile = async (
         
       if (insertError) {
         console.error("Error creating customer profile:", insertError);
+        toast.error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
         throw new Error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
       } else {
         console.log("Default customer profile created successfully");

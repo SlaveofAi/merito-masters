@@ -1,8 +1,8 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ArrowLeft, AlertTriangle, User, LogOut, AlertCircle, Home } from "lucide-react";
+import { RefreshCw, ArrowLeft, AlertTriangle, User, LogOut, AlertCircle, Home, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -21,11 +21,24 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
 }) => {
   const navigate = useNavigate();
   const { user, signOut, userType } = useAuth();
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleCreateProfile = () => {
-    if (onCreateProfile) {
+  const handleCreateProfile = async () => {
+    if (!onCreateProfile) {
+      toast.error("Funkcia pre vytvorenie profilu nie je dostupná");
+      return;
+    }
+    
+    try {
+      setIsCreating(true);
       toast.info("Pokúšam sa vytvoriť profil...");
-      onCreateProfile();
+      console.log("Attempting to create profile...");
+      await onCreateProfile();
+    } catch (error) {
+      console.error("Error in handleCreateProfile:", error);
+      // Error is already handled by the createDefaultProfile function
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -116,10 +129,14 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
           <Button 
             onClick={handleCreateProfile} 
             className="w-full flex items-center justify-center gap-2"
-            disabled={!user || !userType}
+            disabled={!user || !userType || isCreating}
           >
-            <RefreshCw className="h-4 w-4" />
-            Vytvoriť profil
+            {isCreating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            {isCreating ? "Vytváranie profilu..." : "Vytvoriť profil"}
           </Button>
           
           <div className="grid grid-cols-2 gap-3">
