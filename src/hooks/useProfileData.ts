@@ -75,7 +75,7 @@ export const useProfileData = (id?: string) => {
     try {
       // Using any type to work around TypeScript errors with the craftsman_reviews table
       const { data, error } = await supabase
-        .from('craftsman_reviews')
+        .from('craftsman_reviews' as any)
         .select('*')
         .eq('craftsman_id', userId)
         .order('created_at', { ascending: false });
@@ -123,7 +123,7 @@ export const useProfileData = (id?: string) => {
           .from('user_types')
           .select('user_type')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no data is found
 
         if (error) {
           console.error("Error fetching user type:", error);

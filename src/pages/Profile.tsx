@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -11,6 +10,7 @@ import PortfolioTab from "@/components/profile/PortfolioTab";
 import ReviewsTab from "@/components/profile/ReviewsTab";
 import ContactTab from "@/components/profile/ContactTab";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
+import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { useProfileData } from "@/hooks/useProfileData";
 import { useImageUploader } from "@/components/profile/ImageUploader";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,9 +90,8 @@ const Profile = () => {
         comment: reviewComment,
       };
       
-      // We need to use 'any' type to work around TypeScript errors
       const { error } = await supabase
-        .from('craftsman_reviews')
+        .from('craftsman_reviews' as any)
         .insert(newReview as any);
       
       if (error) {
@@ -120,9 +119,7 @@ const Profile = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
+        <ProfileSkeleton />
       </Layout>
     );
   }
@@ -138,9 +135,17 @@ const Profile = () => {
   if (!profileData) {
     return (
       <Layout>
-        <div className="min-h-screen flex flex-col items-center justify-center">
+        <div className="min-h-screen flex flex-col items-center justify-center p-4">
           <h1 className="text-2xl font-bold mb-4">Profil nebol nájdený</h1>
-          <button onClick={() => navigate("/")}>Späť na domovskú stránku</button>
+          <p className="text-muted-foreground mb-6 text-center max-w-md">
+            Zdá sa, že profil nie je dostupný. Ak ste sa práve zaregistrovali, môže to byť spôsobené problémom s oprávneniami v databáze.
+          </p>
+          <button 
+            onClick={() => navigate("/")}
+            className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
+          >
+            Späť na domovskú stránku
+          </button>
         </div>
       </Layout>
     );
@@ -185,7 +190,7 @@ const Profile = () => {
             <TabsContent value="reviews" className="animate-fade-in">
               <ReviewsTab 
                 userType={userType}
-                profileId={id || profileData.id}
+                profileId={id || profileData?.id}
                 rating={rating}
                 reviewComment={reviewComment}
                 handleStarClick={handleStarClick}
