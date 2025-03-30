@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,9 +11,10 @@ import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const ProfilePage: React.FC = () => {
-  const { user, userType } = useAuth();
+  const { user, userType, updateUserType } = useAuth();
   const navigate = useNavigate();
   const {
     loading,
@@ -40,7 +40,7 @@ const ProfilePage: React.FC = () => {
     }
   }, [isCurrentUser, profileNotFound, createDefaultProfileIfNeeded]);
 
-  // First check if user is logged in but has no user type set
+  // Render a special UI when the user is logged in but has no user type set
   if (user && !userType && isCurrentUser) {
     return (
       <Layout>
@@ -53,8 +53,7 @@ const ProfilePage: React.FC = () => {
             </p>
             <div className="space-y-4">
               <p className="text-sm text-amber-600">
-                Je možné, že registrácia nebola dokončená. Skúste sa odhlásiť a znova prihlásiť. 
-                Ak problém pretrváva, možno budete musieť registráciu vykonať znova.
+                Je možné, že registrácia nebola dokončená. Vyberte si typ účtu nižšie alebo sa odhláste a znova prihláste.
               </p>
               {user && (
                 <div className="bg-gray-50 p-3 rounded text-left text-sm">
@@ -66,12 +65,32 @@ const ProfilePage: React.FC = () => {
                   </ul>
                 </div>
               )}
-              <button 
-                onClick={() => navigate("/register")}
-                className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors w-full"
-              >
-                Prejsť na registráciu
-              </button>
+              <div className="grid grid-cols-1 gap-4 mt-6">
+                <p className="font-medium">Vyberte typ používateľa:</p>
+                <Button 
+                  onClick={() => updateUserType('craftsman')}
+                  className="w-full"
+                >
+                  Som remeselník
+                </Button>
+                <Button 
+                  onClick={() => updateUserType('customer')}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Som zákazník
+                </Button>
+                <div className="text-sm text-muted-foreground mt-2">
+                  Alebo
+                </div>
+                <Button 
+                  onClick={() => navigate("/register")}
+                  variant="secondary"
+                  className="w-full"
+                >
+                  Prejsť na registráciu
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -105,52 +124,13 @@ const ProfilePage: React.FC = () => {
               </p>
             )}
             {createDefaultProfileIfNeeded && isCurrentUser && (
-              <button 
+              <Button 
                 onClick={() => createDefaultProfileIfNeeded()}
                 className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
               >
                 Vytvoriť profil znova
-              </button>
+              </Button>
             )}
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  // Handle the case where the user type is not set
-  if (isCurrentUser && (!userType || userType === null)) {
-    return (
-      <Layout>
-        <div className="min-h-screen flex flex-col items-center justify-center p-4">
-          <div className="max-w-md bg-white rounded-lg shadow-sm p-6 text-center">
-            <h1 className="text-xl font-bold mb-4">Typ používateľa nie je nastavený</h1>
-            <p className="mb-4">
-              Váš typ používateľa (zákazník alebo remeselník) nie je nastavený. 
-              Toto je potrebné pre správne fungovanie profilu.
-            </p>
-            <div className="space-y-4">
-              <p className="text-sm text-amber-600">
-                Skúste sa odhlásiť a znova prihlásiť. Ak problém pretrváva, 
-                možno budete musieť registráciu vykonať znova.
-              </p>
-              {user && (
-                <div className="bg-gray-50 p-3 rounded text-left text-sm">
-                  <p className="font-medium">Aktuálne informácie:</p>
-                  <ul className="list-disc list-inside mt-1">
-                    <li>ID používateľa: {user.id.substring(0, 8)}...</li>
-                    <li>Email: {user.email}</li>
-                    <li>Typ používateľa: <span className="text-red-500">Nenastavený</span></li>
-                  </ul>
-                </div>
-              )}
-              <button 
-                onClick={() => window.location.href = "/register"}
-                className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors w-full"
-              >
-                Prejsť na registráciu
-              </button>
-            </div>
           </div>
         </div>
       </Layout>
@@ -167,12 +147,12 @@ const ProfilePage: React.FC = () => {
             <p className="mb-4">
               Nepodarilo sa spojiť s databázou. Skúste stránku obnoviť alebo to skúste znova neskôr.
             </p>
-            <button 
+            <Button 
               onClick={() => window.location.reload()}
               className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
             >
               Obnoviť stránku
-            </button>
+            </Button>
           </div>
         </div>
       </Layout>
