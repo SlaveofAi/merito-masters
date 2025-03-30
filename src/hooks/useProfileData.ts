@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -87,7 +87,6 @@ export const useProfileData = (id?: string) => {
     try {
       console.log("Fetching reviews for craftsman:", userId);
       
-      // Use type assertion to avoid TypeScript errors
       const { data, error } = await supabase
         .from('craftsman_reviews')
         .select('*')
@@ -113,7 +112,8 @@ export const useProfileData = (id?: string) => {
         rating: review.rating,
         comment: review.comment,
         created_at: review.created_at
-      }));
+      })) as CraftsmanReview[];
+      
     } catch (error) {
       console.error("Error in fetchReviews:", error);
       return [];
@@ -185,8 +185,10 @@ export const useProfileData = (id?: string) => {
     }
   }, [profileData, userType]);
 
-  const createDefaultProfileIfNeeded = async () => {
-    if (!user || !userType || !isCurrentUser || profileData) return;
+  const createDefaultProfileIfNeeded = useCallback(async () => {
+    if (!user || !userType || !isCurrentUser) {
+      throw new Error("Nemožno vytvoriť profil: používateľ nie je prihlásený alebo typ používateľa nie je nastavený");
+    }
     
     try {
       console.log("Checking if we need to create a default profile");
@@ -200,11 +202,12 @@ export const useProfileData = (id?: string) => {
         
       if (checkError) {
         console.error("Error checking for existing profile:", checkError);
-        return;
+        throw new Error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
       }
       
       if (existingProfile) {
         console.log("Profile already exists, no need to create a default one");
+        fetchProfileData();
         return;
       }
       
@@ -214,7 +217,6 @@ export const useProfileData = (id?: string) => {
       const name = user.user_metadata?.name || user.user_metadata?.full_name || 'User';
       
       if (userType === 'craftsman') {
-        // Add profile_image_url field to match the database schema
         const { error: insertError } = await supabase
           .from('craftsman_profiles')
           .insert({
@@ -230,14 +232,13 @@ export const useProfileData = (id?: string) => {
           
         if (insertError) {
           console.error("Error creating craftsman profile:", insertError);
-          toast.error("Nastala chyba pri vytváraní profilu");
+          throw new Error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
         } else {
           console.log("Default craftsman profile created successfully");
           toast.success("Profil bol vytvorený", { duration: 3000 });
-          fetchProfileData();
+          await fetchProfileData();
         }
       } else {
-        // Add profile_image_url field to match the database schema
         const { error: insertError } = await supabase
           .from('customer_profiles')
           .insert({
@@ -251,24 +252,21 @@ export const useProfileData = (id?: string) => {
           
         if (insertError) {
           console.error("Error creating customer profile:", insertError);
-          toast.error("Nastala chyba pri vytváraní profilu");
+          throw new Error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
         } else {
           console.log("Default customer profile created successfully");
           toast.success("Profil bol vytvorený", { duration: 3000 });
-          fetchProfileData();
+          await fetchProfileData();
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in createDefaultProfileIfNeeded:", error);
-      toast.error("Nastala nečakaná chyba");
+      toast.error("Nastala chyba pri vytváraní profilu", {
+        description: error.message || "Neznáma chyba"
+      });
+      throw error;
     }
-  };
-
-  useEffect(() => {
-    if (user && userType && isCurrentUser && profileNotFound) {
-      createDefaultProfileIfNeeded();
-    }
-  }, [user, userType, isCurrentUser, profileNotFound]);
+  }, [user, userType, isCurrentUser, fetchProfileData]);
 
   return {
     loading,

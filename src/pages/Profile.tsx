@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -24,6 +25,7 @@ const Profile = () => {
   const [reviewComment, setReviewComment] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const {
     loading,
@@ -44,7 +46,10 @@ const Profile = () => {
 
   useEffect(() => {
     if (user && isCurrentUser && profileNotFound) {
-      createDefaultProfileIfNeeded();
+      createDefaultProfileIfNeeded().catch(error => {
+        console.error("Error creating profile:", error);
+        setProfileError(error.message || "Nastala chyba pri vytváraní profilu");
+      });
     }
   }, [user, isCurrentUser, profileNotFound, createDefaultProfileIfNeeded]);
 
@@ -52,6 +57,14 @@ const Profile = () => {
     setProfileData({...profileData, ...updatedProfile});
     setIsEditing(false);
     toast.success("Profil bol aktualizovaný");
+  };
+
+  const handleCreateProfile = () => {
+    setProfileError(null);
+    createDefaultProfileIfNeeded().catch(error => {
+      console.error("Error creating profile:", error);
+      setProfileError(error.message || "Nastala chyba pri vytváraní profilu");
+    });
   };
 
   const { handleProfileImageUpload, handlePortfolioImageUpload } = useImageUploader(
@@ -142,7 +155,8 @@ const Profile = () => {
       <Layout>
         <ProfileNotFound 
           isCurrentUser={isCurrentUser} 
-          onCreateProfile={createDefaultProfileIfNeeded}
+          onCreateProfile={handleCreateProfile}
+          error={profileError || undefined}
         />
       </Layout>
     );
@@ -151,26 +165,11 @@ const Profile = () => {
   if (!profileData) {
     return (
       <Layout>
-        <div className="min-h-screen flex flex-col items-center justify-center p-4">
-          <h1 className="text-2xl font-bold mb-4">Profil nebol nájdený</h1>
-          <p className="text-muted-foreground mb-6 text-center max-w-md">
-            Zdá sa, že profil nie je dostupný. Ak ste sa práve zaregistrovali, môže to byť spôsobené problémom s oprávneniami v databáze.
-          </p>
-          <div className="flex gap-4">
-            <button 
-              onClick={() => navigate("/")}
-              className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
-            >
-              Späť na domovskú stránku
-            </button>
-            <button 
-              onClick={() => createDefaultProfileIfNeeded()}
-              className="bg-secondary text-foreground px-4 py-2 rounded hover:bg-secondary/90 transition-colors"
-            >
-              Vytvoriť profil
-            </button>
-          </div>
-        </div>
+        <ProfileNotFound 
+          isCurrentUser={isCurrentUser} 
+          onCreateProfile={handleCreateProfile}
+          error={profileError || "Profil nebol nájdený alebo nemáte k nemu prístup. Možno je potrebné nastaviť oprávnenia v databáze."}
+        />
       </Layout>
     );
   }
