@@ -68,7 +68,7 @@ const Chat = () => {
       
       // First get all conversations for current user
       const { data: conversations, error: convError } = await supabase
-        .from('chat_conversations')
+        .from('chat_conversations' as any)
         .select('*')
         .or(`customer_id.eq.${user.id},craftsman_id.eq.${user.id}`)
         .eq(userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman', false) as { data: ChatConversation[] | null, error: any };
@@ -121,7 +121,7 @@ const Chat = () => {
         
         // Get last message and unread count
         const { data: lastMessageData, error: lastMessageError } = await supabase
-          .from('chat_messages')
+          .from('chat_messages' as any)
           .select('*')
           .eq('conversation_id', conv.id)
           .order('created_at', { ascending: false })
@@ -131,7 +131,7 @@ const Chat = () => {
         
         // Count unread messages
         const { count, error: countError } = await supabase
-          .from('chat_messages')
+          .from('chat_messages' as any)
           .select('*', { count: 'exact', head: true })
           .eq('conversation_id', conv.id)
           .eq('receiver_id', user.id)
@@ -166,7 +166,7 @@ const Chat = () => {
       }
       
       const { data, error } = await supabase
-        .from('chat_messages')
+        .from('chat_messages' as any)
         .select('*')
         .eq('conversation_id', selectedContact.conversation_id)
         .order('created_at', { ascending: true }) as { data: ChatMessage[] | null, error: any };
@@ -184,7 +184,7 @@ const Chat = () => {
         if (unreadMessages.length > 0) {
           unreadMessages.forEach(async (msg) => {
             await supabase
-              .from('chat_messages')
+              .from('chat_messages' as any)
               .update({ read: true })
               .eq('id', msg.id);
           });
@@ -217,7 +217,7 @@ const Chat = () => {
       // Create a new conversation if it doesn't exist
       if (!convId) {
         const { data: newConversation, error: convError } = await supabase
-          .from('chat_conversations')
+          .from('chat_conversations' as any)
           .insert({
             customer_id: userType === 'customer' ? user.id : contactId,
             craftsman_id: userType === 'craftsman' ? user.id : contactId,
@@ -228,7 +228,7 @@ const Chat = () => {
         if (convError) {
           // Check if conversation already exists (because of unique constraint)
           const { data: existingConv, error: fetchError } = await supabase
-            .from('chat_conversations')
+            .from('chat_conversations' as any)
             .select('*')
             .eq('customer_id', userType === 'customer' ? user.id : contactId)
             .eq('craftsman_id', userType === 'craftsman' ? user.id : contactId)
@@ -248,7 +248,7 @@ const Chat = () => {
       
       // Insert the message
       const { data: newMessage, error: msgError } = await supabase
-        .from('chat_messages')
+        .from('chat_messages' as any)
         .insert({
           conversation_id: convId,
           sender_id: user.id,
@@ -266,7 +266,7 @@ const Chat = () => {
       
       // Update conversation's updated_at timestamp
       await supabase
-        .from('chat_conversations')
+        .from('chat_conversations' as any)
         .update({ updated_at: new Date().toISOString() })
         .eq('id', convId);
       
@@ -352,7 +352,7 @@ const Chat = () => {
       : 'is_archived_by_craftsman';
       
     const { error } = await supabase
-      .from('chat_conversations')
+      .from('chat_conversations' as any)
       .update({ [fieldToUpdate]: true })
       .eq('id', selectedContact.conversation_id);
       
@@ -375,7 +375,7 @@ const Chat = () => {
       : 'is_deleted_by_craftsman';
       
     const { error } = await supabase
-      .from('chat_conversations')
+      .from('chat_conversations' as any)
       .update({ [fieldToUpdate]: true })
       .eq('id', selectedContact.conversation_id);
       
