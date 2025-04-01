@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Image, UploadCloud, Plus, Edit, Trash2, X } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
@@ -155,7 +155,6 @@ const PortfolioTab: React.FC = () => {
             setShowProjectForm(false);
             setEditingProject(null);
           }}
-          initialData={editingProject || undefined}
         />
       </div>
     );

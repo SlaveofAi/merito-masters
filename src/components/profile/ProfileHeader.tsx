@@ -17,7 +17,8 @@ const ProfileHeader: React.FC = () => {
     profileImageUrl,
     handleProfileImageUpload,
     uploading,
-    handleProfileUpdate
+    handleProfileUpdate,
+    reviews
   } = useProfile();
 
   const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
@@ -25,6 +26,15 @@ const ProfileHeader: React.FC = () => {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
   if (!profileData) return null;
+
+  // Calculate average rating from reviews
+  const calculateAverageRating = () => {
+    if (!reviews || reviews.length === 0) return 0;
+    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return (total / reviews.length).toFixed(1);
+  };
+
+  const averageRating = calculateAverageRating();
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -51,9 +61,11 @@ const ProfileHeader: React.FC = () => {
     try {
       if (tempImageSrc && croppedAreaPixels) {
         const croppedImage = await getCroppedImg(tempImageSrc, croppedAreaPixels);
-        handleProfileImageUpload(croppedImage);
-        setCropperVisible(false);
-        setTempImageSrc(null);
+        if (croppedImage) {
+          handleProfileImageUpload(croppedImage);
+          setCropperVisible(false);
+          setTempImageSrc(null);
+        }
       }
     } catch (error) {
       console.error('Error cropping image:', error);
@@ -125,12 +137,12 @@ const ProfileHeader: React.FC = () => {
               </div>
             ) : (
               <>
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">
+                <h1 className="text-3xl md:text-4xl font-bold mb-1">
                   {profileData.name}
                 </h1>
                 
                 {userType === 'craftsman' && 'trade_category' in profileData && (
-                  <div className="inline-block mb-3 px-3 py-1 bg-black/5 backdrop-blur-sm text-sm font-medium rounded-full">
+                  <div className="mb-3 font-medium text-lg">
                     {profileData.trade_category}
                   </div>
                 )}
@@ -138,10 +150,10 @@ const ProfileHeader: React.FC = () => {
                 <div className="flex items-center justify-center md:justify-start mb-4">
                   {userType === 'craftsman' && (
                     <div className="flex items-center mr-4">
-                      <Star className="w-5 h-5 fill-current text-yellow-500 mr-1" />
-                      <span className="font-semibold">4.8</span>
+                      <Star className={`w-5 h-5 ${Number(averageRating) > 0 ? 'fill-current text-yellow-500' : ''} mr-1`} />
+                      <span className="font-semibold">{averageRating}</span>
                       <span className="text-muted-foreground ml-1">
-                        (24 hodnotení)
+                        ({reviews ? reviews.length : 0} hodnotení)
                       </span>
                     </div>
                   )}
