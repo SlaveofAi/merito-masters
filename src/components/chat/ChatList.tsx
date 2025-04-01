@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Search } from "lucide-react";
@@ -16,6 +16,12 @@ interface ChatListProps {
 }
 
 const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSelectContact, loading }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  const filteredContacts = contacts.filter(contact => 
+    contact.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b">
@@ -25,6 +31,8 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
           <Input
             placeholder="Vyhľadať kontakt..."
             className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
@@ -41,13 +49,17 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
               </div>
             ))}
           </div>
-        ) : contacts.length === 0 ? (
+        ) : filteredContacts.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            <p>Žiadne konverzácie</p>
+            {searchTerm ? (
+              <p>Žiadne výsledky pre "{searchTerm}"</p>
+            ) : (
+              <p>Žiadne konverzácie</p>
+            )}
           </div>
         ) : (
           <ul>
-            {contacts.map((contact) => {
+            {filteredContacts.map((contact) => {
               const isSelected = contact.id === selectedContactId;
               const timeAgo = contact.last_message_time 
                 ? formatDistanceToNow(new Date(contact.last_message_time), { addSuffix: true, locale: sk }) 

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import ChatList from "./ChatList";
 import ChatWindow from "./ChatWindow";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export interface ChatContact {
   id: string;
@@ -14,12 +15,14 @@ export interface ChatContact {
   last_message_time?: string;
   unread_count?: number;
   user_type: string;
+  conversation_id?: string;
 }
 
 export interface Message {
   id: string;
   sender_id: string;
   receiver_id: string;
+  conversation_id: string;
   content: string;
   created_at: string;
   read: boolean;
@@ -27,136 +30,340 @@ export interface Message {
 
 const Chat = () => {
   const { user, userType } = useAuth();
-  const [contacts, setContacts] = useState<ChatContact[]>([]);
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (user) {
-      fetchContacts();
+  // Fetch contacts
+  const { data: contacts = [], isLoading: contactsLoading } = useQuery({
+    queryKey: ['chat-contacts', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const contactType = userType === 'customer' ? 'craftsman' : 'customer';
+      
+      // First get all conversations for current user
+      const { data: conversations, error: convError } = await supabase
+        .from('chat_conversations')
+        .select('*')
+        .or(`customer_id.eq.${user.id},craftsman_id.eq.${user.id}`)
+        .eq(userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman', false);
+      
+      if (convError) {
+        console.error("Error fetching conversations:", convError);
+        toast.error("Nastala chyba pri načítaní konverzácií");
+        return [];
+      }
+      
+      // No conversations yet, get potential contacts
+      if (!conversations || conversations.length === 0) {
+        const { data, error } = await supabase
+          .from(contactType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles')
+          .select('id, name, profile_image_url')
+          .limit(10);
+          
+        if (error) {
+          console.error("Error fetching potential contacts:", error);
+          toast.error("Nastala chyba pri načítaní kontaktov");
+          return [];
+        }
+        
+        return data.map((contact): ChatContact => ({
+          id: contact.id,
+          name: contact.name,
+          avatar_url: contact.profile_image_url,
+          last_message: 'Kliknite pre zahájenie konverzácie',
+          last_message_time: new Date().toISOString(),
+          unread_count: 0,
+          user_type: contactType
+        }));
+      }
+      
+      // Get contact details for each conversation
+      const contactPromises = conversations.map(async (conv) => {
+        const contactId = userType === 'customer' ? conv.craftsman_id : conv.customer_id;
+        const profileTable = userType === 'customer' ? 'craftsman_profiles' : 'customer_profiles';
+        
+        const { data: contactData, error: contactError } = await supabase
+          .from(profileTable)
+          .select('id, name, profile_image_url')
+          .eq('id', contactId)
+          .single();
+          
+        if (contactError || !contactData) {
+          console.error("Error fetching contact details:", contactError);
+          return null;
+        }
+        
+        // Get last message and unread count
+        const { data: lastMessageData, error: lastMessageError } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('conversation_id', conv.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+          
+        const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
+        
+        // Count unread messages
+        const { count, error: countError } = await supabase
+          .from('chat_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('conversation_id', conv.id)
+          .eq('receiver_id', user.id)
+          .eq('read', false);
+          
+        return {
+          id: contactData.id,
+          name: contactData.name,
+          avatar_url: contactData.profile_image_url,
+          last_message: lastMessage ? lastMessage.content : 'Kliknite pre zobrazenie správ',
+          last_message_time: lastMessage ? lastMessage.created_at : conv.created_at,
+          unread_count: count || 0,
+          user_type: contactType,
+          conversation_id: conv.id
+        } as ChatContact;
+      });
+      
+      const resolvedContacts = await Promise.all(contactPromises);
+      return resolvedContacts.filter(contact => contact !== null) as ChatContact[];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch messages for selected contact
+  const { data: messages = [], refetch: refetchMessages } = useQuery({
+    queryKey: ['chat-messages', selectedContact?.conversation_id],
+    queryFn: async () => {
+      if (!selectedContact || !user) return [];
+      
+      if (!selectedContact.conversation_id) {
+        return [];
+      }
+      
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('conversation_id', selectedContact.conversation_id)
+        .order('created_at', { ascending: true });
+        
+      if (error) {
+        console.error("Error fetching messages:", error);
+        toast.error("Nastala chyba pri načítaní správ");
+        return [];
+      }
+      
+      // Mark messages as read
+      if (data && data.length > 0) {
+        const unreadMessages = data.filter(msg => msg.receiver_id === user.id && !msg.read);
+        
+        if (unreadMessages.length > 0) {
+          unreadMessages.forEach(async (msg) => {
+            await supabase
+              .from('chat_messages')
+              .update({ read: true })
+              .eq('id', msg.id);
+          });
+          
+          // Refresh contact list to update unread count
+          queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+        }
+      }
+      
+      return data as Message[];
+    },
+    enabled: !!selectedContact?.conversation_id && !!user,
+  });
+  
+  // Mutation for sending messages
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ 
+      content, 
+      contactId, 
+      conversationId 
+    }: { 
+      content: string; 
+      contactId: string;
+      conversationId?: string;
+    }) => {
+      if (!user || !contactId || !content.trim()) return null;
+      
+      let convId = conversationId;
+      
+      // Create a new conversation if it doesn't exist
+      if (!convId) {
+        const { data: newConversation, error: convError } = await supabase
+          .from('chat_conversations')
+          .insert({
+            customer_id: userType === 'customer' ? user.id : contactId,
+            craftsman_id: userType === 'craftsman' ? user.id : contactId,
+          })
+          .select()
+          .single();
+          
+        if (convError) {
+          // Check if conversation already exists (because of unique constraint)
+          const { data: existingConv, error: fetchError } = await supabase
+            .from('chat_conversations')
+            .select('*')
+            .eq('customer_id', userType === 'customer' ? user.id : contactId)
+            .eq('craftsman_id', userType === 'craftsman' ? user.id : contactId)
+            .single();
+            
+          if (fetchError || !existingConv) {
+            console.error("Error creating conversation:", convError);
+            toast.error("Nastala chyba pri vytváraní konverzácie");
+            return null;
+          }
+          
+          convId = existingConv.id;
+        } else {
+          convId = newConversation.id;
+        }
+      }
+      
+      // Insert the message
+      const { data: newMessage, error: msgError } = await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: convId,
+          sender_id: user.id,
+          receiver_id: contactId,
+          content: content,
+        })
+        .select()
+        .single();
+        
+      if (msgError) {
+        console.error("Error sending message:", msgError);
+        toast.error("Nastala chyba pri odosielaní správy");
+        return null;
+      }
+      
+      // Update conversation's updated_at timestamp
+      await supabase
+        .from('chat_conversations')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', convId);
+      
+      return { message: newMessage, conversationId: convId };
+    },
+    onSuccess: (data) => {
+      if (data) {
+        // If a new conversation was created, update the contact
+        if (selectedContact && !selectedContact.conversation_id && data.conversationId) {
+          setSelectedContact({
+            ...selectedContact,
+            conversation_id: data.conversationId
+          });
+        }
+        
+        // Refresh messages
+        refetchMessages();
+        
+        // Refresh contact list
+        queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+      }
     }
+  });
+
+  // Set first contact as selected by default
+  useEffect(() => {
+    if (contacts.length > 0 && !selectedContact) {
+      setSelectedContact(contacts[0]);
+    }
+  }, [contacts, selectedContact]);
+
+  // Clear selected contact when user changes
+  useEffect(() => {
+    setSelectedContact(null);
   }, [user]);
 
   useEffect(() => {
-    if (selectedContact) {
-      fetchMessages(selectedContact.id);
-    }
-  }, [selectedContact]);
-
-  const fetchContacts = async () => {
-    setLoading(true);
-    try {
-      const contactType = userType === 'customer' ? 'craftsman' : 'customer';
-      
-      const { data, error } = await supabase
-        .from(contactType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles')
-        .select('id, name, profile_image_url')
-        .limit(10);
-        
-      if (error) throw error;
-      
-      const formattedContacts = data.map((contact): ChatContact => ({
-        id: contact.id,
-        name: contact.name,
-        avatar_url: contact.profile_image_url,
-        last_message: 'Kliknite pre zobrazenie správ',
-        last_message_time: new Date().toISOString(),
-        unread_count: Math.floor(Math.random() * 3),
-        user_type: contactType
-      }));
-      
-      setContacts(formattedContacts);
-      
-      // Select the first contact by default
-      if (formattedContacts.length > 0 && !selectedContact) {
-        setSelectedContact(formattedContacts[0]);
-      }
-    } catch (error) {
-      console.error("Error fetching contacts:", error);
-      toast.error("Nastala chyba pri načítaní kontaktov");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchMessages = async (contactId: string) => {
-    try {
-      // In a real app, you would fetch messages from your database
-      // For now, we'll generate sample messages
-      const sampleMessages: Message[] = [
-        {
-          id: '1',
-          sender_id: user?.id || '',
-          receiver_id: contactId,
-          content: 'Dobrý deň, mám záujem o vaše služby.',
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-          read: true
-        },
-        {
-          id: '2',
-          sender_id: contactId,
-          receiver_id: user?.id || '',
-          content: 'Dobrý deň, ďakujem za správu. Kedy by vám vyhovoval termín stretnutia?',
-          created_at: new Date(Date.now() - 3000000).toISOString(),
-          read: true
-        },
-        {
-          id: '3',
-          sender_id: user?.id || '',
-          receiver_id: contactId,
-          content: 'Mohol by som prísť v utorok okolo 14:00?',
-          created_at: new Date(Date.now() - 2000000).toISOString(),
-          read: true
-        },
-        {
-          id: '4',
-          sender_id: contactId,
-          receiver_id: user?.id || '',
-          content: 'Áno, utorok o 14:00 mi vyhovuje. Teším sa na stretnutie.',
-          created_at: new Date(Date.now() - 1000000).toISOString(),
-          read: false
-        }
-      ];
-      
-      setMessages(sampleMessages);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      toast.error("Nastala chyba pri načítaní správ");
-    }
-  };
+    setLoading(contactsLoading);
+  }, [contactsLoading]);
 
   const sendMessage = async (content: string) => {
     if (!selectedContact || !content.trim() || !user) return;
     
-    try {
-      // In a real app, you would save the message to your database
-      // For now, we'll just add it to the local state
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        sender_id: user.id,
-        receiver_id: selectedContact.id,
-        content: content,
-        created_at: new Date().toISOString(),
-        read: false
-      };
+    sendMessageMutation.mutate({
+      content,
+      contactId: selectedContact.id,
+      conversationId: selectedContact.conversation_id
+    });
+  };
+
+  // Subscribe to new messages via Supabase realtime
+  useEffect(() => {
+    if (!user) return;
+    
+    const channel = supabase
+      .channel('chat-updates')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+        filter: `receiver_id=eq.${user.id}`
+      }, () => {
+        // Refresh messages if conversation is selected
+        if (selectedContact?.conversation_id) {
+          refetchMessages();
+        }
+        
+        // Refresh contact list
+        queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+      })
+      .subscribe();
       
-      setMessages([...messages, newMessage]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, selectedContact, refetchMessages, queryClient]);
+
+  const archiveConversation = async () => {
+    if (!selectedContact?.conversation_id || !user) return;
+    
+    const fieldToUpdate = userType === 'customer' 
+      ? 'is_archived_by_customer' 
+      : 'is_archived_by_craftsman';
       
-      // Update the last message in contacts
-      setContacts(contacts.map(contact => 
-        contact.id === selectedContact.id 
-          ? { 
-              ...contact, 
-              last_message: content,
-              last_message_time: new Date().toISOString() 
-            } 
-          : contact
-      ));
-    } catch (error) {
-      console.error("Error sending message:", error);
-      toast.error("Nastala chyba pri odosielaní správy");
+    const { error } = await supabase
+      .from('chat_conversations')
+      .update({ [fieldToUpdate]: true })
+      .eq('id', selectedContact.conversation_id);
+      
+    if (error) {
+      console.error("Error archiving conversation:", error);
+      toast.error("Nastala chyba pri archivácii konverzácie");
+      return;
     }
+    
+    toast.success("Konverzácia bola archivovaná");
+    queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+    setSelectedContact(null);
+  };
+
+  const deleteConversation = async () => {
+    if (!selectedContact?.conversation_id || !user) return;
+    
+    const fieldToUpdate = userType === 'customer' 
+      ? 'is_deleted_by_customer' 
+      : 'is_deleted_by_craftsman';
+      
+    const { error } = await supabase
+      .from('chat_conversations')
+      .update({ [fieldToUpdate]: true })
+      .eq('id', selectedContact.conversation_id);
+      
+    if (error) {
+      console.error("Error deleting conversation:", error);
+      toast.error("Nastala chyba pri mazaní konverzácie");
+      return;
+    }
+    
+    toast.success("Konverzácia bola zmazaná");
+    queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+    setSelectedContact(null);
   };
 
   if (!user) {
@@ -182,6 +389,8 @@ const Chat = () => {
           contact={selectedContact}
           messages={messages}
           onSendMessage={sendMessage}
+          onArchive={archiveConversation}
+          onDelete={deleteConversation}
         />
       </div>
     </div>
