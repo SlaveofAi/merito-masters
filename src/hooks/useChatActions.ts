@@ -176,7 +176,7 @@ export const useChatActions = (
     
     const fieldToUpdate = userType === 'customer' 
       ? 'is_deleted_by_customer' 
-      : 'is_deleted_by_craftsman';
+      ? 'is_deleted_by_craftsman';
       
     const updateData: Record<string, boolean> = {};
     updateData[fieldToUpdate] = true;

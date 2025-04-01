@@ -23,6 +23,7 @@ export const useContacts = () => {
       
       // First get all conversations for current user
       const fieldToCheck = userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman';
+      
       const { data: conversations, error: convError } = await supabase
         .from('chat_conversations')
         .select('*')
@@ -72,21 +73,33 @@ export const useContacts = () => {
         
         console.log(`Getting contact details for ${contactId} from ${profileTable}`);
         
+        // Create a fallback contact if we can't find the profile
+        const createFallbackContact = (): ChatContact => ({
+          id: contactId,
+          name: "Neznámy užívateľ",
+          avatar_url: undefined,
+          last_message: "No messages yet",
+          last_message_time: conv.created_at,
+          unread_count: 0,
+          user_type: contactType,
+          conversation_id: conv.id
+        });
+        
         try {
           const { data: contactData, error: contactError } = await supabase
             .from(profileTable)
             .select('id, name, profile_image_url')
-            .eq('id', contactId)
-            .single();
+            .eq('id', contactId);
             
-          if (contactError) {
-            console.error("Error fetching contact details:", contactError);
-            return null;
+          if (contactError || !contactData || contactData.length === 0) {
+            console.error(`Error or no data for contact with ID ${contactId}:`, contactError);
+            return createFallbackContact();
           }
           
-          if (!contactData) {
+          const contact = contactData[0];
+          if (!contact) {
             console.error(`No contact found with ID ${contactId}`);
-            return null;
+            return createFallbackContact();
           }
           
           // Get last message and unread count
@@ -107,10 +120,12 @@ export const useContacts = () => {
             .eq('receiver_id', user.id)
             .eq('read', false);
             
+          console.log(`Found contact ${contact.name} with ${count || 0} unread messages`);
+          
           return {
-            id: contactData.id,
-            name: contactData.name,
-            avatar_url: contactData.profile_image_url,
+            id: contact.id,
+            name: contact.name,
+            avatar_url: contact.profile_image_url,
             last_message: lastMessage ? lastMessage.content : 'Kliknite pre zobrazenie správ',
             last_message_time: lastMessage ? lastMessage.created_at : conv.created_at,
             unread_count: count || 0,
@@ -119,11 +134,12 @@ export const useContacts = () => {
           } as ChatContact;
         } catch (err) {
           console.error("Error in contact processing:", err);
-          return null;
+          return createFallbackContact();
         }
       });
       
       const resolvedContacts = await Promise.all(contactPromises);
+      // Filter out null values and ensure we have unique contacts
       const filteredContacts = resolvedContacts.filter(contact => contact !== null) as ChatContact[];
       console.log(`Retrieved ${filteredContacts.length} contacts with conversations`);
       return filteredContacts;

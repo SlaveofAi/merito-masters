@@ -34,7 +34,7 @@ export const useMessages = (selectedContact: ChatContact | null) => {
         return [];
       }
       
-      console.log(`Retrieved ${data?.length || 0} messages:`, data);
+      console.log(`Retrieved ${data?.length || 0} messages`);
       
       // Mark messages as read
       if (data && data.length > 0) {
