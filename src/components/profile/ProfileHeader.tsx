@@ -1,9 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { User, UploadCloud, MapPin, Phone, MessageSquare, Star } from "lucide-react";
 import EditProfileForm from "@/components/EditProfileForm";
 import { useProfile } from "@/contexts/ProfileContext";
+import ImageCropper from "./ImageCropper";
+import { getCroppedImg } from "@/utils/imageCrop";
 
 const ProfileHeader: React.FC = () => {
   const {
@@ -18,7 +20,45 @@ const ProfileHeader: React.FC = () => {
     handleProfileUpdate
   } = useProfile();
 
+  const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
+  const [cropperVisible, setCropperVisible] = useState(false);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
   if (!profileData) return null;
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setTempImageSrc(reader.result as string);
+        setCropperVisible(true);
+      });
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCropComplete = (croppedArea: any) => {
+    setCroppedAreaPixels(croppedArea);
+  };
+
+  const handleCropCancel = () => {
+    setTempImageSrc(null);
+    setCropperVisible(false);
+  };
+
+  const handleCropConfirm = async () => {
+    try {
+      if (tempImageSrc && croppedAreaPixels) {
+        const croppedImage = await getCroppedImg(tempImageSrc, croppedAreaPixels);
+        handleProfileImageUpload(croppedImage);
+        setCropperVisible(false);
+        setTempImageSrc(null);
+      }
+    } catch (error) {
+      console.error('Error cropping image:', error);
+    }
+  };
 
   return (
     <div className="bg-white border-b border-border/50">
@@ -48,7 +88,7 @@ const ProfileHeader: React.FC = () => {
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={handleProfileImageUpload}
+                      onChange={handleImageSelect}
                       disabled={uploading}
                     />
                   </label>
@@ -130,6 +170,15 @@ const ProfileHeader: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {cropperVisible && tempImageSrc && (
+        <ImageCropper
+          imageSrc={tempImageSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+          onConfirm={handleCropConfirm}
+        />
+      )}
     </div>
   );
 };

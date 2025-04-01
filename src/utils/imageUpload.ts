@@ -9,17 +9,20 @@ export const TABLES = {
   PORTFOLIO_IMAGES: 'portfolio_images' as const
 };
 
-export const uploadProfileImage = async (file: File, userId: string, userType: string | null) => {
+export const uploadProfileImage = async (file: File | Blob, userId: string, userType: string | null) => {
   try {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}-profile-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const fileName = `profile-${userId}-${Math.random().toString(36).substring(2)}.jpg`;
     const filePath = `${fileName}`;
     
     const { error: uploadError } = await supabase.storage
       .from('profile_images')
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        contentType: 'image/jpeg',
+        upsert: true
+      });
       
     if (uploadError) {
+      console.error("Upload error:", uploadError);
       throw uploadError;
     }
     
@@ -35,9 +38,11 @@ export const uploadProfileImage = async (file: File, userId: string, userType: s
       .eq('id', userId);
       
     if (updateError) {
+      console.error("Database update error:", updateError);
       throw updateError;
     }
     
+    toast.success("Profilová fotka bola aktualizovaná");
     return data.publicUrl;
   } catch (error) {
     console.error('Error uploading image:', error);
@@ -57,9 +62,12 @@ export const uploadPortfolioImages = async (files: File[], userId: string) => {
       
       const { error: uploadError } = await supabase.storage
         .from('profile_images')
-        .upload(filePath, file);
+        .upload(filePath, file, { 
+          upsert: true 
+        });
         
       if (uploadError) {
+        console.error("Portfolio upload error:", uploadError);
         throw uploadError;
       }
       
@@ -76,10 +84,15 @@ export const uploadPortfolioImages = async (files: File[], userId: string) => {
         });
         
       if (insertError) {
+        console.error("Portfolio DB insert error:", insertError);
         throw insertError;
       }
       
       uploadedUrls.push(data.publicUrl);
+    }
+    
+    if (uploadedUrls.length > 0) {
+      toast.success(`${uploadedUrls.length} ${uploadedUrls.length === 1 ? 'obrázok bol nahratý' : 'obrázky boli nahraté'}`);
     }
     
     return uploadedUrls;
@@ -98,6 +111,7 @@ export const fetchPortfolioImages = async (userId: string) => {
       .eq('craftsman_id', userId);
       
     if (error) {
+      console.error("Error fetching portfolio images:", error);
       throw error;
     }
     

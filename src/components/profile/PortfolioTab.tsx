@@ -1,8 +1,14 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Image, UploadCloud } from "lucide-react";
+import { Image, UploadCloud, Plus } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import ProjectCard, { Project } from "./ProjectCard";
+import ProjectForm from "./ProjectForm";
+import { uploadPortfolioImages } from "@/utils/imageUpload";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const PortfolioTab: React.FC = () => {
   const {
@@ -13,8 +19,77 @@ const PortfolioTab: React.FC = () => {
     activeImageIndex,
     handleImageClick,
     handlePortfolioImageUpload,
-    uploading
+    uploading,
+    fetchPortfolioImages
   } = useProfile();
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+
+  // In a real implementation, you would fetch projects from the database here
+  // For now, we'll just use the portfolioImages as a simple representation
+  React.useEffect(() => {
+    if (portfolioImages.length > 0 && profileData) {
+      // Convert portfolio images to projects format
+      // This is a temporary solution until we implement the proper database structure
+      const mappedProjects = portfolioImages.reduce((acc: Project[], image, index) => {
+        // Create a new project for every 2 images
+        if (index % 2 === 0) {
+          acc.push({
+            id: `project-${index}`,
+            title: `Projekt ${index + 1}`,
+            description: "Ukážka mojej práce",
+            created_at: new Date().toISOString(),
+            images: [{
+              id: image.id,
+              image_url: image.image_url
+            }]
+          });
+        } else if (acc.length > 0) {
+          // Add the image to the last project
+          acc[acc.length - 1].images.push({
+            id: image.id,
+            image_url: image.image_url
+          });
+        }
+        return acc;
+      }, []);
+      
+      setProjects(mappedProjects);
+    }
+  }, [portfolioImages, profileData]);
+
+  const handleProjectSelect = (id: string) => {
+    setSelectedProjectId(id);
+  };
+
+  const handleAddProject = async (title: string, description: string, images: File[]) => {
+    if (!profileData || !profileData.id) {
+      toast.error("Nie je možné pridať projekt, chýba ID profilu");
+      return;
+    }
+    
+    try {
+      // Upload the images
+      const uploadedUrls = await uploadPortfolioImages(images, profileData.id);
+      
+      if (uploadedUrls.length > 0) {
+        toast.success("Projekt bol úspešne pridaný");
+        // Refresh the portfolio images
+        if (fetchPortfolioImages) {
+          fetchPortfolioImages(profileData.id);
+        }
+        setShowProjectForm(false);
+      } else {
+        toast.error("Nepodarilo sa nahrať obrázky projektu");
+      }
+    } catch (error) {
+      console.error("Error adding project:", error);
+      toast.error("Nastala chyba pri pridávaní projektu");
+    }
+  };
 
   if (userType !== 'craftsman') {
     return (
@@ -25,80 +100,84 @@ const PortfolioTab: React.FC = () => {
     );
   }
 
+  if (showProjectForm) {
+    return (
+      <div className="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-sm">
+        <h3 className="text-xl font-semibold mb-4">Pridať nový projekt</h3>
+        <ProjectForm
+          onSubmit={handleAddProject}
+          onCancel={() => setShowProjectForm(false)}
+        />
+      </div>
+    );
+  }
+
+  const selectedProject = projects.find(p => p.id === selectedProjectId) || projects[0];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-      <div className="bg-white rounded-lg overflow-hidden border border-border/50 shadow-sm">
-        {portfolioImages.length > 0 ? (
-          <img
-            src={portfolioImages[activeImageIndex]?.image_url || 'https://images.unsplash.com/photo-1565372781813-6e4d12fd2b12?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80'}
-            alt="Featured work"
-            className="w-full h-96 object-cover object-center transform transition-transform duration-500 hover:scale-105"
-          />
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+      <div className="md:col-span-8 bg-white rounded-lg overflow-hidden border border-border/50 shadow-sm">
+        {selectedProject && selectedProject.images.length > 0 ? (
+          <div>
+            <div className="aspect-video w-full">
+              <Carousel>
+                <CarouselContent>
+                  {selectedProject.images.map((image, index) => (
+                    <CarouselItem key={index}>
+                      <div className="w-full aspect-video">
+                        <img
+                          src={image.image_url}
+                          alt={`Project image ${index + 1}`}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="left-2" />
+                <CarouselNext className="right-2" />
+              </Carousel>
+            </div>
+            
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-2">{selectedProject.title}</h3>
+              <p className="text-gray-600">{selectedProject.description}</p>
+            </div>
+          </div>
         ) : (
-          <div className="w-full h-96 flex flex-col items-center justify-center bg-gray-100">
+          <div className="w-full aspect-video flex flex-col items-center justify-center bg-gray-100">
             <Image className="w-16 h-16 text-gray-300 mb-4" />
-            <p className="text-gray-500">Žiadne obrázky v portfóliu</p>
+            <p className="text-gray-500 mb-2">Žiadne ukážky predchádzajúcich projektov</p>
             {isCurrentUser && (
-              <label htmlFor="portfolio-images-upload" className="mt-4 cursor-pointer">
-                <Button>
-                  <UploadCloud className="mr-2 h-4 w-4" />
-                  Pridať obrázky
-                </Button>
-                <input
-                  id="portfolio-images-upload"
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handlePortfolioImageUpload}
-                  disabled={uploading}
-                />
-              </label>
+              <Button onClick={() => setShowProjectForm(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Pridať nový projekt
+              </Button>
             )}
           </div>
         )}
       </div>
       
-      <div>
+      <div className="md:col-span-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold">Ukážky prác</h3>
-          {isCurrentUser && portfolioImages.length > 0 && (
-            <label htmlFor="portfolio-images-upload" className="cursor-pointer">
-              <Button variant="outline" size="sm">
-                <UploadCloud className="mr-2 h-4 w-4" />
-                Pridať ďalšie
-              </Button>
-              <input
-                id="portfolio-images-upload"
-                type="file"
-                multiple
-                accept="image/*"
-                className="hidden"
-                onChange={handlePortfolioImageUpload}
-                disabled={uploading}
-              />
-            </label>
+          <h3 className="text-xl font-semibold">Predchádzajúce projekty</h3>
+          {isCurrentUser && (
+            <Button variant="outline" size="sm" onClick={() => setShowProjectForm(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Pridať
+            </Button>
           )}
         </div>
         
-        {portfolioImages.length > 0 ? (
-          <div className="grid grid-cols-3 gap-3">
-            {portfolioImages.map((image, index) => (
-              <div
-                key={index}
-                className={`relative cursor-pointer rounded-md overflow-hidden border-2 transition-all ${
-                  index === activeImageIndex
-                    ? "border-primary ring-2 ring-primary/20"
-                    : "border-transparent"
-                }`}
-                onClick={() => handleImageClick(index)}
-              >
-                <img
-                  src={image.image_url}
-                  alt={`Work sample ${index + 1}`}
-                  className="w-full h-24 object-cover"
-                />
-              </div>
+        {projects.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4">
+            {projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onSelect={handleProjectSelect}
+                isSelected={project.id === selectedProjectId}
+              />
             ))}
           </div>
         ) : (
@@ -108,18 +187,9 @@ const PortfolioTab: React.FC = () => {
               <p className="text-center text-gray-500 mb-4">
                 Ukážte svoje práce potenciálnym zákazníkom
               </p>
-              <label htmlFor="portfolio-images-upload-2" className="cursor-pointer">
-                <Button>Nahrať obrázky do portfólia</Button>
-                <input
-                  id="portfolio-images-upload-2"
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handlePortfolioImageUpload}
-                  disabled={uploading}
-                />
-              </label>
+              <Button onClick={() => setShowProjectForm(true)}>
+                Pridať prvý projekt
+              </Button>
             </div>
           )
         )}
