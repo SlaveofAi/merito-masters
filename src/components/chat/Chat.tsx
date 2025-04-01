@@ -18,8 +18,8 @@ const Chat: React.FC = () => {
     refetchMessages
   );
   
-  // Set up real-time updates
-  useChatSubscription(refetchMessages);
+  // Set up real-time updates - passing selectedContact and refetchMessages as required
+  useChatSubscription(selectedContact, refetchMessages);
   
   const handleContactSelect = (contact: ChatContact) => {
     setSelectedContact(contact);
