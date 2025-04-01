@@ -48,6 +48,7 @@ export const useProfileData = (id?: string) => {
       const url = await uploadProfileImage(file, profileData.id, fetchedUserType || userType);
       if (url) {
         setProfileImageUrl(url);
+        toast.success("Profilová fotka bola úspešne aktualizovaná");
       }
     } catch (error) {
       console.error("Error uploading profile image:", error);
@@ -84,6 +85,7 @@ export const useProfileData = (id?: string) => {
       // Refresh portfolio images
       if (fetchPortfolioImages) {
         await fetchPortfolioImages(profileData.id);
+        toast.success("Obrázky boli úspešne nahraté");
       }
     } catch (error) {
       console.error("Error uploading portfolio images:", error);

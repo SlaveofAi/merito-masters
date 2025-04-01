@@ -51,6 +51,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
             onCropChange={onCropChange}
             onCropComplete={handleCropComplete}
             onZoomChange={setZoom}
+            cropSize={{ width: 300, height: 300 }}
           />
         </div>
         

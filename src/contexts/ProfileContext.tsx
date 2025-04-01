@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -68,17 +69,12 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setProfileData,
     setProfileImageUrl,
     fetchPortfolioImages,
+    handleProfileImageUpload: handleProfileImageUploadHook,
+    handlePortfolioImageUpload: handlePortfolioImageUploadHook,
     createDefaultProfileIfNeeded,
     isCreatingProfile,
     error
   } = useProfileData(profileId);
-
-  const { handleProfileImageUpload, handlePortfolioImageUpload } = useImageUploader(
-    user?.id || "",
-    userType,
-    (url) => setProfileImageUrl(url),
-    () => fetchPortfolioImages(user?.id || "")
-  );
 
   const handleProfileUpdate = (updatedProfile: any) => {
     setProfileData({...profileData, ...updatedProfile});
@@ -146,6 +142,18 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  // Use our hook version of the image upload functions
+  const handleProfileImageUpload = (input: React.ChangeEvent<HTMLInputElement> | File | Blob) => {
+    if (input instanceof File || input instanceof Blob) {
+      return handleProfileImageUploadHook(input);
+    } 
+    
+    // If it's an event, get the file from the event
+    if (input.target && input.target.files && input.target.files.length > 0) {
+      return handleProfileImageUploadHook(input.target.files[0]);
+    }
+  };
+
   const value = {
     loading,
     profileData,
@@ -168,7 +176,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setRating,
     setReviewComment,
     handleProfileImageUpload,
-    handlePortfolioImageUpload,
+    handlePortfolioImageUpload: handlePortfolioImageUploadHook,
     handleProfileUpdate,
     handleSubmitReview,
     handleImageClick,

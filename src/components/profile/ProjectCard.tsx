@@ -1,6 +1,8 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Edit, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export interface ProjectImage {
   id: string;
@@ -18,10 +20,18 @@ export interface Project {
 interface ProjectCardProps {
   project: Project;
   onSelect: (id: string) => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
   isSelected: boolean;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onSelect, isSelected }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ 
+  project, 
+  onSelect, 
+  onEdit, 
+  onDelete, 
+  isSelected 
+}) => {
   const handleClick = () => {
     onSelect(project.id);
   };
@@ -33,6 +43,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onSelect, isSelected
       }`}
       onClick={handleClick}
     >
+      <CardHeader className="p-3 pb-2">
+        <CardTitle className="text-base line-clamp-1">{project.title}</CardTitle>
+      </CardHeader>
+      
       <div className="aspect-video w-full overflow-hidden">
         {project.images.length > 0 ? (
           <img 
@@ -46,12 +60,44 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onSelect, isSelected
           </div>
         )}
       </div>
-      <CardHeader className="p-4">
-        <CardTitle className="text-base line-clamp-1">{project.title}</CardTitle>
-        <CardDescription className="line-clamp-2 text-xs">
+      
+      <CardContent className="p-3 pt-2">
+        <CardDescription className="line-clamp-2 text-xs mb-2">
           {project.description}
         </CardDescription>
-      </CardHeader>
+        
+        {(onEdit || onDelete) && (
+          <div className="flex justify-end gap-2 mt-2">
+            {onEdit && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            )}
+            
+            {onDelete && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 text-destructive hover:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 };

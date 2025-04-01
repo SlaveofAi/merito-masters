@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { User, UploadCloud, MapPin, Phone, MessageSquare, Star } from "lucide-react";
@@ -50,9 +51,7 @@ const ProfileHeader: React.FC = () => {
     try {
       if (tempImageSrc && croppedAreaPixels) {
         const croppedImage = await getCroppedImg(tempImageSrc, croppedAreaPixels);
-        if (typeof handleProfileImageUpload === 'function') {
-          handleProfileImageUpload(croppedImage);
-        }
+        handleProfileImageUpload(croppedImage);
         setCropperVisible(false);
         setTempImageSrc(null);
       }
@@ -126,14 +125,16 @@ const ProfileHeader: React.FC = () => {
               </div>
             ) : (
               <>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">
+                  {profileData.name}
+                </h1>
+                
                 {userType === 'craftsman' && 'trade_category' in profileData && (
                   <div className="inline-block mb-3 px-3 py-1 bg-black/5 backdrop-blur-sm text-sm font-medium rounded-full">
                     {profileData.trade_category}
                   </div>
                 )}
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                  {profileData.name}
-                </h1>
+                
                 <div className="flex items-center justify-center md:justify-start mb-4">
                   {userType === 'craftsman' && (
                     <div className="flex items-center mr-4">
