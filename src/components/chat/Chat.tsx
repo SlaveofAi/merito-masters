@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, chatTables } from "@/integrations/supabase/client";
 import ChatList from "./ChatList";
 import ChatWindow from "./ChatWindow";
 import { toast } from "sonner";
@@ -52,14 +52,6 @@ interface ChatMessage {
   read: boolean;
 }
 
-/**
- * Custom type to help with Supabase type assertions
- */
-type GenericObject = Record<string, any>;
-type PostgrestSingleResponse<T> = { data: T | null; error: any };
-type PostgrestResponse<T> = { data: T[] | null; error: any };
-type PostgrestCountResponse = { count: number | null; error: any };
-
 const Chat = () => {
   const { user, userType } = useAuth();
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
@@ -75,11 +67,10 @@ const Chat = () => {
       const contactType = userType === 'customer' ? 'craftsman' : 'customer';
       
       // First get all conversations for current user
-      const { data: conversations, error: convError } = await supabase
-        .from('chat_conversations')
+      const { data: conversations, error: convError } = await chatTables.conversations()
         .select('*')
         .or(`customer_id.eq.${user.id},craftsman_id.eq.${user.id}`)
-        .eq(userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman', false) as PostgrestResponse<ChatConversation>;
+        .eq(userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman', false);
       
       if (convError) {
         console.error("Error fetching conversations:", convError);
@@ -128,22 +119,20 @@ const Chat = () => {
         }
         
         // Get last message and unread count
-        const { data: lastMessageData, error: lastMessageError } = await supabase
-          .from('chat_messages')
+        const { data: lastMessageData, error: lastMessageError } = await chatTables.messages()
           .select('*')
           .eq('conversation_id', conv.id)
           .order('created_at', { ascending: false })
-          .limit(1) as PostgrestResponse<ChatMessage>;
+          .limit(1);
           
         const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
         
         // Count unread messages
-        const { count, error: countError } = await supabase
-          .from('chat_messages')
+        const { count, error: countError } = await chatTables.messages()
           .select('*', { count: 'exact', head: true })
           .eq('conversation_id', conv.id)
           .eq('receiver_id', user.id)
-          .eq('read', false) as PostgrestCountResponse;
+          .eq('read', false);
           
         return {
           id: contactData.id,
@@ -173,11 +162,10 @@ const Chat = () => {
         return [];
       }
       
-      const { data, error } = await supabase
-        .from('chat_messages')
+      const { data, error } = await chatTables.messages()
         .select('*')
         .eq('conversation_id', selectedContact.conversation_id)
-        .order('created_at', { ascending: true }) as PostgrestResponse<ChatMessage>;
+        .order('created_at', { ascending: true });
         
       if (error) {
         console.error("Error fetching messages:", error);
@@ -187,12 +175,11 @@ const Chat = () => {
       
       // Mark messages as read
       if (data && data.length > 0) {
-        const unreadMessages = data.filter((msg: ChatMessage) => msg.receiver_id === user.id && !msg.read);
+        const unreadMessages = data.filter(msg => msg.receiver_id === user.id && !msg.read);
         
         if (unreadMessages.length > 0) {
-          unreadMessages.forEach(async (msg: ChatMessage) => {
-            await supabase
-              .from('chat_messages')
+          unreadMessages.forEach(async (msg) => {
+            await chatTables.messages()
               .update({ read: true })
               .eq('id', msg.id);
           });
@@ -224,23 +211,23 @@ const Chat = () => {
       
       // Create a new conversation if it doesn't exist
       if (!convId) {
-        const { data: newConversation, error: convError } = await supabase
-          .from('chat_conversations')
-          .insert({
-            customer_id: userType === 'customer' ? user.id : contactId,
-            craftsman_id: userType === 'craftsman' ? user.id : contactId,
-          })
+        const newConversation = {
+          customer_id: userType === 'customer' ? user.id : contactId,
+          craftsman_id: userType === 'craftsman' ? user.id : contactId,
+        };
+
+        const { data: insertedConv, error: convError } = await chatTables.conversations()
+          .insert(newConversation)
           .select()
-          .single() as PostgrestSingleResponse<ChatConversation>;
+          .single();
           
         if (convError) {
           // Check if conversation already exists (because of unique constraint)
-          const { data: existingConv, error: fetchError } = await supabase
-            .from('chat_conversations')
+          const { data: existingConv, error: fetchError } = await chatTables.conversations()
             .select('*')
             .eq('customer_id', userType === 'customer' ? user.id : contactId)
             .eq('craftsman_id', userType === 'craftsman' ? user.id : contactId)
-            .single() as PostgrestSingleResponse<ChatConversation>;
+            .single();
             
           if (fetchError || !existingConv) {
             console.error("Error creating conversation:", convError);
@@ -249,22 +236,23 @@ const Chat = () => {
           }
           
           convId = existingConv.id;
-        } else if (newConversation) {
-          convId = newConversation.id;
+        } else if (insertedConv) {
+          convId = insertedConv.id;
         }
       }
       
       // Insert the message
-      const { data: newMessage, error: msgError } = await supabase
-        .from('chat_messages')
-        .insert({
-          conversation_id: convId,
-          sender_id: user.id,
-          receiver_id: contactId,
-          content: content,
-        })
+      const newMessage = {
+        conversation_id: convId,
+        sender_id: user.id,
+        receiver_id: contactId,
+        content: content,
+      };
+
+      const { data: insertedMessage, error: msgError } = await chatTables.messages()
+        .insert(newMessage)
         .select()
-        .single() as PostgrestSingleResponse<ChatMessage>;
+        .single();
         
       if (msgError) {
         console.error("Error sending message:", msgError);
@@ -273,12 +261,11 @@ const Chat = () => {
       }
       
       // Update conversation's updated_at timestamp
-      await supabase
-        .from('chat_conversations')
+      await chatTables.conversations()
         .update({ updated_at: new Date().toISOString() })
         .eq('id', convId);
       
-      return { message: newMessage, conversationId: convId };
+      return { message: insertedMessage, conversationId: convId };
     },
     onSuccess: (data) => {
       if (data) {
@@ -359,8 +346,7 @@ const Chat = () => {
       ? 'is_archived_by_customer' 
       : 'is_archived_by_craftsman';
       
-    const { error } = await supabase
-      .from('chat_conversations')
+    const { error } = await chatTables.conversations()
       .update({ [fieldToUpdate]: true })
       .eq('id', selectedContact.conversation_id);
       
@@ -382,8 +368,7 @@ const Chat = () => {
       ? 'is_deleted_by_customer' 
       : 'is_deleted_by_craftsman';
       
-    const { error } = await supabase
-      .from('chat_conversations')
+    const { error } = await chatTables.conversations()
       .update({ [fieldToUpdate]: true })
       .eq('id', selectedContact.conversation_id);
       
