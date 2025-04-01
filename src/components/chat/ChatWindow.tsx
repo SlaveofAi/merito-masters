@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,8 @@ import {
   Trash2,
   Mail,
   MapPin,
-  Star
+  Star,
+  User
 } from "lucide-react";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
@@ -33,7 +35,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
@@ -45,6 +46,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 interface ChatWindowProps {
   contact: ChatContact | null;
@@ -157,13 +159,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   </Avatar>
                   <div>
                     <h3 className="font-medium text-lg">{contactDetails?.name || contact.name}</h3>
-                    <p className="text-sm text-gray-500">{contact.user_type === 'craftsman' ? 'Remeselník' : 'Zákazník'}</p>
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="mt-1">
+                        {contact.user_type === 'craftsman' ? 'Remeselník' : 'Zákazník'}
+                      </Badge>
+                      {contactDetails ? (
+                        <Badge variant="outline" className="ml-2 mt-1 bg-green-50">
+                          Profil nájdený
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="ml-2 mt-1 bg-yellow-50">
+                          Základný profil
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
                 <Separator />
                 
-                {contactDetails && (
+                {contactDetails ? (
                   <div className="space-y-2">
                     {contactDetails.email && (
                       <div className="flex items-center gap-2">
@@ -206,6 +221,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                         <p className="mt-1 text-sm">{contactDetails.description}</p>
                       </div>
                     )}
+                  </div>
+                ) : (
+                  <div className="py-4 text-center">
+                    <User className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                    <p className="text-gray-500">Rozšírený profil užívateľa nie je k dispozícii</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Užívateľ si ešte nevytvoril kompletný profil v systéme
+                    </p>
                   </div>
                 )}
                 

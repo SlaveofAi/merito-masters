@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact } from "@/types/chat";
+import { useNavigate } from "react-router-dom";
 
 export const useChatActions = (
   selectedContact: ChatContact | null,
@@ -12,6 +13,7 @@ export const useChatActions = (
 ) => {
   const { user, userType } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Mutation for sending messages
   const sendMessageMutation = useMutation({
@@ -54,7 +56,7 @@ export const useChatActions = (
             .select('*')
             .eq('customer_id', userType === 'customer' ? user.id : contactId)
             .eq('craftsman_id', userType === 'craftsman' ? user.id : contactId)
-            .single();
+            .maybeSingle();
             
           if (fetchError || !existingConv) {
             console.error("Error creating conversation:", convError);
@@ -145,56 +147,88 @@ export const useChatActions = (
     });
   };
 
+  // Mutation for archiving and deleting conversations
+  const updateConversationMutation = useMutation({
+    mutationFn: async ({ 
+      conversationId, 
+      action 
+    }: { 
+      conversationId: string; 
+      action: 'archive' | 'delete';
+    }) => {
+      if (!conversationId || !userType) {
+        console.error("Missing required data for updating conversation", { conversationId, userType });
+        return null;
+      }
+      
+      const fieldToUpdate = action === 'archive' 
+        ? (userType === 'customer' ? 'is_archived_by_customer' : 'is_archived_by_craftsman')
+        : (userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman');
+        
+      console.log(`${action === 'archive' ? 'Archiving' : 'Deleting'} conversation ${conversationId}`);
+      
+      const updateData: Record<string, boolean> = {};
+      updateData[fieldToUpdate] = true;
+      
+      const { error } = await supabase
+        .from('chat_conversations')
+        .update(updateData)
+        .eq('id', conversationId);
+        
+      if (error) {
+        console.error(`Error ${action}ing conversation:`, error);
+        return { success: false, error };
+      }
+      
+      return { success: true, conversationId };
+    },
+    onSuccess: (data, variables) => {
+      if (data?.success) {
+        const action = variables.action;
+        console.log(`Conversation ${action} successful:`, data);
+        
+        // Reset selected contact
+        setSelectedContact(null);
+        
+        // Show success message
+        toast.success(action === 'archive' 
+          ? "Konverzácia bola archivovaná" 
+          : "Konverzácia bola zmazaná"
+        );
+        
+        // Refresh the contacts list
+        queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+      }
+    },
+    onError: (error, variables) => {
+      const action = variables.action;
+      console.error(`Conversation ${action} failed:`, error);
+      toast.error(`Nastala chyba pri ${action === 'archive' ? 'archivácii' : 'mazaní'} konverzácie`);
+    }
+  });
+
   const archiveConversation = async () => {
-    if (!selectedContact?.conversation_id || !user) return;
-    
-    const fieldToUpdate = userType === 'customer' 
-      ? 'is_archived_by_customer' 
-      : 'is_archived_by_craftsman';
-    
-    const updateData: Record<string, boolean> = {};
-    updateData[fieldToUpdate] = true;
-      
-    const { error } = await supabase
-      .from('chat_conversations')
-      .update(updateData)
-      .eq('id', selectedContact.conversation_id);
-      
-    if (error) {
-      console.error("Error archiving conversation:", error);
-      toast.error("Nastala chyba pri archivácii konverzácie");
+    if (!selectedContact?.conversation_id || !user) {
+      console.error("Cannot archive - missing data", { selectedContact, user });
       return;
     }
     
-    toast.success("Konverzácia bola archivovaná");
-    queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
-    setSelectedContact(null);
+    updateConversationMutation.mutate({
+      conversationId: selectedContact.conversation_id,
+      action: 'archive'
+    });
   };
 
   const deleteConversation = async () => {
-    if (!selectedContact?.conversation_id || !user) return;
-    
-    const fieldToUpdate = userType === 'customer' 
-      ? 'is_deleted_by_customer' 
-      : 'is_deleted_by_craftsman';
-      
-    const updateData: Record<string, boolean> = {};
-    updateData[fieldToUpdate] = true;
-      
-    const { error } = await supabase
-      .from('chat_conversations')
-      .update(updateData)
-      .eq('id', selectedContact.conversation_id);
-      
-    if (error) {
-      console.error("Error deleting conversation:", error);
-      toast.error("Nastala chyba pri mazaní konverzácie");
+    if (!selectedContact?.conversation_id || !user) {
+      console.error("Cannot delete - missing data", { selectedContact, user });
       return;
     }
     
-    toast.success("Konverzácia bola zmazaná");
-    queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
-    setSelectedContact(null);
+    updateConversationMutation.mutate({
+      conversationId: selectedContact.conversation_id,
+      action: 'delete'
+    });
   };
 
   return {

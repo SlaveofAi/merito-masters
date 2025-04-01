@@ -79,19 +79,43 @@ export const useMessages = (selectedContact: ChatContact | null) => {
       
       console.log(`Fetching ${tableName} details for contact ${selectedContact.id}`);
       
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('*')
-        .eq('id', selectedContact.id)
-        .maybeSingle(); // Changed from single() to maybeSingle() to handle no data case
+      try {
+        // First try direct query
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .eq('id', selectedContact.id)
+          .maybeSingle();
+          
+        if (error) {
+          console.error(`Error fetching ${tableName} details:`, error);
+          return null;
+        }
         
-      if (error) {
-        console.error(`Error fetching ${tableName} details:`, error);
+        if (data) {
+          console.log("Contact details fetched:", data);
+          return data;
+        }
+        
+        // If no data found in direct query, try to get from profiles table
+        console.log(`No ${tableName} found, trying profiles table`);
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', selectedContact.id)
+          .maybeSingle();
+          
+        if (profileError) {
+          console.error(`Error fetching profile details:`, profileError);
+          return null;
+        }
+        
+        console.log("Profile details fetched from profiles table:", profileData);
+        return profileData;
+      } catch (err) {
+        console.error(`Error in contactDetails query:`, err);
         return null;
       }
-      
-      console.log("Contact details fetched:", data);
-      return data;
     },
     enabled: !!selectedContact?.id && !!user,
   });
