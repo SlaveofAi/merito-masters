@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message } from "@/types/chat";
 
 export const useMessages = (selectedContact: ChatContact | null) => {
-  const { user } = useAuth();
+  const { user, userType } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch messages for selected contact
@@ -68,7 +68,7 @@ export const useMessages = (selectedContact: ChatContact | null) => {
 
   // Fetch detailed contact information
   const { data: contactDetails } = useQuery({
-    queryKey: ['contact-details', selectedContact?.id],
+    queryKey: ['contact-details', selectedContact?.id, selectedContact?.user_type],
     queryFn: async () => {
       if (!selectedContact || !user) return null;
       
@@ -90,6 +90,7 @@ export const useMessages = (selectedContact: ChatContact | null) => {
         return null;
       }
       
+      console.log("Contact details fetched:", data);
       return data;
     },
     enabled: !!selectedContact?.id && !!user,
@@ -97,7 +98,7 @@ export const useMessages = (selectedContact: ChatContact | null) => {
   
   // For customers, fetch their reviews
   const { data: customerReviews = [] } = useQuery({
-    queryKey: ['customer-reviews', selectedContact?.id],
+    queryKey: ['customer-reviews', selectedContact?.id, selectedContact?.user_type],
     queryFn: async () => {
       if (!selectedContact || !user || selectedContact.user_type !== 'customer') return [];
       
@@ -114,6 +115,7 @@ export const useMessages = (selectedContact: ChatContact | null) => {
         return [];
       }
       
+      console.log("Customer reviews fetched:", data);
       return data;
     },
     enabled: !!selectedContact?.id && !!user && selectedContact?.user_type === 'customer',

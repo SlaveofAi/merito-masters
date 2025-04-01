@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -210,7 +209,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   </div>
                 )}
                 
-                {contact.user_type === 'customer' && customerReviews.length > 0 && (
+                {contact.user_type === 'customer' && customerReviews && customerReviews.length > 0 && (
                   <>
                     <Separator />
                     <div>

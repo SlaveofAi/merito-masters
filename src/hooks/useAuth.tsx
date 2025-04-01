@@ -52,14 +52,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log("User type found in database:", data.user_type);
         const type = data.user_type as 'customer' | 'craftsman';
         setUserType(type);
+        
+        // Save to localStorage for backup
+        localStorage.setItem("userType", type);
+        
         return type;
       } else {
         console.log("No user type found in database for user:", userId);
         
-        // Try to get from session storage as last resort
-        const storedType = sessionStorage.getItem("userType");
+        // Try to get from localStorage as last resort
+        const storedType = localStorage.getItem("userType");
         if (storedType === 'customer' || storedType === 'craftsman') {
-          console.log("Using user type from session storage:", storedType);
+          console.log("Using user type from localStorage:", storedType);
           setUserType(storedType);
           
           // Try to save this to the database to fix the issue
@@ -110,8 +114,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // Update in session storage
-      sessionStorage.setItem("userType", type);
+      // Update in localStorage
+      localStorage.setItem("userType", type);
       
       // Update in user metadata
       const { error: updateError } = await supabase.auth.updateUser({
@@ -150,7 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (event === 'SIGNED_OUT') {
           setUserType(null);
-          sessionStorage.removeItem("userType");
+          localStorage.removeItem("userType");
         }
         
         setLoading(false);
@@ -177,7 +181,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await supabase.auth.signOut();
       setUserType(null);
-      sessionStorage.removeItem("userType");
+      localStorage.removeItem("userType");
     } catch (error) {
       console.error("Error signing out:", error);
       toast.error("Nastala chyba pri odhlásení");
