@@ -1,7 +1,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { supabase, chatTables } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact } from "@/types/chat";
 
@@ -40,7 +40,8 @@ export const useChatActions = (
           craftsman_id: userType === 'craftsman' ? user.id : contactId,
         };
 
-        const { data: insertedConv, error: convError } = await chatTables.conversations()
+        const { data: insertedConv, error: convError } = await supabase
+          .from('chat_conversations')
           .insert(newConversation)
           .select()
           .single();
@@ -49,7 +50,8 @@ export const useChatActions = (
           // Check if conversation already exists (because of unique constraint)
           console.log("Error creating conversation, checking if it already exists");
           
-          const { data: existingConv, error: fetchError } = await chatTables.conversations()
+          const { data: existingConv, error: fetchError } = await supabase
+            .from('chat_conversations')
             .select('*')
             .eq('customer_id', userType === 'customer' ? user.id : contactId)
             .eq('craftsman_id', userType === 'craftsman' ? user.id : contactId)
@@ -79,7 +81,8 @@ export const useChatActions = (
 
       console.log("Sending message:", newMessage);
 
-      const { data: insertedMessage, error: msgError } = await chatTables.messages()
+      const { data: insertedMessage, error: msgError } = await supabase
+        .from('chat_messages')
         .insert(newMessage)
         .select()
         .single();
@@ -93,7 +96,8 @@ export const useChatActions = (
       console.log("Message sent successfully:", insertedMessage);
       
       // Update conversation's updated_at timestamp
-      await chatTables.conversations()
+      await supabase
+        .from('chat_conversations')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', convId);
       
@@ -146,7 +150,8 @@ export const useChatActions = (
       ? 'is_archived_by_customer' 
       : 'is_archived_by_craftsman';
       
-    const { error } = await chatTables.conversations()
+    const { error } = await supabase
+      .from('chat_conversations')
       .update({ [fieldToUpdate]: true })
       .eq('id', selectedContact.conversation_id);
       
@@ -168,7 +173,8 @@ export const useChatActions = (
       ? 'is_deleted_by_customer' 
       : 'is_deleted_by_craftsman';
       
-    const { error } = await chatTables.conversations()
+    const { error } = await supabase
+      .from('chat_conversations')
       .update({ [fieldToUpdate]: true })
       .eq('id', selectedContact.conversation_id);
       

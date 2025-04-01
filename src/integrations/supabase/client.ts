@@ -26,6 +26,6 @@ export const supabase = createClient<Database>(
 
 // Type-safe helper functions for chat tables
 export const chatTables = {
-  conversations: () => supabase.from<ChatConversation>('chat_conversations'),
-  messages: () => supabase.from<ChatMessage>('chat_messages')
+  conversations: () => supabase.from('chat_conversations'),
+  messages: () => supabase.from('chat_messages')
 };

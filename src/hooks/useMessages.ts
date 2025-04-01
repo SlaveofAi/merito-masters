@@ -1,7 +1,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { chatTables } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message } from "@/types/chat";
 
@@ -22,7 +22,8 @@ export const useMessages = (selectedContact: ChatContact | null) => {
       
       console.log(`Fetching messages for conversation ${selectedContact.conversation_id}`);
       
-      const { data, error } = await chatTables.messages()
+      const { data, error } = await supabase
+        .from('chat_messages')
         .select('*')
         .eq('conversation_id', selectedContact.conversation_id)
         .order('created_at', { ascending: true });
@@ -43,7 +44,8 @@ export const useMessages = (selectedContact: ChatContact | null) => {
           console.log(`Marking ${unreadMessages.length} messages as read`);
           
           for (const msg of unreadMessages) {
-            await chatTables.messages()
+            await supabase
+              .from('chat_messages')
               .update({ read: true })
               .eq('id', msg.id);
           }

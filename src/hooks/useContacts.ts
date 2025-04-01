@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { supabase, chatTables } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact } from "@/types/chat";
 
@@ -22,7 +22,8 @@ export const useContacts = () => {
       console.log(`Fetching conversations for ${userType} with ID ${user.id}`);
       
       // First get all conversations for current user
-      const { data: conversations, error: convError } = await chatTables.conversations()
+      const { data: conversations, error: convError } = await supabase
+        .from('chat_conversations')
         .select('*')
         .or(`customer_id.eq.${user.id},craftsman_id.eq.${user.id}`)
         .eq(userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman', false);
@@ -88,7 +89,8 @@ export const useContacts = () => {
           }
           
           // Get last message and unread count
-          const { data: lastMessageData, error: lastMessageError } = await chatTables.messages()
+          const { data: lastMessageData, error: lastMessageError } = await supabase
+            .from('chat_messages')
             .select('*')
             .eq('conversation_id', conv.id)
             .order('created_at', { ascending: false })
@@ -97,7 +99,8 @@ export const useContacts = () => {
           const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
           
           // Count unread messages
-          const { count, error: countError } = await chatTables.messages()
+          const { count, error: countError } = await supabase
+            .from('chat_messages')
             .select('*', { count: 'exact', head: true })
             .eq('conversation_id', conv.id)
             .eq('receiver_id', user.id)
