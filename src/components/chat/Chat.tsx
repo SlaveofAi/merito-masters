@@ -66,6 +66,8 @@ const Chat = () => {
       
       const contactType = userType === 'customer' ? 'craftsman' : 'customer';
       
+      console.log(`Fetching conversations for ${userType} with ID ${user.id}`);
+      
       // First get all conversations for current user
       const { data: conversations, error: convError } = await chatTables.conversations()
         .select('*')
@@ -78,8 +80,12 @@ const Chat = () => {
         return [];
       }
       
+      console.log("Fetched conversations:", conversations);
+      
       // No conversations yet, get potential contacts
       if (!conversations || conversations.length === 0) {
+        console.log(`No conversations found, fetching potential ${contactType} contacts`);
+        
         const { data, error } = await supabase
           .from(contactType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles')
           .select('id, name, profile_image_url')
@@ -90,6 +96,8 @@ const Chat = () => {
           toast.error("Nastala chyba pri načítaní kontaktov");
           return [];
         }
+        
+        console.log(`Found ${data?.length || 0} potential contacts`);
         
         return data.map((contact): ChatContact => ({
           id: contact.id,
@@ -107,47 +115,61 @@ const Chat = () => {
         const contactId = userType === 'customer' ? conv.craftsman_id : conv.customer_id;
         const profileTable = userType === 'customer' ? 'craftsman_profiles' : 'customer_profiles';
         
-        const { data: contactData, error: contactError } = await supabase
-          .from(profileTable)
-          .select('id, name, profile_image_url')
-          .eq('id', contactId)
-          .single();
+        console.log(`Getting contact details for ${contactId} from ${profileTable}`);
+        
+        try {
+          const { data: contactData, error: contactError } = await supabase
+            .from(profileTable)
+            .select('id, name, profile_image_url')
+            .eq('id', contactId)
+            .single();
+            
+          if (contactError) {
+            console.error("Error fetching contact details:", contactError);
+            return null;
+          }
           
-        if (contactError || !contactData) {
-          console.error("Error fetching contact details:", contactError);
+          if (!contactData) {
+            console.error(`No contact found with ID ${contactId}`);
+            return null;
+          }
+          
+          // Get last message and unread count
+          const { data: lastMessageData, error: lastMessageError } = await chatTables.messages()
+            .select('*')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+            
+          const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
+          
+          // Count unread messages
+          const { count, error: countError } = await chatTables.messages()
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .eq('receiver_id', user.id)
+            .eq('read', false);
+            
+          return {
+            id: contactData.id,
+            name: contactData.name,
+            avatar_url: contactData.profile_image_url,
+            last_message: lastMessage ? lastMessage.content : 'Kliknite pre zobrazenie správ',
+            last_message_time: lastMessage ? lastMessage.created_at : conv.created_at,
+            unread_count: count || 0,
+            user_type: contactType,
+            conversation_id: conv.id
+          } as ChatContact;
+        } catch (err) {
+          console.error("Error in contact processing:", err);
           return null;
         }
-        
-        // Get last message and unread count
-        const { data: lastMessageData, error: lastMessageError } = await chatTables.messages()
-          .select('*')
-          .eq('conversation_id', conv.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-          
-        const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
-        
-        // Count unread messages
-        const { count, error: countError } = await chatTables.messages()
-          .select('*', { count: 'exact', head: true })
-          .eq('conversation_id', conv.id)
-          .eq('receiver_id', user.id)
-          .eq('read', false);
-          
-        return {
-          id: contactData.id,
-          name: contactData.name,
-          avatar_url: contactData.profile_image_url,
-          last_message: lastMessage ? lastMessage.content : 'Kliknite pre zobrazenie správ',
-          last_message_time: lastMessage ? lastMessage.created_at : conv.created_at,
-          unread_count: count || 0,
-          user_type: contactType,
-          conversation_id: conv.id
-        } as ChatContact;
       });
       
       const resolvedContacts = await Promise.all(contactPromises);
-      return resolvedContacts.filter(contact => contact !== null) as ChatContact[];
+      const filteredContacts = resolvedContacts.filter(contact => contact !== null) as ChatContact[];
+      console.log(`Retrieved ${filteredContacts.length} contacts with conversations`);
+      return filteredContacts;
     },
     enabled: !!user,
   });
@@ -159,8 +181,11 @@ const Chat = () => {
       if (!selectedContact || !user) return [];
       
       if (!selectedContact.conversation_id) {
+        console.log("No conversation ID for selected contact");
         return [];
       }
+      
+      console.log(`Fetching messages for conversation ${selectedContact.conversation_id}`);
       
       const { data, error } = await chatTables.messages()
         .select('*')
@@ -173,16 +198,20 @@ const Chat = () => {
         return [];
       }
       
+      console.log(`Retrieved ${data?.length || 0} messages`);
+      
       // Mark messages as read
       if (data && data.length > 0) {
         const unreadMessages = data.filter(msg => msg.receiver_id === user.id && !msg.read);
         
         if (unreadMessages.length > 0) {
-          unreadMessages.forEach(async (msg) => {
+          console.log(`Marking ${unreadMessages.length} messages as read`);
+          
+          for (const msg of unreadMessages) {
             await chatTables.messages()
               .update({ read: true })
               .eq('id', msg.id);
-          });
+          }
           
           // Refresh contact list to update unread count
           queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
@@ -205,12 +234,17 @@ const Chat = () => {
       contactId: string;
       conversationId?: string;
     }) => {
-      if (!user || !contactId || !content.trim()) return null;
+      if (!user || !contactId || !content.trim()) {
+        console.error("Missing required data for sending message", { user, contactId, content });
+        return null;
+      }
       
       let convId = conversationId;
       
       // Create a new conversation if it doesn't exist
       if (!convId) {
+        console.log("Creating new conversation");
+        
         const newConversation = {
           customer_id: userType === 'customer' ? user.id : contactId,
           craftsman_id: userType === 'craftsman' ? user.id : contactId,
@@ -223,6 +257,8 @@ const Chat = () => {
           
         if (convError) {
           // Check if conversation already exists (because of unique constraint)
+          console.log("Error creating conversation, checking if it already exists");
+          
           const { data: existingConv, error: fetchError } = await chatTables.conversations()
             .select('*')
             .eq('customer_id', userType === 'customer' ? user.id : contactId)
@@ -236,8 +272,10 @@ const Chat = () => {
           }
           
           convId = existingConv.id;
+          console.log("Found existing conversation:", convId);
         } else if (insertedConv) {
           convId = insertedConv.id;
+          console.log("Created new conversation:", convId);
         }
       }
       
@@ -248,6 +286,8 @@ const Chat = () => {
         receiver_id: contactId,
         content: content,
       };
+
+      console.log("Sending message:", newMessage);
 
       const { data: insertedMessage, error: msgError } = await chatTables.messages()
         .insert(newMessage)
@@ -260,6 +300,8 @@ const Chat = () => {
         return null;
       }
       
+      console.log("Message sent successfully:", insertedMessage);
+      
       // Update conversation's updated_at timestamp
       await chatTables.conversations()
         .update({ updated_at: new Date().toISOString() })
@@ -269,6 +311,8 @@ const Chat = () => {
     },
     onSuccess: (data) => {
       if (data) {
+        console.log("Send message mutation succeeded:", data);
+        
         // If a new conversation was created, update the contact
         if (selectedContact && !selectedContact.conversation_id && data.conversationId) {
           setSelectedContact({
@@ -283,12 +327,17 @@ const Chat = () => {
         // Refresh contact list
         queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
       }
+    },
+    onError: (error) => {
+      console.error("Send message mutation failed:", error);
+      toast.error("Nastala chyba pri odosielaní správy");
     }
   });
 
   // Set first contact as selected by default
   useEffect(() => {
     if (contacts.length > 0 && !selectedContact) {
+      console.log("Setting first contact as selected:", contacts[0]);
       setSelectedContact(contacts[0]);
     }
   }, [contacts, selectedContact]);
@@ -303,7 +352,12 @@ const Chat = () => {
   }, [contactsLoading]);
 
   const sendMessage = async (content: string) => {
-    if (!selectedContact || !content.trim() || !user) return;
+    if (!selectedContact || !content.trim() || !user) {
+      console.error("Cannot send message - missing data", { selectedContact, content, user });
+      return;
+    }
+    
+    console.log(`Sending message to ${selectedContact.name}:`, content);
     
     sendMessageMutation.mutate({
       content,
@@ -316,6 +370,8 @@ const Chat = () => {
   useEffect(() => {
     if (!user) return;
     
+    console.log("Setting up realtime subscription for chat messages");
+    
     const channel = supabase
       .channel('chat-updates')
       .on('postgres_changes', {
@@ -323,18 +379,30 @@ const Chat = () => {
         schema: 'public',
         table: 'chat_messages',
         filter: `receiver_id=eq.${user.id}`
-      }, () => {
+      }, (payload) => {
+        console.log("Received new message via realtime:", payload);
+        
+        // Play notification sound
+        const audio = new Audio('/message.mp3');
+        audio.play().catch(e => console.log("Could not play notification sound", e));
+        
+        // Show toast notification
+        toast.success("Nová správa");
+        
         // Refresh messages if conversation is selected
-        if (selectedContact?.conversation_id) {
+        if (selectedContact?.conversation_id === payload.new.conversation_id) {
           refetchMessages();
         }
         
         // Refresh contact list
         queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Realtime subscription status:", status);
+      });
       
     return () => {
+      console.log("Cleaning up realtime subscription");
       supabase.removeChannel(channel);
     };
   }, [user, selectedContact, refetchMessages, queryClient]);
