@@ -30,34 +30,33 @@ const PortfolioTab: React.FC = () => {
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [deletingImage, setDeletingImage] = useState<string | null>(null);
 
-  // In a real implementation, you would fetch projects from the database here
-  // For now, we'll just use the portfolioImages as a simple representation
-  React.useEffect(() => {
+  // Create better projects from portfolio images by grouping them
+  useEffect(() => {
     if (portfolioImages.length > 0 && profileData) {
-      // Convert portfolio images to projects format
-      // This is a temporary solution until we implement the proper database structure
-      const mappedProjects = portfolioImages.reduce((acc: Project[], image, index) => {
-        // Create a new project for every 2 images
-        if (index % 2 === 0) {
-          acc.push({
-            id: `project-${index}`,
-            title: `Projekt ${index + 1}`,
-            description: "Ukážka mojej práce",
-            created_at: new Date().toISOString(),
-            images: [{
-              id: image.id,
-              image_url: image.image_url
-            }]
-          });
-        } else if (acc.length > 0) {
-          // Add the image to the last project
-          acc[acc.length - 1].images.push({
-            id: image.id,
-            image_url: image.image_url
-          });
+      // Group images by title if available, otherwise create separate projects
+      const projectGroups: {[key: string]: any[]} = {};
+      
+      portfolioImages.forEach((image) => {
+        const projectTitle = image.title || `Projekt ${image.id.substring(0, 4)}`;
+        if (!projectGroups[projectTitle]) {
+          projectGroups[projectTitle] = [];
         }
-        return acc;
-      }, []);
+        projectGroups[projectTitle].push(image);
+      });
+      
+      // Convert groups to projects
+      const mappedProjects = Object.entries(projectGroups).map(([title, images], index) => {
+        return {
+          id: `project-${index}`,
+          title: title,
+          description: images[0].description || "Ukážka mojej práce",
+          created_at: images[0].created_at,
+          images: images.map(img => ({
+            id: img.id,
+            image_url: img.image_url
+          }))
+        };
+      });
       
       setProjects(mappedProjects);
       if (!selectedProjectId && mappedProjects.length > 0) {
@@ -81,6 +80,24 @@ const PortfolioTab: React.FC = () => {
       const uploadedUrls = await uploadPortfolioImages(images, profileData.id);
       
       if (uploadedUrls.length > 0) {
+        // Update the titles and descriptions in the database
+        for (const url of uploadedUrls) {
+          const imageId = url.split('/').pop()?.split('-')[0];
+          if (imageId) {
+            const { error } = await supabase
+              .from('portfolio_images')
+              .update({ 
+                title: title,
+                description: description 
+              })
+              .eq('image_url', url);
+              
+            if (error) {
+              console.error("Error updating image metadata:", error);
+            }
+          }
+        }
+        
         toast.success("Projekt bol úspešne pridaný");
         // Refresh the portfolio images
         if (fetchPortfolioImages) {
@@ -155,6 +172,7 @@ const PortfolioTab: React.FC = () => {
             setShowProjectForm(false);
             setEditingProject(null);
           }}
+          initialData={editingProject}
         />
       </div>
     );
