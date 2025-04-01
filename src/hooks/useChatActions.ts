@@ -43,8 +43,7 @@ export const useChatActions = (
         const { data: insertedConv, error: convError } = await supabase
           .from('chat_conversations')
           .insert(newConversation)
-          .select()
-          .single();
+          .select();
           
         if (convError) {
           // Check if conversation already exists (because of unique constraint)
@@ -65,8 +64,8 @@ export const useChatActions = (
           
           convId = existingConv.id;
           console.log("Found existing conversation:", convId);
-        } else if (insertedConv) {
-          convId = insertedConv.id;
+        } else if (insertedConv && insertedConv.length > 0) {
+          convId = insertedConv[0].id;
           console.log("Created new conversation:", convId);
         }
       }
@@ -84,8 +83,7 @@ export const useChatActions = (
       const { data: insertedMessage, error: msgError } = await supabase
         .from('chat_messages')
         .insert(newMessage)
-        .select()
-        .single();
+        .select();
         
       if (msgError) {
         console.error("Error sending message:", msgError);
@@ -96,10 +94,14 @@ export const useChatActions = (
       console.log("Message sent successfully:", insertedMessage);
       
       // Update conversation's updated_at timestamp
-      await supabase
+      const { error: updateError } = await supabase
         .from('chat_conversations')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', convId);
+        
+      if (updateError) {
+        console.error("Error updating conversation timestamp:", updateError);
+      }
       
       return { message: insertedMessage, conversationId: convId };
     },
@@ -149,10 +151,13 @@ export const useChatActions = (
     const fieldToUpdate = userType === 'customer' 
       ? 'is_archived_by_customer' 
       : 'is_archived_by_craftsman';
+    
+    const updateData: Record<string, boolean> = {};
+    updateData[fieldToUpdate] = true;
       
     const { error } = await supabase
       .from('chat_conversations')
-      .update({ [fieldToUpdate]: true })
+      .update(updateData)
       .eq('id', selectedContact.conversation_id);
       
     if (error) {
@@ -173,9 +178,12 @@ export const useChatActions = (
       ? 'is_deleted_by_customer' 
       : 'is_deleted_by_craftsman';
       
+    const updateData: Record<string, boolean> = {};
+    updateData[fieldToUpdate] = true;
+      
     const { error } = await supabase
       .from('chat_conversations')
-      .update({ [fieldToUpdate]: true })
+      .update(updateData)
       .eq('id', selectedContact.conversation_id);
       
     if (error) {

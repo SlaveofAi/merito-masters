@@ -38,6 +38,7 @@ export const useChatSubscription = (
         
         // Refresh messages if conversation is selected
         if (selectedContact?.conversation_id === payload.new.conversation_id) {
+          console.log("Refreshing messages for current conversation");
           refetchMessages();
         }
         

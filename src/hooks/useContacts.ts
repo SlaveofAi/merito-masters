@@ -22,11 +22,12 @@ export const useContacts = () => {
       console.log(`Fetching conversations for ${userType} with ID ${user.id}`);
       
       // First get all conversations for current user
+      const fieldToCheck = userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman';
       const { data: conversations, error: convError } = await supabase
         .from('chat_conversations')
         .select('*')
         .or(`customer_id.eq.${user.id},craftsman_id.eq.${user.id}`)
-        .eq(userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman', false);
+        .eq(fieldToCheck, false);
       
       if (convError) {
         console.error("Error fetching conversations:", convError);

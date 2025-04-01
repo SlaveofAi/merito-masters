@@ -34,20 +34,26 @@ export const useMessages = (selectedContact: ChatContact | null) => {
         return [];
       }
       
-      console.log(`Retrieved ${data?.length || 0} messages`);
+      console.log(`Retrieved ${data?.length || 0} messages:`, data);
       
       // Mark messages as read
       if (data && data.length > 0) {
-        const unreadMessages = data.filter(msg => msg.receiver_id === user.id && !msg.read);
+        const unreadMessages = data.filter(msg => 
+          msg.receiver_id === user.id && !msg.read
+        );
         
         if (unreadMessages.length > 0) {
           console.log(`Marking ${unreadMessages.length} messages as read`);
           
           for (const msg of unreadMessages) {
-            await supabase
+            const { error: updateError } = await supabase
               .from('chat_messages')
               .update({ read: true })
               .eq('id', msg.id);
+              
+            if (updateError) {
+              console.error("Error marking message as read:", updateError);
+            }
           }
           
           // Refresh contact list to update unread count
