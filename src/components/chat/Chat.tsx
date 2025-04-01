@@ -28,6 +28,30 @@ export interface Message {
   read: boolean;
 }
 
+// Interface for chat_conversations table
+interface ChatConversation {
+  id: string;
+  customer_id: string;
+  craftsman_id: string;
+  created_at: string;
+  updated_at: string;
+  is_archived_by_customer: boolean;
+  is_archived_by_craftsman: boolean;
+  is_deleted_by_customer: boolean;
+  is_deleted_by_craftsman: boolean;
+}
+
+// Interface for chat_messages table
+interface ChatMessage {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  created_at: string;
+  read: boolean;
+}
+
 const Chat = () => {
   const { user, userType } = useAuth();
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
@@ -47,7 +71,7 @@ const Chat = () => {
         .from('chat_conversations')
         .select('*')
         .or(`customer_id.eq.${user.id},craftsman_id.eq.${user.id}`)
-        .eq(userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman', false);
+        .eq(userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman', false) as { data: ChatConversation[] | null, error: any };
       
       if (convError) {
         console.error("Error fetching conversations:", convError);
@@ -101,7 +125,7 @@ const Chat = () => {
           .select('*')
           .eq('conversation_id', conv.id)
           .order('created_at', { ascending: false })
-          .limit(1);
+          .limit(1) as { data: ChatMessage[] | null, error: any };
           
         const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
         
@@ -145,7 +169,7 @@ const Chat = () => {
         .from('chat_messages')
         .select('*')
         .eq('conversation_id', selectedContact.conversation_id)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true }) as { data: ChatMessage[] | null, error: any };
         
       if (error) {
         console.error("Error fetching messages:", error);
@@ -199,7 +223,7 @@ const Chat = () => {
             craftsman_id: userType === 'craftsman' ? user.id : contactId,
           })
           .select()
-          .single();
+          .single() as { data: ChatConversation | null, error: any };
           
         if (convError) {
           // Check if conversation already exists (because of unique constraint)
@@ -208,7 +232,7 @@ const Chat = () => {
             .select('*')
             .eq('customer_id', userType === 'customer' ? user.id : contactId)
             .eq('craftsman_id', userType === 'craftsman' ? user.id : contactId)
-            .single();
+            .single() as { data: ChatConversation | null, error: any };
             
           if (fetchError || !existingConv) {
             console.error("Error creating conversation:", convError);
@@ -217,7 +241,7 @@ const Chat = () => {
           }
           
           convId = existingConv.id;
-        } else {
+        } else if (newConversation) {
           convId = newConversation.id;
         }
       }
@@ -232,7 +256,7 @@ const Chat = () => {
           content: content,
         })
         .select()
-        .single();
+        .single() as { data: ChatMessage | null, error: any };
         
       if (msgError) {
         console.error("Error sending message:", msgError);
