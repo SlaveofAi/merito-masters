@@ -47,14 +47,12 @@ const Chat = () => {
   const fetchContacts = async () => {
     setLoading(true);
     try {
-      // In a real app, you would fetch contacts from your database
-      // For now, we'll generate sample contacts
       const contactType = userType === 'customer' ? 'craftsman' : 'customer';
       
       const { data, error } = await supabase
         .from(contactType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles')
         .select('id, name, profile_image_url')
-        .limit(5);
+        .limit(10);
         
       if (error) throw error;
       
@@ -62,7 +60,7 @@ const Chat = () => {
         id: contact.id,
         name: contact.name,
         avatar_url: contact.profile_image_url,
-        last_message: 'Nová správa... (ukážka)',
+        last_message: 'Kliknite pre zobrazenie správ',
         last_message_time: new Date().toISOString(),
         unread_count: Math.floor(Math.random() * 3),
         user_type: contactType

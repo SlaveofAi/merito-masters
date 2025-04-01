@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { User, UploadCloud, MapPin, Phone, MessageSquare, Star } from "lucide-react";
 import EditProfileForm from "@/components/EditProfileForm";
 import { useProfile } from "@/contexts/ProfileContext";
+import { useNavigate } from "react-router-dom";
 import ImageCropper from "./ImageCropper";
 import { getCroppedImg } from "@/utils/imageCrop";
 
@@ -21,6 +22,7 @@ const ProfileHeader: React.FC = () => {
     reviews
   } = useProfile();
 
+  const navigate = useNavigate();
   const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
   const [cropperVisible, setCropperVisible] = useState(false);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
@@ -70,6 +72,10 @@ const ProfileHeader: React.FC = () => {
     } catch (error) {
       console.error('Error cropping image:', error);
     }
+  };
+
+  const navigateToMessages = () => {
+    navigate("/messages");
   };
 
   return (
@@ -174,7 +180,7 @@ const ProfileHeader: React.FC = () => {
                     <Phone className="mr-2 h-4 w-4" />
                     Kontaktovať
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={navigateToMessages}>
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Správa
                   </Button>

@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,6 +7,7 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import PortfolioTab from "@/components/profile/PortfolioTab";
 import ReviewsTab from "@/components/profile/ReviewsTab";
 import ContactTab from "@/components/profile/ContactTab";
+import CustomerReviewsTab from "@/components/profile/CustomerReviewsTab";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { useProfile } from "@/contexts/ProfileContext";
@@ -22,7 +24,8 @@ const ProfilePage: React.FC = () => {
     isCurrentUser,
     profileNotFound,
     error,
-    createDefaultProfileIfNeeded
+    createDefaultProfileIfNeeded,
+    userType: profileUserType
   } = useProfile();
 
   useEffect(() => {
@@ -197,14 +200,34 @@ const ProfilePage: React.FC = () => {
         <ProfileHeader />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <ProfileTabs />
+          <ProfileTabs userType={profileUserType || userType} />
         </div>
       </div>
     </Layout>
   );
 };
 
-const ProfileTabs: React.FC = () => {
+const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null }> = ({ userType }) => {
+  if (userType === 'customer') {
+    return (
+      <Tabs defaultValue="reviews" className="w-full">
+        <TabsList className="grid w-full max-w-md mx-auto md:grid-cols-2 mb-8">
+          <TabsTrigger value="reviews">Moje hodnotenia</TabsTrigger>
+          <TabsTrigger value="info">Údaje</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="reviews" className="animate-fade-in">
+          <CustomerReviewsTab />
+        </TabsContent>
+        
+        <TabsContent value="info" className="animate-fade-in">
+          <ContactTab />
+        </TabsContent>
+      </Tabs>
+    );
+  }
+  
+  // Default tabs for craftsman profiles
   return (
     <Tabs defaultValue="portfolio" className="w-full">
       <TabsList className="grid w-full max-w-md mx-auto md:grid-cols-3 mb-8">
