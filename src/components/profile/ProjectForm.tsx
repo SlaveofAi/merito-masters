@@ -1,22 +1,38 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { UploadCloud } from "lucide-react";
 import { toast } from "sonner";
+import { Project } from "./ProjectCard";
 
 interface ProjectFormProps {
   onSubmit: (title: string, description: string, images: File[]) => Promise<void>;
   onCancel: () => void;
+  initialData?: Project;
 }
 
-const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel }) => {
+const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialData }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  // Populate the form with initialData if provided (for editing)
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title);
+      setDescription(initialData.description || "");
+      
+      // We can't directly set the images from initialData because they're already uploaded
+      // Instead, we'll just set the preview URLs for display
+      if (initialData.images && initialData.images.length > 0) {
+        setPreviewUrls(initialData.images.map(img => img.image_url));
+      }
+    }
+  }, [initialData]);
 
   const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -30,15 +46,30 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel }) => {
   };
 
   const removeImage = (index: number) => {
-    const newImages = [...images];
-    newImages.splice(index, 1);
-    setImages(newImages);
-    
-    // Revoke the preview URL to prevent memory leaks
-    URL.revokeObjectURL(previewUrls[index]);
-    const newPreviewUrls = [...previewUrls];
-    newPreviewUrls.splice(index, 1);
-    setPreviewUrls(newPreviewUrls);
+    // If we're editing and there are existing images from initialData,
+    // we need to distinguish between existing images and newly added ones
+    if (initialData && index < (initialData.images?.length || 0)) {
+      // For existing images, just remove from the preview
+      const newPreviewUrls = [...previewUrls];
+      newPreviewUrls.splice(index, 1);
+      setPreviewUrls(newPreviewUrls);
+    } else {
+      // For new images, remove from both images array and preview
+      const newImageIndex = initialData ? index - (initialData.images?.length || 0) : index;
+      const newImages = [...images];
+      
+      // Revoke the preview URL to prevent memory leaks
+      if (!initialData || index >= initialData.images.length) {
+        URL.revokeObjectURL(previewUrls[index]);
+      }
+      
+      newImages.splice(newImageIndex, 1);
+      setImages(newImages);
+      
+      const newPreviewUrls = [...previewUrls];
+      newPreviewUrls.splice(index, 1);
+      setPreviewUrls(newPreviewUrls);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,7 +80,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel }) => {
       return;
     }
     
-    if (images.length === 0) {
+    if (images.length === 0 && (!initialData || previewUrls.length === 0)) {
       toast.error("Pridajte aspoň jeden obrázok");
       return;
     }
@@ -59,7 +90,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel }) => {
       await onSubmit(title, description, images);
       
       // Clean up preview URLs
-      previewUrls.forEach(url => URL.revokeObjectURL(url));
+      previewUrls.forEach(url => {
+        // Only revoke URLs that start with blob: to avoid revoking server URLs
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
       
       // Reset form
       setTitle("");
@@ -147,7 +183,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel }) => {
           Zrušiť
         </Button>
         <Button type="submit" disabled={uploading}>
-          {uploading ? "Nahrávam..." : "Uložiť projekt"}
+          {uploading ? "Nahrávam..." : initialData ? "Upraviť projekt" : "Uložiť projekt"}
         </Button>
       </div>
     </form>
