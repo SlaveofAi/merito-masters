@@ -52,6 +52,14 @@ interface ChatMessage {
   read: boolean;
 }
 
+/**
+ * Custom type to help with Supabase type assertions
+ */
+type GenericObject = Record<string, any>;
+type PostgrestSingleResponse<T> = { data: T | null; error: any };
+type PostgrestResponse<T> = { data: T[] | null; error: any };
+type PostgrestCountResponse = { count: number | null; error: any };
+
 const Chat = () => {
   const { user, userType } = useAuth();
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
@@ -71,7 +79,7 @@ const Chat = () => {
         .from('chat_conversations' as any)
         .select('*')
         .or(`customer_id.eq.${user.id},craftsman_id.eq.${user.id}`)
-        .eq(userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman', false) as { data: ChatConversation[] | null, error: any };
+        .eq(userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman', false) as PostgrestResponse<ChatConversation>;
       
       if (convError) {
         console.error("Error fetching conversations:", convError);
@@ -104,7 +112,7 @@ const Chat = () => {
       }
       
       // Get contact details for each conversation
-      const contactPromises = conversations.map(async (conv) => {
+      const contactPromises = conversations.map(async (conv: ChatConversation) => {
         const contactId = userType === 'customer' ? conv.craftsman_id : conv.customer_id;
         const profileTable = userType === 'customer' ? 'craftsman_profiles' : 'customer_profiles';
         
@@ -125,7 +133,7 @@ const Chat = () => {
           .select('*')
           .eq('conversation_id', conv.id)
           .order('created_at', { ascending: false })
-          .limit(1) as { data: ChatMessage[] | null, error: any };
+          .limit(1) as PostgrestResponse<ChatMessage>;
           
         const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
         
@@ -135,7 +143,7 @@ const Chat = () => {
           .select('*', { count: 'exact', head: true })
           .eq('conversation_id', conv.id)
           .eq('receiver_id', user.id)
-          .eq('read', false);
+          .eq('read', false) as PostgrestCountResponse;
           
         return {
           id: contactData.id,
@@ -169,7 +177,7 @@ const Chat = () => {
         .from('chat_messages' as any)
         .select('*')
         .eq('conversation_id', selectedContact.conversation_id)
-        .order('created_at', { ascending: true }) as { data: ChatMessage[] | null, error: any };
+        .order('created_at', { ascending: true }) as PostgrestResponse<ChatMessage>;
         
       if (error) {
         console.error("Error fetching messages:", error);
@@ -179,10 +187,10 @@ const Chat = () => {
       
       // Mark messages as read
       if (data && data.length > 0) {
-        const unreadMessages = data.filter(msg => msg.receiver_id === user.id && !msg.read);
+        const unreadMessages = data.filter((msg: ChatMessage) => msg.receiver_id === user.id && !msg.read);
         
         if (unreadMessages.length > 0) {
-          unreadMessages.forEach(async (msg) => {
+          unreadMessages.forEach(async (msg: ChatMessage) => {
             await supabase
               .from('chat_messages' as any)
               .update({ read: true })
@@ -223,7 +231,7 @@ const Chat = () => {
             craftsman_id: userType === 'craftsman' ? user.id : contactId,
           })
           .select()
-          .single() as { data: ChatConversation | null, error: any };
+          .single() as PostgrestSingleResponse<ChatConversation>;
           
         if (convError) {
           // Check if conversation already exists (because of unique constraint)
@@ -232,7 +240,7 @@ const Chat = () => {
             .select('*')
             .eq('customer_id', userType === 'customer' ? user.id : contactId)
             .eq('craftsman_id', userType === 'craftsman' ? user.id : contactId)
-            .single() as { data: ChatConversation | null, error: any };
+            .single() as PostgrestSingleResponse<ChatConversation>;
             
           if (fetchError || !existingConv) {
             console.error("Error creating conversation:", convError);
@@ -256,7 +264,7 @@ const Chat = () => {
           content: content,
         })
         .select()
-        .single() as { data: ChatMessage | null, error: any };
+        .single() as PostgrestSingleResponse<ChatMessage>;
         
       if (msgError) {
         console.error("Error sending message:", msgError);
