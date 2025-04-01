@@ -83,7 +83,7 @@ export const useMessages = (selectedContact: ChatContact | null) => {
         .from(tableName)
         .select('*')
         .eq('id', selectedContact.id)
-        .single();
+        .maybeSingle(); // Changed from single() to maybeSingle() to handle no data case
         
       if (error) {
         console.error(`Error fetching ${tableName} details:`, error);
