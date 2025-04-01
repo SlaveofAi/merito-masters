@@ -13,7 +13,6 @@ export const useChatActions = (
 ) => {
   const { user, userType } = useAuth();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   // Mutation for sending messages
   const sendMessageMutation = useMutation({

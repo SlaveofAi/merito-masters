@@ -106,6 +106,29 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     setShowArchiveDialog(false);
   };
   
+  // Helper function to get display name with fallback
+  const getContactName = () => {
+    if (contactDetails?.name) return contactDetails.name;
+    if (contact?.name) return contact.name;
+    return "Neznámy užívateľ";
+  };
+  
+  // Helper function to get profile status
+  const getProfileStatus = () => {
+    if (contactDetails && (contactDetails.email || contactDetails.phone)) {
+      return "Profil nájdený";
+    }
+    return "Základný profil";
+  };
+  
+  // Helper function to get profile badge color
+  const getProfileBadgeColor = () => {
+    if (contactDetails && (contactDetails.email || contactDetails.phone)) {
+      return "bg-green-50";
+    }
+    return "bg-yellow-50";
+  };
+  
   if (!contact) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-6">
@@ -121,11 +144,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       <div className="p-4 border-b flex justify-between items-center">
         <div className="flex items-center">
           <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage src={contact.avatar_url} alt={contact.name} />
-            <AvatarFallback>{contact.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={contact.avatar_url} alt={getContactName()} />
+            <AvatarFallback>{getContactName().substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
-            <h2 className="font-semibold">{contact.name}</h2>
+            <h2 className="font-semibold">{getContactName()}</h2>
             <p className="text-xs text-gray-500">
               {contact.user_type === 'craftsman' ? 'Remeselník' : 'Zákazník'}
             </p>
@@ -148,30 +171,24 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               <DialogHeader>
                 <DialogTitle>Profil užívateľa</DialogTitle>
                 <DialogDescription>
-                  Informácie o užívateľovi {contact.name}
+                  Informácie o užívateľovi {getContactName()}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-16 w-16">
-                    <AvatarImage src={contactDetails?.profile_image_url || contact.avatar_url} alt={contact.name} />
-                    <AvatarFallback>{contact.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarImage src={contactDetails?.profile_image_url || contact.avatar_url} alt={getContactName()} />
+                    <AvatarFallback>{getContactName().substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="font-medium text-lg">{contactDetails?.name || contact.name}</h3>
+                    <h3 className="font-medium text-lg">{getContactName()}</h3>
                     <div className="flex items-center">
                       <Badge variant="outline" className="mt-1">
                         {contact.user_type === 'craftsman' ? 'Remeselník' : 'Zákazník'}
                       </Badge>
-                      {contactDetails ? (
-                        <Badge variant="outline" className="ml-2 mt-1 bg-green-50">
-                          Profil nájdený
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="ml-2 mt-1 bg-yellow-50">
-                          Základný profil
-                        </Badge>
-                      )}
+                      <Badge variant="outline" className={`ml-2 mt-1 ${getProfileBadgeColor()}`}>
+                        {getProfileStatus()}
+                      </Badge>
                     </div>
                   </div>
                 </div>

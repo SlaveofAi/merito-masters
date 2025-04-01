@@ -66,55 +66,94 @@ export const useMessages = (selectedContact: ChatContact | null) => {
     enabled: !!selectedContact?.conversation_id && !!user,
   });
 
-  // Fetch detailed contact information
+  // Fetch detailed contact information with better error handling and fallbacks
   const { data: contactDetails } = useQuery({
     queryKey: ['contact-details', selectedContact?.id, selectedContact?.user_type],
     queryFn: async () => {
       if (!selectedContact || !user) return null;
       
-      // Determine which table to query based on the contact type
-      const tableName = selectedContact.user_type === 'customer' 
-        ? 'customer_profiles' 
-        : 'craftsman_profiles';
-      
-      console.log(`Fetching ${tableName} details for contact ${selectedContact.id}`);
+      console.log(`Attempting to fetch details for contact ${selectedContact.id} of type ${selectedContact.user_type}`);
       
       try {
-        // First try direct query
-        const { data, error } = await supabase
-          .from(tableName)
+        // Determine which table to query based on the contact type
+        const primaryTable = selectedContact.user_type === 'customer' 
+          ? 'customer_profiles' 
+          : 'craftsman_profiles';
+        
+        // Step 1: Try primary profile table first
+        console.log(`First attempt: Querying ${primaryTable} for contact ${selectedContact.id}`);
+        const { data: primaryData, error: primaryError } = await supabase
+          .from(primaryTable)
           .select('*')
           .eq('id', selectedContact.id)
           .maybeSingle();
           
-        if (error) {
-          console.error(`Error fetching ${tableName} details:`, error);
-          return null;
+        if (!primaryError && primaryData) {
+          console.log(`Successfully found contact in ${primaryTable}:`, primaryData);
+          return primaryData;
         }
         
-        if (data) {
-          console.log("Contact details fetched:", data);
-          return data;
+        // If primary lookup failed, log the error
+        if (primaryError) {
+          console.error(`Error querying ${primaryTable}:`, primaryError);
+        } else {
+          console.log(`No data found in ${primaryTable} for id ${selectedContact.id}`);
         }
         
-        // If no data found in direct query, try to get from profiles table
-        console.log(`No ${tableName} found, trying profiles table`);
+        // Step 2: Try the profiles table as fallback
+        console.log(`Second attempt: Querying profiles table for contact ${selectedContact.id}`);
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', selectedContact.id)
           .maybeSingle();
           
-        if (profileError) {
-          console.error(`Error fetching profile details:`, profileError);
-          return null;
+        if (!profileError && profileData) {
+          console.log(`Found contact in profiles table:`, profileData);
+          return {
+            ...profileData,
+            // Add missing fields that might be expected by the UI
+            email: profileData.email || '',
+            location: profileData.location || '',
+            profile_image_url: profileData.profile_image_url || null
+          };
         }
         
-        console.log("Profile details fetched from profiles table:", profileData);
-        return profileData;
+        if (profileError) {
+          console.error("Error querying profiles table:", profileError);
+        } else {
+          console.log(`No data found in profiles table for id ${selectedContact.id}`);
+        }
+        
+        // Step 3: Check if we can get basic data from the auth users (as a last resort)
+        console.log(`Third attempt: Creating basic profile from contact info`);
+        
+        // Create a minimal profile from what we know
+        return {
+          id: selectedContact.id,
+          name: selectedContact.name || "Neznámy užívateľ",
+          email: "",
+          profile_image_url: selectedContact.avatar_url,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          // For UI compatibility
+          location: "",
+          phone: null,
+          user_type: selectedContact.user_type
+        };
       } catch (err) {
         console.error(`Error in contactDetails query:`, err);
-        return null;
+        // Return a fallback profile rather than null
+        return {
+          id: selectedContact.id,
+          name: selectedContact.name || "Neznámy užívateľ",
+          email: "",
+          profile_image_url: selectedContact.avatar_url,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          location: "",
+          phone: null
+        };
       }
     },
     enabled: !!selectedContact?.id && !!user,
