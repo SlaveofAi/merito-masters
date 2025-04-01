@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Menu, X, User, Hammer, Home } from "lucide-react";
+import { Menu, X, User, Hammer, Home, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const Navbar = () => {
@@ -117,6 +117,12 @@ const Navbar = () => {
               <div className="h-9 w-20 bg-gray-100 animate-pulse rounded-md"></div>
             ) : user ? (
               <>
+                <Link to="/messages">
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>Správy</span>
+                  </Button>
+                </Link>
                 <Link to="/profile">
                   <Button variant="ghost" className="flex items-center gap-2">
                     <User className="h-4 w-4" />
@@ -205,6 +211,13 @@ const Navbar = () => {
           <div className="pt-4 pb-3 border-t border-gray-200">
             {user ? (
               <div className="space-y-1">
+                <Link
+                  to="/messages"
+                  className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                  onClick={toggleMenu}
+                >
+                  Správy
+                </Link>
                 <Link
                   to="/profile"
                   className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100"

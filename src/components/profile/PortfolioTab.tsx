@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Image, UploadCloud, Plus, Edit, Trash2, X } from "lucide-react";
+import { Image, UploadCloud, Plus, Edit, Trash2, X, MessageSquare } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import ProjectCard, { Project } from "./ProjectCard";
@@ -30,10 +29,8 @@ const PortfolioTab: React.FC = () => {
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [deletingImage, setDeletingImage] = useState<string | null>(null);
 
-  // Create better projects from portfolio images by grouping them
   useEffect(() => {
     if (portfolioImages.length > 0 && profileData) {
-      // Group images by title if available, otherwise create separate projects
       const projectGroups: {[key: string]: any[]} = {};
       
       portfolioImages.forEach((image) => {
@@ -44,7 +41,6 @@ const PortfolioTab: React.FC = () => {
         projectGroups[projectTitle].push(image);
       });
       
-      // Convert groups to projects
       const mappedProjects = Object.entries(projectGroups).map(([title, images], index) => {
         return {
           id: `project-${index}`,
@@ -76,32 +72,24 @@ const PortfolioTab: React.FC = () => {
     }
     
     try {
-      // Upload the images
       const uploadedUrls = await uploadPortfolioImages(images, profileData.id);
       
       if (uploadedUrls.length > 0) {
-        // Update the titles and descriptions in the database
-        for (const url of uploadedUrls) {
-          const imageId = url.split('/').pop()?.split('-')[0];
-          if (imageId) {
-            const { error } = await supabase
-              .from('portfolio_images')
-              .update({ 
-                title: title,
-                description: description 
-              })
-              .eq('image_url', url);
-              
-            if (error) {
-              console.error("Error updating image metadata:", error);
-            }
-          }
-        }
+        const updatePromises = uploadedUrls.map(url => {
+          return supabase
+            .from('portfolio_images')
+            .update({ 
+              title: title,
+              description: description 
+            })
+            .eq('image_url', url);
+        });
+        
+        await Promise.all(updatePromises);
         
         toast.success("Projekt bol úspešne pridaný");
-        // Refresh the portfolio images
         if (fetchPortfolioImages) {
-          fetchPortfolioImages(profileData.id);
+          await fetchPortfolioImages(profileData.id);
         }
         setShowProjectForm(false);
       } else {
@@ -127,7 +115,6 @@ const PortfolioTab: React.FC = () => {
     try {
       setDeletingImage(imageId);
       
-      // Delete from the database
       const { error } = await supabase
         .from('portfolio_images')
         .delete()
@@ -137,7 +124,26 @@ const PortfolioTab: React.FC = () => {
         throw error;
       }
       
-      // Refresh the portfolio images
+      const updatedPortfolioImages = portfolioImages.filter(img => img.id !== imageId);
+      
+      const updatedProjects = projects.map(project => {
+        const updatedImages = project.images.filter(img => img.id !== imageId);
+        return {
+          ...project,
+          images: updatedImages
+        };
+      }).filter(project => project.images.length > 0);
+      
+      setProjects(updatedProjects);
+      
+      if (selectedProject && selectedProject.images.length === 1 && selectedProject.images[0].id === imageId) {
+        if (updatedProjects.length > 0) {
+          setSelectedProjectId(updatedProjects[0].id);
+        } else {
+          setSelectedProjectId(null);
+        }
+      }
+      
       if (fetchPortfolioImages) {
         await fetchPortfolioImages(profileData.id);
       }
@@ -182,7 +188,6 @@ const PortfolioTab: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-      {/* Projects list - Left side */}
       <div className="md:col-span-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-semibold">Moje projekty</h3>
@@ -227,7 +232,6 @@ const PortfolioTab: React.FC = () => {
         )}
       </div>
       
-      {/* Project details - Right side */}
       <div className="md:col-span-8 bg-white rounded-lg overflow-hidden border border-border/50 shadow-sm">
         {selectedProject && selectedProject.images.length > 0 ? (
           <div>
