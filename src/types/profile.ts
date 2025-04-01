@@ -1,4 +1,3 @@
-
 export type UserTypeRecord = {
   user_type: string;
   user_id: string;
@@ -27,7 +26,7 @@ export type CustomerProfile = {
   location: string;
   created_at: string;
   updated_at: string;
-  profile_image_url: string | null; // Add this field to match the actual data
+  profile_image_url: string | null;
 };
 
 export type ProfileData = CraftsmanProfile | CustomerProfile;
@@ -49,4 +48,12 @@ export type CraftsmanReview = {
   rating: number;
   comment: string | null;
   created_at: string;
+};
+
+// Adding a basic profile type for the minimal profile data from the profiles table
+export type BasicProfile = {
+  id: string;
+  name: string | null;
+  created_at: string;
+  updated_at: string;
 };

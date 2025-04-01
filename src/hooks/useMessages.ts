@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message } from "@/types/chat";
+import { BasicProfile } from "@/types/profile";
 
 export const useMessages = (selectedContact: ChatContact | null) => {
   const { user, userType } = useAuth();
@@ -110,12 +111,17 @@ export const useMessages = (selectedContact: ChatContact | null) => {
           
         if (!profileError && profileData) {
           console.log(`Found contact in profiles table:`, profileData);
+          // Convert basic profile to expected format with all required fields
           return {
-            ...profileData,
-            // Add missing fields that might be expected by the UI
-            email: profileData.email || '',
-            location: profileData.location || '',
-            profile_image_url: profileData.profile_image_url || null
+            id: profileData.id,
+            name: profileData.name || "Neznámy užívateľ",
+            email: "", // Adding missing fields with default values
+            location: "",
+            profile_image_url: null,
+            created_at: profileData.created_at,
+            updated_at: profileData.updated_at,
+            phone: null,
+            user_type: selectedContact.user_type
           };
         }
         
@@ -125,7 +131,7 @@ export const useMessages = (selectedContact: ChatContact | null) => {
           console.log(`No data found in profiles table for id ${selectedContact.id}`);
         }
         
-        // Step 3: Check if we can get basic data from the auth users (as a last resort)
+        // Step 3: Create a minimal profile from what we know if all lookups fail
         console.log(`Third attempt: Creating basic profile from contact info`);
         
         // Create a minimal profile from what we know
@@ -136,7 +142,6 @@ export const useMessages = (selectedContact: ChatContact | null) => {
           profile_image_url: selectedContact.avatar_url,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          // For UI compatibility
           location: "",
           phone: null,
           user_type: selectedContact.user_type
