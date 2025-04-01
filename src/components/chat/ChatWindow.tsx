@@ -15,7 +15,7 @@ import {
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
-import { ChatContact, Message } from "./Chat";
+import { ChatContact, Message } from "@/types/chat";
 import {
   DropdownMenu,
   DropdownMenuContent,

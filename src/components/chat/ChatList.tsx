@@ -6,7 +6,7 @@ import { Search } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { sk } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
-import { ChatContact } from "./Chat";
+import { ChatContact } from "@/types/chat";
 
 interface ChatListProps {
   contacts: ChatContact[];
