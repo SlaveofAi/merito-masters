@@ -9,6 +9,80 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      chat_conversations: {
+        Row: {
+          craftsman_id: string
+          created_at: string
+          customer_id: string
+          id: string
+          is_archived_by_craftsman: boolean
+          is_archived_by_customer: boolean
+          is_deleted_by_craftsman: boolean
+          is_deleted_by_customer: boolean
+          updated_at: string
+        }
+        Insert: {
+          craftsman_id: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          is_archived_by_craftsman?: boolean
+          is_archived_by_customer?: boolean
+          is_deleted_by_craftsman?: boolean
+          is_deleted_by_customer?: boolean
+          updated_at?: string
+        }
+        Update: {
+          craftsman_id?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          is_archived_by_craftsman?: boolean
+          is_archived_by_customer?: boolean
+          is_deleted_by_craftsman?: boolean
+          is_deleted_by_customer?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          read: boolean
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       craftsman_profiles: {
         Row: {
           created_at: string
