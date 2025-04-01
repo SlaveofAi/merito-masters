@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -28,7 +27,7 @@ interface ProfileContextType {
   setIsEditing: (value: boolean) => void;
   setRating: (value: number) => void;
   setReviewComment: (value: string) => void;
-  handleProfileImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  handleProfileImageUpload: (event: React.ChangeEvent<HTMLInputElement> | File | Blob) => void;
   handlePortfolioImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleProfileUpdate: (updatedProfile: any) => void;
   handleSubmitReview: (e: React.FormEvent) => void;
@@ -36,6 +35,7 @@ interface ProfileContextType {
   handleStarClick: (value: number) => void;
   refetchReviews: () => void;
   createDefaultProfileIfNeeded: () => Promise<void>;
+  fetchPortfolioImages?: (userId: string) => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -52,7 +52,6 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [uploading, setUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Only pass id to useProfileData if it's not the literal ":id" string
   const profileId = id === ":id" ? undefined : id;
   
   const {
@@ -74,7 +73,6 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     error
   } = useProfileData(profileId);
 
-  // Upload handlers from useImageUploader
   const { handleProfileImageUpload, handlePortfolioImageUpload } = useImageUploader(
     user?.id || "",
     userType,
@@ -176,7 +174,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     handleImageClick,
     handleStarClick,
     refetchReviews,
-    createDefaultProfileIfNeeded
+    createDefaultProfileIfNeeded,
+    fetchPortfolioImages
   };
 
   return (

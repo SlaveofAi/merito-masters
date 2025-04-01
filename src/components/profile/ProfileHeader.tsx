@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { User, UploadCloud, MapPin, Phone, MessageSquare, Star } from "lucide-react";
@@ -51,7 +50,9 @@ const ProfileHeader: React.FC = () => {
     try {
       if (tempImageSrc && croppedAreaPixels) {
         const croppedImage = await getCroppedImg(tempImageSrc, croppedAreaPixels);
-        handleProfileImageUpload(croppedImage);
+        if (typeof handleProfileImageUpload === 'function') {
+          handleProfileImageUpload(croppedImage);
+        }
         setCropperVisible(false);
         setTempImageSrc(null);
       }

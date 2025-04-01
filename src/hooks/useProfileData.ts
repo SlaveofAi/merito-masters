@@ -5,7 +5,7 @@ import { useProfileCore } from "@/hooks/useProfileCore";
 import { useProfileImages } from "@/hooks/useProfileImages";
 import { useProfileReviews } from "@/hooks/useProfileReviews";
 import { createDefaultProfile } from "@/utils/profileCreation";
-import { uploadProfileImage } from "@/utils/imageUpload";
+import { uploadProfileImage, uploadPortfolioImages } from "@/utils/imageUpload";
 import { toast } from "sonner";
 
 export const useProfileData = (id?: string) => {
