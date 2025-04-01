@@ -66,8 +66,63 @@ export const useMessages = (selectedContact: ChatContact | null) => {
     enabled: !!selectedContact?.conversation_id && !!user,
   });
 
+  // Fetch detailed contact information
+  const { data: contactDetails } = useQuery({
+    queryKey: ['contact-details', selectedContact?.id],
+    queryFn: async () => {
+      if (!selectedContact || !user) return null;
+      
+      // Determine which table to query based on the contact type
+      const tableName = selectedContact.user_type === 'customer' 
+        ? 'customer_profiles' 
+        : 'craftsman_profiles';
+      
+      console.log(`Fetching ${tableName} details for contact ${selectedContact.id}`);
+      
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('id', selectedContact.id)
+        .single();
+        
+      if (error) {
+        console.error(`Error fetching ${tableName} details:`, error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!selectedContact?.id && !!user,
+  });
+  
+  // For customers, fetch their reviews
+  const { data: customerReviews = [] } = useQuery({
+    queryKey: ['customer-reviews', selectedContact?.id],
+    queryFn: async () => {
+      if (!selectedContact || !user || selectedContact.user_type !== 'customer') return [];
+      
+      console.log(`Fetching reviews written by customer ${selectedContact.id}`);
+      
+      const { data, error } = await supabase
+        .from('craftsman_reviews')
+        .select('*')
+        .eq('customer_id', selectedContact.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error("Error fetching customer reviews:", error);
+        return [];
+      }
+      
+      return data;
+    },
+    enabled: !!selectedContact?.id && !!user && selectedContact?.user_type === 'customer',
+  });
+
   return {
     messages,
-    refetchMessages
+    refetchMessages,
+    contactDetails,
+    customerReviews
   };
 };

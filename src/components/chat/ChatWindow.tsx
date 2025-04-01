@@ -10,7 +10,10 @@ import {
   Video, 
   MoreVertical, 
   Archive, 
-  Trash2 
+  Trash2,
+  Mail,
+  MapPin,
+  Star
 } from "lucide-react";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
@@ -33,6 +36,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 interface ChatWindowProps {
   contact: ChatContact | null;
@@ -40,6 +53,8 @@ interface ChatWindowProps {
   onSendMessage: (content: string) => void;
   onArchive: () => void;
   onDelete: () => void;
+  contactDetails?: any;
+  customerReviews?: any[];
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ 
@@ -47,13 +62,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   messages, 
   onSendMessage,
   onArchive,
-  onDelete
+  onDelete,
+  contactDetails,
+  customerReviews = []
 }) => {
   const { user } = useAuth();
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
   
   useEffect(() => {
     scrollToBottom();
@@ -119,9 +137,119 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <Button variant="ghost" size="icon" title="Telefonický hovor">
             <Phone className="h-5 w-5 text-gray-500" />
           </Button>
-          <Button variant="ghost" size="icon" title="Informácie">
-            <Info className="h-5 w-5 text-gray-500" />
-          </Button>
+          <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" title="Informácie o užívateľovi">
+                <Info className="h-5 w-5 text-gray-500" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Profil užívateľa</DialogTitle>
+                <DialogDescription>
+                  Informácie o užívateľovi {contact.name}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={contactDetails?.profile_image_url || contact.avatar_url} alt={contact.name} />
+                    <AvatarFallback>{contact.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-medium text-lg">{contactDetails?.name || contact.name}</h3>
+                    <p className="text-sm text-gray-500">{contact.user_type === 'craftsman' ? 'Remeselník' : 'Zákazník'}</p>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                {contactDetails && (
+                  <div className="space-y-2">
+                    {contactDetails.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-gray-500" />
+                        <span>{contactDetails.email}</span>
+                      </div>
+                    )}
+                    
+                    {contactDetails.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-500" />
+                        <span>{contactDetails.phone}</span>
+                      </div>
+                    )}
+                    
+                    {contactDetails.location && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-gray-500" />
+                        <span>{contactDetails.location}</span>
+                      </div>
+                    )}
+                    
+                    {contact.user_type === 'craftsman' && contactDetails.trade_category && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Kategória: </span>
+                        <span>{contactDetails.trade_category}</span>
+                      </div>
+                    )}
+                    
+                    {contact.user_type === 'craftsman' && contactDetails.years_experience && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Roky skúseností: </span>
+                        <span>{contactDetails.years_experience}</span>
+                      </div>
+                    )}
+                    
+                    {contact.user_type === 'craftsman' && contactDetails.description && (
+                      <div className="mt-2">
+                        <span className="font-medium">Popis: </span>
+                        <p className="mt-1 text-sm">{contactDetails.description}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {contact.user_type === 'customer' && customerReviews.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h4 className="font-medium mb-2">Hodnotenia od zákazníka</h4>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {customerReviews.map((review) => (
+                          <Card key={review.id} className="p-2">
+                            <CardContent className="p-2">
+                              <div className="flex justify-between items-start">
+                                <span className="text-sm font-medium">Hodnotenie remeselníka</span>
+                                <div className="flex items-center">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`w-3 h-3 ${
+                                        i < review.rating 
+                                          ? "text-yellow-500 fill-current" 
+                                          : "text-gray-300"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              {review.comment && (
+                                <p className="text-sm mt-1">{review.comment}</p>
+                              )}
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(review.created_at).toLocaleDateString("sk-SK")}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
