@@ -91,7 +91,12 @@ export const useMessages = (selectedContact: ChatContact | null) => {
           
         if (!primaryError && primaryData) {
           console.log(`Successfully found contact in ${primaryTable}:`, primaryData);
-          return primaryData;
+          
+          // Make sure we have a consistent profile shape regardless of the table source
+          return {
+            ...primaryData,
+            user_type: selectedContact.user_type
+          };
         }
         
         // If primary lookup failed, log the error

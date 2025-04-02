@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -113,6 +112,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     return "Neznámy užívateľ";
   };
   
+  // Helper function to get avatar URL with fallback
+  const getAvatarUrl = () => {
+    return contactDetails?.profile_image_url || contact?.avatar_url || null;
+  };
+  
   // Helper function to get profile status
   const getProfileStatus = () => {
     if (contactDetails && (contactDetails.email || contactDetails.phone)) {
@@ -144,7 +148,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       <div className="p-4 border-b flex justify-between items-center">
         <div className="flex items-center">
           <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage src={contact.avatar_url} alt={getContactName()} />
+            <AvatarImage src={getAvatarUrl()} alt={getContactName()} />
             <AvatarFallback>{getContactName().substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
