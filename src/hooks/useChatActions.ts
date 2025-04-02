@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact } from "@/types/chat";
 import { useNavigate } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
 
 export const useChatActions = (
   selectedContact: ChatContact | null,
@@ -19,14 +20,16 @@ export const useChatActions = (
     mutationFn: async ({ 
       content, 
       contactId, 
-      conversationId 
+      conversationId,
+      mediaFile
     }: { 
       content: string; 
       contactId: string;
       conversationId?: string;
+      mediaFile?: File;
     }) => {
-      if (!user || !contactId || !content.trim()) {
-        console.error("Missing required data for sending message", { user, contactId, content });
+      if (!user || !contactId || (!content.trim() && !mediaFile)) {
+        console.error("Missing required data for sending message", { user, contactId, content, mediaFile });
         return null;
       }
       
@@ -71,12 +74,51 @@ export const useChatActions = (
         }
       }
       
+      // Handle media upload if present
+      let mediaUrl = undefined;
+      let mediaType = undefined;
+      
+      if (mediaFile) {
+        const fileExt = mediaFile.name.split('.').pop()?.toLowerCase();
+        const isVideo = fileExt === 'mp4' || fileExt === 'mov' || fileExt === 'webm';
+        const isImage = fileExt === 'jpg' || fileExt === 'jpeg' || fileExt === 'png' || fileExt === 'gif';
+        
+        if (isImage || isVideo) {
+          const fileName = `${uuidv4()}.${fileExt}`;
+          const filePath = `chat-media/${fileName}`;
+          
+          const { error: uploadError, data: uploadData } = await supabase.storage
+            .from('chat_media')
+            .upload(filePath, mediaFile, {
+              contentType: mediaFile.type,
+              upsert: true
+            });
+            
+          if (uploadError) {
+            console.error("Error uploading media:", uploadError);
+            toast.error("Nastala chyba pri nahrávaní súboru");
+          } else {
+            const { data: urlData } = supabase.storage
+              .from('chat_media')
+              .getPublicUrl(filePath);
+              
+            mediaUrl = urlData.publicUrl;
+            mediaType = isVideo ? 'video' : 'image';
+            console.log("Media uploaded successfully:", mediaUrl);
+          }
+        } else {
+          toast.error("Nepodporovaný formát súboru");
+        }
+      }
+      
       // Insert the message
       const newMessage = {
         conversation_id: convId,
         sender_id: user.id,
         receiver_id: contactId,
-        content: content,
+        content: content.trim() || (mediaUrl ? 'Odoslaný súbor' : ''),
+        media_url: mediaUrl,
+        media_type: mediaType
       };
 
       console.log("Sending message:", newMessage);
@@ -131,18 +173,19 @@ export const useChatActions = (
     }
   });
 
-  const sendMessage = async (content: string) => {
-    if (!selectedContact || !content.trim() || !user) {
-      console.error("Cannot send message - missing data", { selectedContact, content, user });
+  const sendMessage = async (content: string, mediaFile?: File) => {
+    if (!selectedContact || (!content.trim() && !mediaFile) || !user) {
+      console.error("Cannot send message - missing data", { selectedContact, content, mediaFile, user });
       return;
     }
     
-    console.log(`Sending message to ${selectedContact.name}:`, content);
+    console.log(`Sending message to ${selectedContact.name}:`, content, mediaFile);
     
     sendMessageMutation.mutate({
       content,
       contactId: selectedContact.id,
-      conversationId: selectedContact.conversation_id
+      conversationId: selectedContact.conversation_id,
+      mediaFile
     });
   };
 

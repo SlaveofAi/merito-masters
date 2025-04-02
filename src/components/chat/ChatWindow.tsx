@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -52,11 +53,13 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ChatMedia from "./ChatMedia";
+import MessageFileInput from "./MessageFileInput";
 
 interface ChatWindowProps {
   contact: ChatContact | null;
   messages: Message[];
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, mediaFile?: File) => void;
   onArchive: () => void;
   onDelete: () => void;
   contactDetails?: any;
@@ -74,6 +77,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 }) => {
   const { user, userType } = useAuth();
   const [messageText, setMessageText] = useState("");
+  const [mediaFile, setMediaFile] = useState<File | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
@@ -96,7 +100,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   };
   
   const fetchBookingRequests = async () => {
-    if (!contact?.id || !user) return;
+    if (!contact?.id || !user || !contact.conversation_id) return;
     
     try {
       const { data, error } = await supabase
@@ -119,9 +123,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   };
   
   const handleSendMessage = () => {
-    if (messageText.trim() && onSendMessage) {
-      onSendMessage(messageText);
+    if ((messageText.trim() || mediaFile) && onSendMessage) {
+      onSendMessage(messageText, mediaFile);
       setMessageText("");
+      setMediaFile(undefined);
     }
   };
   
@@ -224,6 +229,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const isBookingRequest = message.content.includes('Žiadosť o rezerváciu:');
     const isBookingConfirmed = message.content.includes('Rezervácia potvrdená:');
     const isBookingRejected = message.content.includes('Rezervácia zamietnutá:');
+    const hasMedia = message.media_url && message.media_type;
     
     if (isBookingRequest || isBookingConfirmed || isBookingRejected) {
       let icon = <CalendarCheck className="h-5 w-5" />;
@@ -260,7 +266,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     return (
       <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
         <div className={`max-w-[75%] ${isOwnMessage ? 'bg-primary text-white' : 'bg-white'} rounded-lg px-4 py-2 shadow-sm`}>
-          <p>{message.content}</p>
+          {hasMedia && (
+            <div className="mb-2">
+              <ChatMedia 
+                url={message.media_url!} 
+                type={message.media_type!} 
+              />
+            </div>
+          )}
+          {message.content && <p>{message.content}</p>}
           <div className={`text-xs mt-1 ${isOwnMessage ? 'text-primary-foreground/70' : 'text-gray-500'} text-right`}>
             {formattedTime}
           </div>
@@ -546,7 +560,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       </div>
       
       <div className="p-4 border-t">
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <Textarea
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
@@ -555,13 +569,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             className="resize-none min-h-[60px]"
             rows={2}
           />
-          <Button 
-            onClick={handleSendMessage} 
-            disabled={!messageText.trim()} 
-            className="self-end"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
+          <div className="flex justify-between items-center">
+            <MessageFileInput onFileSelected={setMediaFile} />
+            <Button 
+              onClick={handleSendMessage} 
+              disabled={!messageText.trim() && !mediaFile} 
+              className="self-end"
+            >
+              <Send className="h-5 w-5 mr-2" /> Odoslať
+            </Button>
+          </div>
         </div>
       </div>
 

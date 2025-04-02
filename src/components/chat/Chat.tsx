@@ -25,6 +25,10 @@ const Chat: React.FC = () => {
     setSelectedContact(contact);
   };
   
+  const handleSendMessage = (content: string, mediaFile?: File) => {
+    sendMessage(content, mediaFile);
+  };
+  
   return (
     <div className="flex bg-white rounded-lg shadow-sm overflow-hidden h-[75vh]">
       <div className="w-full sm:w-1/3 border-r">
@@ -39,7 +43,7 @@ const Chat: React.FC = () => {
         <ChatWindow 
           contact={selectedContact} 
           messages={messages}
-          onSendMessage={sendMessage}
+          onSendMessage={handleSendMessage}
           onArchive={archiveConversation}
           onDelete={deleteConversation}
           contactDetails={contactDetails}

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message } from "@/types/chat";
 import { BasicProfile } from "@/types/profile";
+import { BookingRequest } from "@/types/booking";
 
 export const useMessages = (selectedContact: ChatContact | null) => {
   const { user, userType } = useAuth();
@@ -173,6 +174,30 @@ export const useMessages = (selectedContact: ChatContact | null) => {
     enabled: !!selectedContact?.id && !!user,
   });
   
+  // Fetch booking requests for this conversation
+  const { data: bookingRequests = [] } = useQuery({
+    queryKey: ['bookings', selectedContact?.conversation_id],
+    queryFn: async () => {
+      if (!selectedContact?.conversation_id || !user) return [];
+      
+      console.log(`Fetching booking requests for conversation ${selectedContact.conversation_id}`);
+      
+      const { data, error } = await supabase
+        .from('booking_requests')
+        .select('*')
+        .eq('conversation_id', selectedContact.conversation_id)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error("Error fetching booking requests:", error);
+        return [];
+      }
+      
+      return data as BookingRequest[];
+    },
+    enabled: !!selectedContact?.conversation_id && !!user,
+  });
+  
   // For customers, fetch their reviews
   const { data: customerReviews = [] } = useQuery({
     queryKey: ['customer-reviews', selectedContact?.id, selectedContact?.user_type],
@@ -202,6 +227,7 @@ export const useMessages = (selectedContact: ChatContact | null) => {
     messages,
     refetchMessages,
     contactDetails,
-    customerReviews
+    customerReviews,
+    bookingRequests
   };
 };
