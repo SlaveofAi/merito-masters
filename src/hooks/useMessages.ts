@@ -111,18 +111,21 @@ export const useMessages = (selectedContact: ChatContact | null) => {
           
         if (!profileError && profileData) {
           console.log(`Found contact in profiles table:`, profileData);
-          // Convert basic profile to expected format with all required fields
-          return {
+          
+          // Ensure the profile data has all the required fields
+          const enhancedProfile: BasicProfile = {
             id: profileData.id,
             name: profileData.name || "Neznámy užívateľ",
-            email: "", // Adding missing fields with default values
+            email: "",
             location: "",
             profile_image_url: null,
+            phone: null,
             created_at: profileData.created_at,
             updated_at: profileData.updated_at,
-            phone: null,
             user_type: selectedContact.user_type
           };
+          
+          return enhancedProfile;
         }
         
         if (profileError) {
@@ -157,7 +160,8 @@ export const useMessages = (selectedContact: ChatContact | null) => {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           location: "",
-          phone: null
+          phone: null,
+          user_type: selectedContact.user_type
         };
       }
     },

@@ -1,3 +1,4 @@
+
 export type UserTypeRecord = {
   user_type: string;
   user_id: string;
@@ -54,6 +55,11 @@ export type CraftsmanReview = {
 export type BasicProfile = {
   id: string;
   name: string | null;
+  email?: string;
+  location?: string;
+  profile_image_url?: string | null;
+  phone?: string | null;
   created_at: string;
   updated_at: string;
+  user_type?: string;
 };
