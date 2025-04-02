@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -237,7 +236,6 @@ const ContactTab: React.FC = () => {
           });
         }
         
-        // Check if there's an existing availability for this date
         const { data: existingData, error: checkError } = await supabase
           .from('craftsman_availability')
           .select('*')
@@ -251,7 +249,6 @@ const ContactTab: React.FC = () => {
         }
         
         if (existingData) {
-          // Update existing record
           const { error: updateError } = await supabase
             .from('craftsman_availability')
             .update({ time_slots: defaultTimeSlots })
@@ -262,7 +259,6 @@ const ContactTab: React.FC = () => {
             toast.error("Nastala chyba pri aktualizácii dostupnosti");
           }
         } else {
-          // Insert new record
           const { error: insertError } = await supabase
             .from('craftsman_availability')
             .insert({

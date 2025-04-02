@@ -111,7 +111,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       }
       
       if (data) {
-        setBookingRequests(data as BookingRequest[]);
+        setBookingRequests(data as unknown as BookingRequest[]);
       }
     } catch (err) {
       console.error("Error in fetchBookingRequests:", err);
@@ -142,12 +142,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     setShowArchiveDialog(false);
   };
   
-  // Handle booking confirmation or rejection
   const handleBookingResponse = async (bookingId: string, isConfirmed: boolean) => {
     if (!user) return;
     
     try {
-      // Update booking status
       const status = isConfirmed ? 'confirmed' : 'declined';
       
       const { error: updateError } = await supabase
@@ -161,11 +159,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         return;
       }
       
-      // Find the booking to get details for the message
       const booking = bookingRequests.find(b => b.id === bookingId);
       
       if (booking && contact?.conversation_id) {
-        // Send message about the confirmation/rejection
         const statusMessage = isConfirmed 
           ? `Rezervácia potvrdená: ${format(new Date(booking.date), 'EEEE, d. MMMM yyyy', { locale: sk })}, ${booking.start_time} - ${booking.end_time}`
           : `Rezervácia zamietnutá: ${format(new Date(booking.date), 'EEEE, d. MMMM yyyy', { locale: sk })}, ${booking.start_time} - ${booking.end_time}`;
@@ -185,7 +181,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         }
       }
       
-      // Refresh booking requests
       fetchBookingRequests();
       
       toast.success(isConfirmed ? "Rezervácia bola potvrdená" : "Rezervácia bola zamietnutá");
@@ -196,19 +191,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
   
-  // Helper function to get display name with fallback
   const getContactName = () => {
     if (contactDetails?.name) return contactDetails.name;
     if (contact?.name) return contact.name;
     return "Neznámy užívateľ";
   };
   
-  // Helper function to get avatar URL with fallback
   const getAvatarUrl = () => {
     return contactDetails?.profile_image_url || contact?.avatar_url || null;
   };
   
-  // Helper function to get profile status
   const getProfileStatus = () => {
     if (contactDetails && (contactDetails.email || contactDetails.phone)) {
       return "Profil nájdený";
@@ -216,7 +208,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     return "Základný profil";
   };
   
-  // Helper function to get profile badge color
   const getProfileBadgeColor = () => {
     if (contactDetails && (contactDetails.email || contactDetails.phone)) {
       return "bg-green-50";
@@ -224,19 +215,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     return "bg-yellow-50";
   };
   
-  // Helper function to render a booking message
   const renderMessage = (message: Message) => {
     const isOwnMessage = message.sender_id === user?.id;
     const messageDate = new Date(message.created_at);
     const formattedTime = format(messageDate, 'HH:mm');
     const formattedDate = format(messageDate, 'EEEE, d. MMMM', { locale: sk });
     
-    // Check if this is a booking request/confirmation/rejection message
     const isBookingRequest = message.content.includes('Žiadosť o rezerváciu:');
     const isBookingConfirmed = message.content.includes('Rezervácia potvrdená:');
     const isBookingRejected = message.content.includes('Rezervácia zamietnutá:');
     
-    // If this is a booking-related message, render it with special styles
     if (isBookingRequest || isBookingConfirmed || isBookingRejected) {
       let icon = <CalendarCheck className="h-5 w-5" />;
       let bgColor = "bg-blue-50 text-blue-800";
@@ -269,7 +257,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       );
     }
     
-    // Regular message rendering
     return (
       <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
         <div className={`max-w-[75%] ${isOwnMessage ? 'bg-primary text-white' : 'bg-white'} rounded-lg px-4 py-2 shadow-sm`}>
@@ -292,7 +279,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     );
   }
   
-  // Count pending booking requests for this conversation
   const pendingBookings = bookingRequests.filter(b => b.status === 'pending').length;
   
   return (
