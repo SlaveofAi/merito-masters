@@ -51,7 +51,7 @@ const ContactTab: React.FC = () => {
       }
       
       if (data && data.length > 0) {
-        const dates = data.map(item => new Date(item.date));
+        const dates = data.map(item => new Date(item.date as string));
         setAvailableDates(dates);
       }
     } catch (err) {
@@ -82,7 +82,7 @@ const ContactTab: React.FC = () => {
       }
       
       if (data && data.time_slots) {
-        setTimeSlots((data.time_slots as TimeSlot[]).filter((slot: TimeSlot) => slot.is_available));
+        setTimeSlots((data.time_slots as unknown as TimeSlot[]).filter(slot => slot.is_available));
       } else {
         setTimeSlots([]);
       }
@@ -150,10 +150,9 @@ const ContactTab: React.FC = () => {
       
       const { data: booking, error: bookingError } = await supabase
         .from('booking_requests')
-        .insert(bookingRequest)
-        .select();
+        .insert(bookingRequest);
         
-      if (bookingError || !booking || booking.length === 0) {
+      if (bookingError) {
         console.error("Error creating booking request:", bookingError);
         toast.error("Nastala chyba pri vytváraní rezervácie");
         setIsLoading(false);
@@ -191,22 +190,23 @@ const ContactTab: React.FC = () => {
   const handleSetAvailability = async (date: Date | undefined) => {
     if (!date || !user || userType !== 'craftsman') return;
     
+    setIsLoading(true);
+    
     const dateExists = availableDates.some(d => 
       d.getDate() === date.getDate() && 
       d.getMonth() === date.getMonth() && 
       d.getFullYear() === date.getFullYear()
     );
     
-    if (dateExists) {
-      const newDates = availableDates.filter(d => 
-        !(d.getDate() === date.getDate() && 
-          d.getMonth() === date.getMonth() && 
-          d.getFullYear() === date.getFullYear())
-      );
-      setAvailableDates(newDates);
-      
-      try {
-        const dateStr = date.toISOString().split('T')[0];
+    const dateStr = date.toISOString().split('T')[0];
+    
+    try {
+      if (dateExists) {
+        const newDates = availableDates.filter(d => 
+          !(d.getDate() === date.getDate() && 
+            d.getMonth() === date.getMonth() && 
+            d.getFullYear() === date.getFullYear())
+        );
         
         const { error } = await supabase
           .from('craftsman_availability')
@@ -217,16 +217,11 @@ const ContactTab: React.FC = () => {
         if (error) {
           console.error("Error removing availability:", error);
           toast.error("Nastala chyba pri odstraňovaní dostupnosti");
+        } else {
+          setAvailableDates(newDates);
+          toast.success("Dostupnosť bola odstránená");
         }
-      } catch (err) {
-        console.error("Error in handleSetAvailability (remove):", err);
-      }
-    } else {
-      setAvailableDates([...availableDates, date]);
-      
-      try {
-        const dateStr = date.toISOString().split('T')[0];
-        
+      } else {
         const defaultTimeSlots: TimeSlot[] = [];
         for (let hour = 9; hour < 17; hour++) {
           defaultTimeSlots.push({
@@ -245,36 +240,41 @@ const ContactTab: React.FC = () => {
           
         if (checkError) {
           console.error("Error checking existing availability:", checkError);
+          toast.error("Nastala chyba pri kontrole dostupnosti");
+          setIsLoading(false);
           return;
         }
         
+        let result;
+        
         if (existingData) {
-          const { error: updateError } = await supabase
+          result = await supabase
             .from('craftsman_availability')
             .update({ time_slots: defaultTimeSlots })
             .eq('id', existingData.id);
-            
-          if (updateError) {
-            console.error("Error updating availability:", updateError);
-            toast.error("Nastala chyba pri aktualizácii dostupnosti");
-          }
         } else {
-          const { error: insertError } = await supabase
+          result = await supabase
             .from('craftsman_availability')
             .insert({
               craftsman_id: user.id,
               date: dateStr,
               time_slots: defaultTimeSlots
             });
-            
-          if (insertError) {
-            console.error("Error setting availability:", insertError);
-            toast.error("Nastala chyba pri nastavovaní dostupnosti");
-          }
         }
-      } catch (err) {
-        console.error("Error in handleSetAvailability (add):", err);
+        
+        if (result.error) {
+          console.error("Error setting availability:", result.error);
+          toast.error("Nastala chyba pri nastavovaní dostupnosti");
+        } else {
+          setAvailableDates([...availableDates, date]);
+          toast.success("Dostupnosť bola nastavená");
+        }
       }
+    } catch (err) {
+      console.error("Error in handleSetAvailability:", err);
+      toast.error("Nastala chyba pri úprave dostupnosti");
+    } finally {
+      setIsLoading(false);
     }
   };
 
