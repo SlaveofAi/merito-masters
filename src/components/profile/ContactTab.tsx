@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TimeSlot, BookingRequest } from "@/types/booking";
+import { TimeSlot, BookingRequest, CraftsmanAvailability } from "@/types/booking";
 
 const ContactTab: React.FC = () => {
   const { profileData, userType, isCurrentUser } = useProfile();
@@ -82,7 +83,7 @@ const ContactTab: React.FC = () => {
       }
       
       if (data && data.time_slots) {
-        setTimeSlots(data.time_slots.filter((slot: TimeSlot) => slot.is_available));
+        setTimeSlots((data.time_slots as TimeSlot[]).filter((slot: TimeSlot) => slot.is_available));
       } else {
         setTimeSlots([]);
       }
@@ -236,17 +237,44 @@ const ContactTab: React.FC = () => {
           });
         }
         
-        const { error } = await supabase
+        // Check if there's an existing availability for this date
+        const { data: existingData, error: checkError } = await supabase
           .from('craftsman_availability')
-          .insert({
-            craftsman_id: user.id,
-            date: dateStr,
-            time_slots: defaultTimeSlots
-          });
+          .select('*')
+          .eq('craftsman_id', user.id)
+          .eq('date', dateStr)
+          .maybeSingle();
           
-        if (error) {
-          console.error("Error setting availability:", error);
-          toast.error("Nastala chyba pri nastavovaní dostupnosti");
+        if (checkError) {
+          console.error("Error checking existing availability:", checkError);
+          return;
+        }
+        
+        if (existingData) {
+          // Update existing record
+          const { error: updateError } = await supabase
+            .from('craftsman_availability')
+            .update({ time_slots: defaultTimeSlots })
+            .eq('id', existingData.id);
+            
+          if (updateError) {
+            console.error("Error updating availability:", updateError);
+            toast.error("Nastala chyba pri aktualizácii dostupnosti");
+          }
+        } else {
+          // Insert new record
+          const { error: insertError } = await supabase
+            .from('craftsman_availability')
+            .insert({
+              craftsman_id: user.id,
+              date: dateStr,
+              time_slots: defaultTimeSlots
+            });
+            
+          if (insertError) {
+            console.error("Error setting availability:", insertError);
+            toast.error("Nastala chyba pri nastavovaní dostupnosti");
+          }
         }
       } catch (err) {
         console.error("Error in handleSetAvailability (add):", err);
