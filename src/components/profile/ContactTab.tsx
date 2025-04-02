@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TimeSlot } from "@/types/booking";
+import { TimeSlot, BookingRequest } from "@/types/booking";
 
 const ContactTab: React.FC = () => {
   const { profileData, userType, isCurrentUser } = useProfile();
@@ -29,19 +28,16 @@ const ContactTab: React.FC = () => {
   const [bookingMessage, setBookingMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  // Form fields for contact form
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    // If we're viewing a craftsman profile and we're not the craftsman, load their availability
     if (profileData && profileData.id && userType === 'craftsman' && !isCurrentUser) {
       loadCraftsmanAvailability(profileData.id);
     }
   }, [profileData, userType, isCurrentUser]);
 
-  // Load craftsman's available dates
   const loadCraftsmanAvailability = async (craftsmanId: string) => {
     try {
       const { data, error } = await supabase
@@ -55,7 +51,6 @@ const ContactTab: React.FC = () => {
       }
       
       if (data && data.length > 0) {
-        // Convert dates from string to Date objects
         const dates = data.map(item => new Date(item.date));
         setAvailableDates(dates);
       }
@@ -64,7 +59,6 @@ const ContactTab: React.FC = () => {
     }
   };
 
-  // When a date is selected, load the available time slots for that date
   const handleDateSelect = async (date: Date | undefined) => {
     if (!date || !profileData) return;
     
@@ -88,7 +82,7 @@ const ContactTab: React.FC = () => {
       }
       
       if (data && data.time_slots) {
-        setTimeSlots(data.time_slots.filter(slot => slot.is_available));
+        setTimeSlots(data.time_slots.filter((slot: TimeSlot) => slot.is_available));
       } else {
         setTimeSlots([]);
       }
@@ -103,7 +97,6 @@ const ContactTab: React.FC = () => {
     setEditingHours(false);
   };
   
-  // Function to handle booking request
   const handleBookingRequest = async () => {
     if (!user || !profileData || !selectedDate || !selectedTimeSlot) {
       toast.error("Vyplňte všetky potrebné údaje pre rezerváciu");
@@ -113,7 +106,6 @@ const ContactTab: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Check if a conversation already exists between customer and craftsman
       const { data: existingConv, error: convError } = await supabase
         .from('chat_conversations')
         .select('id')
@@ -123,7 +115,6 @@ const ContactTab: React.FC = () => {
         
       let conversationId = existingConv?.id;
       
-      // If no conversation exists, create one
       if (!conversationId) {
         const { data: newConv, error: createError } = await supabase
           .from('chat_conversations')
@@ -143,7 +134,6 @@ const ContactTab: React.FC = () => {
         conversationId = newConv[0].id;
       }
       
-      // Create booking request
       const dateStr = selectedDate.toISOString().split('T')[0];
       
       const bookingRequest = {
@@ -170,8 +160,7 @@ const ContactTab: React.FC = () => {
         return;
       }
       
-      // Send a message to the conversation about the booking
-      const bookingMessage = `Žiadosť o rezerváciu: ${format(selectedDate, 'EEEE, d. MMMM yyyy', { locale: sk })}, ${selectedTimeSlot.start_time} - ${selectedTimeSlot.end_time}`;
+      const bookingMsg = `Žiadosť o rezerváciu: ${format(selectedDate, 'EEEE, d. MMMM yyyy', { locale: sk })}, ${selectedTimeSlot.start_time} - ${selectedTimeSlot.end_time}`;
       
       const { error: messageError } = await supabase
         .from('chat_messages')
@@ -179,7 +168,7 @@ const ContactTab: React.FC = () => {
           conversation_id: conversationId,
           sender_id: user.id,
           receiver_id: profileData.id,
-          content: bookingMessage,
+          content: bookingMsg,
           read: false
         });
         
@@ -189,7 +178,6 @@ const ContactTab: React.FC = () => {
       
       toast.success("Rezervácia bola úspešne odoslaná");
       
-      // Navigate to messages
       navigate("/messages");
       
     } catch (err) {
@@ -200,11 +188,9 @@ const ContactTab: React.FC = () => {
     }
   };
 
-  // For craftsmen to set their availability
   const handleSetAvailability = async (date: Date | undefined) => {
     if (!date || !user || userType !== 'craftsman') return;
     
-    // Add or remove the date from selected dates
     const dateExists = availableDates.some(d => 
       d.getDate() === date.getDate() && 
       d.getMonth() === date.getMonth() && 
@@ -212,7 +198,6 @@ const ContactTab: React.FC = () => {
     );
     
     if (dateExists) {
-      // Remove date
       const newDates = availableDates.filter(d => 
         !(d.getDate() === date.getDate() && 
           d.getMonth() === date.getMonth() && 
@@ -220,7 +205,6 @@ const ContactTab: React.FC = () => {
       );
       setAvailableDates(newDates);
       
-      // Remove from database
       try {
         const dateStr = date.toISOString().split('T')[0];
         
@@ -238,14 +222,11 @@ const ContactTab: React.FC = () => {
         console.error("Error in handleSetAvailability (remove):", err);
       }
     } else {
-      // Add date
       setAvailableDates([...availableDates, date]);
       
-      // Add to database with default time slots
       try {
         const dateStr = date.toISOString().split('T')[0];
         
-        // Default time slots (9:00 - 17:00, hourly)
         const defaultTimeSlots: TimeSlot[] = [];
         for (let hour = 9; hour < 17; hour++) {
           defaultTimeSlots.push({
@@ -273,7 +254,6 @@ const ContactTab: React.FC = () => {
     }
   };
 
-  // Handle contact form submission
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -285,9 +265,7 @@ const ContactTab: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Create conversation if user is logged in, otherwise just show success
       if (user) {
-        // Check if a conversation already exists
         const { data: existingConv, error: convError } = await supabase
           .from('chat_conversations')
           .select('id')
@@ -297,7 +275,6 @@ const ContactTab: React.FC = () => {
           
         let conversationId = existingConv?.id;
         
-        // If no conversation exists, create one
         if (!conversationId) {
           const { data: newConv, error: createError } = await supabase
             .from('chat_conversations')
@@ -317,7 +294,6 @@ const ContactTab: React.FC = () => {
           conversationId = newConv[0].id;
         }
         
-        // Send the message
         const { error: messageError } = await supabase
           .from('chat_messages')
           .insert({
@@ -337,10 +313,8 @@ const ContactTab: React.FC = () => {
         
         toast.success("Správa bola úspešne odoslaná");
         
-        // Navigate to messages
         navigate("/messages");
       } else {
-        // If not logged in, just show success and reset form
         toast.success("Správa bola úspešne odoslaná");
         setName("");
         setEmail("");
@@ -356,9 +330,7 @@ const ContactTab: React.FC = () => {
 
   if (!profileData) return null;
 
-  // Calendar components with proper configurations
   const renderCalendar = () => {
-    // For customers viewing craftsman profiles
     if (userType === 'craftsman' && !isCurrentUser) {
       return (
         <div className="mt-6">
@@ -369,13 +341,11 @@ const ContactTab: React.FC = () => {
               selected={selectedDate}
               onSelect={handleDateSelect}
               disabled={date => {
-                // Disable dates that are not in craftsman's availability or are in the past
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 
                 if (date < today) return true;
                 
-                // Check if date is in available dates
                 return !availableDates.some(d => 
                   d.getDate() === date.getDate() && 
                   d.getMonth() === date.getMonth() && 
@@ -436,7 +406,6 @@ const ContactTab: React.FC = () => {
       );
     }
     
-    // For craftsmen setting their availability
     if (userType === 'craftsman' && isCurrentUser) {
       return (
         <div className="mt-6 pt-6 border-t border-gray-200">
@@ -464,7 +433,6 @@ const ContactTab: React.FC = () => {
                   selected: "bg-primary text-primary-foreground"
                 }}
                 disabled={date => {
-                  // Disable dates in the past
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
                   return date < today;
@@ -491,7 +459,6 @@ const ContactTab: React.FC = () => {
       );
     }
     
-    // Return null if none of the conditions match
     return null;
   };
 

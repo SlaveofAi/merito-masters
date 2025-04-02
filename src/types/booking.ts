@@ -23,7 +23,7 @@ export type BookingRequest = {
   start_time: string; // Format: "HH:MM"
   end_time: string; // Format: "HH:MM"
   status: 'pending' | 'confirmed' | 'declined' | 'completed' | 'cancelled';
-  message: string;
+  message: string | null;
   created_at: string;
   updated_at: string;
   conversation_id: string;

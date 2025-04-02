@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ import { format } from "date-fns";
 import { sk } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message } from "@/types/chat";
+import { BookingRequest } from "@/types/booking";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,7 +78,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
-  const [bookingRequests, setBookingRequests] = useState<any[]>([]);
+  const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([]);
   const [showBookingsDialog, setShowBookingsDialog] = useState(false);
   
   useEffect(() => {
@@ -111,7 +111,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       }
       
       if (data) {
-        setBookingRequests(data);
+        setBookingRequests(data as BookingRequest[]);
       }
     } catch (err) {
       console.error("Error in fetchBookingRequests:", err);
