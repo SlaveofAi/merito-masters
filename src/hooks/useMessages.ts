@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,6 +58,9 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
             
             // Refresh contact list to update unread count
             refetchContacts();
+            
+            // Also invalidate the chat-contacts query to ensure the UI updates
+            queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
           } catch (updateError) {
             console.error("Error marking messages as read:", updateError);
           }

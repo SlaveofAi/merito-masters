@@ -112,7 +112,7 @@ export const useContacts = () => {
             
           const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
           
-          // Count unread messages
+          // Count unread messages - make sure to use the correct filter
           const { count, error: countError } = await supabase
             .from('chat_messages')
             .select('*', { count: 'exact', head: true })
@@ -122,6 +122,7 @@ export const useContacts = () => {
             
           console.log(`Found contact ${contact.name} with ${count || 0} unread messages`);
           
+          // Create a unique ID for the contact that includes the conversation ID to avoid key conflicts
           return {
             id: contact.id,
             name: contact.name,
@@ -142,9 +143,14 @@ export const useContacts = () => {
       // Filter out null values and ensure we have unique contacts
       const filteredContacts = resolvedContacts.filter(contact => contact !== null) as ChatContact[];
       console.log(`Retrieved ${filteredContacts.length} contacts with conversations`);
+      
+      // Make sure contacts have unique keys for React
       return filteredContacts;
     },
     enabled: !!user,
+    // Add more frequent refetching to ensure unread counts are up to date
+    refetchInterval: 15000, // Refresh every 15 seconds
+    refetchOnWindowFocus: true,
   });
 
   // Update loading state

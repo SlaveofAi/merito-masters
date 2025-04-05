@@ -49,11 +49,17 @@ export const useChatSubscription = (
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
-        table: 'chat_messages'
+        table: 'chat_messages',
+        filter: `receiver_id=eq.${user.id}`
       }, (payload) => {
         // If messages are marked as read, update the contact list to reflect new unread counts
         console.log("Message status changed:", payload);
-        refetchContacts();
+        
+        // If this is a message being marked as read, update the contacts list
+        if (payload.old.read === false && payload.new.read === true) {
+          console.log("Message marked as read, updating contacts list");
+          refetchContacts();
+        }
       })
       .subscribe((status) => {
         console.log("Realtime subscription status:", status);

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
 import { useContacts } from "@/hooks/useContacts";
@@ -23,6 +23,15 @@ const Chat: React.FC = () => {
   
   const handleContactSelect = (contact: ChatContact) => {
     setSelectedContact(contact);
+    
+    // If the contact has unread messages, we'll mark them as read in the useMessages hook
+    // but we should also refresh the contacts list in case there was already a selection
+    if (contact.unread_count && contact.unread_count > 0) {
+      // Allow a small delay for the messages to be marked as read first
+      setTimeout(() => {
+        refetchContacts();
+      }, 300);
+    }
   };
   
   return (
