@@ -1,6 +1,7 @@
+
 import React, { useRef } from 'react';
 import { useProfile } from "@/contexts/ProfileContext";
-import ImageUploader from './ImageUploader';
+import { ImageUploader } from './ImageUploader';
 import SpecializationInput from './SpecializationInput';
 import { Pencil, Share2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,6 @@ const ProfileHeader: React.FC = () => {
     isCurrentUser, 
     profileImageUrl,
     customSpecialization,
-    updating,
     handleProfileImageUpload,
     updateCustomSpecialization 
   } = useProfile();
