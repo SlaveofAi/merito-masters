@@ -43,25 +43,33 @@ export const useChatSubscription = (
           refetchMessages();
         }
         
-        // Always refresh contact list for new messages
+        // Always refresh contact list for new messages - do multiple refreshes
+        // to ensure the UI updates correctly with the latest badge counts
         refetchContacts();
         
         // Force invalidate the contacts query to update unread count
         queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+        
+        // Multiple refreshes to ensure UI updates
+        [200, 500, 1000].forEach(delay => {
+          setTimeout(() => {
+            refetchContacts();
+            queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+          }, delay);
+        });
       })
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'chat_messages',
-        filter: `receiver_id=eq.${user.id}`
       }, (payload) => {
-        // If messages are marked as read, update the contact list to reflect new unread counts
+        // Handle all message updates - especially read status changes
         console.log("Message status changed:", payload);
         
         // If this is a message being marked as read, update the contacts list
         if (payload.old.read === false && payload.new.read === true) {
           console.log("Message marked as read via realtime, updating contacts list");
-          // Force refresh for read status changes
+          // Force refresh for read status changes - multiple times to ensure it propagates
           refetchContacts();
           
           // Invalidate cache for both messages and contacts
@@ -76,13 +84,20 @@ export const useChatSubscription = (
               return oldData.map((contact: ChatContact) => {
                 if (contact.conversation_id === payload.new.conversation_id) {
                   // Set or decrement unread count
-                  const currentCount = contact.unread_count || 0;
-                  return { ...contact, unread_count: Math.max(0, currentCount - 1) };
+                  return { ...contact, unread_count: 0 };
                 }
                 return contact;
               });
             });
           }
+          
+          // Multiple refreshes to ensure UI updates
+          [200, 500, 1000, 2000].forEach(delay => {
+            setTimeout(() => {
+              refetchContacts();
+              queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+            }, delay);
+          });
         }
       })
       .subscribe((status) => {
