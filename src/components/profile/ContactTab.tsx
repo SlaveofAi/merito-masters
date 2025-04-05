@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Upload, Euro, Clock } from "lucide-react";
+import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Upload, Euro, Clock, FileText, Image, X } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -31,6 +30,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 const ContactTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
@@ -43,7 +43,8 @@ const ContactTab: React.FC = () => {
   const [hasShownFirstAvailableMonth, setHasShownFirstAvailableMonth] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  
+  const navigate = useNavigate();
+
   const isCraftsmanProfile = profileData && 'trade_category' in profileData;
 
   useEffect(() => {
@@ -82,7 +83,6 @@ const ContactTab: React.FC = () => {
         console.log("Found available dates:", parsedDates);
         setAvailableDates(parsedDates);
         
-        // Set the calendar to show the first available month
         if (!hasShownFirstAvailableMonth && !isCurrentUser && userType === 'customer') {
           const sortedDates = [...parsedDates].sort((a, b) => a.getTime() - b.getTime());
           if (sortedDates.length > 0) {
@@ -220,8 +220,29 @@ const ContactTab: React.FC = () => {
       
       try {
         let conversationId: string | null = null;
+        let imageUrl: string | null = null;
         
-        // Check for existing conversation
+        if (selectedImage) {
+          const filePath = `booking-images/${user.id}/${Date.now()}_${selectedImage.name}`;
+          const { data: uploadResult, error: uploadError } = await supabase
+            .storage
+            .from('booking-images')
+            .upload(filePath, selectedImage);
+            
+          if (uploadError) {
+            console.error("Error uploading image:", uploadError);
+            toast.error("Nastala chyba pri nahrávaní obrázka");
+            return;
+          } else {
+            const { data: urlData } = supabase
+              .storage
+              .from('booking-images')
+              .getPublicUrl(filePath);
+              
+            imageUrl = urlData.publicUrl;
+          }
+        }
+        
         const { data: existingConversation, error: convFetchError } = await supabase
           .from('chat_conversations')
           .select('id')
@@ -237,7 +258,6 @@ const ContactTab: React.FC = () => {
           conversationId = existingConversation.id;
           console.log("Found existing conversation:", conversationId);
         } else {
-          // Create new conversation
           const { data: newConversation, error: createConvError } = await supabase
             .from('chat_conversations')
             .insert({
@@ -258,7 +278,6 @@ const ContactTab: React.FC = () => {
           throw new Error("Nepodarilo sa vytvoriť konverzáciu");
         }
         
-        // Create booking request with conversation_id
         const bookingData = {
           conversation_id: conversationId,
           craftsman_id: profileData.id,
@@ -268,6 +287,8 @@ const ContactTab: React.FC = () => {
           start_time: values.time,
           end_time: "18:00",
           message: values.message,
+          amount: values.amount,
+          image_url: imageUrl,
           status: "pending"
         };
         
@@ -278,14 +299,13 @@ const ContactTab: React.FC = () => {
           
         if (error) throw error;
         
-        // Create a structured booking request message for chat
         const bookingMessage = `🗓️ **Požiadavka na termín**
 Dátum: ${values.date}
 Čas: ${values.time}
 ${values.message ? `Správa: ${values.message}` : ''}
-${values.amount ? `Suma: ${values.amount}€` : ''}`;
+${values.amount ? `Suma: ${values.amount}€` : ''}
+${imageUrl ? `Fotky: Priložená fotografia` : ''}`;
 
-        // Send message to chat
         const { data: messageData, error: messageError } = await supabase
           .from('chat_messages')
           .insert({
@@ -301,7 +321,8 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
                 date: values.date,
                 time: values.time,
                 message: values.message,
-                amount: values.amount
+                amount: values.amount,
+                image_url: imageUrl
               }
             }
           });
@@ -315,13 +336,14 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
         setSelectedDate(null);
         setSelectedImage(null);
         setImagePreview(null);
+        
+        navigate('/messages');
       } catch (error: any) {
         console.error("Error sending booking request:", error);
         toast.error("Nastala chyba pri odosielaní požiadavky");
       }
     };
 
-    // Generate time options (hourly slots from 8:00 to 18:00)
     const timeOptions = Array.from({ length: 11 }, (_, i) => {
       const hour = i + 8;
       return `${hour.toString().padStart(2, '0')}:00`;
@@ -464,14 +486,14 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
                   <img 
                     src={imagePreview} 
                     alt="Preview" 
-                    className="h-10 w-auto rounded-md" 
+                    className="h-16 w-auto rounded-md object-cover" 
                   />
                   <button
                     type="button"
                     onClick={handleImageRemove}
                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 w-5 h-5 flex items-center justify-center text-xs"
                   >
-                    &times;
+                    <X className="h-3 w-3" />
                   </button>
                 </div>
               )}

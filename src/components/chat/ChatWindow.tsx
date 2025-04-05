@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,8 @@ import {
   Calendar,
   Clock,
   Euro,
-  Image
+  Image,
+  FileText
 } from "lucide-react";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
@@ -290,12 +292,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const isPending = bookingDetails.status === 'pending';
     const formattedDate = formatDateString(bookingDetails.date);
     
-    // Check if this booking ID has been processed
-    const isProcessed = async () => {
-      const bookingId = await getBookingId(message);
-      return bookingId ? processedBookings.includes(bookingId) : false;
-    };
-    
     return (
       <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`} key={message.id}>
         <div className={`max-w-[85%] bg-white border rounded-lg shadow-sm overflow-hidden`}>
@@ -333,30 +329,32 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               </div>
             )}
             
+            {bookingDetails.message && (
+              <div className="flex space-x-2 items-start">
+                <FileText className="h-4 w-4 text-gray-500 mt-0.5" />
+                <span className="text-sm">{bookingDetails.message}</span>
+              </div>
+            )}
+            
             {bookingDetails.photos && (
               <div className="flex space-x-2 items-center">
                 <Image className="h-4 w-4 text-gray-500" />
                 <span className="text-sm">{bookingDetails.photos}</span>
               </div>
             )}
-            
-            {bookingDetails.message && (
-              <div className="mt-2 border-t pt-2">
-                <p className="text-sm">{bookingDetails.message}</p>
-              </div>
-            )}
           </div>
           
-          {isPending && userType === 'craftsman' && !isOwnMessage && (
+          {isPending && userType === 'craftsman' && !isOwnMessage && !processedBookings.includes(message.id) && (
             <div className="p-3 bg-gray-50 border-t flex justify-end space-x-2">
               <Button 
                 variant="destructive" 
                 size="sm" 
                 onClick={async () => {
                   const bookingId = await getBookingId(message);
-                  if (bookingId) handleBookingAction(bookingId, 'reject');
+                  if (bookingId) {
+                    handleBookingAction(bookingId, 'reject');
+                  }
                 }}
-                disabled={processedBookings.includes(message.id)}
               >
                 <X className="h-4 w-4 mr-1" /> Zamietnuť
               </Button>
@@ -365,12 +363,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 size="sm" 
                 onClick={async () => {
                   const bookingId = await getBookingId(message);
-                  if (bookingId) handleBookingAction(bookingId, 'accept');
+                  if (bookingId) {
+                    handleBookingAction(bookingId, 'accept');
+                  }
                 }}
-                disabled={processedBookings.includes(message.id)}
               >
                 <Check className="h-4 w-4 mr-1" /> Akceptovať
               </Button>
+            </div>
+          )}
+          
+          {isPending && userType === 'craftsman' && !isOwnMessage && processedBookings.includes(message.id) && (
+            <div className="p-3 bg-gray-50 border-t">
+              <p className="text-sm text-gray-500 text-center">Táto požiadavka už bola spracovaná</p>
             </div>
           )}
           

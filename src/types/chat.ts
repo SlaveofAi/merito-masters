@@ -19,6 +19,20 @@ export interface Message {
   content: string;
   created_at: string;
   read: boolean;
+  metadata?: MessageMetadata;
+}
+
+export interface MessageMetadata {
+  type?: string;
+  booking_id?: string;
+  status?: string;
+  details?: {
+    date?: string;
+    time?: string;
+    message?: string;
+    amount?: string;
+    image_url?: string;
+  };
 }
 
 // Interface for chat_conversations table
@@ -43,4 +57,5 @@ export interface ChatMessage {
   content: string;
   created_at: string;
   read: boolean;
+  metadata?: MessageMetadata;
 }

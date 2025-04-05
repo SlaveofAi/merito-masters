@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Messages = () => {
   const { user, loading } = useAuth();
@@ -23,6 +24,43 @@ const Messages = () => {
       }
     }
   }, [user, loading, navigate]);
+  
+  useEffect(() => {
+    // Create "booking-images" storage bucket if it doesn't exist
+    const createBucketIfNeeded = async () => {
+      try {
+        // Check if the bucket exists by listing buckets
+        const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+        
+        if (bucketError) {
+          console.error("Error checking buckets:", bucketError);
+          return;
+        }
+        
+        // Check if booking-images bucket already exists
+        const bucketExists = buckets?.some(bucket => bucket.name === 'booking-images');
+        
+        if (!bucketExists) {
+          // Create the bucket
+          const { error } = await supabase.storage.createBucket('booking-images', {
+            public: true
+          });
+          
+          if (error) {
+            console.error("Error creating booking-images bucket:", error);
+          } else {
+            console.log("booking-images bucket created successfully");
+          }
+        }
+      } catch (error) {
+        console.error("Error in bucket creation:", error);
+      }
+    };
+    
+    if (user) {
+      createBucketIfNeeded();
+    }
+  }, [user]);
 
   if (loading || isCheckingAuth) {
     return (

@@ -1,9 +1,8 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ChatContact } from "@/types/chat";
+import { ChatContact, Message, MessageMetadata } from "@/types/chat";
 import { useNavigate } from "react-router-dom";
 
 export const useChatActions = (
@@ -19,11 +18,13 @@ export const useChatActions = (
     mutationFn: async ({ 
       content, 
       contactId, 
-      conversationId 
+      conversationId,
+      metadata
     }: { 
       content: string; 
       contactId: string;
       conversationId?: string;
+      metadata?: MessageMetadata;
     }) => {
       if (!user || !contactId || !content.trim()) {
         console.error("Missing required data for sending message", { user, contactId, content });
@@ -54,7 +55,7 @@ export const useChatActions = (
           
           const { data: existingConv, error: fetchError } = await supabase
             .from('chat_conversations')
-            .select('*')
+            .select('id')
             .eq('customer_id', userType === 'customer' ? user.id : contactId)
             .eq('craftsman_id', userType === 'craftsman' ? user.id : contactId)
             .maybeSingle();
@@ -79,6 +80,7 @@ export const useChatActions = (
         sender_id: user.id,
         receiver_id: contactId,
         content: content,
+        metadata: metadata || null
       };
 
       console.log("Sending message:", newMessage);
@@ -133,7 +135,7 @@ export const useChatActions = (
     }
   });
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string, metadata?: MessageMetadata) => {
     if (!selectedContact || !content.trim() || !user) {
       console.error("Cannot send message - missing data", { selectedContact, content, user });
       return;
@@ -144,7 +146,8 @@ export const useChatActions = (
     sendMessageMutation.mutate({
       content,
       contactId: selectedContact.id,
-      conversationId: selectedContact.conversation_id
+      conversationId: selectedContact.conversation_id,
+      metadata
     });
   };
 
@@ -208,33 +211,29 @@ export const useChatActions = (
     }
   });
 
-  const archiveConversation = async () => {
-    if (!selectedContact?.conversation_id || !user) {
-      console.error("Cannot archive - missing data", { selectedContact, user });
-      return;
-    }
-    
-    updateConversationMutation.mutate({
-      conversationId: selectedContact.conversation_id,
-      action: 'archive'
-    });
-  };
-
-  const deleteConversation = async () => {
-    if (!selectedContact?.conversation_id || !user) {
-      console.error("Cannot delete - missing data", { selectedContact, user });
-      return;
-    }
-    
-    updateConversationMutation.mutate({
-      conversationId: selectedContact.conversation_id,
-      action: 'delete'
-    });
-  };
-
   return {
     sendMessage,
-    archiveConversation,
-    deleteConversation
+    archiveConversation: async () => {
+      if (!selectedContact?.conversation_id || !user) {
+        console.error("Cannot archive - missing data", { selectedContact, user });
+        return;
+      }
+      
+      updateConversationMutation.mutate({
+        conversationId: selectedContact.conversation_id,
+        action: 'archive'
+      });
+    },
+    deleteConversation: async () => {
+      if (!selectedContact?.conversation_id || !user) {
+        console.error("Cannot delete - missing data", { selectedContact, user });
+        return;
+      }
+      
+      updateConversationMutation.mutate({
+        conversationId: selectedContact.conversation_id,
+        action: 'delete'
+      });
+    }
   };
 };
