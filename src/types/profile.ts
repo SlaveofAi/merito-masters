@@ -31,7 +31,9 @@ export type CustomerProfile = {
   profile_image_url: string | null;
 };
 
-export type ProfileData = CraftsmanProfile | CustomerProfile;
+export type ProfileData = (CraftsmanProfile | CustomerProfile) & {
+  user_type?: string;
+};
 
 export type PortfolioImage = {
   id: string;

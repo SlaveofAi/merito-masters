@@ -42,6 +42,7 @@ export const useProfileReviews = (id?: string) => {
         return reviewsData as CraftsmanReview[];
       }
       
+      // Fetch replies from craftsman_review_replies table
       const { data: repliesData, error: repliesError } = await supabase
         .from('craftsman_review_replies')
         .select('*')
@@ -58,7 +59,7 @@ export const useProfileReviews = (id?: string) => {
         const reply = repliesData?.find(r => r.review_id === review.id);
         return {
           ...review,
-          reply: reply?.reply || null
+          reply: reply ? reply.reply : null
         };
       });
       
@@ -80,6 +81,7 @@ export const useProfileReviews = (id?: string) => {
     queryKey: ['reviews', userId],
     queryFn: () => fetchReviews(userId || ''),
     enabled: !!userId,
+    gcTime: 0, // Use gcTime instead of cacheTime to ensure fresh data
   });
 
   return {

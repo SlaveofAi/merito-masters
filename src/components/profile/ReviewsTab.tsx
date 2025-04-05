@@ -27,13 +27,14 @@ const ReviewsTab: React.FC = () => {
   const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
   const [showReplyForm, setShowReplyForm] = useState<{ [key: string]: boolean }>({});
 
+  // Check if the current profile belongs to the logged-in user
+  const isCurrentUser = profileData?.id === user?.id;
+  
   // Only customers can leave reviews for craftsmen
-  const canLeaveReview = user && userType === 'customer' && profileData?.user_type === 'craftsman';
+  const canLeaveReview = user && userType === 'customer' && profileData?.user_type === 'craftsman' && !isCurrentUser;
   
   // Only craftsmen can reply to their own reviews
   const canReplyToReview = user && userType === 'craftsman' && isCurrentUser;
-  
-  const isCurrentUser = profileData?.id === user?.id;
 
   // Handle reply submission
   const handleSubmitReply = async (reviewId: string) => {

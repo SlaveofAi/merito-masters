@@ -158,6 +158,7 @@ export type Database = {
       craftsman_profiles: {
         Row: {
           created_at: string
+          custom_specialization: string | null
           description: string | null
           email: string
           id: string
@@ -171,6 +172,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custom_specialization?: string | null
           description?: string | null
           email: string
           id: string
@@ -184,6 +186,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custom_specialization?: string | null
           description?: string | null
           email?: string
           id?: string
@@ -196,6 +199,38 @@ export type Database = {
           years_experience?: number | null
         }
         Relationships: []
+      }
+      craftsman_review_replies: {
+        Row: {
+          craftsman_id: string
+          created_at: string | null
+          id: string
+          reply: string
+          review_id: string
+        }
+        Insert: {
+          craftsman_id: string
+          created_at?: string | null
+          id?: string
+          reply: string
+          review_id: string
+        }
+        Update: {
+          craftsman_id?: string
+          created_at?: string | null
+          id?: string
+          reply?: string
+          review_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "craftsman_review_replies_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: true
+            referencedRelation: "craftsman_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       craftsman_reviews: {
         Row: {
