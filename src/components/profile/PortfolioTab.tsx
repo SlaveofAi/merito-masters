@@ -1,13 +1,15 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Image, UploadCloud, Plus, Edit, Trash2, X, MessageSquare } from "lucide-react";
+import { Image, UploadCloud, Plus, Wrench } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import ProjectCard, { Project } from "./ProjectCard";
 import ProjectForm from "./ProjectForm";
+import ProjectDetail from "./ProjectDetail";
 import { uploadPortfolioImages } from "@/utils/imageUpload";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import CraftsmanSpecialization from "./CraftsmanSpecialization";
 
 const PortfolioTab: React.FC = () => {
   const {
@@ -15,8 +17,6 @@ const PortfolioTab: React.FC = () => {
     isCurrentUser,
     portfolioImages,
     profileData,
-    activeImageIndex,
-    handleImageClick,
     handlePortfolioImageUpload,
     uploading,
     fetchPortfolioImages
@@ -26,7 +26,6 @@ const PortfolioTab: React.FC = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [loadingProjects, setLoadingProjects] = useState(false);
   const [deletingImage, setDeletingImage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,6 +46,7 @@ const PortfolioTab: React.FC = () => {
           title: title,
           description: images[0].description || "Ukážka mojej práce",
           created_at: images[0].created_at,
+          projectType: "craftsman" in profileData ? profileData.trade_category : undefined,
           images: images.map(img => ({
             id: img.id,
             image_url: img.image_url
@@ -157,6 +157,22 @@ const PortfolioTab: React.FC = () => {
     }
   };
 
+  const navigateToNextProject = () => {
+    if (projects.length <= 1) return;
+    
+    const currentIndex = projects.findIndex(p => p.id === selectedProjectId);
+    const nextIndex = (currentIndex + 1) % projects.length;
+    setSelectedProjectId(projects[nextIndex].id);
+  };
+  
+  const navigateToPreviousProject = () => {
+    if (projects.length <= 1) return;
+    
+    const currentIndex = projects.findIndex(p => p.id === selectedProjectId);
+    const prevIndex = (currentIndex - 1 + projects.length) % projects.length;
+    setSelectedProjectId(projects[prevIndex].id);
+  };
+
   if (userType !== 'craftsman') {
     return (
       <div className="text-center p-8">
@@ -232,61 +248,19 @@ const PortfolioTab: React.FC = () => {
         )}
       </div>
       
-      <div className="md:col-span-8 bg-white rounded-lg overflow-hidden border border-border/50 shadow-sm">
+      <div className="md:col-span-8">
         {selectedProject && selectedProject.images.length > 0 ? (
-          <div>
-            <div className="aspect-video w-full relative">
-              <Carousel>
-                <CarouselContent>
-                  {selectedProject.images.map((image, index) => (
-                    <CarouselItem key={index}>
-                      <div className="w-full aspect-video relative">
-                        <img
-                          src={image.image_url}
-                          alt={`Project image ${index + 1}`}
-                          className="w-full h-full object-contain"
-                        />
-                        {isCurrentUser && (
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 opacity-70 hover:opacity-100"
-                            onClick={() => handleDeleteImage(image.id)}
-                            disabled={deletingImage === image.id}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="left-2" />
-                <CarouselNext className="right-2" />
-              </Carousel>
-            </div>
-            
-            <div className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">{selectedProject.title}</h3>
-                  <p className="text-gray-600">{selectedProject.description}</p>
-                </div>
-                {isCurrentUser && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleEditProject(selectedProject)}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Upraviť
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+          <ProjectDetail
+            project={selectedProject}
+            onEdit={isCurrentUser ? () => handleEditProject(selectedProject) : undefined}
+            onDelete={isCurrentUser ? handleDeleteImage : undefined}
+            isCurrentUser={isCurrentUser}
+            nextProject={navigateToNextProject}
+            previousProject={navigateToPreviousProject}
+            deletingImage={deletingImage}
+          />
         ) : (
-          <div className="w-full aspect-video flex flex-col items-center justify-center bg-gray-100">
+          <div className="w-full aspect-video flex flex-col items-center justify-center bg-gray-100 rounded-lg">
             <Image className="w-16 h-16 text-gray-300 mb-4" />
             <p className="text-gray-500 mb-2">Žiadne ukážky predchádzajúcich projektov</p>
             {isCurrentUser && (
@@ -298,14 +272,23 @@ const PortfolioTab: React.FC = () => {
           </div>
         )}
         
-        {userType === 'craftsman' && 'trade_category' in profileData && (
-          <div className="p-6 border-t border-border/50">
-            <h3 className="text-xl font-semibold mb-4">Fotogaléria prác</h3>
+        {userType === 'craftsman' && 'trade_category' in profileData && profileData.trade_category && (
+          <div className="mt-8 p-6 bg-white rounded-lg border border-border/50 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold">Fotogaléria prác</h3>
+              {'trade_category' in profileData && (
+                <div className="flex items-center">
+                  <Wrench className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <span className="text-sm font-medium">{profileData.trade_category}</span>
+                </div>
+              )}
+            </div>
+            
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {portfolioImages.map((image) => (
                 <div 
                   key={image.id} 
-                  className="aspect-square rounded-md overflow-hidden border border-border/50 relative group"
+                  className="aspect-square rounded-md overflow-hidden border border-border/50 relative group shadow-sm hover:shadow-md transition-all"
                 >
                   <img 
                     src={image.image_url} 

@@ -1,203 +1,135 @@
-
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { User, UploadCloud, MapPin, Phone, MessageSquare, Star } from "lucide-react";
-import EditProfileForm from "@/components/EditProfileForm";
+import React, { useRef } from 'react';
 import { useProfile } from "@/contexts/ProfileContext";
-import { useNavigate } from "react-router-dom";
-import ImageCropper from "./ImageCropper";
-import { getCroppedImg } from "@/utils/imageCrop";
+import ImageUploader from './ImageUploader';
+import SpecializationInput from './SpecializationInput';
+import { Pencil, Share2 } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { useQRCode } from '@/hooks/useQRCode';
+import CraftsmanSpecialization from './CraftsmanSpecialization';
 
 const ProfileHeader: React.FC = () => {
-  const {
-    profileData,
-    userType,
-    isCurrentUser,
-    isEditing,
-    setIsEditing,
+  const { 
+    profileData, 
+    userType, 
+    isCurrentUser, 
     profileImageUrl,
+    customSpecialization,
+    updating,
     handleProfileImageUpload,
-    uploading,
-    handleProfileUpdate,
-    reviews
+    updateCustomSpecialization 
   } = useProfile();
 
-  const navigate = useNavigate();
-  const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
-  const [cropperVisible, setCropperVisible] = useState(false);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const qrCodeRef = useRef<HTMLDivElement>(null);
+  const { generateQRCode, showQRCode, setShowQRCode } = useQRCode();
 
   if (!profileData) return null;
 
-  // Calculate average rating from reviews
-  const calculateAverageRating = () => {
-    if (!reviews || reviews.length === 0) return 0;
-    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
-    return (total / reviews.length).toFixed(1);
-  };
-
-  const averageRating = calculateAverageRating();
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        setTempImageSrc(reader.result as string);
-        setCropperVisible(true);
-      });
-      reader.readAsDataURL(file);
+  const handleShareProfile = () => {
+    if (typeof window !== 'undefined') {
+      const currentUrl = window.location.href;
+      generateQRCode(currentUrl);
     }
   };
 
-  const handleCropComplete = (croppedArea: any) => {
-    setCroppedAreaPixels(croppedArea);
+  const getInitials = () => {
+    if (!profileData.name) return '?';
+    return profileData.name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
-  const handleCropCancel = () => {
-    setTempImageSrc(null);
-    setCropperVisible(false);
-  };
-
-  const handleCropConfirm = async () => {
-    try {
-      if (tempImageSrc && croppedAreaPixels) {
-        const croppedImage = await getCroppedImg(tempImageSrc, croppedAreaPixels);
-        if (croppedImage) {
-          handleProfileImageUpload(croppedImage);
-          setCropperVisible(false);
-          setTempImageSrc(null);
-        }
-      }
-    } catch (error) {
-      console.error('Error cropping image:', error);
-    }
-  };
-
-  const navigateToMessages = () => {
-    navigate("/messages");
-  };
-
+  const isCraftsman = userType === 'craftsman';
+  
   return (
-    <div className="bg-white border-b border-border/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-        <div className="flex flex-col md:flex-row gap-8">
-          <div className="w-full md:w-1/3">
-            <div className="relative w-48 h-48 mx-auto md:mx-0 rounded-full overflow-hidden border-4 border-white shadow-md bg-gray-100">
-              {profileImageUrl ? (
-                <img
-                  src={profileImageUrl}
-                  alt={profileData.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <User className="w-24 h-24 text-gray-300" />
-                </div>
-              )}
+    <div className="relative bg-white rounded-lg p-6 shadow-sm border border-border/50 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center gap-6">
+        <div className="relative">
+          <Avatar className="h-24 w-24">
+            <AvatarImage src={profileImageUrl || undefined} alt={profileData.name || 'Profile'} />
+            <AvatarFallback className="text-2xl bg-primary/10">{getInitials()}</AvatarFallback>
+          </Avatar>
+          
+          {isCurrentUser && (
+            <ImageUploader handleImageUpload={handleProfileImageUpload}>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-background border border-input"
+              >
+                <Pencil className="h-3 w-3" />
+              </Button>
+            </ImageUploader>
+          )}
+        </div>
+        
+        <div className="flex-1">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+            <div>
+              <h1 className="text-2xl font-bold">{profileData.name || 'Používateľ'}</h1>
               
-              {isCurrentUser && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
-                  <label htmlFor="profile-image-upload" className="cursor-pointer flex flex-col items-center justify-center text-white">
-                    <UploadCloud className="w-8 h-8 mb-2" />
-                    <span className="text-sm">Nahrať fotku</span>
-                    <input
-                      id="profile-image-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageSelect}
-                      disabled={uploading}
-                    />
-                  </label>
-                </div>
+              {isCraftsman && 'trade_category' in profileData && (
+                <CraftsmanSpecialization 
+                  tradeCategory={profileData.trade_category}
+                  customSpecialization={customSpecialization || profileData.custom_specialization}
+                  yearsExperience={profileData.years_experience}
+                />
               )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Badge variant={isCraftsman ? "default" : "outline"} className={isCraftsman ? "bg-primary" : ""}>
+                {isCraftsman ? 'Remeselník' : 'Zákazník'}
+              </Badge>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleShareProfile} 
+                className="flex items-center gap-1"
+              >
+                <Share2 className="h-4 w-4" />
+                Zdieľať
+              </Button>
             </div>
           </div>
           
-          <div className="w-full md:w-2/3 text-center md:text-left">
-            {isCurrentUser && !isEditing && (
-              <Button 
-                variant="outline" 
-                className="mb-4"
-                onClick={() => setIsEditing(true)}
-              >
-                Upraviť profil
-              </Button>
-            )}
-            
-            {isEditing && profileData ? (
-              <div className="mb-6">
-                <EditProfileForm 
-                  profile={profileData} 
-                  userType={userType}
-                  onUpdate={handleProfileUpdate} 
-                />
-                <Button 
-                  variant="outline" 
-                  className="mt-2"
-                  onClick={() => setIsEditing(false)}
-                >
-                  Zrušiť
-                </Button>
-              </div>
-            ) : (
-              <>
-                <h1 className="text-3xl md:text-4xl font-bold mb-1">
-                  {profileData.name}
-                </h1>
-                
-                {userType === 'craftsman' && 'trade_category' in profileData && (
-                  <div className="mb-3 font-medium text-lg">
-                    {profileData.trade_category}
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-center md:justify-start mb-4">
-                  {userType === 'craftsman' && (
-                    <div className="flex items-center mr-4">
-                      <Star className={`w-5 h-5 ${Number(averageRating) > 0 ? 'fill-current text-yellow-500' : ''} mr-1`} />
-                      <span className="font-semibold">{averageRating}</span>
-                      <span className="text-muted-foreground ml-1">
-                        ({reviews ? reviews.length : 0} hodnotení)
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-1 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      {profileData.location}
-                    </span>
-                  </div>
-                </div>
-                {'description' in profileData && userType === 'craftsman' && profileData.description && (
-                  <p className="text-muted-foreground mb-6 max-w-2xl mx-auto md:mx-0">
-                    {profileData.description}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                  <Button className="flex items-center">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Kontaktovať
-                  </Button>
-                  <Button variant="outline" onClick={navigateToMessages}>
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Správa
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
+          {isCraftsman && isCurrentUser && 'custom_specialization' in profileData && (
+            <div className="mt-3">
+              <label className="text-sm font-medium mb-1 block">Vlastná špecializácia:</label>
+              <SpecializationInput 
+                value={customSpecialization || profileData.custom_specialization || ''}
+                onSave={updateCustomSpecialization}
+                isLoading={updating}
+              />
+            </div>
+          )}
+          
+          {profileData.location && (
+            <div className="mt-2 text-sm text-muted-foreground">
+              {profileData.location}
+            </div>
+          )}
         </div>
       </div>
-
-      {cropperVisible && tempImageSrc && (
-        <ImageCropper
-          imageSrc={tempImageSrc}
-          onCropComplete={handleCropComplete}
-          onCancel={handleCropCancel}
-          onConfirm={handleCropConfirm}
-        />
+      
+      {showQRCode && (
+        <div 
+          ref={qrCodeRef} 
+          className="absolute top-full right-0 mt-2 p-4 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+        >
+          <div className="flex flex-col items-center">
+            <div id="qrcode" className="mb-2"></div>
+            <p className="text-sm text-center">Naskenujte kód pre zdieľanie profilu</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2" 
+              onClick={() => setShowQRCode(false)}
+            >
+              Zavrieť
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
