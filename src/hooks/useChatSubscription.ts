@@ -14,7 +14,7 @@ export const useChatSubscription = (
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Subscribe to new messages via Supabase realtime
+  // Subscribe to new messages and message status changes via Supabase realtime
   useEffect(() => {
     if (!user) return;
     
@@ -43,7 +43,7 @@ export const useChatSubscription = (
           refetchMessages();
         }
         
-        // Refresh contact list
+        // Always refresh contact list for new messages
         refetchContacts();
       })
       .on('postgres_changes', {
@@ -57,8 +57,13 @@ export const useChatSubscription = (
         
         // If this is a message being marked as read, update the contacts list
         if (payload.old.read === false && payload.new.read === true) {
-          console.log("Message marked as read, updating contacts list");
+          console.log("Message marked as read via realtime, updating contacts list");
+          // Force refresh for read status changes
           refetchContacts();
+          
+          // Invalidate cache for both messages and contacts
+          queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+          queryClient.invalidateQueries({ queryKey: ['chat-messages'] });
         }
       })
       .subscribe((status) => {

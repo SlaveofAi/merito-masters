@@ -21,17 +21,25 @@ const Chat: React.FC = () => {
   // Set up real-time updates
   useChatSubscription(selectedContact, refetchMessages, refetchContacts);
   
-  const handleContactSelect = (contact: ChatContact) => {
-    setSelectedContact(contact);
-    
-    // If the contact has unread messages, we'll mark them as read in the useMessages hook
-    // but we should also refresh the contacts list in case there was already a selection
-    if (contact.unread_count && contact.unread_count > 0) {
-      // Allow a small delay for the messages to be marked as read first
-      setTimeout(() => {
-        refetchContacts();
-      }, 300);
+  // Force a re-fetch of contacts when selectedContact changes to ensure badges are updated
+  useEffect(() => {
+    if (selectedContact) {
+      // If the contact has unread messages, trigger contacts refresh
+      if (selectedContact.unread_count && selectedContact.unread_count > 0) {
+        // Small delay to allow messages to be marked as read first
+        const timer = setTimeout(() => {
+          console.log("Refreshing contacts after message read");
+          refetchContacts();
+        }, 500);
+        
+        return () => clearTimeout(timer);
+      }
     }
+  }, [selectedContact, refetchContacts]);
+  
+  const handleContactSelect = (contact: ChatContact) => {
+    console.log("Selected contact with unread count:", contact.unread_count);
+    setSelectedContact(contact);
   };
   
   return (

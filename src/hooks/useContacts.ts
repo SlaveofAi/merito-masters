@@ -11,7 +11,7 @@ export const useContacts = () => {
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
 
-  // Fetch contacts
+  // Fetch contacts with improved caching strategy
   const { data: contacts = [], isLoading: contactsLoading, refetch: refetchContacts } = useQuery({
     queryKey: ['chat-contacts', user?.id],
     queryFn: async () => {
@@ -112,7 +112,7 @@ export const useContacts = () => {
             
           const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
           
-          // Count unread messages - make sure to use the correct filter
+          // Count unread messages - make sure to use the correct filter and don't use client-side caching
           const { count, error: countError } = await supabase
             .from('chat_messages')
             .select('*', { count: 'exact', head: true })
@@ -149,8 +149,9 @@ export const useContacts = () => {
     },
     enabled: !!user,
     // Add more frequent refetching to ensure unread counts are up to date
-    refetchInterval: 15000, // Refresh every 15 seconds
+    refetchInterval: 10000, // Refresh every 10 seconds
     refetchOnWindowFocus: true,
+    staleTime: 5000, // Consider data stale after 5 seconds to ensure fresh unread counts
   });
 
   // Update loading state

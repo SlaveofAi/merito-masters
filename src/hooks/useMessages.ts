@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message } from "@/types/chat";
 import { BasicProfile } from "@/types/profile";
+import { useEffect } from "react";
 
 export const useMessages = (selectedContact: ChatContact | null, refetchContacts: () => void) => {
   const { user, userType } = useAuth();
@@ -36,7 +37,7 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
       
       console.log(`Retrieved ${data?.length || 0} messages`);
       
-      // Mark messages as read
+      // Mark messages as read - this is critical for updating unread counts
       if (data && data.length > 0) {
         const unreadMessages = data.filter(msg => 
           msg.receiver_id === user.id && !msg.read
@@ -45,24 +46,26 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
         if (unreadMessages.length > 0) {
           console.log(`Marking ${unreadMessages.length} messages as read`);
           
-          const updatePromises = unreadMessages.map(async (msg) => {
-            return supabase
+          try {
+            // Use a single update for better performance and reliability
+            const { error: updateError } = await supabase
               .from('chat_messages')
               .update({ read: true })
-              .eq('id', msg.id);
-          });
-          
-          try {
-            await Promise.all(updatePromises);
-            console.log("All messages marked as read");
+              .in('id', unreadMessages.map(msg => msg.id));
             
-            // Refresh contact list to update unread count
-            refetchContacts();
-            
-            // Also invalidate the chat-contacts query to ensure the UI updates
-            queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+            if (updateError) {
+              console.error("Error marking messages as read:", updateError);
+            } else {
+              console.log("All messages marked as read");
+              
+              // Force refresh contact list to update unread count
+              refetchContacts();
+              
+              // Also invalidate the chat-contacts query to ensure the UI updates
+              queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+            }
           } catch (updateError) {
-            console.error("Error marking messages as read:", updateError);
+            console.error("Error in batch update of messages:", updateError);
           }
         }
       }
@@ -71,6 +74,14 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
     },
     enabled: !!selectedContact?.conversation_id && !!user,
   });
+
+  // Ensure contacts are refreshed whenever messages change
+  useEffect(() => {
+    if (messages.length > 0 && selectedContact) {
+      console.log("Messages changed, refreshing contacts");
+      refetchContacts();
+    }
+  }, [messages, selectedContact, refetchContacts]);
 
   // Fetch detailed contact information with better error handling and fallbacks
   const { data: contactDetails } = useQuery({
