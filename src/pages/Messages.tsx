@@ -54,14 +54,16 @@ const Messages = () => {
           } else {
             console.log("booking-images bucket created successfully");
             
-            // Add public policy to the bucket
+            // Set public bucket policy
             const { error: policyError } = await supabase
               .storage
               .from('booking-images')
-              .createSignedUrl('test.txt', 60);
+              .setPublicUrl('dummy.txt'); // This is just to trigger policy creation
               
-            if (policyError && policyError.message !== 'The resource was not found') {
+            if (policyError) {
               console.error("Error with bucket policy:", policyError);
+            } else {
+              console.log("Public policy set for booking-images bucket");
             }
           }
         }

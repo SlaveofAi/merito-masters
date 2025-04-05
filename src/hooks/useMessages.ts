@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,13 +61,17 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
         }
       }
       
-      // Return the messages with updated read status
+      // Return the messages with updated read status and properly parsed metadata
       return data.map(msg => {
-        if (msg.receiver_id === user.id) {
-          return { ...msg, read: true };
-        }
-        return msg;
-      }) as Message[];
+        // Ensure the message is properly typed with metadata
+        const typedMessage: Message = {
+          ...msg,
+          read: msg.receiver_id === user.id ? true : msg.read,
+          // Make sure metadata is properly parsed if it exists
+          metadata: msg.metadata || undefined
+        };
+        return typedMessage;
+      });
     },
     enabled: !!selectedContact?.conversation_id && !!user,
     gcTime: 0, // Use gcTime instead of cacheTime
@@ -180,7 +183,7 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
     enabled: !!selectedContact?.id && !!user,
     gcTime: 0, // Use gcTime instead of cacheTime
   });
-  
+
   // For customers, fetch their reviews
   const { data: customerReviews = [] } = useQuery({
     queryKey: ['customer-reviews', selectedContact?.id, selectedContact?.user_type],
