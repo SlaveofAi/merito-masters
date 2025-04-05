@@ -7,9 +7,9 @@ import ReviewsTab from "@/components/profile/ReviewsTab";
 import CustomerReviewsTab from "@/components/profile/CustomerReviewsTab";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
-import { useProfile } from "@/contexts/ProfileContext";
+import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
 
-const ProfileReviews: React.FC = () => {
+const ProfileReviewsContent: React.FC = () => {
   const {
     loading,
     profileData,
@@ -77,6 +77,15 @@ const ProfileReviews: React.FC = () => {
         </div>
       </div>
     </Layout>
+  );
+};
+
+// Wrapper component that provides the ProfileProvider context
+const ProfileReviews: React.FC = () => {
+  return (
+    <ProfileProvider>
+      <ProfileReviewsContent />
+    </ProfileProvider>
   );
 };
 

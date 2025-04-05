@@ -7,9 +7,9 @@ import PortfolioTab from "@/components/profile/PortfolioTab";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import { useProfile } from "@/contexts/ProfileContext";
-import { toast } from "sonner";
+import { ProfileProvider } from "@/contexts/ProfileContext";
 
-const ProfilePortfolio: React.FC = () => {
+const ProfilePortfolioContent: React.FC = () => {
   const {
     loading,
     profileData,
@@ -73,6 +73,15 @@ const ProfilePortfolio: React.FC = () => {
         </div>
       </div>
     </Layout>
+  );
+};
+
+// Wrapper component that provides the ProfileProvider context
+const ProfilePortfolio: React.FC = () => {
+  return (
+    <ProfileProvider>
+      <ProfilePortfolioContent />
+    </ProfileProvider>
   );
 };
 

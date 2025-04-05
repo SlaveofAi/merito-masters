@@ -6,9 +6,9 @@ import ProfileNavigation from "@/components/profile/ProfileNavigation";
 import ContactTab from "@/components/profile/ContactTab";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
-import { useProfile } from "@/contexts/ProfileContext";
+import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
 
-const ProfileContact: React.FC = () => {
+const ProfileContactContent: React.FC = () => {
   const {
     loading,
     profileData,
@@ -72,6 +72,15 @@ const ProfileContact: React.FC = () => {
         </div>
       </div>
     </Layout>
+  );
+};
+
+// Wrapper component that provides the ProfileProvider context
+const ProfileContact: React.FC = () => {
+  return (
+    <ProfileProvider>
+      <ProfileContactContent />
+    </ProfileProvider>
   );
 };
 
