@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQRCode } from '@/hooks/useQRCode';
 import CraftsmanSpecialization from './CraftsmanSpecialization';
 
-// Create a wrapper component for ImageUploader
+// Create a wrapper component for image uploading functionality
 const ImageUploader: React.FC<{
   handleImageUpload: (event: React.ChangeEvent<HTMLInputElement> | File | Blob) => void;
   children: React.ReactNode;
@@ -24,7 +24,9 @@ const ImageUploader: React.FC<{
   };
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleImageUpload(e);
+    if (e.target.files && e.target.files.length > 0) {
+      handleImageUpload(e.target.files[0]);
+    }
   };
   
   return (
