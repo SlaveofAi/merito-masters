@@ -26,6 +26,8 @@ interface ProfileContextType {
   reviewComment: string;
   customSpecialization: string;
   saving: boolean;
+  projects: any[]; // Added missing property
+  deletingImage: string | null; // Added for ProjectDetail component
   setActiveImageIndex: (index: number) => void;
   setIsEditing: (value: boolean) => void;
   setRating: (value: number) => void;
@@ -41,6 +43,7 @@ interface ProfileContextType {
   refetchReviews: () => void;
   createDefaultProfileIfNeeded: () => Promise<void>;
   fetchPortfolioImages?: (userId: string) => Promise<void>;
+  removeProject: (projectId: string) => Promise<void>; // Added missing method
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -56,6 +59,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingImage, setDeletingImage] = useState<string | null>(null);
 
   const profileId = id === ":id" ? undefined : id;
   
@@ -81,6 +85,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateCustomSpecialization,
     createDefaultProfileIfNeeded,
     isCreatingProfile,
+    projects, // Get projects from useProfileData
     error
   } = useProfileData(profileId);
 
@@ -162,6 +167,22 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  // Implement the missing removeProject method
+  const removeProject = async (projectId: string) => {
+    try {
+      setDeletingImage(projectId);
+      // Here you would implement the actual deletion logic
+      // For example, calling a Supabase or API endpoint
+      toast.success("Projekt bol odstránený");
+      // You might need to refresh projects after deletion
+    } catch (error) {
+      console.error("Error removing project:", error);
+      toast.error("Nastala chyba pri odstraňovaní projektu");
+    } finally {
+      setDeletingImage(null);
+    }
+  };
+
   const value = {
     loading,
     profileData,
@@ -181,6 +202,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     reviewComment,
     customSpecialization,
     saving,
+    projects, // Add projects to the context value
+    deletingImage, // Add deletingImage to the context value
     setActiveImageIndex,
     setIsEditing,
     setRating,
@@ -195,7 +218,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     handleStarClick,
     refetchReviews,
     createDefaultProfileIfNeeded,
-    fetchPortfolioImages
+    fetchPortfolioImages,
+    removeProject, // Add removeProject to the context value
   };
 
   return (

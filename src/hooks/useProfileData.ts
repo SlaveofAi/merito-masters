@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfileCore } from "@/hooks/useProfileCore";
 import { useProfileImages } from "@/hooks/useProfileImages";
@@ -16,6 +16,7 @@ export const useProfileData = (id?: string) => {
   const [uploading, setUploading] = useState(false);
   const [customSpecialization, setCustomSpecialization] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [projects, setProjects] = useState<any[]>([]);
 
   const {
     loading,
@@ -46,6 +47,28 @@ export const useProfileData = (id?: string) => {
       setCustomSpecialization(profileData.custom_specialization || '');
     }
   }, [profileData]);
+
+  // Fetch projects when profile data is available
+  useEffect(() => {
+    const fetchProjects = async () => {
+      if (!profileData?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('portfolio_projects')
+          .select('*, images:portfolio_images(*)')
+          .eq('craftsman_id', profileData.id)
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        setProjects(data || []);
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      }
+    };
+    
+    fetchProjects();
+  }, [profileData?.id]);
 
   const handleProfileImageUpload = async (file: File | Blob) => {
     if (!profileData || !user) {
@@ -209,9 +232,7 @@ export const useProfileData = (id?: string) => {
     isCreatingProfile,
     uploading,
     saving,
+    projects, // Include projects in the return object
     error
   };
 };
-
-// Add missing import
-import { useEffect } from "react";

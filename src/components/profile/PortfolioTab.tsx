@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useProfile } from "@/contexts/ProfileContext";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import ProjectDetail from "./ProjectDetail";
 import { formatDate } from "@/utils/dateUtils";
 
 const PortfolioTab: React.FC = () => {
-  const { profileData, projects, isCurrentUser, removeProject } = useProfile();
+  const { profileData, projects, isCurrentUser, removeProject, deletingImage } = useProfile();
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [currentProjectIndex, setCurrentProjectIndex] = useState(0);
@@ -55,6 +56,11 @@ const PortfolioTab: React.FC = () => {
     }
   };
 
+  const handleAddProject = (title: string, description: string, images: File[]) => {
+    // This would be implemented to add a new project
+    setIsAddingProject(false);
+  };
+
   return (
     <div>
       {projects && projects.length > 0 ? (
@@ -94,16 +100,26 @@ const PortfolioTab: React.FC = () => {
           <TabsContent value="detail">
             {selectedProject ? (
               <div>
-                <ProjectDetail project={selectedProject} />
+                <ProjectDetail 
+                  project={selectedProject}
+                  isCurrentUser={isCurrentUser}
+                  nextProject={handleNextProject}
+                  previousProject={handlePrevProject}
+                  onEdit={() => {/* Implement edit functionality */}}
+                  onDelete={handleDeleteProject}
+                  deletingImage={deletingImage}
+                />
                 <div className="flex justify-between mt-4">
                   <Button variant="outline" size="sm" onClick={handlePrevProject}>
                     <ChevronLeft className="w-4 h-4 mr-2" />
                     Predošlý
                   </Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDeleteProject(selectedProject.id)}>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Odstrániť
-                  </Button>
+                  {isCurrentUser && (
+                    <Button variant="destructive" size="sm" onClick={() => handleDeleteProject(selectedProject.id)} disabled={deletingImage === selectedProject.id}>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Odstrániť
+                    </Button>
+                  )}
                   <Button variant="outline" size="sm" onClick={handleNextProject}>
                     Ďalší
                     <ChevronRight className="w-4 h-4 ml-2" />
@@ -138,7 +154,10 @@ const PortfolioTab: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Pridať nový projekt</DialogTitle>
           </DialogHeader>
-          <ProjectForm onClose={() => setIsAddingProject(false)} />
+          <ProjectForm 
+            onSubmit={handleAddProject} 
+            onCancel={() => setIsAddingProject(false)}
+          />
         </DialogContent>
       </Dialog>
     </div>

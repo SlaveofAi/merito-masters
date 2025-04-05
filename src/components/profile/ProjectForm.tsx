@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,14 +22,11 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
   const [currentEditImage, setCurrentEditImage] = useState<string | null>(null);
 
-  // Populate the form with initialData if provided (for editing)
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title);
       setDescription(initialData.description || "");
       
-      // We can't directly set the images from initialData because they're already uploaded
-      // Instead, we'll just set the preview URLs for display
       if (initialData.images && initialData.images.length > 0) {
         setPreviewUrls(initialData.images.map(img => img.image_url));
       }
@@ -41,7 +37,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
     if (e.target.files) {
       const newImages = Array.from(e.target.files);
       
-      // Create preview URLs for the new images
       const newPreviewUrls = newImages.map(file => URL.createObjectURL(file));
       
       setImages([...images, ...newImages]);
@@ -50,19 +45,14 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
   };
 
   const removeImage = (index: number) => {
-    // If we're editing and there are existing images from initialData,
-    // we need to distinguish between existing images and newly added ones
     if (initialData && index < (initialData.images?.length || 0)) {
-      // For existing images, just remove from the preview
       const newPreviewUrls = [...previewUrls];
       newPreviewUrls.splice(index, 1);
       setPreviewUrls(newPreviewUrls);
     } else {
-      // For new images, remove from both images array and preview
       const newImageIndex = initialData ? index - (initialData.images?.length || 0) : index;
       const newImages = [...images];
       
-      // Revoke the preview URL to prevent memory leaks
       if (!initialData || index >= initialData.images.length) {
         URL.revokeObjectURL(previewUrls[index]);
       }
@@ -84,27 +74,21 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
   const handleSaveCroppedImage = (croppedImage: File) => {
     if (editingImageIndex === null) return;
     
-    // Create a new preview URL for the cropped image
     const newPreviewUrl = URL.createObjectURL(croppedImage);
     
-    // Update the preview URLs array
     const newPreviewUrls = [...previewUrls];
     newPreviewUrls[editingImageIndex] = newPreviewUrl;
     setPreviewUrls(newPreviewUrls);
     
-    // If this is a new image, update the images array
     if (!initialData || editingImageIndex >= (initialData.images?.length || 0)) {
       const adjustedIndex = initialData ? editingImageIndex - initialData.images.length : editingImageIndex;
       const newImages = [...images];
       newImages[adjustedIndex] = croppedImage;
       setImages(newImages);
     } else {
-      // For existing images, add to images array with the same index
       setImages(prev => [...prev, croppedImage]);
-      // We'll need special handling in onSubmit to know this is an update to an existing image
     }
     
-    // Close the editor
     setEditingImageIndex(null);
     setCurrentEditImage(null);
   };
@@ -126,15 +110,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
     try {
       await onSubmit(title, description, images);
       
-      // Clean up preview URLs
       previewUrls.forEach(url => {
-        // Only revoke URLs that start with blob: to avoid revoking server URLs
         if (url.startsWith('blob:')) {
           URL.revokeObjectURL(url);
         }
       });
       
-      // Reset form
       setTitle("");
       setDescription("");
       setImages([]);
@@ -234,7 +215,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
         </Button>
       </div>
 
-      {/* Image editor modal */}
       {editingImageIndex !== null && currentEditImage && (
         <ProjectImageEditor
           imageSrc={currentEditImage}

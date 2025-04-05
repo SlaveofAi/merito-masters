@@ -1,7 +1,7 @@
 
 import React, { useRef } from 'react';
 import { useProfile } from "@/contexts/ProfileContext";
-import { ImageUploader } from './ImageUploader';
+import { useImageUploader } from './ImageUploader';
 import SpecializationInput from './SpecializationInput';
 import { Pencil, Share2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,37 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useQRCode } from '@/hooks/useQRCode';
 import CraftsmanSpecialization from './CraftsmanSpecialization';
+
+// Create a wrapper component for ImageUploader
+const ImageUploader: React.FC<{
+  handleImageUpload: (event: React.ChangeEvent<HTMLInputElement> | File | Blob) => void;
+  children: React.ReactNode;
+}> = ({ handleImageUpload, children }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  const handleClick = () => {
+    if (inputRef.current) {
+      inputRef.current.click();
+    }
+  };
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleImageUpload(e);
+  };
+  
+  return (
+    <div onClick={handleClick} className="cursor-pointer">
+      {children}
+      <input
+        type="file"
+        ref={inputRef}
+        onChange={handleChange}
+        accept="image/*"
+        className="hidden"
+      />
+    </div>
+  );
+};
 
 const ProfileHeader: React.FC = () => {
   const { 
@@ -18,7 +49,8 @@ const ProfileHeader: React.FC = () => {
     profileImageUrl,
     customSpecialization,
     handleProfileImageUpload,
-    updateCustomSpecialization 
+    updateCustomSpecialization,
+    saving
   } = useProfile();
 
   const qrCodeRef = useRef<HTMLDivElement>(null);
@@ -99,7 +131,7 @@ const ProfileHeader: React.FC = () => {
               <SpecializationInput 
                 value={customSpecialization || profileData.custom_specialization || ''}
                 onSave={updateCustomSpecialization}
-                isLoading={updating}
+                isLoading={saving}
               />
             </div>
           )}
