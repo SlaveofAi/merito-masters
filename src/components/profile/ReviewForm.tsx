@@ -44,12 +44,15 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
         .insert({
           craftsman_id: profileId,
           customer_id: userId,
-          customer_name: userName,
+          customer_name: userName || 'Anonymný zákazník',
           rating,
           comment: comment.trim() || null
         });
         
-      if (error) throw error;
+      if (error) {
+        console.error("Review submission error:", error);
+        throw error;
+      }
       
       toast.success("Hodnotenie bolo úspešne pridané");
       setRating(0);
@@ -57,7 +60,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       onSuccess();
     } catch (error: any) {
       console.error("Error submitting review:", error);
-      toast.error("Nastala chyba pri odosielaní hodnotenia");
+      toast.error("Nastala chyba pri odosielaní hodnotenia: " + (error.message || "Neznáma chyba"));
     } finally {
       setSubmitting(false);
     }

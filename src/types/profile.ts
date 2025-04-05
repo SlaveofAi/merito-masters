@@ -18,6 +18,7 @@ export type CraftsmanProfile = {
   updated_at: string;
   years_experience: number | null;
   custom_specialization?: string | null;
+  user_type?: 'craftsman';
 };
 
 export type CustomerProfile = {
@@ -29,6 +30,7 @@ export type CustomerProfile = {
   created_at: string;
   updated_at: string;
   profile_image_url: string | null;
+  user_type?: 'customer';
 };
 
 export type ProfileData = (CraftsmanProfile | CustomerProfile) & {

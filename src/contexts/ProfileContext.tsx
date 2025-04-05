@@ -26,6 +26,8 @@ interface ProfileContextType {
   reviewComment: string;
   customSpecialization: string;
   saving: boolean;
+  projects: any[]; // Added missing property
+  deletingImage: string | null; // Added for ProjectDetail component
   setActiveImageIndex: (index: number) => void;
   setIsEditing: (value: boolean) => void;
   setRating: (value: number) => void;
@@ -41,6 +43,8 @@ interface ProfileContextType {
   refetchReviews: () => void;
   createDefaultProfileIfNeeded: () => Promise<void>;
   fetchPortfolioImages?: (userId: string) => Promise<void>;
+  removeProject: (projectId: string) => Promise<void>; // Added missing method
+  createProject: (title: string, description: string, images: File[]) => Promise<void>; // Added missing method
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -56,9 +60,11 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingImage, setDeletingImage] = useState<string | null>(null);
 
   const profileId = id === ":id" ? undefined : id;
   
+  // Extract all the needed properties from useProfileData
   const {
     loading,
     profileData,
@@ -81,7 +87,10 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateCustomSpecialization,
     createDefaultProfileIfNeeded,
     isCreatingProfile,
-    error
+    projects, 
+    error,
+    removeProject,
+    createProject // Make sure to get this from useProfileData
   } = useProfileData(profileId);
 
   const handleProfileUpdate = (updatedProfile: any) => {
@@ -162,6 +171,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  // REMOVED THE DUPLICATE removeProject FUNCTION HERE
+  
   const value = {
     loading,
     profileData,
@@ -181,6 +192,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     reviewComment,
     customSpecialization,
     saving,
+    projects,
+    deletingImage,
     setActiveImageIndex,
     setIsEditing,
     setRating,
@@ -195,7 +208,9 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     handleStarClick,
     refetchReviews,
     createDefaultProfileIfNeeded,
-    fetchPortfolioImages
+    fetchPortfolioImages,
+    removeProject,
+    createProject, // Add createProject to the context value
   };
 
   return (

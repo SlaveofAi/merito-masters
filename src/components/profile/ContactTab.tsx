@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { Badge } from "@/components/ui/badge";
 
 const ContactTab: React.FC = () => {
   const { profileData, userType, isCurrentUser } = useProfile();
@@ -21,11 +22,11 @@ const ContactTab: React.FC = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    // Load saved available dates when profile data is available
-    if (profileData?.id && userType === 'craftsman') {
+    // Load saved available dates for any craftsman profile we're viewing
+    if (profileData?.id && profileData.user_type === 'craftsman') {
       fetchAvailableDates();
     }
-  }, [profileData?.id, userType]);
+  }, [profileData?.id]);
 
   const fetchAvailableDates = async () => {
     try {
@@ -107,6 +108,9 @@ const ContactTab: React.FC = () => {
   };
 
   if (!profileData) return null;
+  
+  // Determine if viewing a craftsman profile
+  const isCraftsmanProfile = profileData.user_type === 'craftsman';
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -134,7 +138,7 @@ const ContactTab: React.FC = () => {
                 </p>
               </div>
             </div>
-            {userType === 'craftsman' && (
+            {isCraftsmanProfile && (
               <div className="flex items-start">
                 <Clock className="w-5 h-5 mr-3 mt-0.5 text-primary" />
                 <div>
@@ -192,53 +196,100 @@ const ContactTab: React.FC = () => {
             </div>
           </div>
           
-          {userType === 'craftsman' && isCurrentUser && (
+          {/* Show craftsman availability calendar */}
+          {isCraftsmanProfile && (
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <h4 className="font-medium mb-3">Dostupnosť v kalendári</h4>
-              <p className="text-sm text-gray-500 mb-4">
-                Vyberte dni, kedy ste k dispozícii pre zákazníkov
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium">Dostupnosť v kalendári</h4>
+                {isCurrentUser && (
+                  <Badge variant="outline" className="text-xs">
+                    Vy ako remeselník
+                  </Badge>
+                )}
+              </div>
               
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                    <Clock className="mr-2 h-4 w-4" />
-                    <span>Vybrať dostupné dni</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="multiple"
-                    selected={selectedDates}
-                    onSelect={(dates) => {
-                      if (Array.isArray(dates)) {
-                        setSelectedDates(dates);
-                      }
-                    }}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-              
-              {selectedDates.length > 0 && (
-                <div className="mt-4">
-                  <p className="font-medium text-sm mb-2">Vaše dostupné dni:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedDates.map((date, i) => (
-                      <div key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                        {date.toLocaleDateString('sk-SK')}
+              {isCurrentUser ? (
+                <>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Vyberte dni, kedy ste k dispozícii pre zákazníkov
+                  </p>
+                
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal">
+                        <Clock className="mr-2 h-4 w-4" />
+                        <span>Vybrať dostupné dni</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="multiple"
+                        selected={selectedDates}
+                        onSelect={(dates) => {
+                          if (Array.isArray(dates)) {
+                            setSelectedDates(dates);
+                          }
+                        }}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                
+                  {selectedDates.length > 0 && (
+                    <div className="mt-4">
+                      <p className="font-medium text-sm mb-2">Vaše dostupné dni:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedDates.map((date, i) => (
+                          <div key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
+                            {date.toLocaleDateString('sk-SK')}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                  
-                  <Button
-                    onClick={saveAvailableDates}
-                    className="mt-4"
-                    disabled={saving}
-                  >
-                    {saving ? "Ukladám..." : "Uložiť dostupné dni"}
-                  </Button>
+                    
+                      <Button
+                        onClick={saveAvailableDates}
+                        className="mt-4"
+                        disabled={saving}
+                      >
+                        {saving ? "Ukladám..." : "Uložiť dostupné dni"}
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                // Customers viewing craftsman calendar
+                <div>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Dostupné dni pre tohto remeselníka:
+                  </p>
+
+                  {selectedDates.length > 0 ? (
+                    <div className="bg-gray-50 rounded-md p-4">
+                      <Calendar
+                        mode="default"
+                        selected={date}
+                        onSelect={setDate}
+                        disabled={date => !selectedDates.some(d => d.toDateString() === date.toDateString())}
+                        modifiers={{
+                          available: date => selectedDates.some(d => d.toDateString() === date.toDateString())
+                        }}
+                        modifiersStyles={{
+                          available: { backgroundColor: '#dcfce7' }
+                        }}
+                        className="bg-white rounded-md shadow-sm"
+                      />
+                      
+                      <div className="mt-3 text-xs text-gray-500 flex items-center">
+                        <div className="w-4 h-4 bg-green-100 mr-2 rounded"></div>
+                        <span>Remeselník je dostupný v označené dni</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 italic">
+                      Remeselník zatiaľ nezadal svoje dostupné dni.
+                    </div>
+                  )}
                 </div>
               )}
             </div>
