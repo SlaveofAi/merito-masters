@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       booking_requests: {
         Row: {
+          amount: string | null
           conversation_id: string
           craftsman_id: string
           created_at: string
@@ -26,6 +27,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          amount?: string | null
           conversation_id: string
           craftsman_id: string
           created_at?: string
@@ -41,6 +43,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          amount?: string | null
           conversation_id?: string
           craftsman_id?: string
           created_at?: string

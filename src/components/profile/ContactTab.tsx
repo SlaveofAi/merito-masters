@@ -287,7 +287,7 @@ const ContactTab: React.FC = () => {
           start_time: values.time,
           end_time: "18:00",
           message: values.message,
-          amount: values.amount,
+          amount: values.amount ? values.amount : null,
           image_url: imageUrl,
           status: "pending"
         };
@@ -449,8 +449,7 @@ ${imageUrl ? `Fotky: Priložená fotografia` : ''}`;
                 <FormControl>
                   <div className="relative">
                     <Input
-                      type="number"
-                      step="0.01"
+                      type="text"
                       placeholder="0.00"
                       className="w-full pr-8"
                       {...field}
