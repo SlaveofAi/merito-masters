@@ -31,6 +31,7 @@ const ContactTab: React.FC = () => {
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [isLoadingDates, setIsLoadingDates] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   
   // Safely determine if viewing a craftsman profile by checking both user_type and trade_category
   const isCraftsmanProfile = profileData?.user_type === 'craftsman' || 
@@ -165,7 +166,54 @@ const ContactTab: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-  
+
+  const saveAvailableDates = async () => {
+    if (!user?.id || !profileData?.id || userType !== 'craftsman') {
+      toast.error("Nemôžem uložiť dostupnosť, chýba ID používateľa");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    
+    try {
+      console.log("Saving dates for craftsman:", profileData.id, availableDates);
+      
+      // First delete all existing dates for this craftsman
+      const { error: deleteError } = await supabase
+        .from('craftsman_availability')
+        .delete()
+        .eq('craftsman_id', profileData.id);
+        
+      if (deleteError) {
+        throw deleteError;
+      }
+      
+      // Then insert the new dates
+      if (availableDates.length > 0) {
+        const datesToInsert = availableDates.map(date => ({
+          craftsman_id: profileData.id,
+          date: date.toISOString().split('T')[0], // Format as YYYY-MM-DD
+          time_slots: []
+        }));
+        
+        const { error } = await supabase
+          .from('craftsman_availability')
+          .insert(datesToInsert);
+          
+        if (error) throw error;
+      }
+      
+      toast.success("Dostupné dni boli úspešne uložené");
+    } catch (error: any) {
+      console.error("Error saving available dates:", error);
+      setError(`Chyba pri ukladaní: ${error.message}`);
+      toast.error("Chyba pri ukladaní dostupných dní");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const goToNextMonth = () => {
     const nextMonth = new Date(month);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -213,6 +261,87 @@ const ContactTab: React.FC = () => {
   const getDayName = (date: Date) => {
     return format(date, 'EEEE', { locale: sk });
   };
+
+  const handleDateToggle = (date: Date) => {
+    if (!isCurrentUser || userType !== 'craftsman') return;
+    
+    const dateString = date.toDateString();
+    
+    if (availableDates.some(d => d.toDateString() === dateString)) {
+      // If date is already selected, remove it
+      setAvailableDates(prev => prev.filter(d => d.toDateString() !== dateString));
+    } else {
+      // Otherwise add it to the selected dates
+      setAvailableDates(prev => [...prev, date]);
+    }
+  };
+
+  const isDateSelected = (date: Date): boolean => {
+    return availableDates.some(d => d.toDateString() === date.toDateString());
+  };
+
+  const CraftsmanCalendarEditor = () => (
+    <div>
+      <div className="p-3 border-b">
+        <div className="flex items-center justify-between">
+          <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="text-sm font-medium">
+            {format(month, 'LLLL yyyy', { locale: sk })}
+          </div>
+          <Button variant="outline" size="sm" onClick={goToNextMonth}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <CalendarUI
+        mode="multiple"
+        selected={availableDates}
+        onSelect={(dates) => {
+          if (Array.isArray(dates)) {
+            setAvailableDates(dates);
+          }
+        }}
+        month={month}
+        onMonthChange={setMonth}
+        className="p-3 pointer-events-auto"
+        showOutsideDays
+      />
+      
+      <div className="mt-4">
+        {availableDates.length > 0 && (
+          <div className="mb-4">
+            <p className="font-medium text-sm mb-2">Vaše dostupné dni ({availableDates.length}):</p>
+            <div className="flex flex-wrap gap-2">
+              {availableDates
+                .sort((a, b) => a.getTime() - b.getTime())
+                .slice(0, 5)
+                .map((date, i) => (
+                  <div key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
+                    {format(date, 'dd.MM.yyyy')}
+                  </div>
+                ))}
+              {availableDates.length > 5 && (
+                <div className="px-2 py-1 bg-gray-100 rounded-md text-xs">
+                  +{availableDates.length - 5} ďalších
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
+        <Button
+          onClick={saveAvailableDates}
+          className="w-full"
+          disabled={saving}
+        >
+          {saving ? "Ukladám..." : "Uložiť dostupné dni"}
+        </Button>
+      </div>
+    </div>
+  );
 
   if (!profileData) return null;
 
@@ -476,19 +605,27 @@ const ContactTab: React.FC = () => {
         </Card>
       ) : (
         <Card className="border border-border/50">
-          <CardContent className="p-6 flex flex-col items-center justify-center h-full">
-            <Calendar className="h-16 w-16 text-primary mb-4" />
-            <h3 className="text-xl font-semibold">Váš kalendár dostupnosti</h3>
-            <p className="text-muted-foreground text-center mt-2">
-              Pre správu vašich dostupných termínov prejdite do sekcie Kontakt na vašom profile.
-            </p>
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => window.location.href = "/profile/contact"}
-            >
-              Spravovať kalendár
-            </Button>
+          <CardContent className="p-6">
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
+              <Calendar className="w-5 h-5 mr-2" />
+              Váš kalendár dostupnosti
+            </h3>
+            
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            {isLoadingDates ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Načítavam dostupné termíny...</span>
+              </div>
+            ) : (
+              <CraftsmanCalendarEditor />
+            )}
           </CardContent>
         </Card>
       )}
