@@ -7,6 +7,7 @@ import ReviewsList from "./ReviewsList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ProfileCalendar from "./ProfileCalendar";
 
 const ReviewsTab: React.FC = () => {
   const { user, userType } = useAuth();
@@ -70,7 +71,7 @@ const ReviewsTab: React.FC = () => {
       {canLeaveReview && user && profileData && (
         <ReviewForm 
           userId={user.id} 
-          profileId={profileData.id}
+          profileId={profileData.id || ''}
           userName={user.user_metadata?.name || user.user_metadata?.full_name || 'Anonymous'}
           onSuccess={refetchReviews}
         />

@@ -12,17 +12,25 @@ interface ReviewFormProps {
   profileId: string;
   userName?: string;
   onSuccess: () => void;
+  existingReview?: {
+    id: string;
+    rating: number;
+    comment: string | null;
+  };
 }
 
 const ReviewForm: React.FC<ReviewFormProps> = ({
   userId,
   profileId,
   userName = 'Anonymný zákazník',
-  onSuccess
+  onSuccess,
+  existingReview
 }) => {
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState("");
+  const [rating, setRating] = useState(existingReview?.rating || 0);
+  const [comment, setComment] = useState(existingReview?.comment || "");
   const [submitting, setSubmitting] = useState(false);
+
+  const isEditMode = !!existingReview;
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,25 +46,44 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
 
     setSubmitting(true);
     try {
-      // Add the review directly to the database
-      const { error } = await supabase
-        .from('craftsman_reviews')
-        .insert({
-          craftsman_id: profileId,
-          customer_id: userId,
-          customer_name: userName || 'Anonymný zákazník',
-          rating,
-          comment: comment.trim() || null
-        });
+      if (isEditMode) {
+        // Update existing review
+        const { error } = await supabase
+          .from('craftsman_reviews')
+          .update({
+            rating,
+            comment: comment.trim() || null
+          })
+          .eq('id', existingReview.id);
+          
+        if (error) {
+          console.error("Review update error:", error);
+          throw error;
+        }
         
-      if (error) {
-        console.error("Review submission error:", error);
-        throw error;
+        toast.success("Hodnotenie bolo úspešne aktualizované");
+      } else {
+        // Add new review
+        const { error } = await supabase
+          .from('craftsman_reviews')
+          .insert({
+            craftsman_id: profileId,
+            customer_id: userId,
+            customer_name: userName || 'Anonymný zákazník',
+            rating,
+            comment: comment.trim() || null
+          });
+          
+        if (error) {
+          console.error("Review submission error:", error);
+          throw error;
+        }
+        
+        toast.success("Hodnotenie bolo úspešne pridané");
+        setRating(0);
+        setComment("");
       }
       
-      toast.success("Hodnotenie bolo úspešne pridané");
-      setRating(0);
-      setComment("");
       onSuccess();
     } catch (error: any) {
       console.error("Error submitting review:", error);
@@ -69,7 +96,9 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   return (
     <Card>
       <CardContent className="p-6">
-        <h3 className="text-lg font-medium mb-4">Ohodnoťte tohto remeselníka</h3>
+        <h3 className="text-lg font-medium mb-4">
+          {isEditMode ? "Upraviť hodnotenie" : "Ohodnoťte tohto remeselníka"}
+        </h3>
         <form onSubmit={handleSubmitReview} className="space-y-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium">
@@ -91,13 +120,30 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
             />
           </div>
           
-          <Button 
-            type="submit" 
-            className="w-full sm:w-auto"
-            disabled={rating === 0 || submitting}
-          >
-            {submitting ? "Odosielam..." : "Odoslať hodnotenie"}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              type="submit" 
+              className="w-full sm:w-auto"
+              disabled={rating === 0 || submitting}
+            >
+              {submitting ? "Odosielam..." : isEditMode ? "Upraviť hodnotenie" : "Odoslať hodnotenie"}
+            </Button>
+            
+            {isEditMode && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full sm:w-auto"
+                onClick={() => {
+                  setRating(existingReview.rating); 
+                  setComment(existingReview.comment || "");
+                }}
+                disabled={submitting}
+              >
+                Zrušiť zmeny
+              </Button>
+            )}
+          </div>
         </form>
       </CardContent>
     </Card>

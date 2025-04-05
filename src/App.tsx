@@ -9,6 +9,9 @@ import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import ProfilePortfolio from "./pages/ProfilePages/ProfilePortfolio";
+import ProfileReviews from "./pages/ProfilePages/ProfileReviews";
+import ProfileContact from "./pages/ProfilePages/ProfileContact";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
@@ -27,8 +30,19 @@ const App = () => (
             <Route path="/home" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/profile/:id" element={<Profile />} />
+            
+            {/* Profile routes */}
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:id" element={<Profile />} />
+            
+            {/* New profile sub-pages */}
+            <Route path="/profile/portfolio" element={<ProfilePortfolio />} />
+            <Route path="/profile/reviews" element={<ProfileReviews />} />
+            <Route path="/profile/contact" element={<ProfileContact />} />
+            <Route path="/profile/:id/portfolio" element={<ProfilePortfolio />} />
+            <Route path="/profile/:id/reviews" element={<ProfileReviews />} />
+            <Route path="/profile/:id/contact" element={<ProfileContact />} />
+            
             <Route path="/messages" element={<Messages />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

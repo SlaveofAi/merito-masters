@@ -3,11 +3,13 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Reply, AlertCircle } from "lucide-react";
+import { Reply, AlertCircle, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ReviewStarRating from "./ReviewStarRating";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/hooks/useAuth";
+import ReviewForm from "./ReviewForm";
 
 interface ReviewCardProps {
   review: any;
@@ -22,10 +24,16 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   userId,
   onRefresh
 }) => {
+  const { user } = useAuth();
   const [replyText, setReplyText] = useState("");
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Check if the current user is the author of this review
+  const isReviewAuthor = user?.id === review.customer_id;
 
   const handleSubmitReply = async () => {
     if (!userId || !replyText.trim()) return;
@@ -65,6 +73,63 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
     }
   };
 
+  const handleDeleteReview = async () => {
+    if (!isReviewAuthor) return;
+    
+    setIsSubmitting(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase
+        .from('craftsman_reviews')
+        .delete()
+        .eq('id', review.id);
+        
+      if (error) throw error;
+      
+      toast.success("Hodnotenie bolo úspešne odstránené");
+      onRefresh();
+    } catch (error: any) {
+      console.error("Error deleting review:", error);
+      setError(`Nastala chyba: ${error.message}`);
+      toast.error("Nastala chyba pri odstraňovaní hodnotenia");
+    } finally {
+      setIsSubmitting(false);
+      setConfirmDelete(false);
+    }
+  };
+
+  // If in editing mode, show the review form instead
+  if (isEditing && isReviewAuthor) {
+    return (
+      <div className="mb-4">
+        <ReviewForm 
+          userId={review.customer_id}
+          profileId={review.craftsman_id}
+          userName={review.customer_name}
+          onSuccess={() => {
+            setIsEditing(false);
+            onRefresh();
+          }}
+          existingReview={{
+            id: review.id,
+            rating: review.rating,
+            comment: review.comment
+          }}
+        />
+        <div className="mt-2">
+          <Button 
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsEditing(false)}
+          >
+            Zrušiť úpravu
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-6">
@@ -78,6 +143,54 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
           <ReviewStarRating value={review.rating} readonly size="small" />
         </div>
         <p className="text-gray-700">{review.comment}</p>
+        
+        {/* User actions for their own reviews */}
+        {isReviewAuthor && (
+          <div className="mt-3 flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center"
+              onClick={() => setIsEditing(true)}
+            >
+              <Edit className="mr-1 h-4 w-4" />
+              Upraviť
+            </Button>
+            
+            {confirmDelete ? (
+              <>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="flex items-center"
+                  onClick={handleDeleteReview}
+                  disabled={isSubmitting}
+                >
+                  <Trash2 className="mr-1 h-4 w-4" />
+                  Potvrdiť
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={isSubmitting}
+                >
+                  Zrušiť
+                </Button>
+              </>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center text-red-500"
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 className="mr-1 h-4 w-4" />
+                Odstrániť
+              </Button>
+            )}
+          </div>
+        )}
         
         {/* Review reply section */}
         {review.reply && (
