@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -13,12 +14,16 @@ import {
   Mail,
   MapPin,
   Star,
-  User
+  User,
+  CalendarCheck,
+  Check,
+  X
 } from "lucide-react";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message } from "@/types/chat";
+import { BookingRequest } from "@/types/booking";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,11 +51,15 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import ChatMedia from "./ChatMedia";
+import MessageFileInput from "./MessageFileInput";
 
 interface ChatWindowProps {
   contact: ChatContact | null;
   messages: Message[];
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, mediaFile?: File) => void;
   onArchive: () => void;
   onDelete: () => void;
   contactDetails?: any;
@@ -66,25 +75,58 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   contactDetails,
   customerReviews = []
 }) => {
-  const { user } = useAuth();
+  const { user, userType } = useAuth();
   const [messageText, setMessageText] = useState("");
+  const [mediaFile, setMediaFile] = useState<File | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([]);
+  const [showBookingsDialog, setShowBookingsDialog] = useState(false);
   
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
   
+  useEffect(() => {
+    if (contact?.conversation_id && user) {
+      fetchBookingRequests();
+    }
+  }, [contact, user]);
+  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   
+  const fetchBookingRequests = async () => {
+    if (!contact?.id || !user || !contact.conversation_id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('booking_requests')
+        .select('*')
+        .eq('conversation_id', contact.conversation_id)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error("Error fetching booking requests:", error);
+        return;
+      }
+      
+      if (data) {
+        setBookingRequests(data as unknown as BookingRequest[]);
+      }
+    } catch (err) {
+      console.error("Error in fetchBookingRequests:", err);
+    }
+  };
+  
   const handleSendMessage = () => {
-    if (messageText.trim() && onSendMessage) {
-      onSendMessage(messageText);
+    if ((messageText.trim() || mediaFile) && onSendMessage) {
+      onSendMessage(messageText, mediaFile);
       setMessageText("");
+      setMediaFile(undefined);
     }
   };
   
@@ -105,19 +147,65 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     setShowArchiveDialog(false);
   };
   
-  // Helper function to get display name with fallback
+  const handleBookingResponse = async (bookingId: string, isConfirmed: boolean) => {
+    if (!user) return;
+    
+    try {
+      const status = isConfirmed ? 'confirmed' : 'declined';
+      
+      const { error: updateError } = await supabase
+        .from('booking_requests')
+        .update({ status })
+        .eq('id', bookingId);
+        
+      if (updateError) {
+        console.error("Error updating booking status:", updateError);
+        toast.error(`Nastala chyba pri ${isConfirmed ? 'potvrdení' : 'zamietnutí'} rezervácie`);
+        return;
+      }
+      
+      const booking = bookingRequests.find(b => b.id === bookingId);
+      
+      if (booking && contact?.conversation_id) {
+        const statusMessage = isConfirmed 
+          ? `Rezervácia potvrdená: ${format(new Date(booking.date), 'EEEE, d. MMMM yyyy', { locale: sk })}, ${booking.start_time} - ${booking.end_time}`
+          : `Rezervácia zamietnutá: ${format(new Date(booking.date), 'EEEE, d. MMMM yyyy', { locale: sk })}, ${booking.start_time} - ${booking.end_time}`;
+        
+        const { error: messageError } = await supabase
+          .from('chat_messages')
+          .insert({
+            conversation_id: contact.conversation_id,
+            sender_id: user.id,
+            receiver_id: contact.id,
+            content: statusMessage,
+            read: false
+          });
+          
+        if (messageError) {
+          console.error("Error sending booking response message:", messageError);
+        }
+      }
+      
+      fetchBookingRequests();
+      
+      toast.success(isConfirmed ? "Rezervácia bola potvrdená" : "Rezervácia bola zamietnutá");
+      
+    } catch (err) {
+      console.error("Error in handleBookingResponse:", err);
+      toast.error("Nastala chyba pri spracovaní rezervácie");
+    }
+  };
+  
   const getContactName = () => {
     if (contactDetails?.name) return contactDetails.name;
     if (contact?.name) return contact.name;
     return "Neznámy užívateľ";
   };
   
-  // Helper function to get avatar URL with fallback
   const getAvatarUrl = () => {
     return contactDetails?.profile_image_url || contact?.avatar_url || null;
   };
   
-  // Helper function to get profile status
   const getProfileStatus = () => {
     if (contactDetails && (contactDetails.email || contactDetails.phone)) {
       return "Profil nájdený";
@@ -125,12 +213,74 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     return "Základný profil";
   };
   
-  // Helper function to get profile badge color
   const getProfileBadgeColor = () => {
     if (contactDetails && (contactDetails.email || contactDetails.phone)) {
       return "bg-green-50";
     }
     return "bg-yellow-50";
+  };
+  
+  const renderMessage = (message: Message) => {
+    const isOwnMessage = message.sender_id === user?.id;
+    const messageDate = new Date(message.created_at);
+    const formattedTime = format(messageDate, 'HH:mm');
+    const formattedDate = format(messageDate, 'EEEE, d. MMMM', { locale: sk });
+    
+    const isBookingRequest = message.content.includes('Žiadosť o rezerváciu:');
+    const isBookingConfirmed = message.content.includes('Rezervácia potvrdená:');
+    const isBookingRejected = message.content.includes('Rezervácia zamietnutá:');
+    const hasMedia = message.media_url && message.media_type;
+    
+    if (isBookingRequest || isBookingConfirmed || isBookingRejected) {
+      let icon = <CalendarCheck className="h-5 w-5" />;
+      let bgColor = "bg-blue-50 text-blue-800";
+      let iconColor = "text-blue-500";
+      
+      if (isBookingConfirmed) {
+        icon = <Check className="h-5 w-5" />;
+        bgColor = "bg-green-50 text-green-800";
+        iconColor = "text-green-500";
+      } else if (isBookingRejected) {
+        icon = <X className="h-5 w-5" />;
+        bgColor = "bg-red-50 text-red-800";
+        iconColor = "text-red-500";
+      }
+      
+      return (
+        <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+          <div className={`max-w-[85%] ${bgColor} rounded-lg px-4 py-3 shadow-sm`}>
+            <div className="flex items-start">
+              <div className={`mr-2 ${iconColor}`}>{icon}</div>
+              <div>
+                <p className="font-medium text-sm">{message.content}</p>
+                <div className="text-xs mt-2 text-right opacity-70">
+                  {formattedTime}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+        <div className={`max-w-[75%] ${isOwnMessage ? 'bg-primary text-white' : 'bg-white'} rounded-lg px-4 py-2 shadow-sm`}>
+          {hasMedia && (
+            <div className="mb-2">
+              <ChatMedia 
+                url={message.media_url!} 
+                type={message.media_type!} 
+              />
+            </div>
+          )}
+          {message.content && <p>{message.content}</p>}
+          <div className={`text-xs mt-1 ${isOwnMessage ? 'text-primary-foreground/70' : 'text-gray-500'} text-right`}>
+            {formattedTime}
+          </div>
+        </div>
+      </div>
+    );
   };
   
   if (!contact) {
@@ -142,6 +292,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       </div>
     );
   }
+  
+  const pendingBookings = bookingRequests.filter(b => b.status === 'pending').length;
   
   return (
     <div className="flex flex-col h-full">
@@ -159,6 +311,82 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         </div>
         <div className="flex gap-2">
+          {pendingBookings > 0 && userType === 'craftsman' && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs flex items-center gap-1"
+              onClick={() => setShowBookingsDialog(true)}
+            >
+              <CalendarCheck className="h-4 w-4 text-primary" />
+              <span>Rezervácie ({pendingBookings})</span>
+            </Button>
+          )}
+          
+          <Dialog open={showBookingsDialog} onOpenChange={setShowBookingsDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Rezervácie</DialogTitle>
+                <DialogDescription>
+                  Spravovať rezervácie od zákazníka {getContactName()}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 mt-4 max-h-96 overflow-y-auto">
+                {bookingRequests.length > 0 ? (
+                  bookingRequests.map((booking) => (
+                    <Card key={booking.id} className="bg-gray-50">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-medium">
+                            {format(new Date(booking.date), 'EEEE, d. MMMM yyyy', { locale: sk })}
+                          </h4>
+                          <Badge variant={
+                            booking.status === 'confirmed' ? 'default' :
+                            booking.status === 'declined' ? 'destructive' :
+                            'outline'
+                          }>
+                            {booking.status === 'confirmed' ? 'Potvrdené' :
+                             booking.status === 'declined' ? 'Zamietnuté' :
+                             'Čaká na potvrdenie'}
+                          </Badge>
+                        </div>
+                        <p className="text-sm mb-2">Čas: {booking.start_time} - {booking.end_time}</p>
+                        {booking.message && (
+                          <p className="text-sm italic mb-3 text-gray-600">"{booking.message}"</p>
+                        )}
+                        
+                        {booking.status === 'pending' && (
+                          <div className="flex gap-2 mt-3">
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleBookingResponse(booking.id, true)}
+                              className="w-full"
+                            >
+                              <Check className="mr-1 h-4 w-4" /> Potvrdiť
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleBookingResponse(booking.id, false)}
+                              className="w-full"
+                            >
+                              <X className="mr-1 h-4 w-4" /> Zamietnuť
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <CalendarCheck className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+                    <p>Žiadne rezervácie</p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+          
           <Button variant="ghost" size="icon" title="Videohovor">
             <Video className="h-5 w-5 text-gray-500" />
           </Button>
@@ -321,30 +549,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               <p className="text-gray-500">Začnite konverzáciu odoslaním správy</p>
             </div>
           ) : (
-            messages.map((message) => {
-              const isOwnMessage = message.sender_id === user?.id;
-              const messageDate = new Date(message.created_at);
-              const formattedTime = format(messageDate, 'HH:mm');
-              const formattedDate = format(messageDate, 'EEEE, d. MMMM', { locale: sk });
-              
-              return (
-                <div key={message.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] ${isOwnMessage ? 'bg-primary text-white' : 'bg-white'} rounded-lg px-4 py-2 shadow-sm`}>
-                    <p>{message.content}</p>
-                    <div className={`text-xs mt-1 ${isOwnMessage ? 'text-primary-foreground/70' : 'text-gray-500'} text-right`}>
-                      {formattedTime}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+            messages.map((message) => (
+              <div key={message.id}>
+                {renderMessage(message)}
+              </div>
+            ))
           )}
           <div ref={messagesEndRef}></div>
         </div>
       </div>
       
       <div className="p-4 border-t">
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <Textarea
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
@@ -353,13 +569,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             className="resize-none min-h-[60px]"
             rows={2}
           />
-          <Button 
-            onClick={handleSendMessage} 
-            disabled={!messageText.trim()} 
-            className="self-end"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
+          <div className="flex justify-between items-center">
+            <MessageFileInput onFileSelected={setMediaFile} />
+            <Button 
+              onClick={handleSendMessage} 
+              disabled={!messageText.trim() && !mediaFile} 
+              className="self-end"
+            >
+              <Send className="h-5 w-5 mr-2" /> Odoslať
+            </Button>
+          </div>
         </div>
       </div>
 

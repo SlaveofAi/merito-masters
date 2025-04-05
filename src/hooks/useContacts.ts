@@ -11,8 +11,8 @@ export const useContacts = () => {
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
 
-  // Fetch contacts with improved caching strategy
-  const { data: contacts = [], isLoading: contactsLoading, refetch: refetchContacts } = useQuery({
+  // Fetch contacts
+  const { data: contacts = [], isLoading: contactsLoading } = useQuery({
     queryKey: ['chat-contacts', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -102,7 +102,7 @@ export const useContacts = () => {
             return createFallbackContact();
           }
           
-          // Get last message - use a fresh request without any caching
+          // Get last message and unread count
           const { data: lastMessageData, error: lastMessageError } = await supabase
             .from('chat_messages')
             .select('*')
@@ -112,9 +112,7 @@ export const useContacts = () => {
             
           const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
           
-          // Count unread messages - CRITICAL - use a completely separate request
-          // with no cache to ensure accurate counts
-          console.log(`Counting unread messages for conversation ${conv.id}`);
+          // Count unread messages
           const { count, error: countError } = await supabase
             .from('chat_messages')
             .select('*', { count: 'exact', head: true })
@@ -144,16 +142,9 @@ export const useContacts = () => {
       // Filter out null values and ensure we have unique contacts
       const filteredContacts = resolvedContacts.filter(contact => contact !== null) as ChatContact[];
       console.log(`Retrieved ${filteredContacts.length} contacts with conversations`);
-      
       return filteredContacts;
     },
     enabled: !!user,
-    // More aggressive refetching to ensure unread counts are accurate
-    refetchInterval: 5000, // Refresh more frequently (every 5 seconds)
-    refetchOnWindowFocus: true,
-    staleTime: 0, // No stale time - always fetch fresh data
-    networkMode: 'always', // Always fetch from network
-    refetchOnMount: true,
   });
 
   // Update loading state
@@ -165,6 +156,6 @@ export const useContacts = () => {
     contacts,
     loading,
     contactsLoading,
-    refetchContacts
+    refetchContacts: () => queryClient.invalidateQueries({ queryKey: ['chat-contacts'] })
   };
 };

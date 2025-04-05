@@ -1,12 +1,13 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message } from "@/types/chat";
 import { BasicProfile } from "@/types/profile";
-import { useEffect } from "react";
+import { BookingRequest } from "@/types/booking";
 
-export const useMessages = (selectedContact: ChatContact | null, refetchContacts: () => void) => {
+export const useMessages = (selectedContact: ChatContact | null) => {
   const { user, userType } = useAuth();
   const queryClient = useQueryClient();
 
@@ -23,7 +24,6 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
       
       console.log(`Fetching messages for conversation ${selectedContact.conversation_id}`);
       
-      // First get messages
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
@@ -38,94 +38,35 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
       
       console.log(`Retrieved ${data?.length || 0} messages`);
       
-      // Mark messages as read - use more aggressive approach to ensure updates
+      // Mark messages as read
       if (data && data.length > 0) {
         const unreadMessages = data.filter(msg => 
           msg.receiver_id === user.id && !msg.read
         );
         
         if (unreadMessages.length > 0) {
-          console.log(`Marking ${unreadMessages.length} messages as read - CRITICAL for badge updates`);
+          console.log(`Marking ${unreadMessages.length} messages as read`);
           
-          try {
-            // Use a direct update for better reliability
-            for (const msg of unreadMessages) {
-              try {
-                const { error: updateError } = await supabase
-                  .from('chat_messages')
-                  .update({ read: true })
-                  .eq('id', msg.id);
-                
-                if (updateError) {
-                  console.error(`Error marking message ${msg.id} as read:`, updateError);
-                } else {
-                  console.log(`Successfully marked message ${msg.id} as read`);
-                }
-              } catch (err) {
-                console.error(`Exception marking message as read:`, err);
-              }
+          for (const msg of unreadMessages) {
+            const { error: updateError } = await supabase
+              .from('chat_messages')
+              .update({ read: true })
+              .eq('id', msg.id);
+              
+            if (updateError) {
+              console.error("Error marking message as read:", updateError);
             }
-            
-            // Force refresh contacts to update badges
-            console.log("All messages marked as read, refreshing contacts");
-            refetchContacts();
-            
-            // Also invalidate the contacts query to ensure the UI updates
-            queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
-            
-            // Immediately attempt to update the cache with zero unread messages
-            if (selectedContact && selectedContact.unread_count > 0) {
-              queryClient.setQueryData(['chat-contacts'], (oldData: any) => {
-                if (!oldData) return oldData;
-                
-                return oldData.map((contact: ChatContact) => {
-                  if (contact.id === selectedContact.id) {
-                    console.log(`Setting unread count for ${contact.name} to 0 in cache`);
-                    return { ...contact, unread_count: 0 };
-                  }
-                  return contact;
-                });
-              });
-            }
-          } catch (updateError) {
-            console.error("Error in updating message read status:", updateError);
           }
+          
+          // Refresh contact list to update unread count
+          queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
         }
       }
       
       return data as Message[];
     },
     enabled: !!selectedContact?.conversation_id && !!user,
-    // Improve refetching strategy for better real-time updates
-    refetchOnWindowFocus: true,
-    staleTime: 500, // Shorter stale time for more frequent refreshes
-    networkMode: 'always', // Always fetch from network, don't use cache for critical data
   });
-
-  // Enhanced effect to update contacts more aggressively when messages change
-  useEffect(() => {
-    if (messages.length > 0 && selectedContact) {
-      console.log("Messages changed, triggering multiple contact refreshes");
-      
-      // Immediate refresh
-      refetchContacts();
-      queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
-      
-      // Multiple staggered refreshes to ensure updates take effect
-      const refreshTimes = [200, 500, 1000];
-      const timers = refreshTimes.map(time => {
-        return setTimeout(() => {
-          console.log(`Refreshing contacts after ${time}ms delay since messages changed`);
-          refetchContacts();
-          queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
-        }, time);
-      });
-      
-      return () => {
-        timers.forEach(timer => clearTimeout(timer));
-      };
-    }
-  }, [messages, selectedContact, refetchContacts, queryClient]);
 
   // Fetch detailed contact information with better error handling and fallbacks
   const { data: contactDetails } = useQuery({
@@ -233,6 +174,30 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
     enabled: !!selectedContact?.id && !!user,
   });
   
+  // Fetch booking requests for this conversation
+  const { data: bookingRequests = [] } = useQuery({
+    queryKey: ['bookings', selectedContact?.conversation_id],
+    queryFn: async () => {
+      if (!selectedContact?.conversation_id || !user) return [];
+      
+      console.log(`Fetching booking requests for conversation ${selectedContact.conversation_id}`);
+      
+      const { data, error } = await supabase
+        .from('booking_requests')
+        .select('*')
+        .eq('conversation_id', selectedContact.conversation_id)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error("Error fetching booking requests:", error);
+        return [];
+      }
+      
+      return data as BookingRequest[];
+    },
+    enabled: !!selectedContact?.conversation_id && !!user,
+  });
+  
   // For customers, fetch their reviews
   const { data: customerReviews = [] } = useQuery({
     queryKey: ['customer-reviews', selectedContact?.id, selectedContact?.user_type],
@@ -262,6 +227,7 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
     messages,
     refetchMessages,
     contactDetails,
-    customerReviews
+    customerReviews,
+    bookingRequests
   };
 };

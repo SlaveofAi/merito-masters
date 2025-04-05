@@ -22,17 +22,6 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
     contact.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  // Sort contacts to prioritize those with unread messages
-  const sortedContacts = [...filteredContacts].sort((a, b) => {
-    // First sort by unread count (higher first)
-    if ((b.unread_count || 0) - (a.unread_count || 0) !== 0) {
-      return (b.unread_count || 0) - (a.unread_count || 0);
-    }
-    // Then sort by last_message_time (newer first)
-    return new Date(b.last_message_time || 0).getTime() - 
-           new Date(a.last_message_time || 0).getTime();
-  });
-  
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b">
@@ -70,20 +59,15 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
           </div>
         ) : (
           <ul>
-            {sortedContacts.map((contact) => {
+            {filteredContacts.map((contact) => {
               const isSelected = contact.id === selectedContactId;
               const timeAgo = contact.last_message_time 
                 ? formatDistanceToNow(new Date(contact.last_message_time), { addSuffix: true, locale: sk }) 
                 : '';
-              
-              // Unique key for each contact, use conversation_id if available
-              const contactKey = contact.conversation_id 
-                ? `${contact.id}-${contact.conversation_id}` 
-                : contact.id;
                 
               return (
                 <li 
-                  key={contactKey}
+                  key={contact.id}
                   className={`
                     py-3 px-4 border-b cursor-pointer hover:bg-gray-50 transition-colors
                     ${isSelected ? 'bg-gray-50' : ''}
