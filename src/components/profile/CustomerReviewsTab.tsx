@@ -15,6 +15,7 @@ const CustomerReviewsTab: React.FC = () => {
   const { user, userType } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   
+  // Enhanced query to fetch reviews with craftsman names
   const { data: reviews, isLoading, refetch } = useQuery({
     queryKey: ['customer-reviews', profileData?.id],
     queryFn: async () => {
@@ -22,7 +23,7 @@ const CustomerReviewsTab: React.FC = () => {
       
       const { data, error } = await supabase
         .from('craftsman_reviews')
-        .select('*')
+        .select('*, craftsman:craftsman_id(name)')
         .eq('customer_id', profileData.id)
         .order('created_at', { ascending: false });
       
@@ -31,7 +32,7 @@ const CustomerReviewsTab: React.FC = () => {
         return [];
       }
       
-      return data as CraftsmanReview[];
+      return data as (CraftsmanReview & { craftsman: { name: string } })[];
     },
     enabled: !!profileData?.id,
   });
@@ -94,7 +95,9 @@ const CustomerReviewsTab: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <div className="font-medium">Hodnotenie pre: {review.craftsman_id}</div>
+                    <div className="font-medium">
+                      Hodnotenie pre: {review.craftsman?.name || 'Neznámy remeselník'}
+                    </div>
                     <div className="text-sm text-gray-500">
                       {new Date(review.created_at).toLocaleDateString("sk-SK")}
                     </div>
