@@ -35,12 +35,15 @@ const ReviewsTab: React.FC = () => {
     canLeaveReview, 
     userType, 
     profileType: profileData?.user_type,
+    userId: user?.id,
+    profileId: profileData?.id,
     error
   });
 
   // Fetch reviews when component mounts
   useEffect(() => {
     if (profileData?.id) {
+      console.log("Fetching reviews for profile:", profileData.id);
       refetchReviews();
     }
   }, [profileData?.id, refetchReviews]);
@@ -68,7 +71,7 @@ const ReviewsTab: React.FC = () => {
         <ReviewForm 
           userId={user.id} 
           profileId={profileData.id}
-          userName={user.user_metadata?.name || 'Anonymous'}
+          userName={user.user_metadata?.name || user.user_metadata?.full_name || 'Anonymous'}
           onSuccess={refetchReviews}
         />
       )}

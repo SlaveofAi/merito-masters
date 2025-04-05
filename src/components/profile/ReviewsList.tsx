@@ -22,6 +22,14 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
   onRefresh,
   error
 }) => {
+  // For debugging
+  console.log("ReviewsList rendering", {
+    reviewsCount: reviews?.length,
+    isLoading,
+    canReply: canReplyToReview,
+    userId
+  });
+
   if (error) {
     return (
       <Alert variant="destructive" className="mb-4">

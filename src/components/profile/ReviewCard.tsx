@@ -34,6 +34,12 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
     setError(null);
     
     try {
+      console.log("Submitting reply:", {
+        reviewId: review.id,
+        craftsmanId: userId,
+        replyText
+      });
+      
       // Type-cast supabase.rpc as any to avoid TypeScript errors with generated types
       const { error } = await (supabase.rpc as any)(
         'add_review_reply',
