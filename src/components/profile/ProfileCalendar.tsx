@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ const ProfileCalendar: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [month, setMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [motivationalMessage, setMotivationalMessage] = useState<string>('');
 
   // Check if we're viewing a craftsman profile
   const isCraftsmanProfile = profileData?.user_type === 'craftsman';
@@ -71,6 +73,18 @@ const ProfileCalendar: React.FC = () => {
     }
   };
 
+  // Get motivational phrases for craftsman
+  const getMotivationalPhrase = () => {
+    const phrases = [
+      "Výborne! Vaša dostupnosť je nastavená, zákazníci vás môžu kontaktovať!",
+      "Super! Vaše termíny sú pripravené na rezervácie!",
+      "Skvelá práca! Teraz ste viditeľný pre potenciálnych zákazníkov!",
+      "Fantastické! Váš kalendár je pripravený prijímať rezervácie!",
+      "Perfektné! Ste na ceste k novým zákazkám!"
+    ];
+    return phrases[Math.floor(Math.random() * phrases.length)];
+  };
+
   const saveAvailableDates = async () => {
     if (!user?.id || !profileData?.id || userType !== 'craftsman') {
       toast.error("Nemôžem uložiť dostupnosť, chýba ID používateľa");
@@ -108,6 +122,8 @@ const ProfileCalendar: React.FC = () => {
         if (error) throw error;
       }
       
+      // Set a new motivational message after successful save
+      setMotivationalMessage(getMotivationalPhrase());
       toast.success("Dostupné dni boli úspešne uložené");
     } catch (error: any) {
       console.error("Error saving available dates:", error);
@@ -146,23 +162,6 @@ const ProfileCalendar: React.FC = () => {
     return null;
   }
 
-  // Custom footer for the calendar
-  const calendarFooter = (
-    <div className="p-3 border-t">
-      <div className="flex items-center justify-between">
-        <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <div className="text-sm font-medium">
-          {month.toLocaleString('sk-SK', { month: 'long', year: 'numeric' })}
-        </div>
-        <Button variant="outline" size="sm" onClick={goToNextMonth}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-
   // Define the calendar component based on user type
   const CraftsmanCalendar = () => (
     <Calendar
@@ -174,7 +173,6 @@ const ProfileCalendar: React.FC = () => {
         }
       }}
       className="p-3 pointer-events-auto"
-      footer={calendarFooter}
     />
   );
 
@@ -188,10 +186,9 @@ const ProfileCalendar: React.FC = () => {
         available: (date) => selectedDates.some(d => d.toDateString() === date.toDateString())
       }}
       modifiersStyles={{
-        available: { backgroundColor: '#dcfce7' }
+        available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700 }
       }}
       className="p-3 pointer-events-auto"
-      footer={calendarFooter}
     />
   );
 
@@ -226,6 +223,20 @@ const ProfileCalendar: React.FC = () => {
           </div>
         ) : (
           <div className="flex flex-col">
+            <div className="p-3 border-b">
+              <div className="flex items-center justify-between">
+                <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="text-sm font-medium capitalize">
+                  {month.toLocaleString('sk-SK', { month: 'long', year: 'numeric' })}
+                </div>
+                <Button variant="outline" size="sm" onClick={goToNextMonth}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
             {isCurrentUser ? <CraftsmanCalendar /> : <CustomerCalendar />}
             
             <div className="mt-3 flex items-center">
@@ -259,6 +270,12 @@ const ProfileCalendar: React.FC = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+            
+            {motivationalMessage && (
+              <div className="text-center p-3 mb-4 bg-primary/5 rounded-lg">
+                <p className="font-medium text-gray-700">{motivationalMessage}</p>
               </div>
             )}
             
