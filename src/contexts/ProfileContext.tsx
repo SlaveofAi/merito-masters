@@ -24,10 +24,14 @@ interface ProfileContextType {
   isCreatingProfile: boolean;
   rating: number;
   reviewComment: string;
+  customSpecialization: string;
+  saving: boolean;
   setActiveImageIndex: (index: number) => void;
   setIsEditing: (value: boolean) => void;
   setRating: (value: number) => void;
   setReviewComment: (value: string) => void;
+  setCustomSpecialization: (value: string) => void;
+  updateCustomSpecialization: (value: string) => Promise<void>;
   handleProfileImageUpload: (event: React.ChangeEvent<HTMLInputElement> | File | Blob) => void;
   handlePortfolioImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleProfileUpdate: (updatedProfile: any) => void;
@@ -63,14 +67,18 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     profileNotFound,
     portfolioImages,
     profileImageUrl,
+    customSpecialization,
+    saving,
     reviews,
     isLoadingReviews,
     refetchReviews,
     setProfileData,
     setProfileImageUrl,
+    setCustomSpecialization,
     fetchPortfolioImages,
     handleProfileImageUpload: handleProfileImageUploadHook,
     handlePortfolioImageUpload: handlePortfolioImageUploadHook,
+    updateCustomSpecialization,
     createDefaultProfileIfNeeded,
     isCreatingProfile,
     error
@@ -171,10 +179,14 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     isCreatingProfile,
     rating,
     reviewComment,
+    customSpecialization,
+    saving,
     setActiveImageIndex,
     setIsEditing,
     setRating,
     setReviewComment,
+    setCustomSpecialization,
+    updateCustomSpecialization,
     handleProfileImageUpload,
     handlePortfolioImageUpload: handlePortfolioImageUploadHook,
     handleProfileUpdate,

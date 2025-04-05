@@ -7,12 +7,15 @@ import { useProfileReviews } from "@/hooks/useProfileReviews";
 import { createDefaultProfile } from "@/utils/profileCreation";
 import { uploadProfileImage, uploadPortfolioImages } from "@/utils/imageUpload";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useProfileData = (id?: string) => {
   const { user, userType } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [customSpecialization, setCustomSpecialization] = useState<string>('');
+  const [saving, setSaving] = useState(false);
 
   const {
     loading,
@@ -36,6 +39,13 @@ export const useProfileData = (id?: string) => {
     isLoadingReviews,
     refetchReviews
   } = useProfileReviews(id || profileData?.id);
+  
+  // Set initial custom specialization from profile data
+  useEffect(() => {
+    if (profileData && 'custom_specialization' in profileData) {
+      setCustomSpecialization(profileData.custom_specialization || '');
+    }
+  }, [profileData]);
 
   const handleProfileImageUpload = async (file: File | Blob) => {
     if (!profileData || !user) {
@@ -95,6 +105,43 @@ export const useProfileData = (id?: string) => {
     }
   };
 
+  const updateCustomSpecialization = async (newSpecialization: string) => {
+    if (!profileData || !user) {
+      toast.error("Nie je možné aktualizovať špecializáciu, používateľ nie je prihlásený");
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      // Update the custom specialization in the database
+      const { error } = await supabase
+        .from('craftsman_profiles')
+        .update({ custom_specialization: newSpecialization })
+        .eq('id', profileData.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setCustomSpecialization(newSpecialization);
+      
+      // Update profile data
+      if (profileData && 'custom_specialization' in profileData) {
+        const updatedProfile = { 
+          ...profileData, 
+          custom_specialization: newSpecialization 
+        };
+        setProfileData(updatedProfile);
+      }
+      
+      toast.success("Špecializácia bola úspešne aktualizovaná");
+    } catch (error) {
+      console.error("Error updating custom specialization:", error);
+      toast.error("Nastala chyba pri aktualizácii špecializácie");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const createDefaultProfileIfNeeded = useCallback(async () => {
     if (isCreatingProfile) {
       console.log("Profile creation already in progress, skipping");
@@ -147,17 +194,24 @@ export const useProfileData = (id?: string) => {
     profileNotFound,
     portfolioImages,
     profileImageUrl,
+    customSpecialization,
     reviews,
     isLoadingReviews,
     refetchReviews,
     setProfileData,
     setProfileImageUrl,
+    setCustomSpecialization,
     fetchPortfolioImages,
     handleProfileImageUpload,
     handlePortfolioImageUpload,
+    updateCustomSpecialization,
     createDefaultProfileIfNeeded,
     isCreatingProfile,
     uploading,
+    saving,
     error
   };
 };
+
+// Add missing import
+import { useEffect } from "react";

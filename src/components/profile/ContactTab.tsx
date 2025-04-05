@@ -1,20 +1,52 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Phone, Mail, Clock, MapPin } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const ContactTab: React.FC = () => {
   const { profileData, userType, isCurrentUser } = useProfile();
+  const { user } = useAuth();
   const [workHours, setWorkHours] = useState("Pondelok - Piatok, 8:00 - 17:00");
   const [editingHours, setEditingHours] = useState(false);
   const [tempWorkHours, setTempWorkHours] = useState(workHours);
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [saving, setSaving] = useState(false);
 
-  if (!profileData) return null;
+  useEffect(() => {
+    // Load saved available dates when profile data is available
+    if (profileData?.id && userType === 'craftsman') {
+      fetchAvailableDates();
+    }
+  }, [profileData?.id, userType]);
+
+  const fetchAvailableDates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('craftsman_availability')
+        .select('date')
+        .eq('craftsman_id', profileData?.id);
+
+      if (error) {
+        console.error("Error fetching available dates:", error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const parsedDates = data.map(item => new Date(item.date));
+        setSelectedDates(parsedDates);
+      }
+    } catch (err) {
+      console.error("Error processing available dates:", err);
+    }
+  };
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
@@ -34,6 +66,47 @@ const ContactTab: React.FC = () => {
     setWorkHours(tempWorkHours);
     setEditingHours(false);
   };
+
+  const saveAvailableDates = async () => {
+    if (!user?.id || !profileData?.id || userType !== 'craftsman') {
+      toast.error("Nemôžem uložiť dostupnosť, chýba ID používateľa");
+      return;
+    }
+
+    setSaving(true);
+    
+    try {
+      // First delete all existing dates for this craftsman
+      await supabase
+        .from('craftsman_availability')
+        .delete()
+        .eq('craftsman_id', profileData.id);
+      
+      // Then insert the new dates
+      if (selectedDates.length > 0) {
+        const datesToInsert = selectedDates.map(date => ({
+          craftsman_id: profileData.id,
+          date: date.toISOString().split('T')[0], // Format as YYYY-MM-DD
+          time_slots: []
+        }));
+        
+        const { error } = await supabase
+          .from('craftsman_availability')
+          .insert(datesToInsert);
+          
+        if (error) throw error;
+      }
+      
+      toast.success("Dostupné dni boli úspešne uložené");
+    } catch (error: any) {
+      console.error("Error saving available dates:", error);
+      toast.error("Chyba pri ukladaní dostupných dní");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!profileData) return null;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -158,6 +231,14 @@ const ContactTab: React.FC = () => {
                       </div>
                     ))}
                   </div>
+                  
+                  <Button
+                    onClick={saveAvailableDates}
+                    className="mt-4"
+                    disabled={saving}
+                  >
+                    {saving ? "Ukladám..." : "Uložiť dostupné dni"}
+                  </Button>
                 </div>
               )}
             </div>

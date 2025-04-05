@@ -3,9 +3,10 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { UploadCloud } from "lucide-react";
+import { UploadCloud, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { Project } from "./ProjectCard";
+import ProjectImageEditor from "./ProjectImageEditor";
 
 interface ProjectFormProps {
   onSubmit: (title: string, description: string, images: File[]) => Promise<void>;
@@ -19,6 +20,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
   const [images, setImages] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
+  const [currentEditImage, setCurrentEditImage] = useState<string | null>(null);
 
   // Populate the form with initialData if provided (for editing)
   useEffect(() => {
@@ -37,10 +40,11 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
   const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newImages = Array.from(e.target.files);
-      setImages([...images, ...newImages]);
       
       // Create preview URLs for the new images
       const newPreviewUrls = newImages.map(file => URL.createObjectURL(file));
+      
+      setImages([...images, ...newImages]);
       setPreviewUrls([...previewUrls, ...newPreviewUrls]);
     }
   };
@@ -70,6 +74,39 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
       newPreviewUrls.splice(index, 1);
       setPreviewUrls(newPreviewUrls);
     }
+  };
+
+  const handleEditImage = (index: number) => {
+    setEditingImageIndex(index);
+    setCurrentEditImage(previewUrls[index]);
+  };
+
+  const handleSaveCroppedImage = (croppedImage: File) => {
+    if (editingImageIndex === null) return;
+    
+    // Create a new preview URL for the cropped image
+    const newPreviewUrl = URL.createObjectURL(croppedImage);
+    
+    // Update the preview URLs array
+    const newPreviewUrls = [...previewUrls];
+    newPreviewUrls[editingImageIndex] = newPreviewUrl;
+    setPreviewUrls(newPreviewUrls);
+    
+    // If this is a new image, update the images array
+    if (!initialData || editingImageIndex >= (initialData.images?.length || 0)) {
+      const adjustedIndex = initialData ? editingImageIndex - initialData.images.length : editingImageIndex;
+      const newImages = [...images];
+      newImages[adjustedIndex] = croppedImage;
+      setImages(newImages);
+    } else {
+      // For existing images, add to images array with the same index
+      setImages(prev => [...prev, croppedImage]);
+      // We'll need special handling in onSubmit to know this is an update to an existing image
+    }
+    
+    // Close the editor
+    setEditingImageIndex(null);
+    setCurrentEditImage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -104,6 +141,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
       setPreviewUrls([]);
     } catch (error) {
       console.error("Error submitting project:", error);
+      toast.error("Nastala chyba pri ukladaní projektu");
     } finally {
       setUploading(false);
     }
@@ -149,13 +187,22 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
                 alt={`Preview ${index + 1}`}
                 className="w-full h-full object-cover rounded-md"
               />
-              <button
-                type="button"
-                className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => removeImage(index)}
-              >
-                &times;
-              </button>
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-black/30 flex items-center justify-center space-x-2 transition-opacity rounded-md">
+                <button
+                  type="button"
+                  className="bg-white text-gray-800 rounded-full p-1.5 hover:bg-gray-100"
+                  onClick={() => handleEditImage(index)}
+                >
+                  <Edit2 className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  className="bg-white text-red-500 rounded-full p-1.5 hover:bg-gray-100"
+                  onClick={() => removeImage(index)}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           ))}
           
@@ -186,6 +233,18 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
           {uploading ? "Nahrávam..." : initialData ? "Upraviť projekt" : "Uložiť projekt"}
         </Button>
       </div>
+
+      {/* Image editor modal */}
+      {editingImageIndex !== null && currentEditImage && (
+        <ProjectImageEditor
+          imageSrc={currentEditImage}
+          onSave={handleSaveCroppedImage}
+          onCancel={() => {
+            setEditingImageIndex(null);
+            setCurrentEditImage(null);
+          }}
+        />
+      )}
     </form>
   );
 };
