@@ -382,7 +382,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_review_reply: {
+        Args: {
+          p_review_id: string
+          p_craftsman_id: string
+          p_reply: string
+        }
+        Returns: undefined
+      }
+      get_review_replies_by_review_ids: {
+        Args: {
+          review_ids: string[]
+        }
+        Returns: {
+          id: string
+          review_id: string
+          craftsman_id: string
+          reply: string
+          created_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

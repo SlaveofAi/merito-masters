@@ -42,8 +42,7 @@ export const useProfileReviews = (id?: string) => {
         return reviewsData as CraftsmanReview[];
       }
       
-      // Use traditional query for review replies since the table is new
-      // and not yet in the TypeScript types
+      // Use RPC function for getting review replies
       const { data: repliesData, error: repliesError } = await supabase
         .rpc('get_review_replies_by_review_ids', { review_ids: reviewIds });
         
