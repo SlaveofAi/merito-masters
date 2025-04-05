@@ -10,8 +10,8 @@ import { ChatContact } from "@/types/chat";
 
 const Chat: React.FC = () => {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
-  const { contacts, contactsLoading } = useContacts();
-  const { messages, refetchMessages, contactDetails, customerReviews } = useMessages(selectedContact);
+  const { contacts, contactsLoading, refetchContacts } = useContacts();
+  const { messages, refetchMessages, contactDetails, customerReviews } = useMessages(selectedContact, refetchContacts);
   const { sendMessage, archiveConversation, deleteConversation } = useChatActions(
     selectedContact,
     setSelectedContact,
@@ -19,7 +19,7 @@ const Chat: React.FC = () => {
   );
   
   // Set up real-time updates
-  useChatSubscription(selectedContact, refetchMessages);
+  useChatSubscription(selectedContact, refetchMessages, refetchContacts);
   
   const handleContactSelect = (contact: ChatContact) => {
     setSelectedContact(contact);

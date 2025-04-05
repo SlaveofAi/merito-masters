@@ -8,7 +8,8 @@ import { ChatContact } from "@/types/chat";
 
 export const useChatSubscription = (
   selectedContact: ChatContact | null,
-  refetchMessages: () => void
+  refetchMessages: () => void,
+  refetchContacts: () => void
 ) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -43,7 +44,16 @@ export const useChatSubscription = (
         }
         
         // Refresh contact list
-        queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+        refetchContacts();
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'chat_messages'
+      }, (payload) => {
+        // If messages are marked as read, update the contact list to reflect new unread counts
+        console.log("Message status changed:", payload);
+        refetchContacts();
       })
       .subscribe((status) => {
         console.log("Realtime subscription status:", status);
@@ -53,5 +63,5 @@ export const useChatSubscription = (
       console.log("Cleaning up realtime subscription");
       supabase.removeChannel(channel);
     };
-  }, [user, selectedContact, refetchMessages, queryClient]);
+  }, [user, selectedContact, refetchMessages, refetchContacts, queryClient]);
 };

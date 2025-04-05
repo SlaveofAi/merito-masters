@@ -12,7 +12,7 @@ export const useContacts = () => {
   const queryClient = useQueryClient();
 
   // Fetch contacts
-  const { data: contacts = [], isLoading: contactsLoading } = useQuery({
+  const { data: contacts = [], isLoading: contactsLoading, refetch: refetchContacts } = useQuery({
     queryKey: ['chat-contacts', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -156,6 +156,6 @@ export const useContacts = () => {
     contacts,
     loading,
     contactsLoading,
-    refetchContacts: () => queryClient.invalidateQueries({ queryKey: ['chat-contacts'] })
+    refetchContacts
   };
 };
