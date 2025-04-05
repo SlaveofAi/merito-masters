@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 const ContactTab: React.FC = () => {
   const { profileData, userType, isCurrentUser } = useProfile();
@@ -21,19 +23,29 @@ const ContactTab: React.FC = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [saving, setSaving] = useState(false);
   const [calendarVisible, setCalendarVisible] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoadingDates, setIsLoadingDates] = useState(false);
 
   useEffect(() => {
     // Load saved available dates for any craftsman profile we're viewing
     if (profileData?.id && profileData.user_type === 'craftsman') {
       console.log("Fetching available dates for craftsman:", profileData.id);
-      fetchAvailableDates();
       setCalendarVisible(true);
+      setIsLoadingDates(true);
+      fetchAvailableDates();
     } else {
       setCalendarVisible(false);
     }
   }, [profileData?.id]);
 
   const fetchAvailableDates = async () => {
+    if (!profileData?.id) {
+      setIsLoadingDates(false);
+      return;
+    }
+
+    setError(null);
+    
     try {
       console.log("Running fetchAvailableDates for:", profileData?.id);
       const { data, error } = await supabase
@@ -43,6 +55,8 @@ const ContactTab: React.FC = () => {
 
       if (error) {
         console.error("Error fetching available dates:", error);
+        setError("Nepodarilo sa načítať dostupné dni. Skúste obnoviť stránku.");
+        setIsLoadingDates(false);
         return;
       }
 
@@ -55,8 +69,11 @@ const ContactTab: React.FC = () => {
         console.log("No available dates found");
         setSelectedDates([]);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error processing available dates:", err);
+      setError(`Chyba: ${err.message}`);
+    } finally {
+      setIsLoadingDates(false);
     }
   };
 
@@ -87,15 +104,20 @@ const ContactTab: React.FC = () => {
     }
 
     setSaving(true);
+    setError(null);
     
     try {
       console.log("Saving dates for craftsman:", profileData.id, selectedDates);
       
       // First delete all existing dates for this craftsman
-      await supabase
+      const { error: deleteError } = await supabase
         .from('craftsman_availability')
         .delete()
         .eq('craftsman_id', profileData.id);
+        
+      if (deleteError) {
+        throw deleteError;
+      }
       
       // Then insert the new dates
       if (selectedDates.length > 0) {
@@ -115,6 +137,7 @@ const ContactTab: React.FC = () => {
       toast.success("Dostupné dni boli úspešne uložené");
     } catch (error: any) {
       console.error("Error saving available dates:", error);
+      setError(`Chyba pri ukladaní: ${error.message}`);
       toast.error("Chyba pri ukladaní dostupných dní");
     } finally {
       setSaving(false);
@@ -222,7 +245,19 @@ const ContactTab: React.FC = () => {
                 )}
               </div>
               
-              {isCurrentUser ? (
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              
+              {isLoadingDates ? (
+                <div className="text-center py-4">
+                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+                  <p className="mt-2 text-sm text-gray-500">Načítavam dostupnosť...</p>
+                </div>
+              ) : isCurrentUser ? (
                 <>
                   <p className="text-sm text-gray-500 mb-4">
                     Vyberte dni, kedy ste k dispozícii pre zákazníkov

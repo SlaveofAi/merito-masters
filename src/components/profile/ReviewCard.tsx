@@ -3,10 +3,11 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Reply } from "lucide-react";
+import { Reply, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import ReviewStarRating from "./ReviewStarRating";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ReviewCardProps {
   review: any;
@@ -23,9 +24,14 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
 }) => {
   const [replyText, setReplyText] = useState("");
   const [showReplyForm, setShowReplyForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmitReply = async () => {
     if (!userId || !replyText.trim()) return;
+    
+    setIsSubmitting(true);
+    setError(null);
     
     try {
       // Type-cast supabase.rpc as any to avoid TypeScript errors with generated types
@@ -46,7 +52,10 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
       onRefresh();
     } catch (error: any) {
       console.error("Error submitting reply:", error);
+      setError(`Nastala chyba: ${error.message}`);
       toast.error("Nastala chyba pri odosielaní odpovede");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -75,6 +84,13 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
         {/* Reply form - only for craftsmen on their own profile */}
         {canReplyToReview && !review.reply && (
           <div className="mt-4">
+            {error && (
+              <Alert variant="destructive" className="mb-3">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             {showReplyForm ? (
               <div className="space-y-3">
                 <Textarea
@@ -87,9 +103,9 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
                   <Button 
                     size="sm"
                     onClick={handleSubmitReply}
-                    disabled={!replyText.trim()}
+                    disabled={!replyText.trim() || isSubmitting}
                   >
-                    Odoslať
+                    {isSubmitting ? "Odosielam..." : "Odoslať"}
                   </Button>
                   <Button 
                     size="sm"
@@ -97,7 +113,9 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
                     onClick={() => {
                       setShowReplyForm(false);
                       setReplyText("");
+                      setError(null);
                     }}
+                    disabled={isSubmitting}
                   >
                     Zrušiť
                   </Button>

@@ -1,11 +1,12 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/contexts/ProfileContext";
 import ReviewForm from "./ReviewForm";
 import ReviewsList from "./ReviewsList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const ReviewsTab: React.FC = () => {
   const { user, userType } = useAuth();
@@ -27,6 +28,7 @@ const ReviewsTab: React.FC = () => {
   // Only craftsmen can reply to reviews on their own profiles
   const canReplyToReview = user && userType === 'craftsman' && isCurrentUser;
 
+  // Log for debugging
   console.log("Reviews tab rendering", { 
     reviews: reviews?.length, 
     isCurrentUser, 
@@ -36,13 +38,27 @@ const ReviewsTab: React.FC = () => {
     error
   });
 
+  // Fetch reviews when component mounts
+  useEffect(() => {
+    if (profileData?.id) {
+      refetchReviews();
+    }
+  }, [profileData?.id, refetchReviews]);
+
   return (
     <div className="space-y-6">
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4 mr-2" />
           <AlertDescription>
             {typeof error === 'string' ? error : 'Nastala chyba pri načítaní hodnotení. Prosím, skúste to znova neskôr.'}
+            <Button 
+              variant="link" 
+              className="ml-2 p-0 h-auto" 
+              onClick={() => refetchReviews()}
+            >
+              <RefreshCw className="h-3 w-3 mr-1" /> Obnoviť
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -61,7 +77,7 @@ const ReviewsTab: React.FC = () => {
       <div>
         <h3 className="text-xl font-semibold mb-4">Hodnotenia a recenzie</h3>
         <ReviewsList
-          reviews={reviews}
+          reviews={reviews || []}
           isLoading={isLoadingReviews}
           canReplyToReview={canReplyToReview}
           userId={user?.id}
