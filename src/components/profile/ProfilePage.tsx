@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,7 +28,6 @@ const ProfilePage: React.FC = () => {
   } = useProfile();
 
   useEffect(() => {
-    // If we're on the current user's profile and it doesn't exist, try to create it
     if (isCurrentUser && profileNotFound && createDefaultProfileIfNeeded) {
       console.log("Profile not found for current user, attempting to create default profile");
       setTimeout(() => {
@@ -43,7 +41,6 @@ const ProfilePage: React.FC = () => {
     }
   }, [isCurrentUser, profileNotFound, createDefaultProfileIfNeeded]);
 
-  // Render a special UI when the user is logged in but has no user type set
   if (user && !userType && isCurrentUser) {
     return (
       <Layout>
@@ -109,7 +106,6 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  // Handle case where the profile not found might be due to RLS policies
   if (error && error.includes("row-level security policy")) {
     return (
       <Layout>
@@ -140,7 +136,6 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  // Handle database connection errors
   if (error && error.includes("database function names")) {
     return (
       <Layout>
@@ -208,6 +203,8 @@ const ProfilePage: React.FC = () => {
 };
 
 const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null }> = ({ userType }) => {
+  console.log("Rendering ProfileTabs with userType:", userType);
+  
   if (userType === 'customer') {
     return (
       <Tabs defaultValue="reviews" className="w-full">
@@ -229,7 +226,7 @@ const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null }> = ({
   
   // Default tabs for craftsman profiles
   return (
-    <Tabs defaultValue="portfolio" className="w-full">
+    <Tabs defaultValue="contact" className="w-full">
       <TabsList className="grid w-full max-w-md mx-auto md:grid-cols-3 mb-8">
         <TabsTrigger value="portfolio">Portfólio</TabsTrigger>
         <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>

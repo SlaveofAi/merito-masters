@@ -34,6 +34,8 @@ export const useProfileReviews = (id?: string) => {
         return [];
       }
 
+      console.log("Found reviews:", reviewsData.length);
+
       // Then fetch all replies for these reviews
       const reviewIds = reviewsData.map(review => review.id);
       

@@ -20,16 +20,22 @@ const ContactTab: React.FC = () => {
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [saving, setSaving] = useState(false);
+  const [calendarVisible, setCalendarVisible] = useState(false);
 
   useEffect(() => {
     // Load saved available dates for any craftsman profile we're viewing
     if (profileData?.id && profileData.user_type === 'craftsman') {
+      console.log("Fetching available dates for craftsman:", profileData.id);
       fetchAvailableDates();
+      setCalendarVisible(true);
+    } else {
+      setCalendarVisible(false);
     }
   }, [profileData?.id]);
 
   const fetchAvailableDates = async () => {
     try {
+      console.log("Running fetchAvailableDates for:", profileData?.id);
       const { data, error } = await supabase
         .from('craftsman_availability')
         .select('date')
@@ -43,7 +49,11 @@ const ContactTab: React.FC = () => {
       if (data && data.length > 0) {
         // Parse the dates from string to Date objects
         const parsedDates = data.map(item => new Date(item.date));
+        console.log("Found available dates:", parsedDates);
         setSelectedDates(parsedDates);
+      } else {
+        console.log("No available dates found");
+        setSelectedDates([]);
       }
     } catch (err) {
       console.error("Error processing available dates:", err);
@@ -67,6 +77,7 @@ const ContactTab: React.FC = () => {
   const saveWorkHours = () => {
     setWorkHours(tempWorkHours);
     setEditingHours(false);
+    toast.success("Pracovné hodiny boli aktualizované");
   };
 
   const saveAvailableDates = async () => {
@@ -78,6 +89,8 @@ const ContactTab: React.FC = () => {
     setSaving(true);
     
     try {
+      console.log("Saving dates for craftsman:", profileData.id, selectedDates);
+      
       // First delete all existing dates for this craftsman
       await supabase
         .from('craftsman_availability')
@@ -198,7 +211,7 @@ const ContactTab: React.FC = () => {
           </div>
           
           {/* Show craftsman availability calendar */}
-          {isCraftsmanProfile && (
+          {isCraftsmanProfile && calendarVisible && (
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium">Dostupnosť v kalendári</h4>

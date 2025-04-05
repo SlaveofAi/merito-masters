@@ -24,6 +24,14 @@ const ReviewsTab: React.FC = () => {
   // Only craftsmen can reply to reviews on their own profiles
   const canReplyToReview = user && userType === 'craftsman' && isCurrentUser;
 
+  console.log("Reviews tab rendering", { 
+    reviews: reviews?.length, 
+    isCurrentUser, 
+    canLeaveReview, 
+    userType, 
+    profileType: profileData?.user_type 
+  });
+
   return (
     <div className="space-y-6">
       {/* Review submission form - only for customers viewing craftsman profiles */}
