@@ -2,6 +2,8 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import ReviewCard from "./ReviewCard";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 interface ReviewsListProps {
   reviews: any[];
@@ -9,6 +11,7 @@ interface ReviewsListProps {
   canReplyToReview: boolean;
   userId?: string;
   onRefresh: () => void;
+  error?: any;
 }
 
 const ReviewsList: React.FC<ReviewsListProps> = ({
@@ -16,8 +19,22 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
   isLoading,
   canReplyToReview,
   userId,
-  onRefresh
+  onRefresh,
+  error
 }) => {
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertTriangle className="h-4 w-4 mr-2" />
+        <AlertDescription>
+          {typeof error === 'string' 
+            ? error 
+            : 'Nastala chyba pri načítaní hodnotení. Skúste obnoviť stránku.'}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="text-center py-8">

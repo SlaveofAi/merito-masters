@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/contexts/ProfileContext";
 import ReviewForm from "./ReviewForm";
 import ReviewsList from "./ReviewsList";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const ReviewsTab: React.FC = () => {
   const { user, userType } = useAuth();
@@ -11,6 +13,7 @@ const ReviewsTab: React.FC = () => {
     profileData,
     reviews,
     isLoadingReviews,
+    error,
     refetchReviews
   } = useProfile();
 
@@ -29,11 +32,21 @@ const ReviewsTab: React.FC = () => {
     isCurrentUser, 
     canLeaveReview, 
     userType, 
-    profileType: profileData?.user_type 
+    profileType: profileData?.user_type,
+    error
   });
 
   return (
     <div className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {typeof error === 'string' ? error : 'Nastala chyba pri načítaní hodnotení. Prosím, skúste to znova neskôr.'}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Review submission form - only for customers viewing craftsman profiles */}
       {canLeaveReview && user && profileData && (
         <ReviewForm 
@@ -53,6 +66,7 @@ const ReviewsTab: React.FC = () => {
           canReplyToReview={canReplyToReview}
           userId={user?.id}
           onRefresh={refetchReviews}
+          error={error}
         />
       </div>
     </div>

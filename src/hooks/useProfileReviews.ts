@@ -17,7 +17,7 @@ export const useProfileReviews = (id?: string) => {
       
       console.log("Fetching reviews for craftsman:", userId);
       
-      // First fetch the reviews
+      // First fetch the reviews - now protected by RLS
       const { data: reviewsData, error: reviewsError } = await supabase
         .from('craftsman_reviews')
         .select('*')
@@ -26,7 +26,7 @@ export const useProfileReviews = (id?: string) => {
       
       if (reviewsError) {
         console.error("Error fetching reviews:", reviewsError);
-        return [];
+        throw new Error(`Error fetching reviews: ${reviewsError.message}`);
       }
       
       if (!reviewsData || !Array.isArray(reviewsData)) {
@@ -45,7 +45,6 @@ export const useProfileReviews = (id?: string) => {
       }
       
       // Use RPC function for getting review replies
-      // Type-casting supabase.rpc as any to avoid TypeScript errors with generated types
       const { data: repliesData, error: repliesError } = await (supabase.rpc as any)(
         'get_review_replies_by_review_ids', 
         { review_ids: reviewIds }
@@ -73,7 +72,7 @@ export const useProfileReviews = (id?: string) => {
       return reviewsWithReplies as CraftsmanReview[];
     } catch (error) {
       console.error("Error in fetchReviews:", error);
-      return [];
+      throw error;
     }
   };
 
@@ -83,17 +82,20 @@ export const useProfileReviews = (id?: string) => {
   const {
     data: reviews = [],
     isLoading: isLoadingReviews,
+    error,
     refetch: refetchReviews
   } = useQuery({
     queryKey: ['reviews', userId],
     queryFn: () => fetchReviews(userId || ''),
     enabled: !!userId,
+    retry: 1,
     gcTime: 0, // Use gcTime instead of cacheTime to ensure fresh data
   });
 
   return {
     reviews,
     isLoadingReviews,
+    error,
     refetchReviews
   };
 };
