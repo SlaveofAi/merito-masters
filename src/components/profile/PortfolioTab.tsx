@@ -11,7 +11,7 @@ import ProjectDetail from "./ProjectDetail";
 import { formatDate } from "@/utils/dateUtils";
 
 const PortfolioTab: React.FC = () => {
-  const { profileData, projects, isCurrentUser, removeProject, deletingImage } = useProfile();
+  const { profileData, projects, isCurrentUser, removeProject, createProject, deletingImage } = useProfile();
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [currentProjectIndex, setCurrentProjectIndex] = useState(0);
@@ -56,9 +56,15 @@ const PortfolioTab: React.FC = () => {
     }
   };
 
-  const handleAddProject = (title: string, description: string, images: File[]) => {
-    // This would be implemented to add a new project
-    setIsAddingProject(false);
+  const handleAddProject = async (title: string, description: string, images: File[]): Promise<void> => {
+    try {
+      await createProject(title, description, images);
+      setIsAddingProject(false);
+    } catch (error) {
+      console.error("Error adding project:", error);
+      // Let the error bubble up to the ProjectForm component
+      throw error;
+    }
   };
 
   return (
@@ -80,7 +86,7 @@ const PortfolioTab: React.FC = () => {
                 <div className="relative">
                   {project.images && project.images.length > 0 ? (
                     <img
-                      src={project.images[0]}
+                      src={project.images[0].image_url}
                       alt={project.title}
                       className="w-full h-48 object-cover rounded-md"
                     />
