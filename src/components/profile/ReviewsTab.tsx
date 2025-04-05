@@ -17,11 +17,11 @@ const ReviewsTab: React.FC = () => {
   // Check if the current profile belongs to the logged-in user
   const isCurrentUser = profileData?.id === user?.id;
   
-  // Only customers can leave reviews for craftsmen
+  // Only customers can leave reviews for craftsmen profiles that aren't their own
   const canLeaveReview = user && userType === 'customer' && 
     profileData?.user_type === 'craftsman' && !isCurrentUser;
   
-  // Only craftsmen can reply to their own reviews
+  // Only craftsmen can reply to reviews on their own profiles
   const canReplyToReview = user && userType === 'craftsman' && isCurrentUser;
 
   return (
@@ -31,7 +31,7 @@ const ReviewsTab: React.FC = () => {
         <ReviewForm 
           userId={user.id} 
           profileId={profileData.id}
-          userName={user.user_metadata?.name}
+          userName={user.user_metadata?.name || 'Anonymous'}
           onSuccess={refetchReviews}
         />
       )}
