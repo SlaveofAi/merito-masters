@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Upload, Euro } from "lucide-react";
@@ -138,6 +139,12 @@ const ContactTab: React.FC = () => {
     }
   };
 
+  const handleDateClick = (date: Date) => {
+    if (availableDates.some(d => d.toDateString() === date.toDateString())) {
+      setSelectedDate(date);
+    }
+  };
+
   const goToNextMonth = () => {
     const nextMonth = new Date(month);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -153,11 +160,17 @@ const ContactTab: React.FC = () => {
   const BookingRequestForm = () => {
     const form = useForm({
       defaultValues: {
-        date: "",
+        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "",
         message: "",
         amount: ""
       }
     });
+
+    useEffect(() => {
+      if (selectedDate) {
+        form.setValue('date', format(selectedDate, 'yyyy-MM-dd'));
+      }
+    }, [selectedDate, form]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
@@ -260,6 +273,7 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
         
         toast.success("Vaša požiadavka bola odoslaná remeselníkovi");
         form.reset();
+        setSelectedDate(null);
         setSelectedImage(null);
         setImagePreview(null);
       } catch (error: any) {
@@ -287,7 +301,7 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
                 <FormLabel>Vyberte dátum</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  defaultValue={field.value}
+                  value={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -481,23 +495,29 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
 
       <div className="flex justify-center w-full">
         <CalendarUI
-          mode="default"
+          mode="single"
+          selected={selectedDate}
+          onSelect={(date) => {
+            if (date) {
+              handleDateClick(date);
+            }
+          }}
           month={month}
           onMonthChange={setMonth}
           modifiers={{
             available: (date) => availableDates.some(d => d.toDateString() === date.toDateString())
           }}
           modifiersStyles={{
-            available: { backgroundColor: '#dcfce7' }
+            available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 500 }
           }}
           className="p-3 pointer-events-auto w-full"
           showOutsideDays
-          disabled={date => true}
+          disabled={(date) => !availableDates.some(d => d.toDateString() === date.toDateString())}
           styles={{
-            months: { width: '100%' },
             table: { width: '100%' },
             row: { width: '100%' },
-            cell: { width: '100%' }
+            cell: { width: 'calc(100% / 7)' },
+            head_cell: { width: 'calc(100% / 7)' }
           }}
         />
       </div>
@@ -521,46 +541,57 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <Card className="border border-border/50 md:max-w-xs">
-        <CardContent className="p-6">
-          <h3 className="text-xl font-semibold mb-6">Kontaktné informácie</h3>
-          <div className="space-y-4">
-            {profileData.phone && (
+      <div className="space-y-6">
+        <Card className="border border-border/50 md:max-w-md">
+          <CardContent className="p-6">
+            <h3 className="text-xl font-semibold mb-4">Kontaktné informácie</h3>
+            <div className="space-y-4">
+              {profileData.phone && (
+                <div className="flex items-start">
+                  <Phone className="w-5 h-5 mr-3 mt-0.5 text-primary" />
+                  <div>
+                    <p className="font-medium">Telefón</p>
+                    <p className="text-muted-foreground">
+                      {profileData.phone}
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="flex items-start">
-                <Phone className="w-5 h-5 mr-3 mt-0.5 text-primary" />
+                <Mail className="w-5 h-5 mr-3 mt-0.5 text-primary" />
                 <div>
-                  <p className="font-medium">Telefón</p>
+                  <p className="font-medium">Email</p>
                   <p className="text-muted-foreground">
-                    {profileData.phone}
+                    {profileData.email}
                   </p>
                 </div>
               </div>
-            )}
-            <div className="flex items-start">
-              <Mail className="w-5 h-5 mr-3 mt-0.5 text-primary" />
-              <div>
-                <p className="font-medium">Email</p>
-                <p className="text-muted-foreground">
-                  {profileData.email}
-                </p>
+              
+              <div className="flex items-start">
+                <MapPin className="w-5 h-5 mr-3 mt-0.5 text-primary" />
+                <div>
+                  <p className="font-medium">Región pôsobenia</p>
+                  <p className="text-muted-foreground">
+                    {profileData.location}
+                  </p>
+                </div>
               </div>
             </div>
-            
-            <div className="flex items-start">
-              <MapPin className="w-5 h-5 mr-3 mt-0.5 text-primary" />
-              <div>
-                <p className="font-medium">Región pôsobenia</p>
-                <p className="text-muted-foreground">
-                  {profileData.location}
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        
+        {isCraftsmanProfile && userType === 'customer' && !isCurrentUser && availableDates.length > 0 && (
+          <Card className="border border-border/50 md:max-w-md">
+            <CardContent className="p-6">
+              <h4 className="text-lg font-medium mb-3">Rezervovať termín</h4>
+              <BookingRequestForm />
+            </CardContent>
+          </Card>
+        )}
+      </div>
       
       {isCraftsmanProfile ? (
-        <Card className="border border-border/50 h-full">
+        <Card className="border border-border/50 h-auto">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold mb-4 flex items-center">
               <Calendar className="w-5 h-5 mr-2" />
@@ -584,13 +615,6 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
             ) : (
               <div className="space-y-6">
                 <AvailabilityViewer />
-                
-                {userType === 'customer' && !isCurrentUser && availableDates.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-lg font-medium mb-3">Rezervovať termín</h4>
-                    <BookingRequestForm />
-                  </div>
-                )}
               </div>
             )}
           </CardContent>

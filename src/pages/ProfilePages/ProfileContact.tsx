@@ -58,9 +58,6 @@ const ProfileContactContent: React.FC = () => {
     );
   }
 
-  // Safely determine if viewing a craftsman profile by checking if trade_category property exists
-  const isCraftsmanProfile = 'trade_category' in profileData;
-
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
