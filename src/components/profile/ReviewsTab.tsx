@@ -3,25 +3,62 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, StarIcon } from "lucide-react";
+import { Star, StarIcon, Reply } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/contexts/ProfileContext";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const ReviewsTab: React.FC = () => {
-  const { user } = useAuth();
+  const { user, userType } = useAuth();
   const {
-    userType,
+    profileData,
     rating,
     reviewComment,
     handleStarClick,
     setReviewComment,
     handleSubmitReview,
     reviews,
-    isLoadingReviews
+    isLoadingReviews,
+    refetchReviews
   } = useProfile();
 
+  const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
+  const [showReplyForm, setShowReplyForm] = useState<{ [key: string]: boolean }>({});
+
   // Only customers can leave reviews for craftsmen
-  const canLeaveReview = user && userType !== 'craftsman';
+  const canLeaveReview = user && userType === 'customer' && profileData?.user_type === 'craftsman';
+  
+  // Only craftsmen can reply to their own reviews
+  const canReplyToReview = user && userType === 'craftsman' && isCurrentUser;
+  
+  const isCurrentUser = profileData?.id === user?.id;
+
+  // Handle reply submission
+  const handleSubmitReply = async (reviewId: string) => {
+    if (!user || !replyText[reviewId]?.trim()) return;
+    
+    try {
+      const { error } = await supabase
+        .from('craftsman_review_replies')
+        .insert({
+          review_id: reviewId,
+          craftsman_id: user.id,
+          reply: replyText[reviewId]
+        });
+      
+      if (error) throw error;
+      
+      toast.success("Odpoveď bola úspešne odoslaná");
+      setReplyText(prev => ({ ...prev, [reviewId]: '' }));
+      setShowReplyForm(prev => ({ ...prev, [reviewId]: false }));
+      refetchReviews();
+    } catch (error: any) {
+      console.error("Error submitting reply:", error);
+      toast.error("Nastala chyba pri odosielaní odpovede");
+    }
+  };
 
   // Star rating component
   const StarRating = ({ value, onClick }: { value: number; onClick: (value: number) => void }) => {
@@ -47,7 +84,7 @@ const ReviewsTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Review submission form - only for customers */}
+      {/* Review submission form - only for customers viewing craftsman profiles */}
       {canLeaveReview && (
         <Card>
           <CardContent className="p-6">
@@ -120,6 +157,62 @@ const ReviewsTab: React.FC = () => {
                     </div>
                   </div>
                   <p className="text-gray-700">{review.comment}</p>
+                  
+                  {/* Review reply section */}
+                  {review.reply && (
+                    <div className="mt-4 pl-4 border-l-2 border-gray-200">
+                      <div className="text-sm font-medium">Odpoveď remeselníka:</div>
+                      <p className="text-gray-700 text-sm">{review.reply}</p>
+                    </div>
+                  )}
+                  
+                  {/* Reply form - only for craftsmen on their own profile */}
+                  {canReplyToReview && !review.reply && (
+                    <div className="mt-4">
+                      {showReplyForm[review.id] ? (
+                        <div className="space-y-3">
+                          <Textarea
+                            placeholder="Napíšte odpoveď na túto recenziu..."
+                            value={replyText[review.id] || ''}
+                            onChange={(e) => setReplyText({
+                              ...replyText,
+                              [review.id]: e.target.value
+                            })}
+                            rows={3}
+                          />
+                          <div className="flex space-x-2">
+                            <Button 
+                              size="sm"
+                              onClick={() => handleSubmitReply(review.id)}
+                              disabled={!replyText[review.id]?.trim()}
+                            >
+                              Odoslať
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setShowReplyForm({...showReplyForm, [review.id]: false});
+                                setReplyText({...replyText, [review.id]: ''});
+                              }}
+                            >
+                              Zrušiť
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center mt-2"
+                          onClick={() => setShowReplyForm({...showReplyForm, [review.id]: true})}
+                        >
+                          <Reply className="mr-1 h-4 w-4" />
+                          Odpovedať
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

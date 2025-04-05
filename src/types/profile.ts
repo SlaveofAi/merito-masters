@@ -17,6 +17,7 @@ export type CraftsmanProfile = {
   created_at: string;
   updated_at: string;
   years_experience: number | null;
+  custom_specialization?: string | null;
 };
 
 export type CustomerProfile = {
@@ -48,6 +49,15 @@ export type CraftsmanReview = {
   customer_name: string;
   rating: number;
   comment: string | null;
+  created_at: string;
+  reply?: string | null;
+};
+
+export type ReviewReply = {
+  id: string;
+  review_id: string;
+  craftsman_id: string;
+  reply: string;
   created_at: string;
 };
 

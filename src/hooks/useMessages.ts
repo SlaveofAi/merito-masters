@@ -68,7 +68,7 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
       return data as Message[];
     },
     enabled: !!selectedContact?.conversation_id && !!user,
-    gcTime: 0, // Replace cacheTime with gcTime
+    gcTime: 0, // Use gcTime instead of cacheTime
   });
 
   // Fetch detailed contact information with better error handling and fallbacks
@@ -175,7 +175,7 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
       }
     },
     enabled: !!selectedContact?.id && !!user,
-    gcTime: 0, // Replace cacheTime with gcTime
+    gcTime: 0, // Use gcTime instead of cacheTime
   });
   
   // For customers, fetch their reviews
@@ -201,7 +201,7 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
       return data;
     },
     enabled: !!selectedContact?.id && !!user && selectedContact?.user_type === 'customer',
-    gcTime: 0, // Replace cacheTime with gcTime
+    gcTime: 0, // Use gcTime instead of cacheTime
   });
 
   return {

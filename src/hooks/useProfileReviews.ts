@@ -17,33 +17,52 @@ export const useProfileReviews = (id?: string) => {
       
       console.log("Fetching reviews for craftsman:", userId);
       
-      const { data, error } = await supabase
+      // First fetch the reviews
+      const { data: reviewsData, error: reviewsError } = await supabase
         .from('craftsman_reviews')
         .select('*')
         .eq('craftsman_id', userId)
         .order('created_at', { ascending: false });
       
-      if (error) {
-        console.error("Error fetching reviews:", error);
+      if (reviewsError) {
+        console.error("Error fetching reviews:", reviewsError);
         return [];
       }
       
-      if (!data || !Array.isArray(data)) {
+      if (!reviewsData || !Array.isArray(reviewsData)) {
         console.log("No reviews found for craftsman:", userId);
         return [];
       }
+
+      // Then fetch all replies for these reviews
+      const reviewIds = reviewsData.map(review => review.id);
       
-      // Explicitly map the data to ensure it matches the CraftsmanReview type
-      return data.map(review => ({
-        id: review.id,
-        craftsman_id: review.craftsman_id,
-        customer_id: review.customer_id,
-        customer_name: review.customer_name,
-        rating: review.rating,
-        comment: review.comment,
-        created_at: review.created_at
-      })) as CraftsmanReview[];
+      // Only fetch replies if there are reviews
+      if (reviewIds.length === 0) {
+        return reviewsData as CraftsmanReview[];
+      }
       
+      const { data: repliesData, error: repliesError } = await supabase
+        .from('craftsman_review_replies')
+        .select('*')
+        .in('review_id', reviewIds);
+        
+      if (repliesError) {
+        console.error("Error fetching review replies:", repliesError);
+        // Return reviews without replies
+        return reviewsData as CraftsmanReview[];
+      }
+      
+      // Merge reviews with their replies
+      const reviewsWithReplies = reviewsData.map(review => {
+        const reply = repliesData?.find(r => r.review_id === review.id);
+        return {
+          ...review,
+          reply: reply?.reply || null
+        };
+      });
+      
+      return reviewsWithReplies as CraftsmanReview[];
     } catch (error) {
       console.error("Error in fetchReviews:", error);
       return [];
