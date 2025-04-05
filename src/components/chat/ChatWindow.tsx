@@ -14,7 +14,13 @@ import {
   Mail,
   MapPin,
   Star,
-  User
+  User,
+  Check,
+  X,
+  Calendar,
+  Clock,
+  Euro,
+  Image
 } from "lucide-react";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
@@ -47,6 +53,8 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ChatWindowProps {
   contact: ChatContact | null;
@@ -67,7 +75,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   contactDetails,
   customerReviews = []
 }) => {
-  const { user } = useAuth();
+  const { user, userType } = useAuth();
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -106,6 +114,65 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     setShowArchiveDialog(false);
   };
   
+  const handleBookingAction = async (bookingId: string, action: 'accept' | 'reject') => {
+    if (!user) {
+      toast.error("Pre túto akciu musíte byť prihlásený");
+      return;
+    }
+    
+    try {
+      // Update the booking status
+      const { error } = await supabase
+        .from('booking_requests')
+        .update({ status: action === 'accept' ? 'accepted' : 'rejected' })
+        .eq('id', bookingId);
+        
+      if (error) throw error;
+
+      // Get the booking details to create a response message
+      const { data: booking, error: fetchError } = await supabase
+        .from('booking_requests')
+        .select('*')
+        .eq('id', bookingId)
+        .single();
+        
+      if (fetchError) throw fetchError;
+      
+      // Create a response message
+      const responseMessage = action === 'accept' 
+        ? `✅ **Požiadavka termínu akceptovaná**\nDátum: ${booking.date}\nČas: ${booking.start_time}`
+        : `❌ **Požiadavka termínu zamietnutá**\nDátum: ${booking.date}\nČas: ${booking.start_time}`;
+        
+      // Send the message to chat
+      const { error: messageError } = await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: booking.conversation_id,
+          sender_id: user.id,
+          receiver_id: booking.customer_id,
+          content: responseMessage
+        });
+        
+      if (messageError) throw messageError;
+      
+      toast.success(action === 'accept' 
+        ? "Požiadavka bola úspešne akceptovaná" 
+        : "Požiadavka bola zamietnutá"
+      );
+      
+      // Refresh the messages
+      // This would typically be handled by a realtime subscription,
+      // but for simplicity, we'll manually refresh after a short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
+    } catch (error: any) {
+      console.error("Error handling booking action:", error);
+      toast.error("Nastala chyba pri spracovaní požiadavky");
+    }
+  };
+  
   // Helper function to get display name with fallback
   const getContactName = () => {
     if (contactDetails?.name) return contactDetails.name;
@@ -132,6 +199,187 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       return "bg-green-50";
     }
     return "bg-yellow-50";
+  };
+  
+  // Helper function to check if a message is a booking request
+  const isBookingRequest = (content: string) => {
+    return content.includes('🗓️ **Požiadavka na termín**');
+  };
+
+  // Helper function to check if a message is a booking response
+  const isBookingResponse = (content: string) => {
+    return content.includes('✅ **Požiadavka termínu akceptovaná**') || 
+           content.includes('❌ **Požiadavka termínu zamietnutá**');
+  };
+
+  // Helper function to extract booking ID from a booking request message
+  const extractBookingDetails = (content: string) => {
+    const lines = content.split('\n');
+    const dateMatch = lines.length > 1 ? lines[1].match(/Dátum: (.+)/) : null;
+    const timeMatch = lines.length > 2 ? lines[2].match(/Čas: (.+)/) : null;
+    const messageMatch = content.match(/Správa: (.+)/);
+    const amountMatch = content.match(/Suma: (.+)€/);
+    
+    return {
+      date: dateMatch ? dateMatch[1] : null,
+      time: timeMatch ? timeMatch[1] : null,
+      message: messageMatch ? messageMatch[1] : null,
+      amount: amountMatch ? amountMatch[1] : null,
+      status: lines[0].includes('akceptovaná') ? 'accepted' : lines[0].includes('zamietnutá') ? 'rejected' : 'pending'
+    };
+  };
+  
+  // Render a booking request message
+  const renderBookingRequest = (message: Message) => {
+    const bookingDetails = extractBookingDetails(message.content);
+    const isOwnMessage = message.sender_id === user?.id;
+    const isAccepted = bookingDetails.status === 'accepted';
+    const isRejected = bookingDetails.status === 'rejected';
+    const isPending = bookingDetails.status === 'pending';
+    
+    // Get the booking ID for this message
+    const getBookingId = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('booking_requests')
+          .select('id')
+          .eq('conversation_id', message.conversation_id)
+          .eq('customer_id', isOwnMessage ? user?.id : message.sender_id)
+          .eq('craftsman_id', isOwnMessage ? message.receiver_id : user?.id)
+          .eq('date', bookingDetails.date || '')
+          .single();
+          
+        if (error || !data) {
+          console.error("Error fetching booking ID:", error);
+          return null;
+        }
+        
+        return data.id;
+      } catch (err) {
+        console.error("Error in getBookingId:", err);
+        return null;
+      }
+    };
+    
+    return (
+      <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}>
+        <div className={`max-w-[85%] bg-white border rounded-lg shadow-sm overflow-hidden`}>
+          <div className="bg-gray-50 p-3 border-b">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 text-primary mr-2" />
+                <h4 className="font-medium text-sm">Požiadavka na termín</h4>
+              </div>
+              {(isAccepted || isRejected) && (
+                <Badge variant={isAccepted ? "outline" : "destructive"} className={isAccepted ? "bg-green-50" : ""}>
+                  {isAccepted ? "Akceptované" : "Zamietnuté"}
+                </Badge>
+              )}
+            </div>
+          </div>
+          
+          <div className="p-4 space-y-3">
+            <div className="flex space-x-2 items-center">
+              <Calendar className="h-4 w-4 text-gray-500" />
+              <span className="text-sm">{bookingDetails.date}</span>
+            </div>
+            
+            {bookingDetails.time && (
+              <div className="flex space-x-2 items-center">
+                <Clock className="h-4 w-4 text-gray-500" />
+                <span className="text-sm">{bookingDetails.time}</span>
+              </div>
+            )}
+            
+            {bookingDetails.amount && (
+              <div className="flex space-x-2 items-center">
+                <Euro className="h-4 w-4 text-gray-500" />
+                <span className="text-sm">{bookingDetails.amount}€</span>
+              </div>
+            )}
+            
+            {bookingDetails.message && (
+              <div className="mt-2 border-t pt-2">
+                <p className="text-sm">{bookingDetails.message}</p>
+              </div>
+            )}
+          </div>
+          
+          {isPending && userType === 'craftsman' && !isOwnMessage && (
+            <div className="p-3 bg-gray-50 border-t flex justify-end space-x-2">
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={async () => {
+                  const bookingId = await getBookingId();
+                  if (bookingId) handleBookingAction(bookingId, 'reject');
+                }}
+              >
+                <X className="h-4 w-4 mr-1" /> Zamietnuť
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={async () => {
+                  const bookingId = await getBookingId();
+                  if (bookingId) handleBookingAction(bookingId, 'accept');
+                }}
+              >
+                <Check className="h-4 w-4 mr-1" /> Akceptovať
+              </Button>
+            </div>
+          )}
+          
+          <div className="p-2 bg-gray-50 border-t text-xs text-gray-500 text-right">
+            {format(new Date(message.created_at), 'dd.MM.yyyy HH:mm')}
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render a booking response message
+  const renderBookingResponse = (message: Message) => {
+    const bookingDetails = extractBookingDetails(message.content);
+    const isOwnMessage = message.sender_id === user?.id;
+    const isAccepted = bookingDetails.status === 'accepted';
+    
+    return (
+      <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}>
+        <div className={`max-w-[85%] ${isAccepted ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border rounded-lg shadow-sm overflow-hidden`}>
+          <div className={`${isAccepted ? 'bg-green-100' : 'bg-red-100'} p-3 border-b`}>
+            <div className="flex items-center">
+              {isAccepted ? (
+                <Check className="h-4 w-4 text-green-600 mr-2" />
+              ) : (
+                <X className="h-4 w-4 text-red-600 mr-2" />
+              )}
+              <h4 className="font-medium text-sm">
+                {isAccepted ? "Požiadavka akceptovaná" : "Požiadavka zamietnutá"}
+              </h4>
+            </div>
+          </div>
+          
+          <div className="p-4 space-y-3">
+            <div className="flex space-x-2 items-center">
+              <Calendar className="h-4 w-4 text-gray-500" />
+              <span className="text-sm">{bookingDetails.date}</span>
+            </div>
+            
+            {bookingDetails.time && (
+              <div className="flex space-x-2 items-center">
+                <Clock className="h-4 w-4 text-gray-500" />
+                <span className="text-sm">{bookingDetails.time}</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="p-2 bg-white/50 border-t text-xs text-gray-500 text-right">
+            {format(new Date(message.created_at), 'dd.MM.yyyy HH:mm')}
+          </div>
+        </div>
+      </div>
+    );
   };
   
   if (!contact) {
@@ -323,10 +571,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             </div>
           ) : (
             messages.map((message) => {
+              // Check if this is a booking request message
+              if (isBookingRequest(message.content)) {
+                return renderBookingRequest(message);
+              } 
+              
+              // Check if this is a booking response message
+              if (isBookingResponse(message.content)) {
+                return renderBookingResponse(message);
+              }
+              
+              // Regular message
               const isOwnMessage = message.sender_id === user?.id;
               const messageDate = new Date(message.created_at);
               const formattedTime = format(messageDate, 'HH:mm');
-              const formattedDate = format(messageDate, 'EEEE, d. MMMM', { locale: sk });
               
               return (
                 <div key={message.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>

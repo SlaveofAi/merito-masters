@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Upload, Euro } from "lucide-react";
+import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Upload, Euro, Clock } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -44,6 +44,7 @@ const ContactTab: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [hasShownFirstAvailableMonth, setHasShownFirstAvailableMonth] = useState(false);
   
   const isCraftsmanProfile = profileData && 'trade_category' in profileData;
 
@@ -82,6 +83,16 @@ const ContactTab: React.FC = () => {
         const parsedDates = data.map(item => new Date(item.date));
         console.log("Found available dates:", parsedDates);
         setAvailableDates(parsedDates);
+        
+        // Set the calendar to show the first available month
+        if (!hasShownFirstAvailableMonth && !isCurrentUser && userType === 'customer') {
+          const sortedDates = [...parsedDates].sort((a, b) => a.getTime() - b.getTime());
+          if (sortedDates.length > 0) {
+            const firstDate = new Date(sortedDates[0]);
+            setMonth(new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
+            setHasShownFirstAvailableMonth(true);
+          }
+        }
       } else {
         console.log("No available dates found");
         setAvailableDates([]);
@@ -161,6 +172,7 @@ const ContactTab: React.FC = () => {
     const form = useForm({
       defaultValues: {
         date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "",
+        time: "09:00",
         message: "",
         amount: ""
       }
@@ -199,6 +211,7 @@ const ContactTab: React.FC = () => {
       try {
         let conversationId: string | null = null;
         
+        // Check for existing conversation
         const { data: existingConversation, error: convFetchError } = await supabase
           .from('chat_conversations')
           .select('id')
@@ -214,6 +227,7 @@ const ContactTab: React.FC = () => {
           conversationId = existingConversation.id;
           console.log("Found existing conversation:", conversationId);
         } else {
+          // Create new conversation
           const { data: newConversation, error: createConvError } = await supabase
             .from('chat_conversations')
             .insert({
@@ -234,14 +248,15 @@ const ContactTab: React.FC = () => {
           throw new Error("Nepodarilo sa vytvoriť konverzáciu");
         }
         
+        // Create booking request with conversation_id
         const bookingData = {
           conversation_id: conversationId,
           craftsman_id: profileData.id,
           customer_id: user.id,
           customer_name: user.user_metadata?.name || "Zákazník",
           date: values.date,
-          start_time: "09:00",
-          end_time: "17:00",
+          start_time: values.time,
+          end_time: "18:00",
           message: values.message,
           status: "pending"
         };
@@ -253,11 +268,14 @@ const ContactTab: React.FC = () => {
           
         if (error) throw error;
         
+        // Create a structured booking request message for chat
         const bookingMessage = `🗓️ **Požiadavka na termín**
 Dátum: ${values.date}
+Čas: ${values.time}
 ${values.message ? `Správa: ${values.message}` : ''}
 ${values.amount ? `Suma: ${values.amount}€` : ''}`;
 
+        // Send message to chat
         const { data: messageData, error: messageError } = await supabase
           .from('chat_messages')
           .insert({
@@ -282,6 +300,12 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
       }
     };
 
+    // Generate time options (hourly slots from 8:00 to 18:00)
+    const timeOptions = Array.from({ length: 11 }, (_, i) => {
+      const hour = i + 8;
+      return `${hour.toString().padStart(2, '0')}:00`;
+    });
+
     const formattedAvailableDates = availableDates
       .sort((a, b) => a.getTime() - b.getTime())
       .map(date => {
@@ -304,7 +328,7 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
                   value={field.value}
                 >
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Vyberte dostupný deň" />
                     </SelectTrigger>
                   </FormControl>
@@ -320,6 +344,34 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
                         Žiadne dostupné dni
                       </SelectItem>
                     )}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="time"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Vyberte čas</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Vyberte čas" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {timeOptions.map(time => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -357,6 +409,7 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
                       type="number"
                       step="0.01"
                       placeholder="0.00"
+                      className="w-full pr-8"
                       {...field}
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -441,6 +494,12 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
           onMonthChange={setMonth}
           className="p-3 pointer-events-auto w-full"
           showOutsideDays
+          styles={{
+            day: { width: '100%', textAlign: 'center' },
+            cell: { width: '100%', textAlign: 'center' },
+            head_cell: { width: '100%', textAlign: 'center' },
+            row: { width: '100%' },
+          }}
         />
       </div>
       
@@ -508,16 +567,17 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
             available: (date) => availableDates.some(d => d.toDateString() === date.toDateString())
           }}
           modifiersStyles={{
-            available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 500 }
+            available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700 }
           }}
           className="p-3 pointer-events-auto w-full"
           showOutsideDays
           disabled={(date) => !availableDates.some(d => d.toDateString() === date.toDateString())}
           styles={{
-            table: { width: '100%' },
+            day: { width: '100%', textAlign: 'center' },
+            cell: { width: '14.28%', textAlign: 'center' },
+            head_cell: { width: '14.28%', textAlign: 'center' },
             row: { width: '100%' },
-            cell: { width: 'calc(100% / 7)' },
-            head_cell: { width: 'calc(100% / 7)' }
+            table: { width: '100%' },
           }}
         />
       </div>
@@ -542,7 +602,7 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       <div className="space-y-6">
-        <Card className="border border-border/50 md:max-w-md">
+        <Card className="border border-border/50 w-full shadow-sm">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold mb-4">Kontaktné informácie</h3>
             <div className="space-y-4">
@@ -580,8 +640,8 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
           </CardContent>
         </Card>
         
-        {isCraftsmanProfile && userType === 'customer' && !isCurrentUser && availableDates.length > 0 && (
-          <Card className="border border-border/50 md:max-w-md">
+        {isCraftsmanProfile && userType === 'customer' && !isCurrentUser && (
+          <Card className="border border-border/50 w-full shadow-sm">
             <CardContent className="p-6">
               <h4 className="text-lg font-medium mb-3">Rezervovať termín</h4>
               <BookingRequestForm />
@@ -591,7 +651,7 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
       </div>
       
       {isCraftsmanProfile ? (
-        <Card className="border border-border/50 h-auto">
+        <Card className="border border-border/50 shadow-sm h-auto">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold mb-4 flex items-center">
               <Calendar className="w-5 h-5 mr-2" />
@@ -620,7 +680,7 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
           </CardContent>
         </Card>
       ) : !isCraftsmanProfile ? (
-        <Card className="border border-border/50">
+        <Card className="border border-border/50 shadow-sm">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold mb-6">Poslať správu</h3>
             <form className="space-y-4">
