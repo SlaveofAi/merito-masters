@@ -55,16 +55,13 @@ const Messages = () => {
             console.log("booking-images bucket created successfully");
             
             // Set public bucket policy - fixed to use getPublicUrl instead of setPublicUrl
-            const { data: urlData, error: urlError } = await supabase
+            // The getPublicUrl function returns { data: { publicUrl: string } } without an error property
+            const { data } = await supabase
               .storage
               .from('booking-images')
               .getPublicUrl('dummy.txt'); // This is just to trigger policy creation
               
-            if (urlError) {
-              console.error("Error with bucket policy:", urlError);
-            } else {
-              console.log("Public URL obtained for booking-images bucket");
-            }
+            console.log("Public URL obtained for booking-images bucket");
           }
         }
       } catch (error) {
