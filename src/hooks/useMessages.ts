@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +35,7 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
       }
       
       console.log(`Retrieved ${data?.length || 0} messages`);
+      console.log("Messages data:", data);
       
       // Mark messages as read
       if (data && data.length > 0) {
@@ -68,8 +68,12 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
         const typedMessage: Message = {
           ...msg,
           read: msg.receiver_id === user.id ? true : msg.read,
-          // Handle metadata properly - it might not exist in some messages
-          metadata: 'metadata' in msg ? msg.metadata : undefined
+          // Handle metadata properly - it might be stored as a string in some database setups
+          metadata: msg.metadata ? 
+            (typeof msg.metadata === 'string' ? 
+              JSON.parse(msg.metadata) : 
+              msg.metadata) : 
+            undefined
         };
         return typedMessage;
       });

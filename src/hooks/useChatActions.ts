@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -143,6 +142,7 @@ export const useChatActions = (
     }
     
     console.log(`Sending message to ${selectedContact.name}:`, content);
+    console.log("With metadata:", metadata);
     
     sendMessageMutation.mutate({
       content,

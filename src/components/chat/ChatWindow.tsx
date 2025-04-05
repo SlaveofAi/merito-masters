@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -130,7 +129,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }
     
     try {
-      // Update the booking status
       const { error } = await supabase
         .from('booking_requests')
         .update({ status: action === 'accept' ? 'accepted' : 'rejected' })
@@ -138,7 +136,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         
       if (error) throw error;
 
-      // Get the booking details to create a response message
       const { data: booking, error: fetchError } = await supabase
         .from('booking_requests')
         .select('*')
@@ -147,12 +144,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         
       if (fetchError) throw fetchError;
       
-      // Create a response message
       const responseMessage = action === 'accept' 
         ? `✅ **Požiadavka termínu akceptovaná**\nDátum: ${booking.date}\nČas: ${booking.start_time}`
         : `❌ **Požiadavka termínu zamietnutá**\nDátum: ${booking.date}\nČas: ${booking.start_time}`;
         
-      // Send the message to chat
       const { error: messageError } = await supabase
         .from('chat_messages')
         .insert({
@@ -164,7 +159,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         
       if (messageError) throw messageError;
 
-      // Add to processed bookings
       setProcessedBookings(prev => [...prev, bookingId]);
       
       toast.success(action === 'accept' 
@@ -172,7 +166,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         : "Požiadavka bola zamietnutá"
       );
       
-      // Refresh the messages
       setTimeout(() => {
         window.location.reload();
       }, 1000);
@@ -183,19 +176,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
   
-  // Helper function to get display name with fallback
   const getContactName = () => {
     if (contactDetails?.name) return contactDetails.name;
     if (contact?.name) return contact.name;
     return "Neznámy užívateľ";
   };
   
-  // Helper function to get avatar URL with fallback
   const getAvatarUrl = () => {
     return contactDetails?.profile_image_url || contact?.avatar_url || null;
   };
   
-  // Helper function to get profile status
   const getProfileStatus = () => {
     if (contactDetails && (contactDetails.email || contactDetails.phone)) {
       return "Profil nájdený";
@@ -203,7 +193,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     return "Základný profil";
   };
   
-  // Helper function to get profile badge color
   const getProfileBadgeColor = () => {
     if (contactDetails && (contactDetails.email || contactDetails.phone)) {
       return "bg-green-50";
@@ -211,19 +200,37 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     return "bg-yellow-50";
   };
   
-  // Helper function to check if a message is a booking request
-  const isBookingRequest = (content: string) => {
-    return content.includes('🗓️ **Požiadavka na termín**');
+  const isBookingRequest = (message: Message) => {
+    if (message.metadata && message.metadata.type === 'booking_request') {
+      return true;
+    }
+    
+    return message.content.includes('🗓️ **Požiadavka na termín**');
   };
 
-  // Helper function to check if a message is a booking response
-  const isBookingResponse = (content: string) => {
-    return content.includes('✅ **Požiadavka termínu akceptovaná**') || 
-           content.includes('❌ **Požiadavka termínu zamietnutá**');
+  const isBookingResponse = (message: Message) => {
+    if (message.metadata && message.metadata.type === 'booking_response') {
+      return true;
+    }
+    
+    return message.content.includes('✅ **Požiadavka termínu akceptovaná**') || 
+           message.content.includes('❌ **Požiadavka termínu zamietnutá**');
   };
 
-  // Helper function to extract booking details from a booking request message
-  const extractBookingDetails = (content: string) => {
+  const extractBookingDetails = (message: Message) => {
+    if (message.metadata && message.metadata.details) {
+      const details = message.metadata.details;
+      return {
+        date: details.date || null,
+        time: details.time || null,
+        message: details.message || null,
+        amount: details.amount || null,
+        photo: details.image_url || null,
+        status: message.metadata.status || 'pending'
+      };
+    }
+    
+    const content = message.content;
     const lines = content.split('\n');
     const dateMatch = lines.length > 1 ? lines[1].match(/Dátum: (.+)/) : null;
     const timeMatch = lines.length > 2 ? lines[2].match(/Čas: (.+)/) : null;
@@ -241,10 +248,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   };
   
-  // Get booking ID for a particular booking request
   const getBookingId = async (message: Message) => {
     try {
-      const bookingDetails = extractBookingDetails(message.content);
+      const bookingDetails = extractBookingDetails(message);
       if (!bookingDetails.date) return null;
       
       const { data, error } = await supabase
@@ -266,34 +272,29 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
   
-  // Format date to be consistent (DD.MM.YYYY format)
   const formatDateString = (dateStr: string | null) => {
     if (!dateStr) return "";
     
     try {
-      // Check if it's already in the format DD.MM.YYYY
       if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(dateStr)) {
         return dateStr;
       }
       
-      // Parse date to get consistent format
       const date = new Date(dateStr);
-      return date.toLocaleDateString('sk-SK'); // Format as DD.MM.YYYY
+      return date.toLocaleDateString('sk-SK');
     } catch (e) {
       console.error("Error formatting date:", e);
-      return dateStr; // Return the original string if there's an error
+      return dateStr;
     }
   };
   
-  // Show image in dialog
   const handleImageClick = (imageUrl: string) => {
     setSelectedImage(imageUrl);
     setShowImageDialog(true);
   };
   
-  // Render a booking request message
   const renderBookingRequest = (message: Message) => {
-    const bookingDetails = extractBookingDetails(message.content);
+    const bookingDetails = extractBookingDetails(message);
     const isOwnMessage = message.sender_id === user?.id;
     const isAccepted = bookingDetails.status === 'accepted';
     const isRejected = bookingDetails.status === 'rejected';
@@ -403,9 +404,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     );
   };
   
-  // Render a booking response message
   const renderBookingResponse = (message: Message) => {
-    const bookingDetails = extractBookingDetails(message.content);
+    const bookingDetails = extractBookingDetails(message);
     const isOwnMessage = message.sender_id === user?.id;
     const isAccepted = bookingDetails.status === 'accepted';
     const formattedDate = formatDateString(bookingDetails.date);
@@ -637,17 +637,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             </div>
           ) : (
             messages.map((message) => {
-              // Check if this is a booking request message
-              if (isBookingRequest(message.content)) {
+              console.log("Processing message:", message);
+              
+              if (isBookingRequest(message)) {
+                console.log("Found booking request message:", message);
                 return renderBookingRequest(message);
               } 
               
-              // Check if this is a booking response message
-              if (isBookingResponse(message.content)) {
+              if (isBookingResponse(message)) {
+                console.log("Found booking response message:", message);
                 return renderBookingResponse(message);
               }
               
-              // Regular message
               const isOwnMessage = message.sender_id === user?.id;
               const messageDate = new Date(message.created_at);
               const formattedTime = format(messageDate, 'HH:mm');
