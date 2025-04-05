@@ -29,11 +29,24 @@ const Chat: React.FC = () => {
     console.log("Selected contact with unread count:", contact.unread_count);
     setSelectedContact(contact);
     
-    // If contact has unread messages, immediately invalidate queries to update UI
+    // Force immediate query invalidation and contact refresh when selecting contact with unread messages
     if (contact.unread_count && contact.unread_count > 0) {
-      console.log(`Contact ${contact.name} has ${contact.unread_count} unread messages - invalidating queries`);
+      console.log(`Contact ${contact.name} has ${contact.unread_count} unread messages - forcing immediate refresh`);
+      
+      // Force immediate message fetch and mark as read
+      queryClient.invalidateQueries({ queryKey: ['chat-messages', contact.conversation_id], exact: true });
+      
+      // Force refresh contacts list right away to update badges
+      refetchContacts();
+      
+      // Also invalidate the contact list to refresh badges
       queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
-      queryClient.invalidateQueries({ queryKey: ['chat-messages', contact.conversation_id] });
+      
+      // Force a small delay and second refresh to ensure badges update
+      setTimeout(() => {
+        refetchContacts();
+        queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+      }, 200);
     }
   };
   
@@ -50,17 +63,23 @@ const Chat: React.FC = () => {
       
       // If the contact has unread messages, trigger contacts refresh
       if (selectedContact.unread_count && selectedContact.unread_count > 0) {
+        console.log("Selected contact has unread messages - triggering immediate refresh");
+        
         // Immediate refresh to update UI quickly
         refetchContacts();
+        queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
         
-        // Small delay to allow messages to be marked as read first
-        const timer = setTimeout(() => {
-          console.log("Refreshing contacts after message read");
-          refetchContacts();
-          queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
-        }, 500);
-        
-        return () => clearTimeout(timer);
+        // Multiple staggered refreshes to ensure updates propagate through the system
+        const refreshTimes = [200, 500, 1000];
+        refreshTimes.forEach(time => {
+          const timer = setTimeout(() => {
+            console.log(`Refreshing contacts after ${time}ms delay`);
+            refetchContacts();
+            queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+          }, time);
+          
+          return () => clearTimeout(timer);
+        });
       }
     }
   }, [selectedContact, refetchContacts, queryClient]);
@@ -70,12 +89,18 @@ const Chat: React.FC = () => {
   useEffect(() => {
     if (messages.length > 0 && selectedContact?.unread_count && selectedContact.unread_count > 0) {
       console.log("Messages changed and there were unread messages - refreshing contacts");
-      const timer = setTimeout(() => {
-        refetchContacts();
-        queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
-      }, 300);
       
-      return () => clearTimeout(timer);
+      // Multiple staggered refreshes to ensure updates propagate
+      const refreshTimes = [300, 600, 1000];
+      refreshTimes.forEach(time => {
+        const timer = setTimeout(() => {
+          console.log(`Refreshing contacts after ${time}ms delay from message change`);
+          refetchContacts();
+          queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+        }, time);
+        
+        return () => clearTimeout(timer);
+      });
     }
   }, [messages, selectedContact, refetchContacts, queryClient]);
   

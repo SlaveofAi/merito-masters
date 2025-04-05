@@ -102,7 +102,7 @@ export const useContacts = () => {
             return createFallbackContact();
           }
           
-          // Get last message and unread count - IMPORTANT: do not use cache here!
+          // Get last message - use a fresh request without any caching
           const { data: lastMessageData, error: lastMessageError } = await supabase
             .from('chat_messages')
             .select('*')
@@ -112,7 +112,9 @@ export const useContacts = () => {
             
           const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
           
-          // Count unread messages - CRITICAL: disabling caching with head:true ensures fresh counts
+          // Count unread messages - CRITICAL - use a completely separate request
+          // with no cache to ensure accurate counts
+          console.log(`Counting unread messages for conversation ${conv.id}`);
           const { count, error: countError } = await supabase
             .from('chat_messages')
             .select('*', { count: 'exact', head: true })
@@ -143,16 +145,15 @@ export const useContacts = () => {
       const filteredContacts = resolvedContacts.filter(contact => contact !== null) as ChatContact[];
       console.log(`Retrieved ${filteredContacts.length} contacts with conversations`);
       
-      // Make sure contacts have unique keys for React
       return filteredContacts;
     },
     enabled: !!user,
-    // Add more frequent refetching to ensure unread counts are up to date
-    refetchInterval: 10000, // Refresh every 10 seconds
+    // More aggressive refetching to ensure unread counts are accurate
+    refetchInterval: 5000, // Refresh more frequently (every 5 seconds)
     refetchOnWindowFocus: true,
-    staleTime: 1000, // Short stale time to ensure fresh data
-    networkMode: 'always', // Always fetch from network to avoid stale data
-    refetchOnMount: true, // Always refetch on component mount
+    staleTime: 0, // No stale time - always fetch fresh data
+    networkMode: 'always', // Always fetch from network
+    refetchOnMount: true,
   });
 
   // Update loading state
