@@ -21,10 +21,13 @@ const ReviewsTab: React.FC = () => {
   // Check if the current profile belongs to the logged-in user
   const isCurrentUser = profileData?.id === user?.id;
   
+  // Determine if the profile belongs to a craftsman
+  const isCraftsmanProfile = profileData?.trade_category !== undefined;
+  
   // Only customers can leave reviews for craftsmen profiles that aren't their own
   const canLeaveReview = user && 
     userType === 'customer' && 
-    profileData?.user_type === 'craftsman' && 
+    isCraftsmanProfile && 
     !isCurrentUser;
   
   // Only craftsmen can reply to reviews on their own profiles
@@ -36,9 +39,11 @@ const ReviewsTab: React.FC = () => {
     isCurrentUser, 
     canLeaveReview, 
     userType, 
-    profileType: profileData?.user_type,
+    profileType: isCraftsmanProfile ? 'craftsman' : 'customer',
     userId: user?.id,
     profileId: profileData?.id,
+    isCraftsmanProfile,
+    tradeCategory: profileData?.trade_category,
     error
   });
 
