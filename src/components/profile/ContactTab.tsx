@@ -41,6 +41,7 @@ const ContactTab: React.FC = () => {
       }
 
       if (data && data.length > 0) {
+        // Parse the dates from string to Date objects
         const parsedDates = data.map(item => new Date(item.date));
         setSelectedDates(parsedDates);
       }
@@ -287,7 +288,7 @@ const ContactTab: React.FC = () => {
                     </div>
                   ) : (
                     <div className="text-sm text-gray-500 italic">
-                      Remeselník zatiaľ nezadal svoje dostupné dni.
+                      Remeselník je momentálne plne vyťažený. Skúste neskôr alebo kontaktujte remeselníka priamo.
                     </div>
                   )}
                 </div>
