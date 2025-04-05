@@ -69,12 +69,14 @@ const ReviewsTab: React.FC = () => {
       
       {/* Review submission form - only for customers viewing craftsman profiles */}
       {canLeaveReview && user && profileData && (
-        <ReviewForm 
-          userId={user.id} 
-          profileId={profileData.id || ''}
-          userName={user.user_metadata?.name || user.user_metadata?.full_name || 'Anonymous'}
-          onSuccess={refetchReviews}
-        />
+        <div className="mb-6">
+          <ReviewForm 
+            userId={user.id} 
+            profileId={profileData.id || ''}
+            userName={user.user_metadata?.name || user.user_metadata?.full_name || 'Anonymous'}
+            onSuccess={refetchReviews}
+          />
+        </div>
       )}
       
       {/* Reviews list */}
