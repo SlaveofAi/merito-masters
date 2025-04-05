@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,6 +64,20 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
               
               // Also invalidate the chat-contacts query to ensure the UI updates
               queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+              
+              // Set the unread count for the current contact to 0 in the cache
+              if (selectedContact.unread_count && selectedContact.unread_count > 0) {
+                queryClient.setQueryData(['chat-contacts'], (oldData: any) => {
+                  if (!oldData) return oldData;
+                  
+                  return oldData.map((contact: ChatContact) => {
+                    if (contact.id === selectedContact.id) {
+                      return { ...contact, unread_count: 0 };
+                    }
+                    return contact;
+                  });
+                });
+              }
             }
           } catch (updateError) {
             console.error("Error in batch update of messages:", updateError);
@@ -73,15 +88,26 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
       return data as Message[];
     },
     enabled: !!selectedContact?.conversation_id && !!user,
+    // Improve refetching strategy for better real-time updates
+    refetchOnWindowFocus: true,
+    staleTime: 1000, // Short stale time to ensure frequent refreshes
   });
 
   // Ensure contacts are refreshed whenever messages change
   useEffect(() => {
     if (messages.length > 0 && selectedContact) {
       console.log("Messages changed, refreshing contacts");
-      refetchContacts();
+      // Add a short delay to ensure database updates complete first
+      const timer = setTimeout(() => {
+        refetchContacts();
+        
+        // Also invalidate the contacts query to force a refresh
+        queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+      }, 200);
+      
+      return () => clearTimeout(timer);
     }
-  }, [messages, selectedContact, refetchContacts]);
+  }, [messages, selectedContact, refetchContacts, queryClient]);
 
   // Fetch detailed contact information with better error handling and fallbacks
   const { data: contactDetails } = useQuery({

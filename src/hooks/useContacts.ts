@@ -102,7 +102,7 @@ export const useContacts = () => {
             return createFallbackContact();
           }
           
-          // Get last message and unread count
+          // Get last message and unread count - IMPORTANT: do not use cache here!
           const { data: lastMessageData, error: lastMessageError } = await supabase
             .from('chat_messages')
             .select('*')
@@ -112,7 +112,7 @@ export const useContacts = () => {
             
           const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
           
-          // Count unread messages - make sure to use the correct filter and don't use client-side caching
+          // Count unread messages - CRITICAL: disabling caching with head:true ensures fresh counts
           const { count, error: countError } = await supabase
             .from('chat_messages')
             .select('*', { count: 'exact', head: true })
@@ -122,7 +122,6 @@ export const useContacts = () => {
             
           console.log(`Found contact ${contact.name} with ${count || 0} unread messages`);
           
-          // Create a unique ID for the contact that includes the conversation ID to avoid key conflicts
           return {
             id: contact.id,
             name: contact.name,
@@ -151,7 +150,9 @@ export const useContacts = () => {
     // Add more frequent refetching to ensure unread counts are up to date
     refetchInterval: 10000, // Refresh every 10 seconds
     refetchOnWindowFocus: true,
-    staleTime: 5000, // Consider data stale after 5 seconds to ensure fresh unread counts
+    staleTime: 1000, // Short stale time to ensure fresh data
+    networkMode: 'always', // Always fetch from network to avoid stale data
+    refetchOnMount: true, // Always refetch on component mount
   });
 
   // Update loading state

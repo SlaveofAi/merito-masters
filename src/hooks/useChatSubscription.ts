@@ -45,6 +45,9 @@ export const useChatSubscription = (
         
         // Always refresh contact list for new messages
         refetchContacts();
+        
+        // Force invalidate the contacts query to update unread count
+        queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
       })
       .on('postgres_changes', {
         event: 'UPDATE',
@@ -64,10 +67,34 @@ export const useChatSubscription = (
           // Invalidate cache for both messages and contacts
           queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
           queryClient.invalidateQueries({ queryKey: ['chat-messages'] });
+          
+          // If this is for the currently selected contact, update their unread count in cache
+          if (selectedContact && payload.new.conversation_id === selectedContact.conversation_id) {
+            queryClient.setQueryData(['chat-contacts'], (oldData: any) => {
+              if (!oldData) return oldData;
+              
+              return oldData.map((contact: ChatContact) => {
+                if (contact.conversation_id === payload.new.conversation_id) {
+                  // Set or decrement unread count
+                  const currentCount = contact.unread_count || 0;
+                  return { ...contact, unread_count: Math.max(0, currentCount - 1) };
+                }
+                return contact;
+              });
+            });
+          }
         }
       })
       .subscribe((status) => {
         console.log("Realtime subscription status:", status);
+        
+        // If we're reconnecting, force refresh the data
+        if (status === "SUBSCRIBED") {
+          refetchContacts();
+          if (selectedContact?.conversation_id) {
+            refetchMessages();
+          }
+        }
       });
       
     return () => {
