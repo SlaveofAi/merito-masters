@@ -196,35 +196,51 @@ const ProfileCalendar: React.FC = () => {
       
       <div className="flex flex-col items-center">
         <div className="bg-white rounded-md shadow-sm pointer-events-auto w-full max-w-md">
-          <Calendar
-            mode={isCurrentUser ? "multiple" : "single"}
-            selected={isCurrentUser ? selectedDates : undefined}
-            onSelect={isCurrentUser ? (dates) => {
-              if (Array.isArray(dates)) {
-                setSelectedDates(dates);
-              }
-            } : undefined}
-            className="p-3 pointer-events-auto"
-            disabled={(date) => {
-              if (isCurrentUser) return false;
-              return !selectedDates.some(d => d.toDateString() === date.toDateString());
-            }}
-            modifiers={{
-              available: (date) => selectedDates.some(d => d.toDateString() === date.toDateString())
-            }}
-            modifiersStyles={{
-              available: { backgroundColor: '#dcfce7' }
-            }}
-            footer={
-              <div className="mt-3 text-center text-sm text-gray-500">
-                {isCurrentUser ? (
+          {isCurrentUser ? (
+            <Calendar
+              mode="multiple"
+              selected={selectedDates}
+              onSelect={(dates) => {
+                if (Array.isArray(dates)) {
+                  setSelectedDates(dates);
+                }
+              }}
+              className="p-3 pointer-events-auto"
+              modifiers={{
+                available: (date) => selectedDates.some(d => d.toDateString() === date.toDateString())
+              }}
+              modifiersStyles={{
+                available: { backgroundColor: '#dcfce7' }
+              }}
+              footer={
+                <div className="mt-3 text-center text-sm text-gray-500">
                   <div>Vyberte dni, kedy ste dostupný</div>
-                ) : (
+                </div>
+              }
+            />
+          ) : (
+            <Calendar
+              mode="single"
+              selected={selectedDates.length > 0 ? selectedDates[0] : undefined}
+              onSelect={(date) => {
+                // This won't actually be used as the calendar is disabled for non-owners
+                console.log("Selected date:", date);
+              }}
+              disabled={(date) => !selectedDates.some(d => d.toDateString() === date.toDateString())}
+              className="p-3 pointer-events-auto"
+              modifiers={{
+                available: (date) => selectedDates.some(d => d.toDateString() === date.toDateString())
+              }}
+              modifiersStyles={{
+                available: { backgroundColor: '#dcfce7' }
+              }}
+              footer={
+                <div className="mt-3 text-center text-sm text-gray-500">
                   <div>Zelené dni označujú dostupnosť remeselníka</div>
-                )}
-              </div>
-            }
-          />
+                </div>
+              }
+            />
+          )}
         </div>
         
         {/* Information about selected dates */}
