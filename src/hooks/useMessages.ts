@@ -121,7 +121,7 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
     // Improve refetching strategy for better real-time updates
     refetchOnWindowFocus: true,
     staleTime: 0, // No stale time for critical data
-    cacheTime: 0, // Don't cache this data
+    gcTime: 0, // Updated from cacheTime to gcTime - the modern property name
     networkMode: 'always', // Always fetch from network, don't use cache for critical data
   });
 
