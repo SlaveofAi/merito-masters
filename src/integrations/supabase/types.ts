@@ -9,51 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      booking_requests: {
-        Row: {
-          conversation_id: string
-          craftsman_id: string
-          created_at: string
-          customer_id: string
-          customer_name: string
-          date: string
-          end_time: string
-          id: string
-          message: string | null
-          start_time: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          conversation_id: string
-          craftsman_id: string
-          created_at?: string
-          customer_id: string
-          customer_name: string
-          date: string
-          end_time: string
-          id?: string
-          message?: string | null
-          start_time: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          conversation_id?: string
-          craftsman_id?: string
-          created_at?: string
-          customer_id?: string
-          customer_name?: string
-          date?: string
-          end_time?: string
-          id?: string
-          message?: string | null
-          start_time?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       chat_conversations: {
         Row: {
           craftsman_id: string
@@ -127,33 +82,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      craftsman_availability: {
-        Row: {
-          craftsman_id: string
-          created_at: string
-          date: string
-          id: string
-          time_slots: Json
-          updated_at: string
-        }
-        Insert: {
-          craftsman_id: string
-          created_at?: string
-          date: string
-          id?: string
-          time_slots?: Json
-          updated_at?: string
-        }
-        Update: {
-          craftsman_id?: string
-          created_at?: string
-          date?: string
-          id?: string
-          time_slots?: Json
-          updated_at?: string
-        }
-        Relationships: []
       }
       craftsman_profiles: {
         Row: {

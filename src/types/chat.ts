@@ -19,8 +19,6 @@ export interface Message {
   content: string;
   created_at: string;
   read: boolean;
-  media_url?: string;
-  media_type?: 'image' | 'video';
 }
 
 // Interface for chat_conversations table
@@ -45,6 +43,4 @@ export interface ChatMessage {
   content: string;
   created_at: string;
   read: boolean;
-  media_url?: string;
-  media_type?: 'image' | 'video';
 }
