@@ -33,6 +33,17 @@ const ProfileCalendar: React.FC = () => {
     }
   }, [profileData?.id, isCraftsmanProfile]);
 
+  // Set the month to the first available month for customers
+  useEffect(() => {
+    if (!isCurrentUser && selectedDates.length > 0) {
+      // Sort dates and get the earliest one
+      const sortedDates = [...selectedDates].sort((a, b) => a.getTime() - b.getTime());
+      const earliestDate = sortedDates[0];
+      // Set the month to the earliest available date
+      setMonth(earliestDate);
+    }
+  }, [selectedDates, isCurrentUser]);
+
   const fetchAvailableDates = async () => {
     if (!profileData?.id) {
       setIsLoadingDates(false);
@@ -186,7 +197,7 @@ const ProfileCalendar: React.FC = () => {
         available: (date) => selectedDates.some(d => d.toDateString() === date.toDateString())
       }}
       modifiersStyles={{
-        available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700 }
+        available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700, border: '1px solid #86efac' }
       }}
       className="p-3 pointer-events-auto"
     />
@@ -240,7 +251,7 @@ const ProfileCalendar: React.FC = () => {
             {isCurrentUser ? <CraftsmanCalendar /> : <CustomerCalendar />}
             
             <div className="mt-3 flex items-center">
-              <div className="w-4 h-4 bg-green-100 mr-2 rounded"></div>
+              <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
               <span className="text-xs text-gray-500">
                 {isCurrentUser 
                   ? "Vaše vybrané dostupné dni" 
