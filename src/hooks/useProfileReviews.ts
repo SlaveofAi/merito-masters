@@ -43,8 +43,11 @@ export const useProfileReviews = (id?: string) => {
       }
       
       // Use RPC function for getting review replies
-      const { data: repliesData, error: repliesError } = await supabase
-        .rpc('get_review_replies_by_review_ids', { review_ids: reviewIds });
+      // Type-casting supabase.rpc as any to avoid TypeScript errors with generated types
+      const { data: repliesData, error: repliesError } = await (supabase.rpc as any)(
+        'get_review_replies_by_review_ids', 
+        { review_ids: reviewIds }
+      );
         
       if (repliesError) {
         console.error("Error fetching review replies:", repliesError);
@@ -54,7 +57,11 @@ export const useProfileReviews = (id?: string) => {
       
       // Merge reviews with their replies
       const reviewsWithReplies = reviewsData.map(review => {
-        const reply = repliesData?.find(r => r.review_id === review.id);
+        // Ensure repliesData is not null before accessing it
+        const reply = repliesData && Array.isArray(repliesData) ? 
+          repliesData.find(r => r.review_id === review.id) : 
+          undefined;
+          
         return {
           ...review,
           reply: reply ? reply.reply : null

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,12 +40,15 @@ const ReviewsTab: React.FC = () => {
     if (!user || !replyText[reviewId]?.trim()) return;
     
     try {
-      const { error } = await supabase
-        .rpc('add_review_reply', {
+      // Type-cast supabase.rpc as any to avoid TypeScript errors with generated types
+      const { error } = await (supabase.rpc as any)(
+        'add_review_reply',
+        {
           p_review_id: reviewId,
           p_craftsman_id: user.id,
           p_reply: replyText[reviewId]
-        });
+        }
+      );
       
       if (error) throw error;
       
