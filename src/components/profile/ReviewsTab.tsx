@@ -36,17 +36,16 @@ const ReviewsTab: React.FC = () => {
   // Only craftsmen can reply to their own reviews
   const canReplyToReview = user && userType === 'craftsman' && isCurrentUser;
 
-  // Handle reply submission
+  // Handle reply submission using RPC function instead of direct table access
   const handleSubmitReply = async (reviewId: string) => {
     if (!user || !replyText[reviewId]?.trim()) return;
     
     try {
       const { error } = await supabase
-        .from('craftsman_review_replies')
-        .insert({
-          review_id: reviewId,
-          craftsman_id: user.id,
-          reply: replyText[reviewId]
+        .rpc('add_review_reply', {
+          p_review_id: reviewId,
+          p_craftsman_id: user.id,
+          p_reply: replyText[reviewId]
         });
       
       if (error) throw error;

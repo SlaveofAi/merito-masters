@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CraftsmanReview } from "@/types/profile";
+import { CraftsmanReview, ReviewReply } from "@/types/profile";
 import { useAuth } from "@/hooks/useAuth";
 
 export const useProfileReviews = (id?: string) => {
@@ -42,11 +42,10 @@ export const useProfileReviews = (id?: string) => {
         return reviewsData as CraftsmanReview[];
       }
       
-      // Fetch replies from craftsman_review_replies table
+      // Use traditional query for review replies since the table is new
+      // and not yet in the TypeScript types
       const { data: repliesData, error: repliesError } = await supabase
-        .from('craftsman_review_replies')
-        .select('*')
-        .in('review_id', reviewIds);
+        .rpc('get_review_replies_by_review_ids', { review_ids: reviewIds });
         
       if (repliesError) {
         console.error("Error fetching review replies:", repliesError);
