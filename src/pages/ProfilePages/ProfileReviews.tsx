@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileNavigation from "@/components/profile/ProfileNavigation";
@@ -8,6 +8,7 @@ import CustomerReviewsTab from "@/components/profile/CustomerReviewsTab";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
+import { toast } from "sonner";
 
 const ProfileReviewsContent: React.FC = () => {
   const {
@@ -16,8 +17,20 @@ const ProfileReviewsContent: React.FC = () => {
     isCurrentUser,
     profileNotFound,
     error,
+    userType,
     createDefaultProfileIfNeeded
   } = useProfile();
+
+  // Debug log to help troubleshoot the profile data and user type
+  useEffect(() => {
+    console.log("ProfileReviews rendering:", {
+      loading, 
+      profileFound: !!profileData,
+      userType,
+      profileType: profileData?.user_type,
+      isCurrentUser
+    });
+  }, [loading, profileData, userType, isCurrentUser]);
 
   if (loading) {
     return (

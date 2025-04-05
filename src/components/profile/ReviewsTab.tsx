@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/contexts/ProfileContext";
@@ -29,8 +28,8 @@ const ReviewsTab: React.FC = () => {
   // Only craftsmen can reply to reviews on their own profiles
   const canReplyToReview = user && userType === 'craftsman' && isCurrentUser;
 
-  // Log for debugging
-  console.log("Reviews tab rendering", { 
+  // Debug logs - very important to keep these
+  console.log("Reviews tab rendering with critical variables:", { 
     reviews: reviews?.length, 
     isCurrentUser, 
     canLeaveReview, 
@@ -69,7 +68,8 @@ const ReviewsTab: React.FC = () => {
       
       {/* Review submission form - only for customers viewing craftsman profiles */}
       {canLeaveReview && user && profileData && (
-        <div className="mb-6">
+        <div className="mb-6 border p-4 rounded-md bg-white shadow-sm">
+          <h3 className="text-lg font-medium mb-3">Pridať hodnotenie</h3>
           <ReviewForm 
             userId={user.id} 
             profileId={profileData.id || ''}
