@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -266,6 +267,7 @@ const ContactTab: React.FC = () => {
                   {selectedDates.length > 0 ? (
                     <div className="bg-gray-50 rounded-md p-4">
                       <Calendar
+                        mode="single"
                         selected={date}
                         onSelect={setDate}
                         disabled={(date) => !selectedDates.some(d => d.toDateString() === date.toDateString())}
