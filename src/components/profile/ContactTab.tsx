@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Phone, Mail, Clock, MapPin, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -32,10 +32,9 @@ const ContactTab: React.FC = () => {
   const [isLoadingDates, setIsLoadingDates] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [projects, setProjects] = useState<any[]>([]);
   
-  // Safely determine if viewing a craftsman profile by checking both user_type and trade_category
-  const isCraftsmanProfile = profileData?.user_type === 'craftsman' || 
-    (profileData && 'trade_category' in profileData);
+  const isCraftsmanProfile = profileData && 'trade_category' in profileData;
 
   useEffect(() => {
     if (profileData?.id && isCraftsmanProfile) {
@@ -73,7 +72,6 @@ const ContactTab: React.FC = () => {
         console.log("Found available dates:", parsedDates);
         setAvailableDates(parsedDates);
         
-        // Set the first available date as selected if we have dates
         if (parsedDates.length > 0) {
           const sortedDates = [...parsedDates].sort((a, b) => a.getTime() - b.getTime());
           const closestFutureDate = sortedDates.find(date => date >= new Date()) || sortedDates[0];
@@ -101,16 +99,13 @@ const ContactTab: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Calculate end time (1 hour after start)
       const [hours] = selectedTimeSlot.split(':').map(Number);
       const endHour = hours + 1;
       const endTime = `${endHour}:00`;
 
-      // Format date as YYYY-MM-DD for storage
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       const customerName = user.user_metadata?.name || user.user_metadata?.full_name || 'Anonymous';
 
-      // Create or find conversation for this craftsman-customer pair
       const { data: existingConversation, error: convFindError } = await supabase
         .from('chat_conversations')
         .select('id')
@@ -121,7 +116,6 @@ const ContactTab: React.FC = () => {
       let conversationId;
       
       if (convFindError || !existingConversation) {
-        // Create new conversation
         const { data: newConversation, error: convCreateError } = await supabase
           .from('chat_conversations')
           .insert({
@@ -140,7 +134,6 @@ const ContactTab: React.FC = () => {
         conversationId = existingConversation.id;
       }
 
-      // Create booking request with conversation_id
       const { error } = await supabase
         .from('booking_requests')
         .insert({
@@ -179,7 +172,6 @@ const ContactTab: React.FC = () => {
     try {
       console.log("Saving dates for craftsman:", profileData.id, availableDates);
       
-      // First delete all existing dates for this craftsman
       const { error: deleteError } = await supabase
         .from('craftsman_availability')
         .delete()
@@ -189,11 +181,10 @@ const ContactTab: React.FC = () => {
         throw deleteError;
       }
       
-      // Then insert the new dates
       if (availableDates.length > 0) {
         const datesToInsert = availableDates.map(date => ({
           craftsman_id: profileData.id,
-          date: date.toISOString().split('T')[0], // Format as YYYY-MM-DD
+          date: date.toISOString().split('T')[0],
           time_slots: []
         }));
         
@@ -244,9 +235,7 @@ const ContactTab: React.FC = () => {
     );
   };
 
-  // Helper function to check if a date is selectable
   const isDateSelectable = (date: Date) => {
-    // Don't allow dates in the past
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -254,7 +243,6 @@ const ContactTab: React.FC = () => {
       return false;
     }
     
-    // Check if the date is in the available dates list
     return isDateAvailable(date);
   };
   
@@ -268,10 +256,8 @@ const ContactTab: React.FC = () => {
     const dateString = date.toDateString();
     
     if (availableDates.some(d => d.toDateString() === dateString)) {
-      // If date is already selected, remove it
       setAvailableDates(prev => prev.filter(d => d.toDateString() !== dateString));
     } else {
-      // Otherwise add it to the selected dates
       setAvailableDates(prev => [...prev, date]);
     }
   };
@@ -281,7 +267,7 @@ const ContactTab: React.FC = () => {
   };
 
   const CraftsmanCalendarEditor = () => (
-    <div>
+    <div className="w-full">
       <div className="p-3 border-b">
         <div className="flex items-center justify-between">
           <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
@@ -296,19 +282,21 @@ const ContactTab: React.FC = () => {
         </div>
       </div>
 
-      <CalendarUI
-        mode="multiple"
-        selected={availableDates}
-        onSelect={(dates) => {
-          if (Array.isArray(dates)) {
-            setAvailableDates(dates);
-          }
-        }}
-        month={month}
-        onMonthChange={setMonth}
-        className="p-3 pointer-events-auto"
-        showOutsideDays
-      />
+      <div className="flex justify-center">
+        <CalendarUI
+          mode="multiple"
+          selected={availableDates}
+          onSelect={(dates) => {
+            if (Array.isArray(dates)) {
+              setAvailableDates(dates);
+            }
+          }}
+          month={month}
+          onMonthChange={setMonth}
+          className="p-3 pointer-events-auto w-full"
+          showOutsideDays
+        />
+      </div>
       
       <div className="mt-4">
         {availableDates.length > 0 && (
@@ -343,6 +331,58 @@ const ContactTab: React.FC = () => {
     </div>
   );
 
+  const CustomerAvailabilityView = () => (
+    <div className="w-full">
+      <div className="p-3 border-b">
+        <div className="flex items-center justify-between">
+          <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="text-sm font-medium">
+            {format(month, 'LLLL yyyy', { locale: sk })}
+          </div>
+          <Button variant="outline" size="sm" onClick={goToNextMonth}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex justify-center">
+        <CalendarUI
+          mode="single"
+          selected={selectedDate}
+          onSelect={(date) => date && setSelectedDate(date)}
+          month={month}
+          onMonthChange={setMonth}
+          disabled={(date) => !isDateAvailable(date)}
+          modifiers={{
+            available: (date) => isDateAvailable(date),
+          }}
+          modifiersStyles={{
+            available: { backgroundColor: '#dcfce7' }
+          }}
+          className="p-3 pointer-events-auto w-full"
+          showOutsideDays
+        />
+      </div>
+      
+      <div className="mt-4">
+        {availableDates.length > 0 ? (
+          <div className="text-center p-4 bg-gray-50 rounded-md">
+            <p className="text-sm">Toto sú dostupné dni remeselníka.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Pre rezervovanie termínu sa prosím prihláste ako zákazník.
+            </p>
+          </div>
+        ) : (
+          <div className="text-center p-4 bg-gray-50 rounded-md">
+            <p className="text-sm">Remeselník nemá nastavené žiadne dostupné dni.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   if (!profileData) return null;
 
   return (
@@ -371,18 +411,6 @@ const ContactTab: React.FC = () => {
                 </p>
               </div>
             </div>
-            
-            {isCraftsmanProfile && (
-              <div className="flex items-start">
-                <Clock className="w-5 h-5 mr-3 mt-0.5 text-primary" />
-                <div>
-                  <p className="font-medium">Dostupnosť</p>
-                  <p className="text-muted-foreground">
-                    Pondelok - Piatok, 8:00 - 17:00
-                  </p>
-                </div>
-              </div>
-            )}
             
             <div className="flex items-start">
               <MapPin className="w-5 h-5 mr-3 mt-0.5 text-primary" />
@@ -450,22 +478,24 @@ const ContactTab: React.FC = () => {
                           </Button>
                         </div>
                       </div>
-                      <CalendarUI
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={date => date && setSelectedDate(date)}
-                        month={month}
-                        onMonthChange={setMonth}
-                        disabled={(date) => !isDateSelectable(date)}
-                        modifiers={{
-                          available: (date) => isDateAvailable(date),
-                        }}
-                        modifiersStyles={{
-                          available: { backgroundColor: '#dcfce7' }
-                        }}
-                        className="p-3 pointer-events-auto"
-                        showOutsideDays
-                      />
+                      <div className="flex justify-center">
+                        <CalendarUI
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={date => date && setSelectedDate(date)}
+                          month={month}
+                          onMonthChange={setMonth}
+                          disabled={(date) => !isDateSelectable(date)}
+                          modifiers={{
+                            available: (date) => isDateAvailable(date),
+                          }}
+                          modifiersStyles={{
+                            available: { backgroundColor: '#dcfce7' }
+                          }}
+                          className="p-3 pointer-events-auto"
+                          showOutsideDays
+                        />
+                      </div>
                     </PopoverContent>
                   </Popover>
                   
@@ -606,9 +636,11 @@ const ContactTab: React.FC = () => {
       ) : (
         <Card className="border border-border/50">
           <CardContent className="p-6">
-            <h3 className="text-xl font-semibold mb-4 flex items-center">
-              <Calendar className="w-5 h-5 mr-2" />
-              Váš kalendár dostupnosti
+            <h3 className="text-xl font-semibold mb-4 flex items-center justify-between">
+              <div className="flex items-center">
+                <Calendar className="w-5 h-5 mr-2" />
+                Váš kalendár dostupnosti
+              </div>
             </h3>
             
             {error && (
@@ -625,6 +657,26 @@ const ContactTab: React.FC = () => {
               </div>
             ) : (
               <CraftsmanCalendarEditor />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {isCraftsmanProfile && userType !== 'customer' && !isCurrentUser && (
+        <Card className="border border-border/50">
+          <CardContent className="p-6">
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
+              <Calendar className="w-5 h-5 mr-2" />
+              Kalendár dostupnosti
+            </h3>
+            
+            {isLoadingDates ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Načítavam dostupné termíny...</span>
+              </div>
+            ) : (
+              <CustomerAvailabilityView />
             )}
           </CardContent>
         </Card>
