@@ -37,12 +37,12 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg overflow-hidden max-w-2xl w-full">
+      <div className="bg-white rounded-lg overflow-hidden max-w-4xl w-full">
         <div className="p-4 border-b">
           <h3 className="text-lg font-medium">Upraviť fotografiu</h3>
         </div>
         
-        <div className="relative h-80 w-full">
+        <div className="relative h-[500px] w-full">
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -51,7 +51,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
             onCropChange={onCropChange}
             onCropComplete={handleCropComplete}
             onZoomChange={setZoom}
-            cropSize={{ width: 300, height: 300 }}
+            cropSize={{ width: 400, height: 400 }}
           />
         </div>
         

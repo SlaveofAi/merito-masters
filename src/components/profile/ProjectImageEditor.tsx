@@ -41,7 +41,7 @@ const ProjectImageEditor: React.FC<ProjectImageEditorProps> = ({ imageSrc, onSav
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full overflow-hidden">
+      <div className="bg-white rounded-lg max-w-4xl w-full overflow-hidden">
         <div className="p-4 border-b flex justify-between items-center">
           <h3 className="text-lg font-medium">Upraviť fotografiu projektu</h3>
           <Button variant="ghost" size="icon" onClick={onCancel}>
@@ -49,7 +49,7 @@ const ProjectImageEditor: React.FC<ProjectImageEditorProps> = ({ imageSrc, onSav
           </Button>
         </div>
         
-        <div className="relative h-80 w-full">
+        <div className="relative h-[500px] w-full">
           <Cropper
             image={imageSrc}
             crop={crop}
