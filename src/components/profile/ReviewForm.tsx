@@ -1,11 +1,19 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ReviewStarRating from "./ReviewStarRating";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface ReviewFormProps {
   userId: string;
@@ -17,6 +25,13 @@ interface ReviewFormProps {
     rating: number;
     comment: string | null;
   };
+  isSelectCraftsman?: boolean;
+  onCancel?: () => void;
+}
+
+interface CraftsmanOption {
+  id: string;
+  name: string;
 }
 
 const ReviewForm: React.FC<ReviewFormProps> = ({
@@ -24,13 +39,43 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   profileId,
   userName = 'Anonymný zákazník',
   onSuccess,
-  existingReview
+  existingReview,
+  isSelectCraftsman = false,
+  onCancel
 }) => {
   const [rating, setRating] = useState(existingReview?.rating || 0);
   const [comment, setComment] = useState(existingReview?.comment || "");
   const [submitting, setSubmitting] = useState(false);
-
+  const [selectedCraftsmanId, setSelectedCraftsmanId] = useState(profileId !== "empty" ? profileId : "");
+  const [craftsmen, setCraftsmen] = useState<CraftsmanOption[]>([]);
+  
   const isEditMode = !!existingReview;
+
+  useEffect(() => {
+    // Fetch craftsmen list for selection if needed
+    if (isSelectCraftsman) {
+      const fetchCraftsmen = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('craftsman_profiles')
+            .select('id, name');
+          
+          if (error) {
+            throw error;
+          }
+          
+          if (data) {
+            setCraftsmen(data as CraftsmanOption[]);
+          }
+        } catch (error) {
+          console.error('Error fetching craftsmen:', error);
+          toast.error('Nepodarilo sa načítať zoznam remeselníkov');
+        }
+      };
+      
+      fetchCraftsmen();
+    }
+  }, [isSelectCraftsman]);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +88,13 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       toast.error("Prosím, vyberte hodnotenie (1-5 hviezdičiek)");
       return;
     }
+    
+    if (isSelectCraftsman && !selectedCraftsmanId) {
+      toast.error("Prosím, vyberte remeselníka");
+      return;
+    }
+
+    const craftsmanIdToUse = isSelectCraftsman ? selectedCraftsmanId : profileId;
 
     setSubmitting(true);
     try {
@@ -67,7 +119,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
         const { error } = await supabase
           .from('craftsman_reviews')
           .insert({
-            craftsman_id: profileId,
+            craftsman_id: craftsmanIdToUse,
             customer_id: userId,
             customer_name: userName || 'Anonymný zákazník',
             rating,
@@ -78,13 +130,16 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
           console.error("Review submission error:", error);
           throw error;
         }
-        
-        toast.success("Hodnotenie bolo úspešne pridané");
-        setRating(0);
-        setComment("");
       }
       
       onSuccess();
+      
+      if (!isEditMode) {
+        setRating(0);
+        setComment("");
+        setSelectedCraftsmanId("");
+      }
+      
     } catch (error: any) {
       console.error("Error submitting review:", error);
       toast.error("Nastala chyba pri odosielaní hodnotenia: " + (error.message || "Neznáma chyba"));
@@ -97,9 +152,32 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     <Card>
       <CardContent className="p-6">
         <h3 className="text-lg font-medium mb-4">
-          {isEditMode ? "Upraviť hodnotenie" : "Ohodnoťte tohto remeselníka"}
+          {isEditMode ? "Upraviť hodnotenie" : "Ohodnoťte remeselníka"}
         </h3>
         <form onSubmit={handleSubmitReview} className="space-y-4">
+          {isSelectCraftsman && (
+            <div className="space-y-2">
+              <Label htmlFor="craftsman-select" className="block text-sm font-medium">
+                Vyberte remeselníka
+              </Label>
+              <Select 
+                value={selectedCraftsmanId} 
+                onValueChange={setSelectedCraftsmanId}
+              >
+                <SelectTrigger id="craftsman-select" className="w-full">
+                  <SelectValue placeholder="Vyberte remeselníka" />
+                </SelectTrigger>
+                <SelectContent>
+                  {craftsmen.map(craftsman => (
+                    <SelectItem key={craftsman.id} value={craftsman.id}>
+                      {craftsman.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div className="space-y-2">
             <label className="block text-sm font-medium">
               Hodnotenie
@@ -124,23 +202,27 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
             <Button 
               type="submit" 
               className="w-full sm:w-auto"
-              disabled={rating === 0 || submitting}
+              disabled={rating === 0 || submitting || (isSelectCraftsman && !selectedCraftsmanId)}
             >
               {submitting ? "Odosielam..." : isEditMode ? "Upraviť hodnotenie" : "Odoslať hodnotenie"}
             </Button>
             
-            {isEditMode && (
+            {(isEditMode || onCancel) && (
               <Button 
                 type="button" 
                 variant="outline" 
                 className="w-full sm:w-auto"
                 onClick={() => {
-                  setRating(existingReview.rating); 
-                  setComment(existingReview.comment || "");
+                  if (onCancel) {
+                    onCancel();
+                  } else if (isEditMode) {
+                    setRating(existingReview.rating); 
+                    setComment(existingReview.comment || "");
+                  }
                 }}
                 disabled={submitting}
               >
-                Zrušiť zmeny
+                Zrušiť
               </Button>
             )}
           </div>
