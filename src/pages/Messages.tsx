@@ -5,6 +5,7 @@ import Chat from "@/components/chat/Chat";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 const Messages = () => {
   const { user, loading } = useAuth();
@@ -17,6 +18,7 @@ const Messages = () => {
     if (!loading) {
       setIsCheckingAuth(false);
       if (!user) {
+        toast.error("Pre prístup k správam sa musíte prihlásiť");
         navigate("/login", { replace: true });
       }
     }

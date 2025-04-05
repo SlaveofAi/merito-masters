@@ -81,6 +81,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [processedBookings, setProcessedBookings] = useState<string[]>([]);
   
   useEffect(() => {
     scrollToBottom();
@@ -120,6 +121,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       return;
     }
     
+    if (processedBookings.includes(bookingId)) {
+      toast.info("Táto požiadavka už bola spracovaná");
+      return;
+    }
+    
     try {
       // Update the booking status
       const { error } = await supabase
@@ -154,6 +160,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         });
         
       if (messageError) throw messageError;
+
+      // Add to processed bookings
+      setProcessedBookings(prev => [...prev, bookingId]);
       
       toast.success(action === 'accept' 
         ? "Požiadavka bola úspešne akceptovaná" 
@@ -161,8 +170,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       );
       
       // Refresh the messages
-      // This would typically be handled by a realtime subscription,
-      // but for simplicity, we'll manually refresh after a short delay
       setTimeout(() => {
         window.location.reload();
       }, 1000);
@@ -219,14 +226,60 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const timeMatch = lines.length > 2 ? lines[2].match(/Čas: (.+)/) : null;
     const messageMatch = content.match(/Správa: (.+)/);
     const amountMatch = content.match(/Suma: (.+)€/);
+    const photoMatch = content.match(/Fotky: (.+)/);
     
     return {
       date: dateMatch ? dateMatch[1] : null,
       time: timeMatch ? timeMatch[1] : null,
       message: messageMatch ? messageMatch[1] : null,
       amount: amountMatch ? amountMatch[1] : null,
+      photos: photoMatch ? photoMatch[1] : null,
       status: lines[0].includes('akceptovaná') ? 'accepted' : lines[0].includes('zamietnutá') ? 'rejected' : 'pending'
     };
+  };
+  
+  // Get booking ID for a particular booking request
+  const getBookingId = async (message: Message) => {
+    try {
+      const bookingDetails = extractBookingDetails(message.content);
+      if (!bookingDetails.date) return null;
+      
+      const { data, error } = await supabase
+        .from('booking_requests')
+        .select('id')
+        .eq('conversation_id', message.conversation_id)
+        .eq('date', bookingDetails.date)
+        .maybeSingle();
+        
+      if (error || !data) {
+        console.error("Error fetching booking ID:", error);
+        return null;
+      }
+      
+      return data.id;
+    } catch (err) {
+      console.error("Error in getBookingId:", err);
+      return null;
+    }
+  };
+  
+  // Format date to be consistent (DD.MM.YYYY format)
+  const formatDateString = (dateStr: string | null) => {
+    if (!dateStr) return "";
+    
+    try {
+      // Check if it's already in the format DD.MM.YYYY
+      if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(dateStr)) {
+        return dateStr;
+      }
+      
+      // Parse date to get consistent format
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('sk-SK'); // Format as DD.MM.YYYY
+    } catch (e) {
+      console.error("Error formatting date:", e);
+      return dateStr; // Return the original string if there's an error
+    }
   };
   
   // Render a booking request message
@@ -236,33 +289,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const isAccepted = bookingDetails.status === 'accepted';
     const isRejected = bookingDetails.status === 'rejected';
     const isPending = bookingDetails.status === 'pending';
+    const formattedDate = formatDateString(bookingDetails.date);
     
-    // Get the booking ID for this message
-    const getBookingId = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('booking_requests')
-          .select('id')
-          .eq('conversation_id', message.conversation_id)
-          .eq('customer_id', isOwnMessage ? user?.id : message.sender_id)
-          .eq('craftsman_id', isOwnMessage ? message.receiver_id : user?.id)
-          .eq('date', bookingDetails.date || '')
-          .single();
-          
-        if (error || !data) {
-          console.error("Error fetching booking ID:", error);
-          return null;
-        }
-        
-        return data.id;
-      } catch (err) {
-        console.error("Error in getBookingId:", err);
-        return null;
-      }
+    // Check if this booking ID has been processed
+    const isProcessed = async () => {
+      const bookingId = await getBookingId(message);
+      return bookingId ? processedBookings.includes(bookingId) : false;
     };
     
     return (
-      <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}>
+      <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`} key={message.id}>
         <div className={`max-w-[85%] bg-white border rounded-lg shadow-sm overflow-hidden`}>
           <div className="bg-gray-50 p-3 border-b">
             <div className="flex justify-between items-center">
@@ -281,7 +317,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <div className="p-4 space-y-3">
             <div className="flex space-x-2 items-center">
               <Calendar className="h-4 w-4 text-gray-500" />
-              <span className="text-sm">{bookingDetails.date}</span>
+              <span className="text-sm">{formattedDate}</span>
             </div>
             
             {bookingDetails.time && (
@@ -298,6 +334,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               </div>
             )}
             
+            {bookingDetails.photos && (
+              <div className="flex space-x-2 items-center">
+                <Image className="h-4 w-4 text-gray-500" />
+                <span className="text-sm">{bookingDetails.photos}</span>
+              </div>
+            )}
+            
             {bookingDetails.message && (
               <div className="mt-2 border-t pt-2">
                 <p className="text-sm">{bookingDetails.message}</p>
@@ -311,9 +354,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 variant="destructive" 
                 size="sm" 
                 onClick={async () => {
-                  const bookingId = await getBookingId();
+                  const bookingId = await getBookingId(message);
                   if (bookingId) handleBookingAction(bookingId, 'reject');
                 }}
+                disabled={processedBookings.includes(await getBookingId(message) || '')}
               >
                 <X className="h-4 w-4 mr-1" /> Zamietnuť
               </Button>
@@ -321,9 +365,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 variant="default" 
                 size="sm" 
                 onClick={async () => {
-                  const bookingId = await getBookingId();
+                  const bookingId = await getBookingId(message);
                   if (bookingId) handleBookingAction(bookingId, 'accept');
                 }}
+                disabled={processedBookings.includes(await getBookingId(message) || '')}
               >
                 <Check className="h-4 w-4 mr-1" /> Akceptovať
               </Button>
@@ -343,9 +388,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const bookingDetails = extractBookingDetails(message.content);
     const isOwnMessage = message.sender_id === user?.id;
     const isAccepted = bookingDetails.status === 'accepted';
+    const formattedDate = formatDateString(bookingDetails.date);
     
     return (
-      <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}>
+      <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`} key={message.id}>
         <div className={`max-w-[85%] ${isAccepted ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border rounded-lg shadow-sm overflow-hidden`}>
           <div className={`${isAccepted ? 'bg-green-100' : 'bg-red-100'} p-3 border-b`}>
             <div className="flex items-center">
@@ -363,7 +409,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <div className="p-4 space-y-3">
             <div className="flex space-x-2 items-center">
               <Calendar className="h-4 w-4 text-gray-500" />
-              <span className="text-sm">{bookingDetails.date}</span>
+              <span className="text-sm">{formattedDate}</span>
             </div>
             
             {bookingDetails.time && (

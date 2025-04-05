@@ -183,7 +183,7 @@ const ProfileCalendar: React.FC = () => {
           setSelectedDates(dates);
         }
       }}
-      className="p-3 pointer-events-auto"
+      className="p-3 pointer-events-auto h-auto"
     />
   );
 
@@ -199,7 +199,7 @@ const ProfileCalendar: React.FC = () => {
       modifiersStyles={{
         available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700, border: '1px solid #86efac' }
       }}
-      className="p-3 pointer-events-auto"
+      className="p-3 pointer-events-auto h-auto"
     />
   );
 

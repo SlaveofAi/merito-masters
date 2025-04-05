@@ -46,26 +46,29 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
         if (unreadMessages.length > 0) {
           console.log(`Marking ${unreadMessages.length} messages as read`);
           
-          const updatePromises = unreadMessages.map(async (msg) => {
-            return supabase
-              .from('chat_messages')
-              .update({ read: true })
-              .eq('id', msg.id);
-          });
+          // Using a more reliable approach to update
+          const { error: updateError } = await supabase
+            .from('chat_messages')
+            .update({ read: true })
+            .in('id', unreadMessages.map(msg => msg.id));
           
-          try {
-            await Promise.all(updatePromises);
+          if (updateError) {
+            console.error("Error marking messages as read:", updateError);
+          } else {
             console.log("All messages marked as read");
-            
             // Refresh contact list to update unread count
             refetchContacts();
-          } catch (updateError) {
-            console.error("Error marking messages as read:", updateError);
           }
         }
       }
       
-      return data as Message[];
+      // Return the messages with updated read status
+      return data.map(msg => {
+        if (msg.receiver_id === user.id) {
+          return { ...msg, read: true };
+        }
+        return msg;
+      }) as Message[];
     },
     enabled: !!selectedContact?.conversation_id && !!user,
     gcTime: 0, // Use gcTime instead of cacheTime
