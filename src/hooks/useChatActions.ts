@@ -41,6 +41,8 @@ export const useChatActions = (
           craftsman_id: userType === 'craftsman' ? user.id : contactId,
         };
 
+        console.log("New conversation data:", newConversation);
+
         const { data: insertedConv, error: convError } = await supabase
           .from('chat_conversations')
           .insert(newConversation)
