@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { UploadCloud, Edit2 } from "lucide-react";
+import { UploadCloud, Edit2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Project } from "./ProjectCard";
 import ProjectImageEditor from "./ProjectImageEditor";
