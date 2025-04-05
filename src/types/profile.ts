@@ -44,16 +44,6 @@ export type PortfolioImage = {
   created_at: string;
 };
 
-export type PortfolioProject = {
-  id: string;
-  craftsman_id: string;
-  title: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
-  images?: PortfolioImage[];
-};
-
 export type CraftsmanReview = {
   id: string;
   craftsman_id: string;

@@ -1,9 +1,8 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Edit, Trash2, Calendar } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/utils/dateUtils";
 
 export interface ProjectImage {
   id: string;
@@ -16,7 +15,6 @@ export interface Project {
   description: string;
   created_at: string;
   images: ProjectImage[];
-  projectType?: string;
 }
 
 interface ProjectCardProps {
@@ -40,8 +38,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 
   return (
     <Card 
-      className={`cursor-pointer transition-all hover:shadow-md hover:translate-y-[-2px] ${
-        isSelected ? "ring-2 ring-primary bg-gray-50" : ""
+      className={`cursor-pointer transition-all hover:shadow-md ${
+        isSelected ? "ring-2 ring-primary" : ""
       }`}
       onClick={handleClick}
     >
@@ -54,10 +52,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           <img 
             src={project.images[0].image_url} 
             alt={project.title}
-            className="w-full h-full object-cover rounded-sm"
+            className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-sm">
+          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
             <span className="text-gray-400">Žiadne obrázky</span>
           </div>
         )}
@@ -68,15 +66,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           {project.description}
         </CardDescription>
         
-        <div className="flex items-center text-xs text-gray-500 mt-2">
-          <Calendar className="h-3 w-3 mr-1" />
-          <span>{formatDate(project.created_at)}</span>
-        </div>
-      </CardContent>
-      
-      <CardFooter className="p-2 pt-0 flex justify-end">
         {(onEdit || onDelete) && (
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-2 mt-2">
             {onEdit && (
               <Button 
                 variant="ghost" 
@@ -106,7 +97,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             )}
           </div>
         )}
-      </CardFooter>
+      </CardContent>
     </Card>
   );
 };

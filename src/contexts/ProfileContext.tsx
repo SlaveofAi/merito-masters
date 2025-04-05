@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -25,8 +26,6 @@ interface ProfileContextType {
   reviewComment: string;
   customSpecialization: string;
   saving: boolean;
-  projects: any[]; 
-  deletingImage: string | null;
   setActiveImageIndex: (index: number) => void;
   setIsEditing: (value: boolean) => void;
   setRating: (value: number) => void;
@@ -42,8 +41,6 @@ interface ProfileContextType {
   refetchReviews: () => void;
   createDefaultProfileIfNeeded: () => Promise<void>;
   fetchPortfolioImages?: (userId: string) => Promise<void>;
-  removeProject: (projectId: string) => Promise<void>;
-  createProject: (title: string, description: string, images: File[]) => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -59,11 +56,9 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deletingImage, setDeletingImage] = useState<string | null>(null);
 
   const profileId = id === ":id" ? undefined : id;
   
-  // Get all the data and functions from the useProfileData hook
   const {
     loading,
     profileData,
@@ -86,10 +81,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateCustomSpecialization,
     createDefaultProfileIfNeeded,
     isCreatingProfile,
-    projects, 
-    error,
-    removeProject, // Import from the hook instead of redefining
-    createProject
+    error
   } = useProfileData(profileId);
 
   const handleProfileUpdate = (updatedProfile: any) => {
@@ -189,8 +181,6 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     reviewComment,
     customSpecialization,
     saving,
-    projects,
-    deletingImage,
     setActiveImageIndex,
     setIsEditing,
     setRating,
@@ -205,9 +195,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     handleStarClick,
     refetchReviews,
     createDefaultProfileIfNeeded,
-    fetchPortfolioImages,
-    removeProject, // Use the one from useProfileData
-    createProject,
+    fetchPortfolioImages
   };
 
   return (
