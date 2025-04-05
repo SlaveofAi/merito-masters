@@ -40,15 +40,14 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
         replyText
       });
       
-      // Type-cast supabase.rpc as any to avoid TypeScript errors with generated types
-      const { error } = await (supabase.rpc as any)(
-        'add_review_reply',
-        {
-          p_review_id: review.id,
-          p_craftsman_id: userId,
-          p_reply: replyText
-        }
-      );
+      // Direct insert into craftsman_review_replies table instead of using RPC
+      const { error } = await supabase
+        .from('craftsman_review_replies')
+        .insert({
+          review_id: review.id,
+          craftsman_id: userId,
+          reply: replyText
+        });
       
       if (error) throw error;
       

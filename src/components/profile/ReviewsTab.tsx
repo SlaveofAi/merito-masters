@@ -40,7 +40,7 @@ const ReviewsTab: React.FC = () => {
     error
   });
 
-  // Fetch reviews when component mounts
+  // Fetch reviews immediately when component mounts
   useEffect(() => {
     if (profileData?.id) {
       console.log("Fetching reviews for profile:", profileData.id);

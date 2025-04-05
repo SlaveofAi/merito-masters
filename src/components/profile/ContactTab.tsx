@@ -155,7 +155,7 @@ const ContactTab: React.FC = () => {
         <CardContent className="p-6">
           <h3 className="text-xl font-semibold mb-6">Kontaktné informácie</h3>
           <div className="space-y-4">
-            {profileData.phone && (
+            {profileData?.phone && (
               <div className="flex items-start">
                 <Phone className="w-5 h-5 mr-3 mt-0.5 text-primary" />
                 <div>
@@ -171,11 +171,11 @@ const ContactTab: React.FC = () => {
               <div>
                 <p className="font-medium">Email</p>
                 <p className="text-muted-foreground">
-                  {profileData.email}
+                  {profileData?.email}
                 </p>
               </div>
             </div>
-            {isCraftsmanProfile && (
+            {profileData?.user_type === 'craftsman' && (
               <div className="flex items-start">
                 <Clock className="w-5 h-5 mr-3 mt-0.5 text-primary" />
                 <div>
@@ -227,14 +227,14 @@ const ContactTab: React.FC = () => {
               <div>
                 <p className="font-medium">Región pôsobenia</p>
                 <p className="text-muted-foreground">
-                  {profileData.location}
+                  {profileData?.location}
                 </p>
               </div>
             </div>
           </div>
           
           {/* Show craftsman availability calendar */}
-          {isCraftsmanProfile && calendarVisible && (
+          {profileData?.user_type === 'craftsman' && calendarVisible && (
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium">Dostupnosť v kalendári</h4>

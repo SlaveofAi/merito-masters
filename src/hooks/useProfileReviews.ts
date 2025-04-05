@@ -17,7 +17,7 @@ export const useProfileReviews = (id?: string) => {
       
       console.log("Fetching reviews for craftsman:", userId);
       
-      // First fetch the reviews - now protected by RLS
+      // Fetch the reviews
       const { data: reviewsData, error: reviewsError } = await supabase
         .from('craftsman_reviews')
         .select('*')
@@ -44,11 +44,11 @@ export const useProfileReviews = (id?: string) => {
         return reviewsData as CraftsmanReview[];
       }
       
-      // Use RPC function for getting review replies
-      const { data: repliesData, error: repliesError } = await (supabase.rpc as any)(
-        'get_review_replies_by_review_ids', 
-        { review_ids: reviewIds }
-      );
+      // Use simplified fetch for review replies
+      const { data: repliesData, error: repliesError } = await supabase
+        .from('craftsman_review_replies')
+        .select('*')
+        .in('review_id', reviewIds);
         
       if (repliesError) {
         console.error("Error fetching review replies:", repliesError);
@@ -56,12 +56,14 @@ export const useProfileReviews = (id?: string) => {
         return reviewsData as CraftsmanReview[];
       }
       
+      console.log("Found replies:", repliesData?.length || 0);
+      
       // Merge reviews with their replies
       const reviewsWithReplies = reviewsData.map(review => {
-        // Ensure repliesData is not null before accessing it
-        const reply = repliesData && Array.isArray(repliesData) ? 
+        // Find reply for this review
+        const reply = repliesData ? 
           repliesData.find(r => r.review_id === review.id) : 
-          undefined;
+          null;
           
         return {
           ...review,
@@ -90,6 +92,7 @@ export const useProfileReviews = (id?: string) => {
     enabled: !!userId,
     retry: 1,
     gcTime: 0, // Use gcTime instead of cacheTime to ensure fresh data
+    staleTime: 60000, // 1 minute
   });
 
   return {
