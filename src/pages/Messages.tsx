@@ -28,6 +28,8 @@ const Messages = () => {
   useEffect(() => {
     // Create "booking-images" storage bucket if it doesn't exist
     const createBucketIfNeeded = async () => {
+      if (!user) return;
+      
       try {
         // Check if the bucket exists by listing buckets
         const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
@@ -43,13 +45,24 @@ const Messages = () => {
         if (!bucketExists) {
           // Create the bucket
           const { error } = await supabase.storage.createBucket('booking-images', {
-            public: true
+            public: true,
+            fileSizeLimit: 10485760 // 10MB
           });
           
           if (error) {
             console.error("Error creating booking-images bucket:", error);
           } else {
             console.log("booking-images bucket created successfully");
+            
+            // Add public policy to the bucket
+            const { error: policyError } = await supabase
+              .storage
+              .from('booking-images')
+              .createSignedUrl('test.txt', 60);
+              
+            if (policyError && policyError.message !== 'The resource was not found') {
+              console.error("Error with bucket policy:", policyError);
+            }
           }
         }
       } catch (error) {
@@ -57,9 +70,7 @@ const Messages = () => {
       }
     };
     
-    if (user) {
-      createBucketIfNeeded();
-    }
+    createBucketIfNeeded();
   }, [user]);
 
   if (loading || isCheckingAuth) {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Upload, Euro, Clock, FileText, Image, X } from "lucide-react";
@@ -218,6 +219,12 @@ const ContactTab: React.FC = () => {
         return;
       }
       
+      // Validate required fields
+      if (!values.date) {
+        toast.error("Vyberte prosím dátum");
+        return;
+      }
+      
       try {
         let conversationId: string | null = null;
         let imageUrl: string | null = null;
@@ -306,6 +313,7 @@ ${values.message ? `Správa: ${values.message}` : ''}
 ${values.amount ? `Suma: ${values.amount}€` : ''}
 ${imageUrl ? `Fotky: Priložená fotografia` : ''}`;
 
+        // Send a message with booking metadata
         const { data: messageData, error: messageError } = await supabase
           .from('chat_messages')
           .insert({
