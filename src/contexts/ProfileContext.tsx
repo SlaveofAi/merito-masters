@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -26,8 +25,8 @@ interface ProfileContextType {
   reviewComment: string;
   customSpecialization: string;
   saving: boolean;
-  projects: any[]; // Added missing property
-  deletingImage: string | null; // Added for ProjectDetail component
+  projects: any[]; 
+  deletingImage: string | null;
   setActiveImageIndex: (index: number) => void;
   setIsEditing: (value: boolean) => void;
   setRating: (value: number) => void;
@@ -43,8 +42,8 @@ interface ProfileContextType {
   refetchReviews: () => void;
   createDefaultProfileIfNeeded: () => Promise<void>;
   fetchPortfolioImages?: (userId: string) => Promise<void>;
-  removeProject: (projectId: string) => Promise<void>; // Added missing method
-  createProject: (title: string, description: string, images: File[]) => Promise<void>; // Added missing method
+  removeProject: (projectId: string) => Promise<void>;
+  createProject: (title: string, description: string, images: File[]) => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -64,6 +63,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const profileId = id === ":id" ? undefined : id;
   
+  // Get all the data and functions from the useProfileData hook
   const {
     loading,
     profileData,
@@ -88,8 +88,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     isCreatingProfile,
     projects, 
     error,
-    removeProject,
-    createProject // Make sure to get this from useProfileData
+    removeProject, // Import from the hook instead of redefining
+    createProject
   } = useProfileData(profileId);
 
   const handleProfileUpdate = (updatedProfile: any) => {
@@ -170,22 +170,6 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Implement the missing removeProject method
-  const removeProject = async (projectId: string) => {
-    try {
-      setDeletingImage(projectId);
-      // Here you would implement the actual deletion logic
-      // For example, calling a Supabase or API endpoint
-      toast.success("Projekt bol odstránený");
-      // You might need to refresh projects after deletion
-    } catch (error) {
-      console.error("Error removing project:", error);
-      toast.error("Nastala chyba pri odstraňovaní projektu");
-    } finally {
-      setDeletingImage(null);
-    }
-  };
-
   const value = {
     loading,
     profileData,
@@ -222,8 +206,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     refetchReviews,
     createDefaultProfileIfNeeded,
     fetchPortfolioImages,
-    removeProject,
-    createProject, // Add createProject to the context value
+    removeProject, // Use the one from useProfileData
+    createProject,
   };
 
   return (
