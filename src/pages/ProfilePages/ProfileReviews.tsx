@@ -21,14 +21,15 @@ const ProfileReviewsContent: React.FC = () => {
     createDefaultProfileIfNeeded
   } = useProfile();
 
-  // Debug log to help troubleshoot the profile data and user type
+  // Enhanced debug log to help troubleshoot the profile data and user type
   useEffect(() => {
     console.log("ProfileReviews rendering:", {
       loading, 
       profileFound: !!profileData,
       userType,
-      profileType: profileData?.user_type,
-      isCurrentUser
+      profileUserType: profileData?.user_type,
+      isCurrentUser,
+      canLeaveReview: userType === 'customer' && profileData?.user_type === 'craftsman' && !isCurrentUser
     });
   }, [loading, profileData, userType, isCurrentUser]);
 

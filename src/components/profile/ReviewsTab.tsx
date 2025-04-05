@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/contexts/ProfileContext";
@@ -6,7 +7,6 @@ import ReviewsList from "./ReviewsList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import ProfileCalendar from "./ProfileCalendar";
 
 const ReviewsTab: React.FC = () => {
   const { user, userType } = useAuth();
@@ -22,13 +22,15 @@ const ReviewsTab: React.FC = () => {
   const isCurrentUser = profileData?.id === user?.id;
   
   // Only customers can leave reviews for craftsmen profiles that aren't their own
-  const canLeaveReview = user && userType === 'customer' && 
-    profileData?.user_type === 'craftsman' && !isCurrentUser;
+  const canLeaveReview = user && 
+    userType === 'customer' && 
+    profileData?.user_type === 'craftsman' && 
+    !isCurrentUser;
   
   // Only craftsmen can reply to reviews on their own profiles
   const canReplyToReview = user && userType === 'craftsman' && isCurrentUser;
 
-  // Debug logs - very important to keep these
+  // Enhanced debug logs for troubleshooting the review form visibility
   console.log("Reviews tab rendering with critical variables:", { 
     reviews: reviews?.length, 
     isCurrentUser, 
