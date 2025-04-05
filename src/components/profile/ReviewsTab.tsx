@@ -23,7 +23,7 @@ const ReviewsTab: React.FC = () => {
   
   // Use a safer approach to determine if this is a craftsman profile
   const isCraftsmanProfile = profileData?.user_type === 'craftsman' || 
-                            (profileData && 'trade_category' in profileData && profileData.trade_category !== undefined);
+                           (profileData && 'trade_category' in profileData);
   
   // Only customers can leave reviews for craftsmen profiles that aren't their own
   const canLeaveReview = user && 
@@ -45,7 +45,6 @@ const ReviewsTab: React.FC = () => {
     profileId: profileData?.id,
     isCraftsmanProfile,
     hasTrade: profileData && 'trade_category' in profileData,
-    tradeValue: profileData && 'trade_category' in profileData ? profileData.trade_category : undefined,
     error
   });
 

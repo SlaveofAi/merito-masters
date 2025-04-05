@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { CraftsmanProfile } from "@/types/profile";
 
 const timeSlots = [
   "8:00", "9:00", "10:00", "11:00", "12:00", 
@@ -32,8 +32,9 @@ const ContactTab: React.FC = () => {
   const [isLoadingDates, setIsLoadingDates] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Determine if viewing a craftsman profile
-  const isCraftsmanProfile = profileData?.user_type === 'craftsman' || profileData?.trade_category !== undefined;
+  // Safely determine if viewing a craftsman profile by checking both user_type and trade_category
+  const isCraftsmanProfile = profileData?.user_type === 'craftsman' || 
+    (profileData && 'trade_category' in profileData);
 
   useEffect(() => {
     if (profileData?.id && isCraftsmanProfile) {
@@ -108,7 +109,37 @@ const ContactTab: React.FC = () => {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       const customerName = user.user_metadata?.name || user.user_metadata?.full_name || 'Anonymous';
 
-      // Create booking request
+      // Create or find conversation for this craftsman-customer pair
+      const { data: existingConversation, error: convFindError } = await supabase
+        .from('chat_conversations')
+        .select('id')
+        .eq('craftsman_id', profileData.id)
+        .eq('customer_id', user.id)
+        .maybeSingle();
+      
+      let conversationId;
+      
+      if (convFindError || !existingConversation) {
+        // Create new conversation
+        const { data: newConversation, error: convCreateError } = await supabase
+          .from('chat_conversations')
+          .insert({
+            craftsman_id: profileData.id,
+            customer_id: user.id
+          })
+          .select('id')
+          .single();
+          
+        if (convCreateError || !newConversation) {
+          throw new Error("Failed to create conversation");
+        }
+        
+        conversationId = newConversation.id;
+      } else {
+        conversationId = existingConversation.id;
+      }
+
+      // Create booking request with conversation_id
       const { error } = await supabase
         .from('booking_requests')
         .insert({
@@ -119,6 +150,7 @@ const ContactTab: React.FC = () => {
           end_time: endTime,
           customer_name: customerName,
           message: bookingMessage,
+          conversation_id: conversationId
         });
         
       if (error) throw error;
