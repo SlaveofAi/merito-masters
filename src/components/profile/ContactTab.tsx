@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Upload, Euro } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -12,15 +12,38 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { 
+  Form, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormControl, 
+  FormMessage 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { useChatActions } from "@/hooks/useChatActions";
+import { ChatContact } from "@/types/chat";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 
 const ContactTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
-  const { userType } = useAuth();
+  const { userType, user } = useAuth();
   const [month, setMonth] = useState<Date>(new Date());
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isLoadingDates, setIsLoadingDates] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   // Check if we're viewing a craftsman profile by using type guard
   const isCraftsmanProfile = profileData && 'trade_category' in profileData;
@@ -129,6 +152,214 @@ const ContactTab: React.FC = () => {
     setMonth(prevMonth);
   };
 
+  // Form for booking requests
+  const BookingRequestForm = () => {
+    const form = useForm({
+      defaultValues: {
+        date: "",
+        message: "",
+        amount: ""
+      }
+    });
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        setSelectedImage(file);
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = () => {
+          setImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    
+    const handleImageRemove = () => {
+      setSelectedImage(null);
+      setImagePreview(null);
+    };
+
+    const onSubmit = async (values: any) => {
+      if (!profileData?.id || !user) {
+        toast.error("Nemôžete poslať požiadavku, nie ste prihlásený");
+        return;
+      }
+      
+      try {
+        // Create a booking request
+        const bookingData = {
+          craftsman_id: profileData.id,
+          customer_id: user.id,
+          customer_name: user.user_metadata?.name || "Zákazník",
+          date: values.date,
+          start_time: "09:00", // Default times
+          end_time: "17:00",
+          message: values.message,
+          status: "pending"
+        };
+        
+        // If we have a conversation, link it
+        let conversationId = null;
+        
+        // Send the booking request to the database
+        const { data, error } = await supabase
+          .from('booking_requests')
+          .insert(bookingData)
+          .select();
+          
+        if (error) throw error;
+        
+        // Format booking message for chat
+        const bookingMessage = `🗓️ **Požiadavka na termín**
+Dátum: ${values.date}
+${values.message ? `Správa: ${values.message}` : ''}
+${values.amount ? `Suma: ${values.amount}€` : ''}`;
+
+        // TODO: Send this as a structured message in chat if we implement that feature
+        
+        toast.success("Vaša požiadavka bola odoslaná remeselníkovi");
+        form.reset();
+        setSelectedImage(null);
+        setImagePreview(null);
+      } catch (error: any) {
+        console.error("Error sending booking request:", error);
+        toast.error("Nastala chyba pri odosielaní požiadavky");
+      }
+    };
+
+    // Get formatted available dates for the select dropdown
+    const formattedAvailableDates = availableDates
+      .sort((a, b) => a.getTime() - b.getTime())
+      .map(date => {
+        const formattedDate = format(date, 'yyyy-MM-dd');
+        const displayDate = format(date, 'dd.MM.yyyy');
+        return { value: formattedDate, label: displayDate };
+      });
+
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Vyberte dátum</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Vyberte dostupný deň" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {formattedAvailableDates.length > 0 ? (
+                      formattedAvailableDates.map(date => (
+                        <SelectItem key={date.value} value={date.value}>
+                          {date.label}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled>
+                        Žiadne dostupné dni
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="message"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Správa pre remeselníka</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Opíšte vašu požiadavku alebo projekt..."
+                    className="resize-none"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Navrhovaná cena (EUR)</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      {...field}
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <Euro className="h-4 w-4 text-gray-500" />
+                    </div>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <div className="space-y-2">
+            <FormLabel>Priložiť fotku (voliteľné)</FormLabel>
+            <div className="flex items-center space-x-2">
+              <label className="cursor-pointer">
+                <div className="flex items-center justify-center w-32 h-10 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors">
+                  <Upload className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Nahrať</span>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+              </label>
+              
+              {imagePreview && (
+                <div className="relative">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="h-10 w-auto rounded-md" 
+                  />
+                  <button
+                    type="button"
+                    onClick={handleImageRemove}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 w-5 h-5 flex items-center justify-center text-xs"
+                  >
+                    &times;
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <Button type="submit" className="w-full">
+            Odoslať požiadavku
+          </Button>
+        </form>
+      </Form>
+    );
+  };
+
   // For craftsmen to edit their availability
   const CraftsmanCalendarEditor = () => (
     <div className="w-full">
@@ -212,7 +443,7 @@ const ContactTab: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex justify-center w-full">
         <CalendarUI
           mode="default"
           month={month}
@@ -226,6 +457,12 @@ const ContactTab: React.FC = () => {
           className="p-3 pointer-events-auto w-full"
           showOutsideDays
           disabled={date => true} // Make all dates non-interactive
+          styles={{
+            months: { width: '100%' },
+            table: { width: '100%' },
+            row: { width: '100%' },
+            cell: { width: '100%' }
+          }}
         />
       </div>
       
@@ -248,7 +485,7 @@ const ContactTab: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <Card className="border border-border/50">
+      <Card className="border border-border/50 md:max-w-xs">
         <CardContent className="p-6">
           <h3 className="text-xl font-semibold mb-6">Kontaktné informácie</h3>
           <div className="space-y-4">
@@ -309,7 +546,16 @@ const ContactTab: React.FC = () => {
             ) : isCurrentUser && userType === 'craftsman' ? (
               <CraftsmanCalendarEditor />
             ) : (
-              <AvailabilityViewer />
+              <div className="space-y-6">
+                <AvailabilityViewer />
+                
+                {userType === 'customer' && !isCurrentUser && availableDates.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-lg font-medium mb-3">Rezervovať termín</h4>
+                    <BookingRequestForm />
+                  </div>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
