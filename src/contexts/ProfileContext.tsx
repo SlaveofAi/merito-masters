@@ -44,6 +44,7 @@ interface ProfileContextType {
   createDefaultProfileIfNeeded: () => Promise<void>;
   fetchPortfolioImages?: (userId: string) => Promise<void>;
   removeProject: (projectId: string) => Promise<void>; // Added missing method
+  createProject: (title: string, description: string, images: File[]) => Promise<void>; // Added missing method
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -85,8 +86,10 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateCustomSpecialization,
     createDefaultProfileIfNeeded,
     isCreatingProfile,
-    projects, // Get projects from useProfileData
-    error
+    projects, 
+    error,
+    removeProject,
+    createProject // Make sure to get this from useProfileData
   } = useProfileData(profileId);
 
   const handleProfileUpdate = (updatedProfile: any) => {
@@ -202,8 +205,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     reviewComment,
     customSpecialization,
     saving,
-    projects, // Add projects to the context value
-    deletingImage, // Add deletingImage to the context value
+    projects,
+    deletingImage,
     setActiveImageIndex,
     setIsEditing,
     setRating,
@@ -219,7 +222,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     refetchReviews,
     createDefaultProfileIfNeeded,
     fetchPortfolioImages,
-    removeProject, // Add removeProject to the context value
+    removeProject,
+    createProject, // Add createProject to the context value
   };
 
   return (
