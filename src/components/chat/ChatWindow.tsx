@@ -205,7 +205,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       return true;
     }
     
-    return message.content.includes('🗓️ **Požiadavka na termín**');
+    return message.content.includes('🗓️ **Požiadavka na termín**') || 
+           message.content.includes('Požiadavka na termín');
   };
 
   const isBookingResponse = (message: Message) => {

@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,18 +65,26 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
       
       // Return the messages with updated read status and properly parsed metadata
       return data.map(msg => {
-        // Ensure the message is properly typed with metadata
-        const typedMessage: Message = {
-          ...msg,
+        // Create a base message with the required fields
+        const baseMessage: Message = {
+          id: msg.id,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          conversation_id: msg.conversation_id,
+          content: msg.content,
+          created_at: msg.created_at,
           read: msg.receiver_id === user.id ? true : msg.read,
-          // Handle metadata properly - it might be stored as a string in some database setups
-          metadata: msg.metadata ? 
-            (typeof msg.metadata === 'string' ? 
-              JSON.parse(msg.metadata) : 
-              msg.metadata) : 
-            undefined
         };
-        return typedMessage;
+
+        // Add metadata only if it exists
+        if (msg.metadata !== undefined && msg.metadata !== null) {
+          // Handle metadata that might be stored as a string in some database setups
+          baseMessage.metadata = typeof msg.metadata === 'string' ? 
+            JSON.parse(msg.metadata) : 
+            msg.metadata;
+        }
+
+        return baseMessage;
       });
     },
     enabled: !!selectedContact?.conversation_id && !!user,
