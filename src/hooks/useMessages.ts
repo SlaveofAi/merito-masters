@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,8 +68,8 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
         const typedMessage: Message = {
           ...msg,
           read: msg.receiver_id === user.id ? true : msg.read,
-          // Make sure metadata is properly parsed if it exists
-          metadata: msg.metadata || undefined
+          // Handle metadata properly - it might not exist in some messages
+          metadata: 'metadata' in msg ? msg.metadata : undefined
         };
         return typedMessage;
       });
