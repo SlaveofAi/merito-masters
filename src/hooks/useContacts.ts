@@ -149,7 +149,7 @@ export const useContacts = () => {
     },
     enabled: !!user,
     // More aggressive refetching to ensure unread counts are accurate
-    refetchInterval: 3000, // Refresh more frequently (every 3 seconds)
+    refetchInterval: 5000, // Refresh more frequently (every 5 seconds)
     refetchOnWindowFocus: true,
     staleTime: 0, // No stale time - always fetch fresh data
     networkMode: 'always', // Always fetch from network
