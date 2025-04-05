@@ -19,6 +19,7 @@ export type Database = {
           date: string
           end_time: string
           id: string
+          image_url: string | null
           message: string | null
           start_time: string
           status: string
@@ -33,6 +34,7 @@ export type Database = {
           date: string
           end_time: string
           id?: string
+          image_url?: string | null
           message?: string | null
           start_time: string
           status?: string
@@ -47,6 +49,7 @@ export type Database = {
           date?: string
           end_time?: string
           id?: string
+          image_url?: string | null
           message?: string | null
           start_time?: string
           status?: string

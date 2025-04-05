@@ -83,6 +83,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [processedBookings, setProcessedBookings] = useState<string[]>([]);
+  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
   
   useEffect(() => {
     scrollToBottom();
@@ -220,21 +222,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
            content.includes('❌ **Požiadavka termínu zamietnutá**');
   };
 
-  // Helper function to extract booking ID from a booking request message
+  // Helper function to extract booking details from a booking request message
   const extractBookingDetails = (content: string) => {
     const lines = content.split('\n');
     const dateMatch = lines.length > 1 ? lines[1].match(/Dátum: (.+)/) : null;
     const timeMatch = lines.length > 2 ? lines[2].match(/Čas: (.+)/) : null;
     const messageMatch = content.match(/Správa: (.+)/);
     const amountMatch = content.match(/Suma: (.+)€/);
-    const photoMatch = content.match(/Fotky: (.+)/);
+    const photoMatch = content.match(/Fotka: (.+)/);
     
     return {
       date: dateMatch ? dateMatch[1] : null,
       time: timeMatch ? timeMatch[1] : null,
       message: messageMatch ? messageMatch[1] : null,
       amount: amountMatch ? amountMatch[1] : null,
-      photos: photoMatch ? photoMatch[1] : null,
+      photo: photoMatch ? photoMatch[1] : null,
       status: lines[0].includes('akceptovaná') ? 'accepted' : lines[0].includes('zamietnutá') ? 'rejected' : 'pending'
     };
   };
@@ -281,6 +283,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       console.error("Error formatting date:", e);
       return dateStr; // Return the original string if there's an error
     }
+  };
+  
+  // Show image in dialog
+  const handleImageClick = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    setShowImageDialog(true);
   };
   
   // Render a booking request message
@@ -336,10 +344,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               </div>
             )}
             
-            {bookingDetails.photos && (
-              <div className="flex space-x-2 items-center">
-                <Image className="h-4 w-4 text-gray-500" />
-                <span className="text-sm">{bookingDetails.photos}</span>
+            {bookingDetails.photo && (
+              <div className="flex flex-col space-y-2">
+                <div className="flex space-x-2 items-center">
+                  <Image className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm">Priložená fotka</span>
+                </div>
+                <div className="mt-2">
+                  <img 
+                    src={bookingDetails.photo} 
+                    alt="Booking photo" 
+                    className="max-h-40 rounded-md cursor-pointer hover:opacity-90 transition-opacity" 
+                    onClick={() => handleImageClick(bookingDetails.photo!)}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -351,10 +369,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 size="sm" 
                 onClick={async () => {
                   const bookingId = await getBookingId(message);
-                  if (bookingId) {
-                    handleBookingAction(bookingId, 'reject');
-                  }
+                  if (bookingId) handleBookingAction(bookingId, 'reject');
                 }}
+                disabled={processedBookings.includes(message.id)}
               >
                 <X className="h-4 w-4 mr-1" /> Zamietnuť
               </Button>
@@ -363,10 +380,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 size="sm" 
                 onClick={async () => {
                   const bookingId = await getBookingId(message);
-                  if (bookingId) {
-                    handleBookingAction(bookingId, 'accept');
-                  }
+                  if (bookingId) handleBookingAction(bookingId, 'accept');
                 }}
+                disabled={processedBookings.includes(message.id)}
               >
                 <Check className="h-4 w-4 mr-1" /> Akceptovať
               </Button>
@@ -707,6 +723,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Priložená fotka</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center">
+            <img 
+              src={selectedImage} 
+              alt="Booking photo" 
+              className="max-w-full max-h-[70vh] object-contain"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
