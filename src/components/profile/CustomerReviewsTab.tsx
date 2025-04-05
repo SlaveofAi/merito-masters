@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const CustomerReviewsTab: React.FC = () => {
-  const { profileData } = useProfile();
+  const { profileData, isCurrentUser } = useProfile();
   const { user, userType } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   
@@ -37,8 +37,6 @@ const CustomerReviewsTab: React.FC = () => {
     enabled: !!profileData?.id,
   });
 
-  const isCurrentUser = user?.id === profileData?.id;
-
   const handleReviewSuccess = () => {
     refetch();
     setShowAddForm(false);
@@ -54,11 +52,14 @@ const CustomerReviewsTab: React.FC = () => {
     );
   }
 
+  // Determine if the user can add reviews (if they are a customer)
+  const canAddReview = user && (userType === 'customer');
+
   return (
     <div>
-      <h3 className="text-xl font-semibold mb-4">Vaše hodnotenia remeselníkov</h3>
+      <h3 className="text-xl font-semibold mb-4">Hodnotenia remeselníkov</h3>
       
-      {isCurrentUser && userType === 'customer' && (
+      {canAddReview && (
         <div className="mb-6">
           {!showAddForm ? (
             <button 
@@ -84,7 +85,9 @@ const CustomerReviewsTab: React.FC = () => {
         <Card>
           <CardContent className="p-8 text-center">
             <p className="text-gray-500">
-              Zatiaľ ste nenapísali žiadne hodnotenia.
+              {isCurrentUser 
+                ? "Zatiaľ ste nenapísali žiadne hodnotenia."
+                : "Tento používateľ zatiaľ nenapísal žiadne hodnotenia."}
             </p>
           </CardContent>
         </Card>
