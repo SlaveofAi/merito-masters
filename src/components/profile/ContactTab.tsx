@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Upload, Euro } from "lucide-react";
@@ -45,7 +44,6 @@ const ContactTab: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
-  // Check if we're viewing a craftsman profile by using type guard
   const isCraftsmanProfile = profileData && 'trade_category' in profileData;
 
   useEffect(() => {
@@ -152,7 +150,6 @@ const ContactTab: React.FC = () => {
     setMonth(prevMonth);
   };
 
-  // Form for booking requests
   const BookingRequestForm = () => {
     const form = useForm({
       defaultValues: {
@@ -167,7 +164,6 @@ const ContactTab: React.FC = () => {
         const file = e.target.files[0];
         setSelectedImage(file);
         
-        // Create preview
         const reader = new FileReader();
         reader.onload = () => {
           setImagePreview(reader.result as string);
@@ -188,22 +184,55 @@ const ContactTab: React.FC = () => {
       }
       
       try {
-        // Create a booking request
+        let conversationId: string | null = null;
+        
+        const { data: existingConversation, error: convFetchError } = await supabase
+          .from('chat_conversations')
+          .select('id')
+          .eq('customer_id', user.id)
+          .eq('craftsman_id', profileData.id)
+          .maybeSingle();
+        
+        if (convFetchError) {
+          console.error("Error checking for existing conversation:", convFetchError);
+        }
+        
+        if (existingConversation) {
+          conversationId = existingConversation.id;
+          console.log("Found existing conversation:", conversationId);
+        } else {
+          const { data: newConversation, error: createConvError } = await supabase
+            .from('chat_conversations')
+            .insert({
+              customer_id: user.id,
+              craftsman_id: profileData.id
+            })
+            .select();
+          
+          if (createConvError) {
+            throw createConvError;
+          }
+          
+          conversationId = newConversation?.[0]?.id || null;
+          console.log("Created new conversation:", conversationId);
+        }
+        
+        if (!conversationId) {
+          throw new Error("Nepodarilo sa vytvoriť konverzáciu");
+        }
+        
         const bookingData = {
+          conversation_id: conversationId,
           craftsman_id: profileData.id,
           customer_id: user.id,
           customer_name: user.user_metadata?.name || "Zákazník",
           date: values.date,
-          start_time: "09:00", // Default times
+          start_time: "09:00",
           end_time: "17:00",
           message: values.message,
           status: "pending"
         };
         
-        // If we have a conversation, link it
-        let conversationId = null;
-        
-        // Send the booking request to the database
         const { data, error } = await supabase
           .from('booking_requests')
           .insert(bookingData)
@@ -211,13 +240,23 @@ const ContactTab: React.FC = () => {
           
         if (error) throw error;
         
-        // Format booking message for chat
         const bookingMessage = `🗓️ **Požiadavka na termín**
 Dátum: ${values.date}
 ${values.message ? `Správa: ${values.message}` : ''}
 ${values.amount ? `Suma: ${values.amount}€` : ''}`;
 
-        // TODO: Send this as a structured message in chat if we implement that feature
+        const { data: messageData, error: messageError } = await supabase
+          .from('chat_messages')
+          .insert({
+            conversation_id: conversationId,
+            sender_id: user.id,
+            receiver_id: profileData.id,
+            content: bookingMessage
+          });
+        
+        if (messageError) {
+          console.error("Error sending chat message:", messageError);
+        }
         
         toast.success("Vaša požiadavka bola odoslaná remeselníkovi");
         form.reset();
@@ -229,7 +268,6 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
       }
     };
 
-    // Get formatted available dates for the select dropdown
     const formattedAvailableDates = availableDates
       .sort((a, b) => a.getTime() - b.getTime())
       .map(date => {
@@ -360,7 +398,6 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
     );
   };
 
-  // For craftsmen to edit their availability
   const CraftsmanCalendarEditor = () => (
     <div className="w-full">
       <div className="p-3 border-b">
@@ -426,7 +463,6 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
     </div>
   );
 
-  // For customers to view craftsman's availability (read-only)
   const AvailabilityViewer = () => (
     <div className="w-full">
       <div className="p-3 border-b">
@@ -456,7 +492,7 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
           }}
           className="p-3 pointer-events-auto w-full"
           showOutsideDays
-          disabled={date => true} // Make all dates non-interactive
+          disabled={date => true}
           styles={{
             months: { width: '100%' },
             table: { width: '100%' },
