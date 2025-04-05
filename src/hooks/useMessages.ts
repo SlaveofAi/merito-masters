@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message } from "@/types/chat";
 import { BasicProfile } from "@/types/profile";
 
-export const useMessages = (selectedContact: ChatContact | null) => {
+export const useMessages = (selectedContact: ChatContact | null, refetchContacts: () => void) => {
   const { user, userType } = useAuth();
   const queryClient = useQueryClient();
 
@@ -46,19 +46,22 @@ export const useMessages = (selectedContact: ChatContact | null) => {
         if (unreadMessages.length > 0) {
           console.log(`Marking ${unreadMessages.length} messages as read`);
           
-          for (const msg of unreadMessages) {
-            const { error: updateError } = await supabase
+          const updatePromises = unreadMessages.map(async (msg) => {
+            return supabase
               .from('chat_messages')
               .update({ read: true })
               .eq('id', msg.id);
-              
-            if (updateError) {
-              console.error("Error marking message as read:", updateError);
-            }
-          }
+          });
           
-          // Refresh contact list to update unread count
-          queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+          try {
+            await Promise.all(updatePromises);
+            console.log("All messages marked as read");
+            
+            // Refresh contact list to update unread count
+            refetchContacts();
+          } catch (updateError) {
+            console.error("Error marking messages as read:", updateError);
+          }
         }
       }
       
