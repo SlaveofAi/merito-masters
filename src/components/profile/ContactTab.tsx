@@ -1,39 +1,28 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { format, isToday, getDay, addDays, subDays, setHours, setMinutes } from "date-fns";
+import { format } from "date-fns";
 import { sk } from "date-fns/locale";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarUI } from "@/components/ui/calendar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { CraftsmanProfile } from "@/types/profile";
-
-const timeSlots = [
-  "8:00", "9:00", "10:00", "11:00", "12:00", 
-  "13:00", "14:00", "15:00", "16:00", "17:00"
-];
+import { Button } from "@/components/ui/button";
 
 const ContactTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
-  const { user, userType } = useAuth();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const { userType } = useAuth();
   const [month, setMonth] = useState<Date>(new Date());
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-  const [bookingMessage, setBookingMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [isLoadingDates, setIsLoadingDates] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [projects, setProjects] = useState<any[]>([]);
   
+  // Check if we're viewing a craftsman profile by using type guard
   const isCraftsmanProfile = profileData && 'trade_category' in profileData;
 
   useEffect(() => {
@@ -71,13 +60,6 @@ const ContactTab: React.FC = () => {
         const parsedDates = data.map(item => new Date(item.date));
         console.log("Found available dates:", parsedDates);
         setAvailableDates(parsedDates);
-        
-        if (parsedDates.length > 0) {
-          const sortedDates = [...parsedDates].sort((a, b) => a.getTime() - b.getTime());
-          const closestFutureDate = sortedDates.find(date => date >= new Date()) || sortedDates[0];
-          setSelectedDate(closestFutureDate);
-          setMonth(new Date(closestFutureDate));
-        }
       } else {
         console.log("No available dates found");
         setAvailableDates([]);
@@ -90,78 +72,8 @@ const ContactTab: React.FC = () => {
     }
   };
 
-  const handleBookAppointment = async () => {
-    if (!user || !profileData || !selectedDate || !selectedTimeSlot) {
-      toast.error("Vyberte dátum a čas pre objednávku");
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      const [hours] = selectedTimeSlot.split(':').map(Number);
-      const endHour = hours + 1;
-      const endTime = `${endHour}:00`;
-
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-      const customerName = user.user_metadata?.name || user.user_metadata?.full_name || 'Anonymous';
-
-      const { data: existingConversation, error: convFindError } = await supabase
-        .from('chat_conversations')
-        .select('id')
-        .eq('craftsman_id', profileData.id)
-        .eq('customer_id', user.id)
-        .maybeSingle();
-      
-      let conversationId;
-      
-      if (convFindError || !existingConversation) {
-        const { data: newConversation, error: convCreateError } = await supabase
-          .from('chat_conversations')
-          .insert({
-            craftsman_id: profileData.id,
-            customer_id: user.id
-          })
-          .select('id')
-          .single();
-          
-        if (convCreateError || !newConversation) {
-          throw new Error("Failed to create conversation");
-        }
-        
-        conversationId = newConversation.id;
-      } else {
-        conversationId = existingConversation.id;
-      }
-
-      const { error } = await supabase
-        .from('booking_requests')
-        .insert({
-          craftsman_id: profileData.id,
-          customer_id: user.id,
-          date: formattedDate,
-          start_time: selectedTimeSlot,
-          end_time: endTime,
-          customer_name: customerName,
-          message: bookingMessage,
-          conversation_id: conversationId
-        });
-        
-      if (error) throw error;
-      
-      toast.success("Vaša požiadavka bola odoslaná. Čakajte na potvrdenie od remeselníka.");
-      setSelectedTimeSlot(null);
-      setBookingMessage("");
-    } catch (error: any) {
-      console.error("Error creating booking:", error);
-      toast.error("Nepodarilo sa vytvoriť objednávku. Skúste znova neskôr.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const saveAvailableDates = async () => {
-    if (!user?.id || !profileData?.id || userType !== 'craftsman') {
+    if (!profileData?.id || userType !== 'craftsman') {
       toast.error("Nemôžem uložiť dostupnosť, chýba ID používateľa");
       return;
     }
@@ -217,55 +129,7 @@ const ContactTab: React.FC = () => {
     setMonth(prevMonth);
   };
 
-  const goToNextDay = () => {
-    if (!selectedDate) return;
-    const nextDay = addDays(selectedDate, 1);
-    setSelectedDate(nextDay);
-  };
-
-  const goToPreviousDay = () => {
-    if (!selectedDate) return;
-    const prevDay = subDays(selectedDate, 1);
-    setSelectedDate(prevDay);
-  };
-
-  const isDateAvailable = (date: Date) => {
-    return availableDates.some(
-      availableDate => availableDate.toDateString() === date.toDateString()
-    );
-  };
-
-  const isDateSelectable = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (date < today) {
-      return false;
-    }
-    
-    return isDateAvailable(date);
-  };
-  
-  const getDayName = (date: Date) => {
-    return format(date, 'EEEE', { locale: sk });
-  };
-
-  const handleDateToggle = (date: Date) => {
-    if (!isCurrentUser || userType !== 'craftsman') return;
-    
-    const dateString = date.toDateString();
-    
-    if (availableDates.some(d => d.toDateString() === dateString)) {
-      setAvailableDates(prev => prev.filter(d => d.toDateString() !== dateString));
-    } else {
-      setAvailableDates(prev => [...prev, date]);
-    }
-  };
-
-  const isDateSelected = (date: Date): boolean => {
-    return availableDates.some(d => d.toDateString() === date.toDateString());
-  };
-
+  // For craftsmen to edit their availability
   const CraftsmanCalendarEditor = () => (
     <div className="w-full">
       <div className="p-3 border-b">
@@ -331,7 +195,8 @@ const ContactTab: React.FC = () => {
     </div>
   );
 
-  const CustomerAvailabilityView = () => (
+  // For customers to view craftsman's availability (read-only)
+  const AvailabilityViewer = () => (
     <div className="w-full">
       <div className="p-3 border-b">
         <div className="flex items-center justify-between">
@@ -349,37 +214,33 @@ const ContactTab: React.FC = () => {
 
       <div className="flex justify-center">
         <CalendarUI
-          mode="single"
-          selected={selectedDate}
-          onSelect={(date) => date && setSelectedDate(date)}
+          mode="default"
           month={month}
           onMonthChange={setMonth}
-          disabled={(date) => !isDateAvailable(date)}
           modifiers={{
-            available: (date) => isDateAvailable(date),
+            available: (date) => availableDates.some(d => d.toDateString() === date.toDateString())
           }}
           modifiersStyles={{
             available: { backgroundColor: '#dcfce7' }
           }}
           className="p-3 pointer-events-auto w-full"
           showOutsideDays
+          disabled={date => true} // Make all dates non-interactive
         />
       </div>
       
-      <div className="mt-4">
-        {availableDates.length > 0 ? (
-          <div className="text-center p-4 bg-gray-50 rounded-md">
-            <p className="text-sm">Toto sú dostupné dni remeselníka.</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Pre rezervovanie termínu sa prosím prihláste ako zákazník.
-            </p>
-          </div>
-        ) : (
-          <div className="text-center p-4 bg-gray-50 rounded-md">
-            <p className="text-sm">Remeselník nemá nastavené žiadne dostupné dni.</p>
-          </div>
-        )}
+      <div className="mt-4 flex items-center justify-center">
+        <div className="w-4 h-4 bg-green-100 mr-2 rounded"></div>
+        <span className="text-sm text-gray-600">
+          Remeselník je dostupný v označené dni
+        </span>
       </div>
+      
+      {availableDates.length === 0 && (
+        <div className="mt-4 text-center p-4 bg-gray-50 rounded-md">
+          <p className="text-sm text-gray-500">Remeselník nemá nastavené žiadne dostupné dni.</p>
+        </div>
+      )}
     </div>
   );
 
@@ -425,158 +286,30 @@ const ContactTab: React.FC = () => {
         </CardContent>
       </Card>
       
-      {isCraftsmanProfile && userType === 'customer' && !isCurrentUser ? (
-        <Card className="border border-border/50">
+      {isCraftsmanProfile ? (
+        <Card className="border border-border/50 h-full">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold mb-4 flex items-center">
               <Calendar className="w-5 h-5 mr-2" />
-              Rezervovať termín
+              {isCurrentUser ? "Váš kalendár dostupnosti" : "Kalendár dostupnosti"}
             </h3>
+            
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             
             {isLoadingDates ? (
               <div className="flex justify-center items-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span className="ml-2">Načítavam dostupné termíny...</span>
               </div>
-            ) : error ? (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4 mr-2" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            ) : availableDates.length === 0 ? (
-              <Alert className="mb-4">
-                <AlertCircle className="h-4 w-4 mr-2" />
-                <AlertDescription>
-                  Remeselník momentálne nemá stanovené žiadne dostupné termíny.
-                </AlertDescription>
-              </Alert>
+            ) : isCurrentUser && userType === 'craftsman' ? (
+              <CraftsmanCalendarEditor />
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {selectedDate ? (
-                          format(selectedDate, "dd. MM. yyyy")
-                        ) : (
-                          "Vybrať dátum"
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <div className="p-3 border-b">
-                        <div className="flex items-center justify-between">
-                          <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-                          <div className="text-sm font-medium">
-                            {format(month, 'LLLL yyyy', { locale: sk })}
-                          </div>
-                          <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex justify-center">
-                        <CalendarUI
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={date => date && setSelectedDate(date)}
-                          month={month}
-                          onMonthChange={setMonth}
-                          disabled={(date) => !isDateSelectable(date)}
-                          modifiers={{
-                            available: (date) => isDateAvailable(date),
-                          }}
-                          modifiersStyles={{
-                            available: { backgroundColor: '#dcfce7' }
-                          }}
-                          className="p-3 pointer-events-auto"
-                          showOutsideDays
-                        />
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                  
-                  <div className="flex space-x-1">
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={goToPreviousDay}
-                      disabled={!selectedDate || !isDateSelectable(subDays(selectedDate, 1))}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={goToNextDay}
-                      disabled={!selectedDate || !isDateSelectable(addDays(selectedDate, 1))}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                {selectedDate && (
-                  <>
-                    <div>
-                      <h4 className="font-medium mb-2">
-                        {getDayName(selectedDate)} - {format(selectedDate, 'd. MMMM yyyy', { locale: sk })}
-                        {isToday(selectedDate) && (
-                          <Badge variant="outline" className="ml-2 text-xs">Dnes</Badge>
-                        )}
-                      </h4>
-                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-3">
-                        {timeSlots.map((slot) => (
-                          <Button
-                            key={slot}
-                            variant={selectedTimeSlot === slot ? "default" : "outline"}
-                            className={selectedTimeSlot === slot ? "bg-primary" : ""}
-                            onClick={() => setSelectedTimeSlot(slot)}
-                            size="sm"
-                          >
-                            {slot}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {selectedTimeSlot && (
-                      <div className="space-y-4 mt-4">
-                        <div>
-                          <label htmlFor="message" className="block text-sm font-medium mb-2">
-                            Správa (voliteľná)
-                          </label>
-                          <textarea
-                            id="message"
-                            className="w-full p-2 border rounded-md h-24 focus:ring-primary focus:border-primary"
-                            placeholder="Doplňujúce informácie pre remeselníka..."
-                            value={bookingMessage}
-                            onChange={(e) => setBookingMessage(e.target.value)}
-                          ></textarea>
-                        </div>
-                        
-                        <Button 
-                          onClick={handleBookAppointment} 
-                          className="w-full" 
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Odosielam...
-                            </>
-                          ) : (
-                            "Rezervovať termín"
-                          )}
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+              <AvailabilityViewer />
             )}
           </CardContent>
         </Card>
@@ -633,54 +366,7 @@ const ContactTab: React.FC = () => {
             </form>
           </CardContent>
         </Card>
-      ) : (
-        <Card className="border border-border/50">
-          <CardContent className="p-6">
-            <h3 className="text-xl font-semibold mb-4 flex items-center justify-between">
-              <div className="flex items-center">
-                <Calendar className="w-5 h-5 mr-2" />
-                Váš kalendár dostupnosti
-              </div>
-            </h3>
-            
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4 mr-2" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            
-            {isLoadingDates ? (
-              <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2">Načítavam dostupné termíny...</span>
-              </div>
-            ) : (
-              <CraftsmanCalendarEditor />
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {isCraftsmanProfile && userType !== 'customer' && !isCurrentUser && (
-        <Card className="border border-border/50">
-          <CardContent className="p-6">
-            <h3 className="text-xl font-semibold mb-4 flex items-center">
-              <Calendar className="w-5 h-5 mr-2" />
-              Kalendár dostupnosti
-            </h3>
-            
-            {isLoadingDates ? (
-              <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2">Načítavam dostupné termíny...</span>
-              </div>
-            ) : (
-              <CustomerAvailabilityView />
-            )}
-          </CardContent>
-        </Card>
-      )}
+      ) : null}
     </div>
   );
 };
