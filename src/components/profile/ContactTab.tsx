@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Upload, Euro, Clock } from "lucide-react";
+import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Upload, Euro, Clock, CalendarCheck, Smile } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 const ContactTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
@@ -168,6 +169,18 @@ const ContactTab: React.FC = () => {
     setMonth(prevMonth);
   };
 
+  // Get motivational phrases for craftsman
+  const getMotivationalPhrase = () => {
+    const phrases = [
+      "Výborne! Vaša dostupnosť je nastavená, zákazníci vás môžu kontaktovať! 🎉",
+      "Super! Vaše termíny sú pripravené na rezervácie! 👍",
+      "Skvelá práca! Teraz ste viditeľný pre potenciálnych zákazníkov! ✨",
+      "Fantastické! Váš kalendár je pripravený prijímať rezervácie! 🌟",
+      "Perfektné! Ste na ceste k novým zákazkám! 🚀"
+    ];
+    return phrases[Math.floor(Math.random() * phrases.length)];
+  };
+
   const BookingRequestForm = () => {
     const form = useForm({
       defaultValues: {
@@ -282,7 +295,18 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
             conversation_id: conversationId,
             sender_id: user.id,
             receiver_id: profileData.id,
-            content: bookingMessage
+            content: bookingMessage,
+            metadata: {
+              type: 'booking_request',
+              booking_id: data?.[0]?.id,
+              status: 'pending',
+              details: {
+                date: values.date,
+                time: values.time,
+                message: values.message,
+                amount: values.amount
+              }
+            }
           });
         
         if (messageError) {
@@ -465,6 +489,70 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
     );
   };
 
+  const CraftsmanAvailabilitySummary = () => {
+    const upcomingDates = availableDates
+      .filter(date => date >= new Date())
+      .sort((a, b) => a.getTime() - b.getTime());
+    
+    const currentMonth = new Date().getMonth();
+    const monthCounts = availableDates.reduce((acc, date) => {
+      const month = date.getMonth();
+      acc[month] = (acc[month] || 0) + 1;
+      return acc;
+    }, {} as Record<number, number>);
+    
+    const monthNames = ['Január', 'Február', 'Marec', 'Apríl', 'Máj', 'Jún', 
+                        'Júl', 'August', 'September', 'Október', 'November', 'December'];
+    
+    return (
+      <div className="space-y-6 mt-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium flex items-center">
+            <CalendarCheck className="w-5 h-5 mr-2 text-primary" />
+            Vaša dostupnosť
+          </h3>
+          <Badge variant="outline" className="bg-primary/10">
+            {availableDates.length} dní
+          </Badge>
+        </div>
+        
+        {upcomingDates.length > 0 ? (
+          <>
+            <div>
+              <p className="text-sm text-gray-500 mb-2">Najbližšie dostupné dni:</p>
+              <div className="flex flex-wrap gap-2">
+                {upcomingDates.slice(0, 5).map((date, i) => (
+                  <Badge key={i} variant="outline" className="bg-green-50">
+                    {format(date, 'dd.MM.yyyy')}
+                  </Badge>
+                ))}
+                {upcomingDates.length > 5 && (
+                  <Badge variant="outline">
+                    +{upcomingDates.length - 5} ďalších
+                  </Badge>
+                )}
+              </div>
+            </div>
+            
+            <div className="text-center p-3 bg-primary/5 rounded-lg">
+              <div className="flex justify-center mb-2">
+                <Smile className="h-6 w-6 text-yellow-500" />
+              </div>
+              <p className="font-medium text-gray-700">{getMotivationalPhrase()}</p>
+            </div>
+          </>
+        ) : (
+          <div className="text-center p-4">
+            <p className="text-gray-500 mb-2">Zatiaľ nemáte žiadne nastavené dni.</p>
+            <p className="text-sm text-gray-400">
+              Nastavte dostupné dni v kalendári nižšie, aby vás zákazníci mohli kontaktovať.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const CraftsmanCalendarEditor = () => (
     <div className="w-full">
       <div className="p-3 border-b">
@@ -500,31 +588,13 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
             head_cell: { width: '100%', textAlign: 'center' },
             row: { width: '100%' },
           }}
+          classNames={{
+            day_selected: "bg-primary text-primary-foreground font-medium hover:bg-primary hover:text-primary-foreground border border-primary/20",
+          }}
         />
       </div>
       
       <div className="mt-4">
-        {availableDates.length > 0 && (
-          <div className="mb-4">
-            <p className="font-medium text-sm mb-2">Vaše dostupné dni ({availableDates.length}):</p>
-            <div className="flex flex-wrap gap-2">
-              {availableDates
-                .sort((a, b) => a.getTime() - b.getTime())
-                .slice(0, 5)
-                .map((date, i) => (
-                  <div key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                    {format(date, 'dd.MM.yyyy')}
-                  </div>
-                ))}
-              {availableDates.length > 5 && (
-                <div className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                  +{availableDates.length - 5} ďalších
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        
         <Button
           onClick={saveAvailableDates}
           className="w-full"
@@ -579,6 +649,10 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
             row: { width: '100%' },
             table: { width: '100%' },
           }}
+          classNames={{
+            day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground border border-primary/20",
+            day_today: "bg-accent text-accent-foreground font-medium border border-accent/20",
+          }}
         />
       </div>
       
@@ -591,7 +665,7 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
       
       {availableDates.length === 0 && (
         <div className="mt-4 text-center p-4 bg-gray-50 rounded-md">
-          <p className="text-sm text-gray-500">Remeselník nemá nastavené žiadne dostupné dni.</p>
+          <p className="text-sm text-gray-500">Remeselník momentálne nemá nastavené žiadne dostupné dni.</p>
         </div>
       )}
     </div>
@@ -602,7 +676,7 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       <div className="space-y-6">
-        <Card className="border border-border/50 w-full shadow-sm">
+        <Card className="border border-border/50 shadow-sm">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold mb-4">Kontaktné informácie</h3>
             <div className="space-y-4">
@@ -637,11 +711,15 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
                 </div>
               </div>
             </div>
+            
+            {isCurrentUser && userType === 'craftsman' && isCraftsmanProfile && (
+              <CraftsmanAvailabilitySummary />
+            )}
           </CardContent>
         </Card>
         
         {isCraftsmanProfile && userType === 'customer' && !isCurrentUser && (
-          <Card className="border border-border/50 w-full shadow-sm">
+          <Card className="border border-border/50 shadow-sm">
             <CardContent className="p-6">
               <h4 className="text-lg font-medium mb-3">Rezervovať termín</h4>
               <BookingRequestForm />
@@ -651,7 +729,7 @@ ${values.amount ? `Suma: ${values.amount}€` : ''}`;
       </div>
       
       {isCraftsmanProfile ? (
-        <Card className="border border-border/50 shadow-sm h-auto">
+        <Card className="border border-border/50 shadow-sm h-fit">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold mb-4 flex items-center">
               <Calendar className="w-5 h-5 mr-2" />
