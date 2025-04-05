@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -357,7 +356,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   const bookingId = await getBookingId(message);
                   if (bookingId) handleBookingAction(bookingId, 'reject');
                 }}
-                disabled={processedBookings.includes(await getBookingId(message) || '')}
+                disabled={processedBookings.includes(message.id)}
               >
                 <X className="h-4 w-4 mr-1" /> Zamietnuť
               </Button>
@@ -368,7 +367,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   const bookingId = await getBookingId(message);
                   if (bookingId) handleBookingAction(bookingId, 'accept');
                 }}
-                disabled={processedBookings.includes(await getBookingId(message) || '')}
+                disabled={processedBookings.includes(message.id)}
               >
                 <Check className="h-4 w-4 mr-1" /> Akceptovať
               </Button>
