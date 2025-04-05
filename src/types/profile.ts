@@ -77,3 +77,13 @@ export type BasicProfile = {
   updated_at: string;
   user_type?: string;
 };
+
+// Add Project type to make it easier to work with projects
+export type Project = {
+  id: string;
+  craftsman_id: string;
+  title: string;
+  description: string | null;
+  images: string[];
+  created_at: string;
+};

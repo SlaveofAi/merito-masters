@@ -87,10 +87,11 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateCustomSpecialization,
     createDefaultProfileIfNeeded,
     isCreatingProfile,
-    projects, 
     error,
+    // Add the properties that were missing
+    projects,
     removeProject,
-    createProject // Make sure to get this from useProfileData
+    createProject
   } = useProfileData(profileId);
 
   const handleProfileUpdate = (updatedProfile: any) => {
@@ -171,7 +172,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // REMOVED THE DUPLICATE removeProject FUNCTION HERE
+  // We no longer need to implement removeProject locally as we're using the one from useProfileData
   
   const value = {
     loading,

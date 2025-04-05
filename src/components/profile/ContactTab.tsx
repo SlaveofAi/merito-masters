@@ -267,17 +267,17 @@ const ContactTab: React.FC = () => {
                   {selectedDates.length > 0 ? (
                     <div className="bg-gray-50 rounded-md p-4">
                       <Calendar
-                        mode="default"
+                        mode="single"
                         selected={date}
                         onSelect={setDate}
-                        disabled={date => !selectedDates.some(d => d.toDateString() === date.toDateString())}
+                        disabled={(date) => !selectedDates.some(d => d.toDateString() === date.toDateString())}
                         modifiers={{
-                          available: date => selectedDates.some(d => d.toDateString() === date.toDateString())
+                          available: (date) => selectedDates.some(d => d.toDateString() === date.toDateString())
                         }}
                         modifiersStyles={{
                           available: { backgroundColor: '#dcfce7' }
                         }}
-                        className="bg-white rounded-md shadow-sm"
+                        className="bg-white rounded-md shadow-sm pointer-events-auto"
                       />
                       
                       <div className="mt-3 text-xs text-gray-500 flex items-center">
