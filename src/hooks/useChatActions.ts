@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,7 +84,7 @@ export const useChatActions = (
         metadata: metadata || null
       };
 
-      console.log("Sending message:", newMessage);
+      console.log("Sending message with metadata:", newMessage);
 
       const { data: insertedMessage, error: msgError } = await supabase
         .from('chat_messages')
@@ -97,6 +98,41 @@ export const useChatActions = (
       }
       
       console.log("Message sent successfully:", insertedMessage);
+      
+      // If this is a booking request, create entry in booking_requests table
+      if (metadata?.type === 'booking_request' && metadata.booking_id) {
+        console.log("Creating booking request entry");
+        
+        // Create booking in booking_requests table
+        const bookingData = {
+          id: metadata.booking_id,
+          conversation_id: convId,
+          craftsman_id: userType === 'customer' ? contactId : user.id,
+          customer_id: userType === 'customer' ? user.id : contactId,
+          customer_name: userType === 'customer' ? (user.user_metadata?.name || "Customer") : "Customer",
+          date: metadata.details?.date || new Date().toISOString().split('T')[0],
+          start_time: metadata.details?.time || "00:00",
+          end_time: metadata.details?.time ? 
+            (parseInt(metadata.details.time.split(':')[0]) + 1) + ":" + metadata.details.time.split(':')[1] : 
+            "01:00",
+          message: metadata.details?.message || null,
+          amount: metadata.details?.amount || null,
+          image_url: metadata.details?.image_url || null
+        };
+        
+        console.log("Creating booking with data:", bookingData);
+        
+        const { error: bookingError } = await supabase
+          .from('booking_requests')
+          .insert([bookingData]);
+          
+        if (bookingError) {
+          console.error("Error creating booking request:", bookingError);
+          toast.error("Návrh termínu bol odoslaný, ale nastala chyba pri vytváraní požiadavky");
+        } else {
+          console.log("Booking request created successfully");
+        }
+      }
       
       // Update conversation's updated_at timestamp
       const { error: updateError } = await supabase

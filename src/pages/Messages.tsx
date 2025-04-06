@@ -26,8 +26,9 @@ const Messages = () => {
   }, [user, loading, navigate]);
   
   useEffect(() => {
-    // Create "booking-images" storage bucket if it doesn't exist
-    const createBucketIfNeeded = async () => {
+    // Check for booking-images storage bucket without trying to create it
+    // This fixes the permission errors we were seeing
+    const checkBookingImagesBucket = async () => {
       if (!user) return;
       
       try {
@@ -43,33 +44,17 @@ const Messages = () => {
         const bucketExists = buckets?.some(bucket => bucket.name === 'booking-images');
         
         if (!bucketExists) {
-          // Create the bucket
-          const { error } = await supabase.storage.createBucket('booking-images', {
-            public: true,
-            fileSizeLimit: 10485760 // 10MB
-          });
-          
-          if (error) {
-            console.error("Error creating booking-images bucket:", error);
-          } else {
-            console.log("booking-images bucket created successfully");
-            
-            // Set public bucket policy - fixed to use getPublicUrl instead of setPublicUrl
-            // The getPublicUrl function returns { data: { publicUrl: string } } without an error property
-            const { data } = await supabase
-              .storage
-              .from('booking-images')
-              .getPublicUrl('dummy.txt'); // This is just to trigger policy creation
-              
-            console.log("Public URL obtained for booking-images bucket");
-          }
+          console.log("booking-images bucket doesn't exist - it should be created by an administrator");
+          // Don't try to create it - this requires admin permissions
+        } else {
+          console.log("booking-images bucket exists");
         }
       } catch (error) {
-        console.error("Error in bucket creation:", error);
+        console.error("Error in bucket check:", error);
       }
     };
     
-    createBucketIfNeeded();
+    checkBookingImagesBucket();
   }, [user]);
 
   if (loading || isCheckingAuth) {

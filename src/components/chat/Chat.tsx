@@ -22,7 +22,14 @@ const Chat: React.FC = () => {
   useChatSubscription(selectedContact, refetchMessages, refetchContacts);
   
   const handleContactSelect = (contact: ChatContact) => {
+    console.log("Selected contact:", contact);
     setSelectedContact(contact);
+  };
+  
+  const handleSendMessage = (content: string, metadata?: any) => {
+    console.log("Sending message with content:", content);
+    console.log("And metadata:", metadata);
+    sendMessage(content, metadata);
   };
   
   return (
@@ -39,7 +46,7 @@ const Chat: React.FC = () => {
         <ChatWindow 
           contact={selectedContact} 
           messages={messages}
-          onSendMessage={sendMessage}
+          onSendMessage={handleSendMessage}
           onArchive={archiveConversation}
           onDelete={deleteConversation}
           contactDetails={contactDetails}
