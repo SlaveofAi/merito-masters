@@ -76,12 +76,17 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
           read: msg.receiver_id === user.id ? true : msg.read,
         };
 
-        // Add metadata only if it exists
-        if (msg.metadata !== undefined && msg.metadata !== null) {
-          // Handle metadata that might be stored as a string in some database setups
-          baseMessage.metadata = typeof msg.metadata === 'string' ? 
-            JSON.parse(msg.metadata) : 
-            msg.metadata;
+        // Add metadata only if it exists and handle type conversion
+        if ('metadata' in msg && msg.metadata !== null && msg.metadata !== undefined) {
+          try {
+            baseMessage.metadata = typeof msg.metadata === 'string' ? 
+              JSON.parse(msg.metadata) : 
+              msg.metadata;
+          } catch (e) {
+            console.error("Error parsing message metadata:", e);
+            // If parsing fails, assign the raw value
+            baseMessage.metadata = msg.metadata;
+          }
         }
 
         return baseMessage;
