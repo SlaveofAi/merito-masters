@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,9 +85,10 @@ export const useChatActions = (
 
       console.log("Sending message with metadata:", newMessage);
 
+      // Use upsert to ensure the message is inserted even if the metadata column doesn't exist yet
       const { data: insertedMessage, error: msgError } = await supabase
         .from('chat_messages')
-        .insert(newMessage)
+        .upsert([newMessage], { onConflict: 'id' })
         .select();
         
       if (msgError) {

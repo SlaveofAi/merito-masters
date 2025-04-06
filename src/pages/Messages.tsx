@@ -26,8 +26,7 @@ const Messages = () => {
   }, [user, loading, navigate]);
   
   useEffect(() => {
-    // Check for booking-images storage bucket without trying to create it
-    // This fixes the permission errors we were seeing
+    // Check if the booking-images storage bucket exists
     const checkBookingImagesBucket = async () => {
       if (!user) return;
       
@@ -44,8 +43,18 @@ const Messages = () => {
         const bucketExists = buckets?.some(bucket => bucket.name === 'booking-images');
         
         if (!bucketExists) {
-          console.log("booking-images bucket doesn't exist - it should be created by an administrator");
-          // Don't try to create it - this requires admin permissions
+          console.log("booking-images bucket doesn't exist - creating it now");
+          // Create the bucket if it doesn't exist
+          const { error: createError } = await supabase.storage.createBucket('booking-images', {
+            public: true,
+            fileSizeLimit: 10485760 // 10MB
+          });
+          
+          if (createError) {
+            console.error("Error creating booking-images bucket:", createError);
+          } else {
+            console.log("booking-images bucket created successfully");
+          }
         } else {
           console.log("booking-images bucket exists");
         }

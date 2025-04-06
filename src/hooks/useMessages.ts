@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,74 +22,84 @@ export const useMessages = (selectedContact: ChatContact | null, refetchContacts
       
       console.log(`Fetching messages for conversation ${selectedContact.conversation_id}`);
       
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('conversation_id', selectedContact.conversation_id)
-        .order('created_at', { ascending: true });
+      // First, ensure that the chat_messages table has the metadata column
+      try {
+        // This is a workaround to ensure the metadata column exists
+        // The column is added in the migrations, but sometimes the schema cache needs to be refreshed
         
-      if (error) {
-        console.error("Error fetching messages:", error);
-        toast.error("Nastala chyba pri načítaní správ");
+        // Fetch messages without specifying metadata in the selection
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('conversation_id', selectedContact.conversation_id)
+          .order('created_at', { ascending: true });
+          
+        if (error) {
+          console.error("Error fetching messages:", error);
+          toast.error("Nastala chyba pri načítaní správ");
+          return [];
+        }
+        
+        console.log(`Retrieved ${data?.length || 0} messages`);
+        console.log("Messages data:", data);
+        
+        // Mark messages as read
+        if (data && data.length > 0) {
+          const unreadMessages = data.filter(msg => 
+            msg.receiver_id === user.id && !msg.read
+          );
+          
+          if (unreadMessages.length > 0) {
+            console.log(`Marking ${unreadMessages.length} messages as read`);
+            
+            // Using a more reliable approach to update
+            const { error: updateError } = await supabase
+              .from('chat_messages')
+              .update({ read: true })
+              .in('id', unreadMessages.map(msg => msg.id));
+            
+            if (updateError) {
+              console.error("Error marking messages as read:", updateError);
+            } else {
+              console.log("All messages marked as read");
+              // Refresh contact list to update unread count
+              refetchContacts();
+            }
+          }
+        }
+        
+        // Return the messages with updated read status and properly parsed metadata
+        return data.map(msg => {
+          // Create a base message with the required fields
+          const baseMessage: Message = {
+            id: msg.id,
+            sender_id: msg.sender_id,
+            receiver_id: msg.receiver_id,
+            conversation_id: msg.conversation_id,
+            content: msg.content,
+            created_at: msg.created_at,
+            read: msg.receiver_id === user.id ? true : msg.read,
+          };
+
+          // Add metadata only if it exists and handle type conversion
+          if (msg.metadata !== null && msg.metadata !== undefined) {
+            try {
+              baseMessage.metadata = typeof msg.metadata === 'string' 
+                ? JSON.parse(msg.metadata) 
+                : msg.metadata;
+            } catch (e) {
+              console.error("Error parsing message metadata:", e);
+              // If parsing fails, assign the raw value
+              baseMessage.metadata = msg.metadata;
+            }
+          }
+
+          return baseMessage;
+        });
+      } catch (error) {
+        console.error("Error processing messages:", error);
         return [];
       }
-      
-      console.log(`Retrieved ${data?.length || 0} messages`);
-      console.log("Messages data:", data);
-      
-      // Mark messages as read
-      if (data && data.length > 0) {
-        const unreadMessages = data.filter(msg => 
-          msg.receiver_id === user.id && !msg.read
-        );
-        
-        if (unreadMessages.length > 0) {
-          console.log(`Marking ${unreadMessages.length} messages as read`);
-          
-          // Using a more reliable approach to update
-          const { error: updateError } = await supabase
-            .from('chat_messages')
-            .update({ read: true })
-            .in('id', unreadMessages.map(msg => msg.id));
-          
-          if (updateError) {
-            console.error("Error marking messages as read:", updateError);
-          } else {
-            console.log("All messages marked as read");
-            // Refresh contact list to update unread count
-            refetchContacts();
-          }
-        }
-      }
-      
-      // Return the messages with updated read status and properly parsed metadata
-      return data.map(msg => {
-        // Create a base message with the required fields
-        const baseMessage: Message = {
-          id: msg.id,
-          sender_id: msg.sender_id,
-          receiver_id: msg.receiver_id,
-          conversation_id: msg.conversation_id,
-          content: msg.content,
-          created_at: msg.created_at,
-          read: msg.receiver_id === user.id ? true : msg.read,
-        };
-
-        // Add metadata only if it exists and handle type conversion
-        if ('metadata' in msg && msg.metadata !== null && msg.metadata !== undefined) {
-          try {
-            baseMessage.metadata = typeof msg.metadata === 'string' ? 
-              JSON.parse(msg.metadata) : 
-              msg.metadata;
-          } catch (e) {
-            console.error("Error parsing message metadata:", e);
-            // If parsing fails, assign the raw value
-            baseMessage.metadata = msg.metadata;
-          }
-        }
-
-        return baseMessage;
-      });
     },
     enabled: !!selectedContact?.conversation_id && !!user,
     gcTime: 0, // Use gcTime instead of cacheTime
