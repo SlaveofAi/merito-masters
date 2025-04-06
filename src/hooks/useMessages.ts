@@ -8,7 +8,7 @@ import { useCustomerReviews } from "@/hooks/useCustomerReviews";
 export const useMessages = (selectedContact: ChatContact | null, refetchContacts: () => void) => {
   const { user } = useAuth();
   
-  // Use the extracted hooks
+  // Use the extracted hooks with standardized null/undefined handling
   const { data: messages = [], refetch: refetchMessages } = useChatMessages(selectedContact, user, refetchContacts);
   const { data: contactDetails } = useContactDetails(selectedContact, user);
   const { data: customerReviews = [] } = useCustomerReviews(selectedContact, user);

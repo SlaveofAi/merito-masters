@@ -52,8 +52,8 @@ const CustomerReviewsTab: React.FC = () => {
     );
   }
 
-  // Determine if the user can add reviews (if they are a customer)
-  const canAddReview = user && (userType === 'customer');
+  // Determine if the user can add reviews (ensuring proper user type check)
+  const canAddReview = !!user && userType === 'customer';
 
   return (
     <div>

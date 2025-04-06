@@ -7,7 +7,17 @@ export function useCustomerReviews(selectedContact: ChatContact | null, user: an
   return useQuery({
     queryKey: ['customer-reviews', selectedContact?.id, selectedContact?.user_type],
     queryFn: async () => {
-      if (!selectedContact || !user || selectedContact.user_type !== 'customer') return [];
+      // Only proceed if we have a valid contact and it's a customer
+      if (!selectedContact || !user) return [];
+      
+      // Standardize user_type check to be case-insensitive
+      const isCustomer = selectedContact.user_type && 
+                       selectedContact.user_type.toLowerCase() === 'customer';
+      
+      if (!isCustomer) {
+        console.log(`Not fetching reviews: Contact ${selectedContact.id} is not a customer`);
+        return [];
+      }
       
       console.log(`Fetching reviews written by customer ${selectedContact.id}`);
       
@@ -25,7 +35,9 @@ export function useCustomerReviews(selectedContact: ChatContact | null, user: an
       console.log("Customer reviews fetched:", data);
       return data;
     },
-    enabled: !!selectedContact?.id && !!user && selectedContact?.user_type === 'customer',
+    enabled: !!selectedContact?.id && !!user && 
+             !!selectedContact?.user_type && 
+             selectedContact.user_type.toLowerCase() === 'customer',
     gcTime: 0, // Use gcTime instead of cacheTime
   });
 }

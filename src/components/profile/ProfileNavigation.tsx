@@ -24,10 +24,12 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
     return `/profile/${profileId}/${tab}`;
   };
   
-  // Determine if a tab should be shown based on user type
+  // Determine if a tab should be shown based on user type - using safer check
   const showTab = (tab: TabType) => {
-    if (tab === 'portfolio' && userType === 'customer') {
-      return false;
+    if (tab === 'portfolio') {
+      // Only hide portfolio tab if we're absolutely sure this is a customer
+      const isCustomer = userType && userType.toLowerCase() === 'customer';
+      return !isCustomer;
     }
     return true;
   };
