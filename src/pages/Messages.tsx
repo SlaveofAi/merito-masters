@@ -54,6 +54,30 @@ const Messages = () => {
             console.error("Error creating booking-images bucket:", createError);
           } else {
             console.log("booking-images bucket created successfully");
+            
+            // Create RLS policy to allow anyone to read files
+            const { error: policyError } = await supabase.rpc('create_storage_policy', {
+              bucket_name: 'booking-images',
+              policy_name: 'Public Read Access',
+              definition: 'true',
+              policy_action: 'SELECT'
+            });
+            
+            if (policyError) {
+              console.error("Error creating public read policy:", policyError);
+            }
+            
+            // Create RLS policy to allow authenticated users to upload files
+            const { error: uploadPolicyError } = await supabase.rpc('create_storage_policy', {
+              bucket_name: 'booking-images',
+              policy_name: 'Authenticated Upload',
+              definition: 'auth.role() = \'authenticated\'',
+              policy_action: 'INSERT'
+            });
+            
+            if (uploadPolicyError) {
+              console.error("Error creating upload policy:", uploadPolicyError);
+            }
           }
         } else {
           console.log("booking-images bucket exists");

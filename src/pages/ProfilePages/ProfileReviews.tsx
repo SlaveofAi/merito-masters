@@ -82,7 +82,7 @@ const ProfileReviewsContent: React.FC = () => {
           <ProfileNavigation activeTab="reviews" userType={profileData.user_type} />
           
           <div className="mt-8">
-            {profileData.user_type === 'customer' ? (
+            {profileData.user_type && profileData.user_type.toLowerCase() === 'customer' ? (
               <CustomerReviewsTab />
             ) : (
               <ReviewsTab />

@@ -27,12 +27,12 @@ const ReviewsTab: React.FC = () => {
   
   // Only customers can leave reviews for craftsmen profiles that aren't their own
   const canLeaveReview = user && 
-    userType === 'customer' && 
+    userType && userType.toLowerCase() === 'customer' && 
     isCraftsmanProfile && 
     !isCurrentUser;
   
   // Only craftsmen can reply to reviews on their own profiles
-  const canReplyToReview = user && userType === 'craftsman' && isCurrentUser;
+  const canReplyToReview = user && userType && userType.toLowerCase() === 'craftsman' && isCurrentUser;
 
   // Enhanced debug logs for troubleshooting the review form visibility
   console.log("Reviews tab rendering with critical variables:", { 
