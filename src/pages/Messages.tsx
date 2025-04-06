@@ -55,37 +55,11 @@ const Messages = () => {
           } else {
             console.log("booking-images bucket created successfully");
             
-            // For RLS policies, we need to use direct SQL queries instead of RPC calls
-            // to solve the TS2345 errors
-            try {
-              // Create public read policy
-              const { error: policyError } = await supabase.from('_temp_policy_helper').insert({
-                statement: `
-                  CREATE POLICY "Public Read Access"
-                  ON storage.objects FOR SELECT
-                  USING (bucket_id = 'booking-images');
-                `
-              }).select().single();
-              
-              if (policyError) {
-                console.error("Error creating public read policy:", policyError);
-              }
-              
-              // Create authenticated upload policy
-              const { error: uploadPolicyError } = await supabase.from('_temp_policy_helper').insert({
-                statement: `
-                  CREATE POLICY "Authenticated Upload"
-                  ON storage.objects FOR INSERT
-                  WITH CHECK (bucket_id = 'booking-images' AND auth.role() = 'authenticated');
-                `
-              }).select().single();
-              
-              if (uploadPolicyError) {
-                console.error("Error creating upload policy:", uploadPolicyError);
-              }
-            } catch (err) {
-              console.log("Policy creation errors can be ignored in development - bucket still usable");
-            }
+            // Note: Creating RLS policies for storage buckets requires direct SQL queries
+            // which we can't do via the JS client. The policies should be defined in SQL migrations
+            // See supabase/migrations/20250406_fix_booking_storage_access.sql
+            
+            console.log("RLS policies for the bucket should be configured in SQL migrations");
           }
         } else {
           console.log("booking-images bucket exists");

@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,9 +36,12 @@ export const useChatActions = (
       if (!convId) {
         console.log("Creating new conversation");
         
+        // Normalize userType to lowercase for consistent comparison
+        const normalizedUserType = userType?.toLowerCase();
+        
         const newConversation = {
-          customer_id: userType?.toLowerCase() === 'customer' ? user.id : contactId,
-          craftsman_id: userType?.toLowerCase() === 'craftsman' ? user.id : contactId,
+          customer_id: normalizedUserType === 'customer' ? user.id : contactId,
+          craftsman_id: normalizedUserType === 'craftsman' ? user.id : contactId,
         };
 
         console.log("New conversation data:", newConversation);
@@ -56,8 +58,8 @@ export const useChatActions = (
           const { data: existingConv, error: fetchError } = await supabase
             .from('chat_conversations')
             .select('id')
-            .eq('customer_id', userType?.toLowerCase() === 'customer' ? user.id : contactId)
-            .eq('craftsman_id', userType?.toLowerCase() === 'craftsman' ? user.id : contactId)
+            .eq('customer_id', normalizedUserType === 'customer' ? user.id : contactId)
+            .eq('craftsman_id', normalizedUserType === 'craftsman' ? user.id : contactId)
             .maybeSingle();
             
           if (fetchError || !existingConv) {
@@ -102,13 +104,16 @@ export const useChatActions = (
       if (metadata?.type === 'booking_request' && metadata.booking_id) {
         console.log("Creating booking request entry");
         
+        // Normalize userType for consistent comparison
+        const normalizedUserType = userType?.toLowerCase();
+        
         // Create booking in booking_requests table
         const bookingData = {
           id: metadata.booking_id,
           conversation_id: convId,
-          craftsman_id: userType?.toLowerCase() === 'customer' ? contactId : user.id,
-          customer_id: userType?.toLowerCase() === 'customer' ? user.id : contactId,
-          customer_name: userType?.toLowerCase() === 'customer' ? (user.user_metadata?.name || "Customer") : "Customer",
+          craftsman_id: normalizedUserType === 'customer' ? contactId : user.id,
+          customer_id: normalizedUserType === 'customer' ? user.id : contactId,
+          customer_name: normalizedUserType === 'customer' ? (user.user_metadata?.name || "Customer") : "Customer",
           date: metadata.details?.date || new Date().toISOString().split('T')[0],
           start_time: metadata.details?.time || "00:00",
           end_time: metadata.details?.time ? 
@@ -169,23 +174,6 @@ export const useChatActions = (
       toast.error("Nastala chyba pri odosielaní správy");
     }
   });
-
-  const sendMessage = async (content: string, metadata?: MessageMetadata) => {
-    if (!selectedContact || !content.trim() || !user) {
-      console.error("Cannot send message - missing data", { selectedContact, content, user });
-      return;
-    }
-    
-    console.log(`Sending message to ${selectedContact.name}:`, content);
-    console.log("With metadata:", metadata);
-    
-    sendMessageMutation.mutate({
-      content,
-      contactId: selectedContact.id,
-      conversationId: selectedContact.conversation_id,
-      metadata
-    });
-  };
 
   // Mutation for archiving and deleting conversations
   const updateConversationMutation = useMutation({
@@ -288,4 +276,3 @@ export const useChatActions = (
     }
   };
 };
-
