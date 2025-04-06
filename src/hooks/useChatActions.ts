@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +38,7 @@ export const useChatActions = (
         console.log("Creating new conversation");
         
         // Normalize userType to lowercase for consistent comparison
-        const normalizedUserType = userType?.toLowerCase();
+        const normalizedUserType = userType?.toLowerCase() || '';
         
         const newConversation = {
           customer_id: normalizedUserType === 'customer' ? user.id : contactId,
@@ -105,7 +106,7 @@ export const useChatActions = (
         console.log("Creating booking request entry");
         
         // Normalize userType for consistent comparison
-        const normalizedUserType = userType?.toLowerCase();
+        const normalizedUserType = userType?.toLowerCase() || '';
         
         // Create booking in booking_requests table
         const bookingData = {
@@ -190,8 +191,8 @@ export const useChatActions = (
       }
       
       const fieldToUpdate = action === 'archive' 
-        ? (userType === 'customer' ? 'is_archived_by_customer' : 'is_archived_by_craftsman')
-        : (userType === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman');
+        ? (userType.toLowerCase() === 'customer' ? 'is_archived_by_customer' : 'is_archived_by_craftsman')
+        : (userType.toLowerCase() === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman');
         
       console.log(`${action === 'archive' ? 'Archiving' : 'Deleting'} conversation ${conversationId}`);
       
@@ -245,9 +246,11 @@ export const useChatActions = (
       console.log(`Sending message to ${selectedContact.name}:`, content);
       console.log("With metadata:", metadata);
       
+      const contactIdToUse = selectedContact.contactId || selectedContact.id;
+      
       sendMessageMutation.mutate({
         content,
-        contactId: selectedContact.id,
+        contactId: contactIdToUse,
         conversationId: selectedContact.conversation_id,
         metadata
       });

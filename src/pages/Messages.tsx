@@ -24,54 +24,10 @@ const Messages = () => {
       }
     }
   }, [user, loading, navigate]);
-  
-  useEffect(() => {
-    // Check if the booking-images storage bucket exists
-    const checkBookingImagesBucket = async () => {
-      if (!user) return;
-      
-      try {
-        // Check if the bucket exists by listing buckets
-        const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-        
-        if (bucketError) {
-          console.error("Error checking buckets:", bucketError);
-          return;
-        }
-        
-        // Check if booking-images bucket already exists
-        const bucketExists = buckets?.some(bucket => bucket.name === 'booking-images');
-        
-        if (!bucketExists) {
-          console.log("booking-images bucket doesn't exist - creating it now");
-          // Create the bucket if it doesn't exist
-          const { error: createError } = await supabase.storage.createBucket('booking-images', {
-            public: true,
-            fileSizeLimit: 10485760 // 10MB
-          });
-          
-          if (createError) {
-            console.error("Error creating booking-images bucket:", createError);
-          } else {
-            console.log("booking-images bucket created successfully");
-            
-            // Note: Creating RLS policies for storage buckets requires direct SQL queries
-            // which we can't do via the JS client. The policies should be defined in SQL migrations
-            // See supabase/migrations/20250406_fix_booking_storage_access.sql
-            
-            console.log("RLS policies for the bucket should be configured in SQL migrations");
-          }
-        } else {
-          console.log("booking-images bucket exists");
-        }
-      } catch (error) {
-        console.error("Error in bucket check:", error);
-      }
-    };
-    
-    checkBookingImagesBucket();
-  }, [user]);
 
+  // We're temporarily disabling the storage bucket check as it's causing RLS issues
+  // We'll fix this with proper RLS policies in the future
+  
   if (loading || isCheckingAuth) {
     return (
       <Layout>

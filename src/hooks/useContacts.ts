@@ -123,7 +123,8 @@ export const useContacts = () => {
           console.log(`Found contact ${contact.name} with ${count || 0} unread messages`);
           
           return {
-            id: contact.id,
+            id: `${contact.id}-${conv.id}`, // Add conversation ID to make each contact unique
+            contactId: contact.id,
             name: contact.name,
             avatar_url: contact.profile_image_url,
             last_message: lastMessage ? lastMessage.content : 'Kliknite pre zobrazenie správ',

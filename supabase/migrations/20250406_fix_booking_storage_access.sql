@@ -12,42 +12,5 @@ BEGIN
   END IF;
 END $$;
 
--- Create booking_images bucket if it doesn't exist
-INSERT INTO storage.buckets (id, name, public)
-SELECT 'booking_images', 'booking_images', true
-WHERE NOT EXISTS (
-  SELECT 1 FROM storage.buckets WHERE id = 'booking_images'
-);
-
--- Create RLS policies for booking_images storage bucket
--- Policy to allow authenticated users to select from the bucket
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'objects' 
-    AND schemaname = 'storage' 
-    AND policyname = 'Anyone can read booking_images'
-  ) THEN
-    CREATE POLICY "Anyone can read booking_images" 
-    ON storage.objects 
-    FOR SELECT 
-    USING (bucket_id = 'booking_images');
-  END IF;
-  
-  -- Policy to allow authenticated users to insert into the bucket
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'objects' 
-    AND schemaname = 'storage' 
-    AND policyname = 'Authenticated users can upload booking_images'
-  ) THEN
-    CREATE POLICY "Authenticated users can upload booking_images" 
-    ON storage.objects 
-    FOR INSERT 
-    WITH CHECK (
-      bucket_id = 'booking_images' AND 
-      auth.role() = 'authenticated'
-    );
-  END IF;
-END $$;
+-- We'll create RLS policies for the bucket from a separate migration
+-- to avoid RLS errors in the client-side code
