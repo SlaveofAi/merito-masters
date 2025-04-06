@@ -1,9 +1,9 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message, MessageMetadata } from "@/types/chat";
-import { useNavigate } from "react-router-dom";
 
 export const useChatActions = (
   selectedContact: ChatContact | null,
@@ -38,8 +38,8 @@ export const useChatActions = (
         console.log("Creating new conversation");
         
         const newConversation = {
-          customer_id: userType === 'customer' ? user.id : contactId,
-          craftsman_id: userType === 'craftsman' ? user.id : contactId,
+          customer_id: userType?.toLowerCase() === 'customer' ? user.id : contactId,
+          craftsman_id: userType?.toLowerCase() === 'craftsman' ? user.id : contactId,
         };
 
         console.log("New conversation data:", newConversation);
@@ -56,8 +56,8 @@ export const useChatActions = (
           const { data: existingConv, error: fetchError } = await supabase
             .from('chat_conversations')
             .select('id')
-            .eq('customer_id', userType === 'customer' ? user.id : contactId)
-            .eq('craftsman_id', userType === 'craftsman' ? user.id : contactId)
+            .eq('customer_id', userType?.toLowerCase() === 'customer' ? user.id : contactId)
+            .eq('craftsman_id', userType?.toLowerCase() === 'craftsman' ? user.id : contactId)
             .maybeSingle();
             
           if (fetchError || !existingConv) {
@@ -85,10 +85,9 @@ export const useChatActions = (
 
       console.log("Sending message with metadata:", newMessage);
 
-      // Use upsert to ensure the message is inserted even if the metadata column doesn't exist yet
       const { data: insertedMessage, error: msgError } = await supabase
         .from('chat_messages')
-        .upsert([newMessage], { onConflict: 'id' })
+        .insert([newMessage])
         .select();
         
       if (msgError) {
@@ -107,9 +106,9 @@ export const useChatActions = (
         const bookingData = {
           id: metadata.booking_id,
           conversation_id: convId,
-          craftsman_id: userType === 'customer' ? contactId : user.id,
-          customer_id: userType === 'customer' ? user.id : contactId,
-          customer_name: userType === 'customer' ? (user.user_metadata?.name || "Customer") : "Customer",
+          craftsman_id: userType?.toLowerCase() === 'customer' ? contactId : user.id,
+          customer_id: userType?.toLowerCase() === 'customer' ? user.id : contactId,
+          customer_name: userType?.toLowerCase() === 'customer' ? (user.user_metadata?.name || "Customer") : "Customer",
           date: metadata.details?.date || new Date().toISOString().split('T')[0],
           start_time: metadata.details?.time || "00:00",
           end_time: metadata.details?.time ? 
@@ -249,7 +248,22 @@ export const useChatActions = (
   });
 
   return {
-    sendMessage,
+    sendMessage: async (content: string, metadata?: MessageMetadata) => {
+      if (!selectedContact || !content.trim() || !user) {
+        console.error("Cannot send message - missing data", { selectedContact, content, user });
+        return;
+      }
+      
+      console.log(`Sending message to ${selectedContact.name}:`, content);
+      console.log("With metadata:", metadata);
+      
+      sendMessageMutation.mutate({
+        content,
+        contactId: selectedContact.id,
+        conversationId: selectedContact.conversation_id,
+        metadata
+      });
+    },
     archiveConversation: async () => {
       if (!selectedContact?.conversation_id || !user) {
         console.error("Cannot archive - missing data", { selectedContact, user });
@@ -274,3 +288,4 @@ export const useChatActions = (
     }
   };
 };
+
