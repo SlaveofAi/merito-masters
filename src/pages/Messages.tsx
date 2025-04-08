@@ -29,9 +29,17 @@ const Messages = () => {
   useEffect(() => {
     if (user && location.state?.from === 'booking') {
       console.log("Redirected from booking page with conversation:", location.state);
-      // We'll handle this in the Chat component
+      // This data will be handled in the Chat component
     }
   }, [location, user]);
+
+  // Add debugging to help identify any issues
+  useEffect(() => {
+    if (user) {
+      console.log("Authenticated user in Messages page:", user.id);
+      console.log("Location state:", location.state);
+    }
+  }, [user, location]);
 
   if (loading || isCheckingAuth) {
     return (

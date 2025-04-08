@@ -1,3 +1,4 @@
+
 import { ChatContact, Message, MessageMetadata } from "@/types/chat";
 
 /**
@@ -53,7 +54,39 @@ export function processMessageData(msg: any, userId: string): Message {
     read: msg.receiver_id === userId ? true : msg.read,
   };
 
+  // Try to detect if this is a booking message based on the content (for backward compatibility)
+  if (msg.content && (
+    msg.content.includes('🗓️ **Požiadavka na termín**') || 
+    msg.content.includes('✅ **Požiadavka termínu akceptovaná**') ||
+    msg.content.includes('❌ **Požiadavka termínu zamietnutá**')
+  )) {
+    // Extract booking info from the content
+    let type = 'booking_request';
+    if (msg.content.includes('akceptovaná')) {
+      type = 'booking_response';
+    } else if (msg.content.includes('zamietnutá')) {
+      type = 'booking_response';
+    }
+
+    const lines = msg.content.split('\n');
+    const dateMatch = lines.length > 1 ? lines[1].match(/Dátum: (.+)/) : null;
+    const timeMatch = lines.length > 2 ? lines[2].match(/Čas: (.+)/) : null;
+    
+    if (dateMatch || timeMatch) {
+      baseMessage.metadata = {
+        type: type,
+        status: msg.content.includes('akceptovaná') ? 'accepted' : 
+               msg.content.includes('zamietnutá') ? 'rejected' : 'pending',
+        details: {
+          date: dateMatch ? dateMatch[1] : null,
+          time: timeMatch ? timeMatch[1] : null
+        }
+      };
+    }
+  }
+  
   // Add metadata only if it exists and handle type conversion
+  // This will override the content-based metadata if both exist
   if (msg.metadata !== null && msg.metadata !== undefined) {
     try {
       baseMessage.metadata = parseMessageMetadata(msg.metadata);

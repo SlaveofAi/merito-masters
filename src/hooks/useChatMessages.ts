@@ -23,6 +23,7 @@ export function useChatMessages(
       console.log(`Fetching messages for conversation ${selectedContact.conversation_id}`);
       
       try {
+        // Modified query to select all columns instead of specifying metadata
         const { data, error } = await supabase
           .from('chat_messages')
           .select('*')

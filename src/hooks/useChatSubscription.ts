@@ -31,9 +31,11 @@ export const useChatSubscription = (
       }, (payload) => {
         console.log("Received new message via realtime:", payload);
         
-        // Check if it's a booking request
-        const isBookingRequest = payload.new.metadata && 
-          payload.new.metadata.type === 'booking_request';
+        // Check if it's a booking request by looking at content or metadata
+        const isBookingRequest = 
+          (payload.new.metadata && payload.new.metadata.type === 'booking_request') ||
+          (typeof payload.new.content === 'string' && 
+           payload.new.content.includes('Požiadavka na termín'));
         
         // Play notification sound
         const audio = new Audio('/message.mp3');
