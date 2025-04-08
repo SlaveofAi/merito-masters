@@ -27,7 +27,11 @@ const ProfileContactContent: React.FC = () => {
 
   // Function to create or navigate to an existing conversation
   const handleStartChat = async () => {
-    if (!user || !profileData?.id) return;
+    if (!user || !profileData?.id) {
+      toast.error("Musíte byť prihlásený pre kontaktovanie remeselníka");
+      navigate('/login', { state: { from: 'profile' } });
+      return;
+    }
     
     try {
       // Check if conversation already exists
@@ -77,6 +81,7 @@ const ProfileContactContent: React.FC = () => {
             contactId: profileData.id 
           } 
         });
+        toast.success("Presmerované do správ");
       }
     } catch (err) {
       console.error("Error navigating to chat:", err);

@@ -6,67 +6,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { supabase, checkRealtimeConnection } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Messages = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [connectionStatus, setConnectionStatus] = useState("checking");
-
-  // Check WebSocket connection status
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const isConnected = await checkRealtimeConnection();
-        setConnectionStatus(isConnected ? "connected" : "error");
-        
-        if (!isConnected) {
-          console.error("Initial WebSocket connection check failed");
-        }
-      } catch (error) {
-        console.error('Error checking connection:', error);
-        setConnectionStatus("error");
-      }
-    };
-    
-    checkConnection();
-    
-    // Periodically check connection
-    const checkInterval = setInterval(checkConnection, 60000);
-    
-    return () => {
-      clearInterval(checkInterval);
-    };
-  }, []);
-
-  // Handle manual reconnection
-  const handleReconnect = async () => {
-    setConnectionStatus("checking");
-    toast.info("Pokúšam sa obnoviť pripojenie...");
-    
-    try {
-      // Check connection
-      const isConnected = await checkRealtimeConnection();
-      
-      if (isConnected) {
-        setConnectionStatus("connected");
-        toast.success("Pripojenie obnovené");
-        // Reload the page to reset all connections
-        window.location.reload();
-      } else {
-        setConnectionStatus("error");
-        toast.error("Nepodarilo sa obnoviť pripojenie");
-      }
-    } catch (error) {
-      console.error('Error reconnecting:', error);
-      setConnectionStatus("error");
-      toast.error("Nastala chyba pri pokuse o obnovenie pripojenia");
-    }
-  };
 
   useEffect(() => {
     // Only redirect if we're sure the user is not authenticated
@@ -88,14 +35,9 @@ const Messages = () => {
     }
   }, [location, user]);
 
-  // Show warning if WebSocket connection has issues
-  useEffect(() => {
-    if (connectionStatus === "error" && user) {
-      toast.warning("Problémy s pripojením k serveru. Niektoré správy sa nemusia aktualizovať v reálnom čase.", {
-        duration: 5000,
-      });
-    }
-  }, [connectionStatus, user]);
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
   if (loading || isCheckingAuth) {
     return (
@@ -115,35 +57,31 @@ const Messages = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 mt-16">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Správy</h1>
-          {connectionStatus === "error" && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleReconnect} 
-              className="flex items-center gap-2"
-            >
-              <RefreshCcw className="h-4 w-4" />
-              Obnoviť pripojenie
-            </Button>
-          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh} 
+            className="flex items-center gap-2"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Obnoviť správy
+          </Button>
         </div>
         
-        {connectionStatus === "error" && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-yellow-700">
-                  Problém s pripojením. Správy sa nemusia aktualizovať v reálnom čase. Skúste obnoviť stránku alebo kliknite na tlačidlo "Obnoviť pripojenie".
-                </p>
-              </div>
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                Správy sa neaktualizujú automaticky. Kliknite na tlačidlo "Obnoviť správy" pre zobrazenie nových správ.
+              </p>
             </div>
           </div>
-        )}
+        </div>
         <Chat />
       </div>
     </Layout>

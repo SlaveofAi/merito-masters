@@ -33,8 +33,7 @@ export function useChatMessages(
             receiver_id, 
             content, 
             created_at, 
-            read, 
-            metadata
+            read
           `)
           .eq('conversation_id', selectedContact.conversation_id)
           .order('created_at', { ascending: true });
@@ -99,9 +98,12 @@ export function useChatMessages(
             try {
               const processed = processMessageData(msg, user.id);
               console.log("Processed message with ID:", processed.id);
+              
+              // Safely check if processed has metadata before logging
               if (processed.metadata) {
                 console.log("Message has metadata:", processed.metadata);
               }
+              
               return processed;
             } catch (err) {
               console.error(`Error processing message:`, err, msg);
