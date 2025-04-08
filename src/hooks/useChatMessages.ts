@@ -57,13 +57,20 @@ export function useChatMessages(
         }
         
         // Mark messages as read - safely check the data structure first
-        const unreadMessages = data.filter(msg => 
-          msg && typeof msg === 'object' && 
-          'receiver_id' in msg && 
-          'read' in msg &&
-          msg.receiver_id === user.id && 
-          !msg.read
-        );
+        // Filter with type guards to ensure messages are valid objects with required properties
+        const unreadMessages = data.filter((msg): msg is {
+          id: string;
+          receiver_id: string;
+          read: boolean;
+        } => {
+          return msg !== null && 
+                 typeof msg === 'object' && 
+                 'id' in msg &&
+                 'receiver_id' in msg && 
+                 'read' in msg &&
+                 msg.receiver_id === user.id && 
+                 !msg.read;
+        });
           
         if (unreadMessages.length > 0) {
           console.log(`Marking ${unreadMessages.length} messages as read`);
