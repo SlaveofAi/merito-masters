@@ -57,12 +57,8 @@ export function useChatMessages(
         }
         
         // Mark messages as read - safely check the data structure first
-        // Filter with type guards to ensure messages are valid objects with required properties
-        const unreadMessages = data.filter((msg): msg is {
-          id: string;
-          receiver_id: string;
-          read: boolean;
-        } => {
+        // Filter unread messages that are valid and require marking as read
+        const unreadMessages = data.filter((msg): msg is any => {
           return msg !== null && 
                  typeof msg === 'object' && 
                  'id' in msg &&
@@ -77,10 +73,13 @@ export function useChatMessages(
           
           // Using a more reliable approach to update
           const updatePromises = unreadMessages.map(msg => {
-            return supabase
-              .from('chat_messages')
-              .update({ read: true })
-              .eq('id', msg.id);
+            if (msg && msg.id) {
+              return supabase
+                .from('chat_messages')
+                .update({ read: true })
+                .eq('id', msg.id);
+            }
+            return Promise.resolve(); // Return resolved promise for any null entries
           });
           
           try {
@@ -95,13 +94,18 @@ export function useChatMessages(
         
         // Return the messages with updated read status and processed metadata
         const processedMessages = data.map(msg => {
+          if (!msg) {
+            console.error("Received null message in data array");
+            return null;
+          }
+          
           const processed = processMessageData(msg, user.id);
           console.log("Processed message with ID:", processed.id);
           if (processed.metadata) {
             console.log("Message has metadata:", processed.metadata);
           }
           return processed;
-        });
+        }).filter((msg): msg is Message => msg !== null);
         
         return processedMessages;
       } catch (error) {
