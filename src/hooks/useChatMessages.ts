@@ -23,6 +23,17 @@ export function useChatMessages(
       console.log(`Fetching messages for conversation ${selectedContact.conversation_id}`);
       
       try {
+        // Check if the column metadata exists in the table
+        const { data: tableInfo, error: tableError } = await supabase
+          .from('chat_messages')
+          .select('metadata')
+          .limit(1);
+          
+        if (tableError) {
+          console.error("Error checking metadata column:", tableError);
+          // Continue anyway - we'll handle missing metadata in the processMessageData function
+        }
+        
         const { data, error } = await supabase
           .from('chat_messages')
           .select('*')

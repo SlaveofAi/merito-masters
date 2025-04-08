@@ -4,18 +4,23 @@ import { ChatContact, Message, MessageMetadata } from "@/types/chat";
 /**
  * Safely parses message metadata from either string or object format
  */
-export function parseMessageMetadata(metadata: any): any {
+export function parseMessageMetadata(metadata: any): MessageMetadata | undefined {
   if (metadata === null || metadata === undefined) {
     return undefined;
   }
   
   try {
-    return typeof metadata === 'string' 
-      ? JSON.parse(metadata) 
-      : metadata;
+    // If metadata is a string, parse it
+    if (typeof metadata === 'string') {
+      return JSON.parse(metadata);
+    }
+    
+    // Return as-is if it's already an object
+    return metadata;
   } catch (e) {
     console.error("Error parsing message metadata:", e);
-    return metadata; // Return as-is if parsing fails
+    // Return undefined on parse error instead of returning malformed data
+    return undefined;
   }
 }
 
@@ -36,7 +41,11 @@ export function processMessageData(msg: any, userId: string): Message {
 
   // Add metadata only if it exists and handle type conversion
   if (msg.metadata !== null && msg.metadata !== undefined) {
-    baseMessage.metadata = parseMessageMetadata(msg.metadata);
+    try {
+      baseMessage.metadata = parseMessageMetadata(msg.metadata);
+    } catch (e) {
+      console.error("Error processing message metadata:", e);
+    }
   }
 
   return baseMessage;

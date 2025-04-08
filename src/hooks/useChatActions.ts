@@ -33,60 +33,71 @@ export const useChatActions = (
       
       let convId = conversationId;
       
-      // Create a new conversation if it doesn't exist
+      // Check for existing conversation first
       if (!convId) {
-        console.log("Creating new conversation");
+        console.log("No conversation ID provided, checking for existing conversation");
         
         // Normalize userType to lowercase for consistent comparison
         const normalizedUserType = userType?.toLowerCase() || '';
         
-        const newConversation = {
-          customer_id: normalizedUserType === 'customer' ? user.id : contactId,
-          craftsman_id: normalizedUserType === 'craftsman' ? user.id : contactId,
-        };
-
-        console.log("New conversation data:", newConversation);
-
-        const { data: insertedConv, error: convError } = await supabase
+        // Check if conversation already exists
+        const { data: existingConv, error: fetchError } = await supabase
           .from('chat_conversations')
-          .insert(newConversation)
-          .select();
+          .select('id')
+          .eq('customer_id', normalizedUserType === 'customer' ? user.id : contactId)
+          .eq('craftsman_id', normalizedUserType === 'craftsman' ? user.id : contactId)
+          .maybeSingle();
           
-        if (convError) {
-          // Check if conversation already exists (because of unique constraint)
-          console.log("Error creating conversation, checking if it already exists");
+        if (fetchError) {
+          console.error("Error checking for existing conversation:", fetchError);
+        } else if (existingConv) {
+          convId = existingConv.id;
+          console.log("Found existing conversation:", convId);
+        }
+        
+        // Create a new conversation if it doesn't exist
+        if (!convId) {
+          console.log("Creating new conversation");
           
-          const { data: existingConv, error: fetchError } = await supabase
+          const newConversation = {
+            customer_id: normalizedUserType === 'customer' ? user.id : contactId,
+            craftsman_id: normalizedUserType === 'craftsman' ? user.id : contactId,
+          };
+
+          console.log("New conversation data:", newConversation);
+
+          const { data: insertedConv, error: convError } = await supabase
             .from('chat_conversations')
-            .select('id')
-            .eq('customer_id', normalizedUserType === 'customer' ? user.id : contactId)
-            .eq('craftsman_id', normalizedUserType === 'craftsman' ? user.id : contactId)
-            .maybeSingle();
+            .insert(newConversation)
+            .select();
             
-          if (fetchError || !existingConv) {
+          if (convError) {
             console.error("Error creating conversation:", convError);
             toast.error("Nastala chyba pri vytváraní konverzácie");
             return null;
+          } else if (insertedConv && insertedConv.length > 0) {
+            convId = insertedConv[0].id;
+            console.log("Created new conversation:", convId);
           }
-          
-          convId = existingConv.id;
-          console.log("Found existing conversation:", convId);
-        } else if (insertedConv && insertedConv.length > 0) {
-          convId = insertedConv[0].id;
-          console.log("Created new conversation:", convId);
         }
       }
       
-      // Insert the message
-      const newMessage: any = {
+      if (!convId) {
+        console.error("Failed to get or create conversation");
+        toast.error("Nastala chyba pri vytváraní konverzácie");
+        return null;
+      }
+      
+      // Prepare message data with careful handling of metadata
+      const newMessage: Record<string, any> = {
         conversation_id: convId,
         sender_id: user.id,
         receiver_id: contactId,
         content: content
       };
 
-      // Only add metadata if it exists
-      if (metadata) {
+      // Only add metadata if it exists and convert it to JSON string
+      if (metadata && Object.keys(metadata).length > 0) {
         newMessage.metadata = metadata;
         console.log("Adding metadata to message:", metadata);
       }
@@ -249,6 +260,7 @@ export const useChatActions = (
       }
       
       console.log(`Sending message to ${selectedContact.name}:`, content);
+      console.log("With metadata:", metadata);
       
       // Use contactId for the database operations
       const contactIdToUse = selectedContact.contactId || selectedContact.id;

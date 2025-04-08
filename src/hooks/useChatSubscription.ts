@@ -20,6 +20,7 @@ export const useChatSubscription = (
     
     console.log("Setting up realtime subscription for chat messages and booking requests");
     
+    // Set up a single channel for all subscriptions
     const channel = supabase
       .channel('chat-and-booking-updates')
       .on('postgres_changes', {
