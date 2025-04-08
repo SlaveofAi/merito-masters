@@ -15,8 +15,18 @@ export function parseMessageMetadata(metadata: any): MessageMetadata | undefined
       return JSON.parse(metadata);
     }
     
-    // Return as-is if it's already an object
-    return metadata;
+    // If it's already an object and has the expected properties, return as is
+    if (typeof metadata === 'object') {
+      // Convert any nested objects that might be strings
+      if (metadata.details && typeof metadata.details === 'string') {
+        metadata.details = JSON.parse(metadata.details);
+      }
+      return metadata;
+    }
+    
+    // Return undefined on inconsistent data
+    console.error("Unrecognized metadata format:", metadata);
+    return undefined;
   } catch (e) {
     console.error("Error parsing message metadata:", e);
     // Return undefined on parse error instead of returning malformed data
@@ -43,6 +53,7 @@ export function processMessageData(msg: any, userId: string): Message {
   if (msg.metadata !== null && msg.metadata !== undefined) {
     try {
       baseMessage.metadata = parseMessageMetadata(msg.metadata);
+      console.log("Processed message metadata:", baseMessage.metadata);
     } catch (e) {
       console.error("Error processing message metadata:", e);
     }

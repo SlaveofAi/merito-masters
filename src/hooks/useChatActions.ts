@@ -89,83 +89,117 @@ export const useChatActions = (
       }
       
       // Prepare message data with careful handling of metadata
-      const newMessage: Record<string, any> = {
+      const newMessage = {
         conversation_id: convId,
         sender_id: user.id,
         receiver_id: contactId,
         content: content
       };
 
-      // Only add metadata if it exists and convert it to JSON string
+      // Only add metadata if it exists
       if (metadata && Object.keys(metadata).length > 0) {
-        newMessage.metadata = metadata;
+        // Make sure we store metadata as a valid JSON object
         console.log("Adding metadata to message:", metadata);
-      }
-
-      console.log("Sending message:", newMessage);
-
-      const { data: insertedMessage, error: msgError } = await supabase
-        .from('chat_messages')
-        .insert([newMessage])
-        .select();
         
-      if (msgError) {
-        console.error("Error sending message:", msgError);
-        toast.error("Nastala chyba pri odosielaní správy");
-        return null;
-      }
-      
-      console.log("Message sent successfully:", insertedMessage);
-      
-      // If this is a booking request, create entry in booking_requests table
-      if (metadata?.type === 'booking_request' && metadata.booking_id) {
-        console.log("Creating booking request entry");
-        
-        // Normalize userType for consistent comparison
-        const normalizedUserType = userType?.toLowerCase() || '';
-        
-        // Create booking in booking_requests table
-        const bookingData = {
-          id: metadata.booking_id,
-          conversation_id: convId,
-          craftsman_id: normalizedUserType === 'customer' ? contactId : user.id,
-          customer_id: normalizedUserType === 'customer' ? user.id : contactId,
-          customer_name: normalizedUserType === 'customer' ? (user.user_metadata?.name || "Customer") : "Customer",
-          date: metadata.details?.date || new Date().toISOString().split('T')[0],
-          start_time: metadata.details?.time || "00:00",
-          end_time: metadata.details?.time ? 
-            (parseInt(metadata.details.time.split(':')[0]) + 1) + ":" + metadata.details.time.split(':')[1] : 
-            "01:00",
-          message: metadata.details?.message || null,
-          amount: metadata.details?.amount || null,
-          image_url: metadata.details?.image_url || null
+        // Create a proper insert object with typed fields
+        const messageToInsert = {
+          ...newMessage,
+          metadata: metadata
         };
-        
-        console.log("Creating booking with data:", bookingData);
-        
-        const { error: bookingError } = await supabase
-          .from('booking_requests')
-          .insert([bookingData]);
+
+        console.log("Sending message with metadata:", messageToInsert);
+
+        const { data: insertedMessage, error: msgError } = await supabase
+          .from('chat_messages')
+          .insert(messageToInsert)
+          .select();
           
-        if (bookingError) {
-          console.error("Error creating booking request:", bookingError);
-          toast.error("Návrh termínu bol odoslaný, ale nastala chyba pri vytváraní požiadavky");
-        } else {
-          console.log("Booking request created successfully");
+        if (msgError) {
+          console.error("Error sending message with metadata:", msgError);
+          toast.error("Nastala chyba pri odosielaní správy");
+          return null;
         }
-      }
-      
-      // Update conversation's updated_at timestamp
-      const { error: updateError } = await supabase
-        .from('chat_conversations')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', convId);
         
-      if (updateError) {
-        console.error("Error updating conversation timestamp:", updateError);
+        console.log("Message with metadata sent successfully:", insertedMessage);
+        
+        // If this is a booking request, create entry in booking_requests table
+        if (metadata?.type === 'booking_request' && metadata.booking_id) {
+          console.log("Creating booking request entry");
+          
+          // Normalize userType for consistent comparison
+          const normalizedUserType = userType?.toLowerCase() || '';
+          
+          // Create booking in booking_requests table
+          const bookingData = {
+            id: metadata.booking_id,
+            conversation_id: convId,
+            craftsman_id: normalizedUserType === 'customer' ? contactId : user.id,
+            customer_id: normalizedUserType === 'customer' ? user.id : contactId,
+            customer_name: normalizedUserType === 'customer' ? (user.user_metadata?.name || "Customer") : "Customer",
+            date: metadata.details?.date || new Date().toISOString().split('T')[0],
+            start_time: metadata.details?.time || "00:00",
+            end_time: metadata.details?.time ? 
+              (parseInt(metadata.details.time.split(':')[0]) + 1) + ":" + metadata.details.time.split(':')[1] : 
+              "01:00",
+            message: metadata.details?.message || null,
+            amount: metadata.details?.amount || null,
+            image_url: metadata.details?.image_url || null
+          };
+          
+          console.log("Creating booking with data:", bookingData);
+          
+          const { error: bookingError } = await supabase
+            .from('booking_requests')
+            .insert(bookingData);
+            
+          if (bookingError) {
+            console.error("Error creating booking request:", bookingError);
+            toast.error("Návrh termínu bol odoslaný, ale nastala chyba pri vytváraní požiadavky");
+          } else {
+            console.log("Booking request created successfully");
+          }
+        }
+        
+        // Update conversation's updated_at timestamp
+        const { error: updateError } = await supabase
+          .from('chat_conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', convId);
+          
+        if (updateError) {
+          console.error("Error updating conversation timestamp:", updateError);
+        }
+        
+        return { message: insertedMessage, conversationId: convId };
+      } else {
+        // For regular messages without metadata
+        console.log("Sending regular message:", newMessage);
+
+        const { data: insertedMessage, error: msgError } = await supabase
+          .from('chat_messages')
+          .insert(newMessage)
+          .select();
+          
+        if (msgError) {
+          console.error("Error sending message:", msgError);
+          toast.error("Nastala chyba pri odosielaní správy");
+          return null;
+        }
+        
+        console.log("Regular message sent successfully:", insertedMessage);
+        
+        // Update conversation's updated_at timestamp
+        const { error: updateError } = await supabase
+          .from('chat_conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', convId);
+          
+        if (updateError) {
+          console.error("Error updating conversation timestamp:", updateError);
+        }
+        
+        return { message: insertedMessage, conversationId: convId };
       }
-      
-      return { message: insertedMessage, conversationId: convId };
     },
     onSuccess: (data) => {
       if (data) {
