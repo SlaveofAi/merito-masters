@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,7 @@ export const useChatSubscription = (
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [subscriptionFailed, setSubscriptionFailed] = useState(false);
+  const channelRef = useRef<any>(null);
   
   // Subscribe to new messages and booking requests via Supabase realtime
   useEffect(() => {
@@ -25,6 +26,17 @@ export const useChatSubscription = (
     
     // Function to create and set up a channel
     const setupChannel = () => {
+      // Cleanup old channel if exists
+      if (channelRef.current) {
+        console.log("Removing existing channel before creating a new one");
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch (e) {
+          console.error("Error removing previous channel:", e);
+        }
+        channelRef.current = null;
+      }
+      
       attempts++;
       console.log(`Creating new realtime channel (attempt ${attempts}/${maxAttempts})`);
       
@@ -32,6 +44,7 @@ export const useChatSubscription = (
       const channelName = `chat-updates-${Date.now()}`;
       
       const channel = supabase.channel(channelName);
+      channelRef.current = channel;
 
       // Set up event handlers before subscribing
       channel
@@ -43,6 +56,12 @@ export const useChatSubscription = (
         }, (payload) => {
           console.log("Received new message via realtime:", payload);
           
+          // Check if the payload has expected structure
+          if (!payload || !payload.new) {
+            console.error("Received malformed message payload:", payload);
+            return;
+          }
+          
           // Check if it's a booking request
           const hasMetadata = payload.new.metadata && typeof payload.new.metadata === 'object';
           const isBookingRequest = 
@@ -50,9 +69,13 @@ export const useChatSubscription = (
             (typeof payload.new.content === 'string' && 
              payload.new.content.includes('Požiadavka na termín'));
           
-          // Play notification sound
-          const audio = new Audio('/message.mp3');
-          audio.play().catch(e => console.log("Could not play notification sound", e));
+          // Try to play notification sound
+          try {
+            const audio = new Audio('/message.mp3');
+            audio.play().catch(e => console.log("Could not play notification sound", e));
+          } catch (e) {
+            console.error("Error playing notification sound:", e);
+          }
           
           // Show toast notification
           toast.success(isBookingRequest ? "Nová požiadavka na termín" : "Nová správa");
@@ -72,11 +95,20 @@ export const useChatSubscription = (
           table: 'booking_requests',
           filter: `craftsman_id=eq.${user.id}`
         }, (payload) => {
+          if (!payload || !payload.new) {
+            console.error("Received malformed booking payload:", payload);
+            return;
+          }
+          
           console.log("Received new booking request via realtime:", payload);
           
-          // Play notification sound
-          const audio = new Audio('/message.mp3');
-          audio.play().catch(e => console.log("Could not play notification sound", e));
+          // Try to play notification sound
+          try {
+            const audio = new Audio('/message.mp3');
+            audio.play().catch(e => console.log("Could not play notification sound", e));
+          } catch (e) {
+            console.error("Error playing notification sound:", e);
+          }
           
           // Show toast notification
           toast.success("Nová požiadavka na termín");
@@ -104,6 +136,11 @@ export const useChatSubscription = (
           schema: 'public',
           table: 'booking_requests'
         }, (payload) => {
+          if (!payload || !payload.new) {
+            console.error("Received malformed booking update payload:", payload);
+            return;
+          }
+          
           console.log("Booking request updated:", payload);
           if (selectedContact?.conversation_id === payload.new.conversation_id) {
             refetchMessages();
@@ -113,16 +150,24 @@ export const useChatSubscription = (
         
       // Add system event handlers for better monitoring
       channel
-        .on('system', { event: 'open' }, () => {
+        .on('system', { event: 'connect' }, () => {
           console.log("WebSocket connection established");
+          setSubscriptionFailed(false);
+        })
+        .on('system', { event: 'connected' }, () => {
+          console.log("WebSocket connection fully established");
+          setSubscriptionFailed(false);
+        })
+        .on('system', { event: 'open' }, () => {
+          console.log("WebSocket connection opened");
           setSubscriptionFailed(false);
         })
         .on('system', { event: 'close' }, () => {
           console.log("WebSocket connection closed");
           // Connection closure will trigger reconnect logic via status handlers
         })
-        .on('system', { event: 'error' }, () => {
-          console.error("WebSocket connection error");
+        .on('system', { event: 'error' }, (payload) => {
+          console.error("WebSocket connection error", payload);
           setSubscriptionFailed(true);
         });
 
@@ -145,9 +190,8 @@ export const useChatSubscription = (
           if (attempts < maxAttempts) {
             toast.warning("Realtime pripojenie bolo prerušené. Pokúšam sa znovu pripojiť...");
             setTimeout(() => {
-              supabase.removeChannel(channel);
               setupChannel();
-            }, 2000 * Math.min(attempts, 3)); // Increasing delay up to 6 seconds
+            }, 1000 * Math.min(attempts, 3)); // Increasing delay up to 3 seconds
           } else {
             toast.error("Nepodarilo sa obnoviť realtime pripojenie. Skúste obnoviť stránku.");
           }
@@ -158,9 +202,8 @@ export const useChatSubscription = (
           if (attempts < maxAttempts) {
             toast.error("Chyba realtime pripojenia. Pokúšam sa znovu pripojiť...");
             setTimeout(() => {
-              supabase.removeChannel(channel);
               setupChannel();
-            }, 3000 * Math.min(attempts, 3)); // Increasing delay up to 9 seconds
+            }, 2000 * Math.min(attempts, 3)); // Increasing delay up to 6 seconds
           } else {
             toast.error("Nepodarilo sa obnoviť realtime pripojenie. Skúste obnoviť stránku.");
           }
@@ -170,9 +213,8 @@ export const useChatSubscription = (
           
           if (attempts < maxAttempts) {
             setTimeout(() => {
-              supabase.removeChannel(channel);
               setupChannel();
-            }, 1000); // Quick retry on timeout
+            }, 500); // Quick retry on timeout
           } else {
             toast.error("Realtime pripojenie opakovane vypršalo. Skúste obnoviť stránku.");
           }
@@ -185,20 +227,15 @@ export const useChatSubscription = (
     // Initial setup
     const channel = setupChannel();
     
-    // Implement periodic health check
-    const healthCheckInterval = setInterval(async () => {
+    // Function for checking connection health
+    const checkConnectionHealth = async () => {
       try {
         const isConnected = await checkRealtimeConnection();
         
         if (!isConnected && !subscriptionFailed) {
           console.log("Health check failed - trying to reconnect");
           setSubscriptionFailed(true);
-          
-          // Force channel recreation
-          if (channel) {
-            supabase.removeChannel(channel);
-            setupChannel();
-          }
+          setupChannel();
         } else if (isConnected && subscriptionFailed) {
           // Connection restored outside our knowledge
           console.log("Health check passed but we thought connection was down - updating state");
@@ -207,13 +244,21 @@ export const useChatSubscription = (
       } catch (e) {
         console.error("Error in health check:", e);
       }
-    }, 45000); // Check every 45 seconds
+    };
+    
+    // Implement periodic health check
+    const healthCheckInterval = setInterval(checkConnectionHealth, 30000); // Check every 30 seconds
       
     return () => {
       console.log("Cleaning up realtime subscription");
       clearInterval(healthCheckInterval);
-      if (channel) {
-        supabase.removeChannel(channel);
+      if (channelRef.current) {
+        try {
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        } catch (e) {
+          console.error("Error removing channel during cleanup:", e);
+        }
       }
     };
   }, [user, selectedContact, refetchMessages, refetchContacts, queryClient, subscriptionFailed]);

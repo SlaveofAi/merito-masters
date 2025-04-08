@@ -1,4 +1,3 @@
-
 import { ChatContact, Message, MessageMetadata } from "@/types/chat";
 
 /**
@@ -51,8 +50,8 @@ export function parseMessageMetadata(metadata: any): MessageMetadata | undefined
  * Processes raw message data into standardized Message format
  */
 export function processMessageData(msg: any, userId: string): Message {
-  // Validate that we have a valid message object
-  if (!msg || typeof msg !== 'object' || !('id' in msg)) {
+  // Safety check for null/undefined
+  if (!msg || typeof msg !== 'object') {
     console.error("Invalid message data:", msg);
     // Return a minimal valid message object to prevent runtime errors
     return {
@@ -66,11 +65,9 @@ export function processMessageData(msg: any, userId: string): Message {
     };
   }
 
-  console.log("Processing message:", msg.id, "with content:", msg.content);
-  
-  // Create a base message with the required fields
+  // Create a base message with the required fields, using optional chaining
   const baseMessage: Message = {
-    id: msg.id,
+    id: msg.id || 'missing-id-' + Date.now(),
     sender_id: msg.sender_id || '',
     receiver_id: msg.receiver_id || '',
     conversation_id: msg.conversation_id || '',

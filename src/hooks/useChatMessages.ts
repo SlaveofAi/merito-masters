@@ -56,13 +56,14 @@ export function useChatMessages(
           console.log("Raw message data sample:", data[0]);
         }
         
+        // Filter out null messages and then check for unread messages
+        const validMessages = data.filter((msg): msg is NonNullable<typeof msg> => 
+          msg !== null && typeof msg === 'object'
+        );
+        
         // Mark messages as read - safely check the data structure first
-        // Filter unread messages that are valid and require marking as read
-        const unreadMessages = data.filter((msg) => {
-          return msg !== null && // Check msg is not null
-                 typeof msg === 'object' && 
-                 'id' in msg &&
-                 'receiver_id' in msg && 
+        const unreadMessages = validMessages.filter(msg => {
+          return 'receiver_id' in msg && 
                  'read' in msg &&
                  msg.receiver_id === user.id && 
                  !msg.read;
@@ -90,13 +91,8 @@ export function useChatMessages(
         }
         
         // Return the messages with updated read status and processed metadata
-        const processedMessages = data
+        const processedMessages = validMessages
           .map(msg => {
-            if (!msg) {
-              console.error("Received null message in data array");
-              return null;
-            }
-            
             try {
               const processed = processMessageData(msg, user.id);
               console.log("Processed message with ID:", processed.id);
