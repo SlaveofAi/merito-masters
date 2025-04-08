@@ -1,4 +1,6 @@
 
+import { ChatContact, Message, MessageMetadata } from "@/types/chat";
+
 /**
  * Safely parses message metadata from either string or object format
  */
