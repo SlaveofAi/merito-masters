@@ -36,7 +36,7 @@ export function useChatMessages(
         }
         
         console.log(`Retrieved ${data?.length || 0} messages`);
-        console.log("Messages data (raw):", data);
+        console.log("Messages data:", data);
         
         // Mark messages as read
         if (data && data.length > 0) {
@@ -63,12 +63,8 @@ export function useChatMessages(
           }
         }
         
-        // Process messages with their metadata
-        const processedMessages = data.map(msg => processMessageData(msg, user.id));
-        console.log("Processed messages with metadata:", processedMessages);
-        
         // Return the messages with updated read status
-        return processedMessages;
+        return data.map(msg => processMessageData(msg, user.id));
       } catch (error) {
         console.error("Error processing messages:", error);
         return [];

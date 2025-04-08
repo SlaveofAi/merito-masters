@@ -37,7 +37,6 @@ export function processMessageData(msg: any, userId: string): Message {
   // Add metadata only if it exists and handle type conversion
   if (msg.metadata !== null && msg.metadata !== undefined) {
     baseMessage.metadata = parseMessageMetadata(msg.metadata);
-    console.log("Processed message metadata:", baseMessage.metadata);
   }
 
   return baseMessage;
