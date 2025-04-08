@@ -6,11 +6,14 @@ import { BasicProfile } from "@/types/profile";
 
 export function useContactDetails(selectedContact: ChatContact | null, user: any) {
   return useQuery({
-    queryKey: ['contact-details', selectedContact?.id, selectedContact?.user_type],
+    queryKey: ['contact-details', selectedContact?.contactId, selectedContact?.user_type],
     queryFn: async () => {
       if (!selectedContact || !user) return null;
       
-      console.log(`Attempting to fetch details for contact ${selectedContact.id} of type ${selectedContact.user_type}`);
+      // Use contactId (the actual UUID) rather than the composite id
+      const contactId = selectedContact.contactId || selectedContact.id;
+      
+      console.log(`Attempting to fetch details for contact ${contactId} of type ${selectedContact.user_type}`);
       
       try {
         // Determine which table to query based on the contact type
@@ -19,11 +22,11 @@ export function useContactDetails(selectedContact: ChatContact | null, user: any
           : 'craftsman_profiles';
         
         // Step 1: Try primary profile table first
-        console.log(`First attempt: Querying ${primaryTable} for contact ${selectedContact.id}`);
+        console.log(`First attempt: Querying ${primaryTable} for contact ${contactId}`);
         const { data: primaryData, error: primaryError } = await supabase
           .from(primaryTable)
           .select('*')
-          .eq('id', selectedContact.id)
+          .eq('id', contactId)
           .maybeSingle();
           
         if (!primaryError && primaryData) {
@@ -40,15 +43,15 @@ export function useContactDetails(selectedContact: ChatContact | null, user: any
         if (primaryError) {
           console.error(`Error querying ${primaryTable}:`, primaryError);
         } else {
-          console.log(`No data found in ${primaryTable} for id ${selectedContact.id}`);
+          console.log(`No data found in ${primaryTable} for id ${contactId}`);
         }
         
         // Step 2: Try the profiles table as fallback
-        console.log(`Second attempt: Querying profiles table for contact ${selectedContact.id}`);
+        console.log(`Second attempt: Querying profiles table for contact ${contactId}`);
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', selectedContact.id)
+          .eq('id', contactId)
           .maybeSingle();
           
         if (!profileError && profileData) {
@@ -73,7 +76,7 @@ export function useContactDetails(selectedContact: ChatContact | null, user: any
         if (profileError) {
           console.error("Error querying profiles table:", profileError);
         } else {
-          console.log(`No data found in profiles table for id ${selectedContact.id}`);
+          console.log(`No data found in profiles table for id ${contactId}`);
         }
         
         // Step 3: Create a minimal profile from what we know if all lookups fail
@@ -81,7 +84,7 @@ export function useContactDetails(selectedContact: ChatContact | null, user: any
         
         // Create a minimal profile from what we know
         return {
-          id: selectedContact.id,
+          id: contactId,
           name: selectedContact.name || "Neznámy užívateľ",
           email: "",
           profile_image_url: selectedContact.avatar_url,
@@ -95,7 +98,7 @@ export function useContactDetails(selectedContact: ChatContact | null, user: any
         console.error(`Error in contactDetails query:`, err);
         // Return a fallback profile rather than null
         return {
-          id: selectedContact.id,
+          id: contactId,
           name: selectedContact.name || "Neznámy užívateľ",
           email: "",
           profile_image_url: selectedContact.avatar_url,
@@ -107,7 +110,7 @@ export function useContactDetails(selectedContact: ChatContact | null, user: any
         };
       }
     },
-    enabled: !!selectedContact?.id && !!user,
+    enabled: !!(selectedContact?.contactId || selectedContact?.id) && !!user,
     gcTime: 0, // Use gcTime instead of cacheTime
   });
 }

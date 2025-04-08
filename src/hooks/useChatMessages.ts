@@ -23,7 +23,6 @@ export function useChatMessages(
       console.log(`Fetching messages for conversation ${selectedContact.conversation_id}`);
       
       try {
-        // Fetch messages without specifying metadata in the selection
         const { data, error } = await supabase
           .from('chat_messages')
           .select('*')
@@ -64,7 +63,7 @@ export function useChatMessages(
           }
         }
         
-        // Return the messages with updated read status and properly parsed metadata
+        // Return the messages with updated read status
         return data.map(msg => processMessageData(msg, user.id));
       } catch (error) {
         console.error("Error processing messages:", error);

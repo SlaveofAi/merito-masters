@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 const Messages = () => {
   const { user, loading } = useAuth();
@@ -25,9 +24,6 @@ const Messages = () => {
     }
   }, [user, loading, navigate]);
 
-  // We're temporarily disabling the storage bucket check as it's causing RLS issues
-  // We'll fix this with proper RLS policies in the future
-  
   if (loading || isCheckingAuth) {
     return (
       <Layout>

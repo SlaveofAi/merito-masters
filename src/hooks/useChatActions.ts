@@ -82,11 +82,10 @@ export const useChatActions = (
         conversation_id: convId,
         sender_id: user.id,
         receiver_id: contactId,
-        content: content,
-        metadata: metadata || null
+        content: content
       };
 
-      console.log("Sending message with metadata:", newMessage);
+      console.log("Sending message:", newMessage);
 
       const { data: insertedMessage, error: msgError } = await supabase
         .from('chat_messages')
@@ -244,8 +243,8 @@ export const useChatActions = (
       }
       
       console.log(`Sending message to ${selectedContact.name}:`, content);
-      console.log("With metadata:", metadata);
       
+      // Use contactId for the database operations
       const contactIdToUse = selectedContact.contactId || selectedContact.id;
       
       sendMessageMutation.mutate({

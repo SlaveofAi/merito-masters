@@ -57,6 +57,7 @@ export const useContacts = () => {
         
         return data.map((contact): ChatContact => ({
           id: contact.id,
+          contactId: contact.id, // Ensure contactId is set correctly
           name: contact.name,
           avatar_url: contact.profile_image_url,
           last_message: 'Kliknite pre zahájenie konverzácie',
@@ -76,6 +77,7 @@ export const useContacts = () => {
         // Create a fallback contact if we can't find the profile
         const createFallbackContact = (): ChatContact => ({
           id: contactId,
+          contactId: contactId, // Set contactId separately
           name: "Neznámy užívateľ",
           avatar_url: undefined,
           last_message: "No messages yet",
@@ -122,9 +124,10 @@ export const useContacts = () => {
             
           console.log(`Found contact ${contact.name} with ${count || 0} unread messages`);
           
+          // Use a unique key for UI purposes but store the actual contactId separately
           return {
-            id: `${contact.id}-${conv.id}`, // Add conversation ID to make each contact unique
-            contactId: contact.id,
+            id: contact.id, // Use only the contact's real ID
+            contactId: contact.id, // Store the actual contact ID separately
             name: contact.name,
             avatar_url: contact.profile_image_url,
             last_message: lastMessage ? lastMessage.content : 'Kliknite pre zobrazenie správ',

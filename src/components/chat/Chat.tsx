@@ -28,7 +28,6 @@ const Chat: React.FC = () => {
   
   const handleSendMessage = (content: string, metadata?: any) => {
     console.log("Sending message with content:", content);
-    console.log("And metadata:", metadata);
     sendMessage(content, metadata);
   };
   
