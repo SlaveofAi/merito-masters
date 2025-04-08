@@ -15,7 +15,12 @@ export function parseMessageMetadata(metadata: any): MessageMetadata | undefined
     
     // If metadata is a string, parse it
     if (typeof metadata === 'string') {
-      return JSON.parse(metadata);
+      try {
+        return JSON.parse(metadata);
+      } catch (e) {
+        console.error("Failed to parse metadata string:", e);
+        return undefined;
+      }
     }
     
     // If it's already an object and has the expected properties, return as is
@@ -66,12 +71,12 @@ export function processMessageData(msg: any, userId: string): Message {
   // Create a base message with the required fields
   const baseMessage: Message = {
     id: msg.id,
-    sender_id: msg.sender_id,
-    receiver_id: msg.receiver_id,
-    conversation_id: msg.conversation_id,
-    content: msg.content,
-    created_at: msg.created_at,
-    read: msg.receiver_id === userId ? true : msg.read,
+    sender_id: msg.sender_id || '',
+    receiver_id: msg.receiver_id || '',
+    conversation_id: msg.conversation_id || '',
+    content: msg.content || '',
+    created_at: msg.created_at || new Date().toISOString(),
+    read: msg.receiver_id === userId ? true : !!msg.read,
   };
 
   // Add metadata handling with better debug output
@@ -93,10 +98,14 @@ export function processMessageData(msg: any, userId: string): Message {
     )) {
       // Extract booking info from the content
       let type = 'booking_request';
+      let status = 'pending';
+      
       if (msg.content.includes('akceptovaná')) {
         type = 'booking_response';
+        status = 'accepted';
       } else if (msg.content.includes('zamietnutá')) {
         type = 'booking_response';
+        status = 'rejected';
       }
 
       const lines = msg.content.split('\n');
@@ -106,8 +115,7 @@ export function processMessageData(msg: any, userId: string): Message {
       if (dateMatch || timeMatch) {
         baseMessage.metadata = {
           type: type,
-          status: msg.content.includes('akceptovaná') ? 'accepted' : 
-                 msg.content.includes('zamietnutá') ? 'rejected' : 'pending',
+          status: status,
           details: {
             date: dateMatch ? dateMatch[1] : null,
             time: timeMatch ? timeMatch[1] : null

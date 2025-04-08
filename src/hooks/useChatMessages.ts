@@ -59,13 +59,8 @@ export function useChatMessages(
         // Mark messages as read - safely check the data structure first
         // Filter unread messages that are valid and require marking as read
         const unreadMessages = data.filter((msg) => {
-          // First ensure msg is not null
-          if (msg === null) {
-            return false;
-          }
-          
-          // Then check if it has the necessary properties
-          return typeof msg === 'object' && 
+          return msg !== null && // Check msg is not null
+                 typeof msg === 'object' && 
                  'id' in msg &&
                  'receiver_id' in msg && 
                  'read' in msg &&
@@ -78,13 +73,10 @@ export function useChatMessages(
           
           // Using a more reliable approach to update
           const updatePromises = unreadMessages.map(msg => {
-            if (msg && 'id' in msg) {
-              return supabase
-                .from('chat_messages')
-                .update({ read: true })
-                .eq('id', msg.id);
-            }
-            return Promise.resolve(); // Return resolved promise for any null entries
+            return supabase
+              .from('chat_messages')
+              .update({ read: true })
+              .eq('id', msg.id);
           });
           
           try {
@@ -98,19 +90,26 @@ export function useChatMessages(
         }
         
         // Return the messages with updated read status and processed metadata
-        const processedMessages = data.map(msg => {
-          if (!msg) {
-            console.error("Received null message in data array");
-            return null;
-          }
-          
-          const processed = processMessageData(msg, user.id);
-          console.log("Processed message with ID:", processed.id);
-          if (processed.metadata) {
-            console.log("Message has metadata:", processed.metadata);
-          }
-          return processed;
-        }).filter((msg): msg is Message => msg !== null);
+        const processedMessages = data
+          .map(msg => {
+            if (!msg) {
+              console.error("Received null message in data array");
+              return null;
+            }
+            
+            try {
+              const processed = processMessageData(msg, user.id);
+              console.log("Processed message with ID:", processed.id);
+              if (processed.metadata) {
+                console.log("Message has metadata:", processed.metadata);
+              }
+              return processed;
+            } catch (err) {
+              console.error(`Error processing message:`, err, msg);
+              return null;
+            }
+          })
+          .filter((msg): msg is Message => msg !== null);
         
         return processedMessages;
       } catch (error) {
@@ -120,9 +119,7 @@ export function useChatMessages(
     },
     enabled: !!selectedContact?.conversation_id && !!user,
     gcTime: 0, // Use gcTime instead of cacheTime
-    // Adding staleTime to prevent too frequent refetches
     staleTime: 1000,
-    // Adding retry logic for better reliability
     retry: 3,
     retryDelay: attempt => Math.min(1000 * (2 ** attempt), 30000),
   });

@@ -14,19 +14,27 @@ export const useChatSubscription = (
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [subscriptionFailed, setSubscriptionFailed] = useState(false);
-
+  
   // Subscribe to new messages and booking requests via Supabase realtime
   useEffect(() => {
     if (!user) return;
     
+    let attempts = 0;
+    const maxAttempts = 5;
     console.log("Setting up realtime subscription for chat messages and booking requests");
     
-    // Set up a single channel for all subscriptions with reconnection logic
+    // Function to create and set up a channel
     const setupChannel = () => {
-      console.log("Creating new realtime channel");
+      attempts++;
+      console.log(`Creating new realtime channel (attempt ${attempts}/${maxAttempts})`);
       
-      const channel = supabase
-        .channel('chat-and-booking-updates')
+      // Create a unique channel name to avoid conflicts
+      const channelName = `chat-updates-${Date.now()}`;
+      
+      const channel = supabase.channel(channelName);
+
+      // Set up event handlers before subscribing
+      channel
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
@@ -35,7 +43,7 @@ export const useChatSubscription = (
         }, (payload) => {
           console.log("Received new message via realtime:", payload);
           
-          // Check if it's a booking request by looking at content or metadata
+          // Check if it's a booking request
           const hasMetadata = payload.new.metadata && typeof payload.new.metadata === 'object';
           const isBookingRequest = 
             (hasMetadata && payload.new.metadata.type === 'booking_request') ||
@@ -87,7 +95,7 @@ export const useChatSubscription = (
           schema: 'public',
           table: 'chat_messages'
         }, (payload) => {
-          // If messages are marked as read, update the contact list to reflect new unread counts
+          // If messages are marked as read, update the contact list
           console.log("Message status changed:", payload);
           refetchContacts();
         })
@@ -97,56 +105,79 @@ export const useChatSubscription = (
           table: 'booking_requests'
         }, (payload) => {
           console.log("Booking request updated:", payload);
-          // Refresh messages if relevant
           if (selectedContact?.conversation_id === payload.new.conversation_id) {
             refetchMessages();
           }
           refetchContacts();
         });
-
-      // Add more robust reconnection and event handling
+        
+      // Add system event handlers for better monitoring
       channel
-        .subscribe(async (status) => {
-          console.log("Realtime subscription status:", status);
-          
-          if (status === 'SUBSCRIBED') {
-            console.log("Successfully subscribed to realtime updates");
-            if (subscriptionFailed) {
-              toast.success("Pripojenie k realtime obnovené");
-              setSubscriptionFailed(false);
-            }
-          } else if (status === 'CLOSED') {
-            console.error("Realtime subscription closed");
-            if (!subscriptionFailed) {
-              toast.warning("Realtime pripojenie bolo prerušené. Pokúšam sa znovu pripojiť...");
-              setSubscriptionFailed(true);
-            }
-            // Try to reconnect after a delay
-            setTimeout(() => {
-              console.log("Attempting to reconnect to realtime...");
-              setupChannel();
-            }, 5000);
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error("Realtime subscription error");
-            if (!subscriptionFailed) {
-              toast.error("Chyba realtime pripojenia. Pokúšam sa znovu pripojiť...");
-              setSubscriptionFailed(true);
-            }
-            // Try to reconnect after a delay with exponential backoff
-            setTimeout(() => {
-              console.log("Attempting to reconnect to realtime after error...");
-              setupChannel();
-            }, 8000);
-          } else if (status === 'TIMED_OUT') {
-            console.error("Realtime subscription timed out");
-            if (!subscriptionFailed) {
-              toast.warning("Realtime pripojenie vypršalo. Pokúšam sa znovu pripojiť...");
-              setSubscriptionFailed(true);
-            }
-            // Immediate reconnect attempt
-            setupChannel();
-          }
+        .on('system', { event: 'open' }, () => {
+          console.log("WebSocket connection established");
+          setSubscriptionFailed(false);
+        })
+        .on('system', { event: 'close' }, () => {
+          console.log("WebSocket connection closed");
+          // Connection closure will trigger reconnect logic via status handlers
+        })
+        .on('system', { event: 'error' }, () => {
+          console.error("WebSocket connection error");
+          setSubscriptionFailed(true);
         });
+
+      // Subscribe with robust status handling
+      channel.subscribe((status) => {
+        console.log(`Realtime subscription status: ${status}`);
+        
+        if (status === 'SUBSCRIBED') {
+          console.log("Successfully subscribed to realtime updates");
+          if (subscriptionFailed) {
+            toast.success("Pripojenie k realtime obnovené");
+            setSubscriptionFailed(false);
+          }
+          attempts = 0; // Reset attempts on success
+        } else if (status === 'CLOSED') {
+          console.error("Realtime subscription closed");
+          setSubscriptionFailed(true);
+          
+          // Try to reconnect if we haven't exceeded max attempts
+          if (attempts < maxAttempts) {
+            toast.warning("Realtime pripojenie bolo prerušené. Pokúšam sa znovu pripojiť...");
+            setTimeout(() => {
+              supabase.removeChannel(channel);
+              setupChannel();
+            }, 2000 * Math.min(attempts, 3)); // Increasing delay up to 6 seconds
+          } else {
+            toast.error("Nepodarilo sa obnoviť realtime pripojenie. Skúste obnoviť stránku.");
+          }
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error("Realtime subscription error");
+          setSubscriptionFailed(true);
+          
+          if (attempts < maxAttempts) {
+            toast.error("Chyba realtime pripojenia. Pokúšam sa znovu pripojiť...");
+            setTimeout(() => {
+              supabase.removeChannel(channel);
+              setupChannel();
+            }, 3000 * Math.min(attempts, 3)); // Increasing delay up to 9 seconds
+          } else {
+            toast.error("Nepodarilo sa obnoviť realtime pripojenie. Skúste obnoviť stránku.");
+          }
+        } else if (status === 'TIMED_OUT') {
+          console.error("Realtime subscription timed out");
+          setSubscriptionFailed(true);
+          
+          if (attempts < maxAttempts) {
+            setTimeout(() => {
+              supabase.removeChannel(channel);
+              setupChannel();
+            }, 1000); // Quick retry on timeout
+          } else {
+            toast.error("Realtime pripojenie opakovane vypršalo. Skúste obnoviť stránku.");
+          }
+        }
+      });
 
       return channel;
     };
@@ -154,28 +185,33 @@ export const useChatSubscription = (
     // Initial setup
     const channel = setupChannel();
     
-    // Add a watchdog to check if the connection is still alive periodically
-    const watchdogInterval = setInterval(async () => {
+    // Implement periodic health check
+    const healthCheckInterval = setInterval(async () => {
       try {
-        // Ping the channel - if this fails, the onError handler above will trigger
-        if (channel) {
-          const subscription = channel.subscription;
-          if (subscription && subscription.state === 'SUBSCRIBED') {
-            console.log("Realtime connection is active");
-          } else {
-            console.log("Realtime connection appears to be inactive, reconnecting...");
+        const isConnected = await checkRealtimeConnection();
+        
+        if (!isConnected && !subscriptionFailed) {
+          console.log("Health check failed - trying to reconnect");
+          setSubscriptionFailed(true);
+          
+          // Force channel recreation
+          if (channel) {
             supabase.removeChannel(channel);
             setupChannel();
           }
+        } else if (isConnected && subscriptionFailed) {
+          // Connection restored outside our knowledge
+          console.log("Health check passed but we thought connection was down - updating state");
+          setSubscriptionFailed(false);
         }
       } catch (e) {
-        console.error("Error in realtime watchdog:", e);
+        console.error("Error in health check:", e);
       }
-    }, 30000); // Check every 30 seconds
+    }, 45000); // Check every 45 seconds
       
     return () => {
       console.log("Cleaning up realtime subscription");
-      clearInterval(watchdogInterval);
+      clearInterval(healthCheckInterval);
       if (channel) {
         supabase.removeChannel(channel);
       }
@@ -183,4 +219,16 @@ export const useChatSubscription = (
   }, [user, selectedContact, refetchMessages, refetchContacts, queryClient, subscriptionFailed]);
 
   return { subscriptionFailed };
+};
+
+// Helper function to check realtime connection
+const checkRealtimeConnection = async (): Promise<boolean> => {
+  try {
+    // Use the implementation from supabase client
+    const { checkRealtimeConnection } = await import('@/integrations/supabase/client');
+    return await checkRealtimeConnection();
+  } catch (error) {
+    console.error("Failed to import checkRealtimeConnection:", error);
+    return false;
+  }
 };
