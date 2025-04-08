@@ -59,8 +59,12 @@ export function useChatMessages(
         // Mark messages as read - safely check the data structure first
         // Filter unread messages that are valid and require marking as read
         const unreadMessages = data.filter((msg): msg is any => {
-          return msg !== null && 
-                 typeof msg === 'object' && 
+          // First ensure msg is not null
+          if (msg === null) {
+            return false;
+          }
+          
+          return typeof msg === 'object' && 
                  'id' in msg &&
                  'receiver_id' in msg && 
                  'read' in msg &&
