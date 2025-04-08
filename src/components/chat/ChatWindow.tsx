@@ -55,11 +55,12 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import BookingRequestForm from "@/components/booking/BookingRequestForm";
 
 interface ChatWindowProps {
   contact: ChatContact | null;
   messages: Message[];
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, metadata?: any) => void;
   onArchive: () => void;
   onDelete: () => void;
   contactDetails?: any;
@@ -84,10 +85,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [processedBookings, setProcessedBookings] = useState<string[]>([]);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [selectedImage, setSelectedImage] = useState("");
+  const [showBookingForm, setShowBookingForm] = useState(false);
   
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, showBookingForm]);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -98,6 +100,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       onSendMessage(messageText);
       setMessageText("");
     }
+  };
+
+  const handleSendBookingRequest = (content: string, metadata: any) => {
+    onSendMessage(content, metadata);
+    setShowBookingForm(false);
+    toast.success("Požiadavka na rezerváciu odoslaná");
   };
   
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -154,7 +162,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           conversation_id: booking.conversation_id,
           sender_id: user.id,
           receiver_id: booking.customer_id,
-          content: responseMessage
+          content: responseMessage,
+          metadata: {
+            type: 'booking_response',
+            status: action === 'accept' ? 'accepted' : 'rejected',
+            details: {
+              date: booking.date,
+              time: booking.start_time
+            }
+          }
         });
         
       if (messageError) throw messageError;
@@ -217,7 +233,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     return message.content.includes('✅ **Požiadavka termínu akceptovaná**') || 
            message.content.includes('❌ **Požiadavka termínu zamietnutá**');
   };
-
+  
   const extractBookingDetails = (message: Message) => {
     if (message.metadata && message.metadata.details) {
       const details = message.metadata.details;
@@ -251,6 +267,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   
   const getBookingId = async (message: Message) => {
     try {
+      if (message.metadata && message.metadata.booking_id) {
+        return message.metadata.booking_id;
+      }
+      
       const bookingDetails = extractBookingDetails(message);
       if (!bookingDetails.date) return null;
       
@@ -475,6 +495,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         </div>
         <div className="flex gap-2">
+          {userType === 'customer' && contact.user_type === 'craftsman' && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center" 
+              onClick={() => setShowBookingForm(true)}
+            >
+              <Calendar className="h-4 w-4 mr-1" />
+              Rezervácia
+            </Button>
+          )}
           <Button variant="ghost" size="icon" title="Videohovor">
             <Video className="h-5 w-5 text-gray-500" />
           </Button>
@@ -631,64 +662,73 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       </div>
       
       <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-        <div className="space-y-4">
-          {messages.length === 0 ? (
-            <div className="text-center py-10">
-              <p className="text-gray-500">Začnite konverzáciu odoslaním správy</p>
-            </div>
-          ) : (
-            messages.map((message) => {
-              console.log("Processing message:", message);
-              
-              if (isBookingRequest(message)) {
-                console.log("Found booking request message:", message);
-                return renderBookingRequest(message);
-              } 
-              
-              if (isBookingResponse(message)) {
-                console.log("Found booking response message:", message);
-                return renderBookingResponse(message);
-              }
-              
-              const isOwnMessage = message.sender_id === user?.id;
-              const messageDate = new Date(message.created_at);
-              const formattedTime = format(messageDate, 'HH:mm');
-              
-              return (
-                <div key={message.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] ${isOwnMessage ? 'bg-primary text-white' : 'bg-white'} rounded-lg px-4 py-2 shadow-sm`}>
-                    <p>{message.content}</p>
-                    <div className={`text-xs mt-1 ${isOwnMessage ? 'text-primary-foreground/70' : 'text-gray-500'} text-right`}>
-                      {formattedTime}
+        {showBookingForm ? (
+          <BookingRequestForm 
+            onSubmit={handleSendBookingRequest} 
+            onCancel={() => setShowBookingForm(false)}
+          />
+        ) : (
+          <div className="space-y-4">
+            {messages.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-gray-500">Začnite konverzáciu odoslaním správy</p>
+              </div>
+            ) : (
+              messages.map((message) => {
+                console.log("Processing message:", message);
+                
+                if (isBookingRequest(message)) {
+                  console.log("Found booking request message:", message);
+                  return renderBookingRequest(message);
+                } 
+                
+                if (isBookingResponse(message)) {
+                  console.log("Found booking response message:", message);
+                  return renderBookingResponse(message);
+                }
+                
+                const isOwnMessage = message.sender_id === user?.id;
+                const messageDate = new Date(message.created_at);
+                const formattedTime = format(messageDate, 'HH:mm');
+                
+                return (
+                  <div key={message.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[75%] ${isOwnMessage ? 'bg-primary text-white' : 'bg-white'} rounded-lg px-4 py-2 shadow-sm`}>
+                      <p>{message.content}</p>
+                      <div className={`text-xs mt-1 ${isOwnMessage ? 'text-primary-foreground/70' : 'text-gray-500'} text-right`}>
+                        {formattedTime}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })
-          )}
-          <div ref={messagesEndRef}></div>
-        </div>
+                );
+              })
+            )}
+            <div ref={messagesEndRef}></div>
+          </div>
+        )}
       </div>
       
-      <div className="p-4 border-t">
-        <div className="flex gap-2">
-          <Textarea
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Napíšte správu..."
-            className="resize-none min-h-[60px]"
-            rows={2}
-          />
-          <Button 
-            onClick={handleSendMessage} 
-            disabled={!messageText.trim()} 
-            className="self-end"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
+      {!showBookingForm && (
+        <div className="p-4 border-t">
+          <div className="flex gap-2">
+            <Textarea
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Napíšte správu..."
+              className="resize-none min-h-[60px]"
+              rows={2}
+            />
+            <Button 
+              onClick={handleSendMessage} 
+              disabled={!messageText.trim()} 
+              className="self-end"
+            >
+              <Send className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

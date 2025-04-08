@@ -74,10 +74,13 @@ export function useChatMessages(
           
           // Using a more reliable approach to update
           const updatePromises = unreadMessages.map(msg => {
-            return supabase
-              .from('chat_messages')
-              .update({ read: true })
-              .eq('id', msg.id);
+            if ('id' in msg) {
+              return supabase
+                .from('chat_messages')
+                .update({ read: true })
+                .eq('id', msg.id);
+            }
+            return Promise.resolve({ data: null, error: new Error("Message missing ID") });
           });
           
           try {
