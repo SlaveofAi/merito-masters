@@ -10,6 +10,9 @@ export function parseMessageMetadata(metadata: any): MessageMetadata | undefined
   }
   
   try {
+    // Log the incoming metadata for debugging
+    console.log("Raw metadata to parse:", metadata);
+    
     // If metadata is a string, parse it
     if (typeof metadata === 'string') {
       return JSON.parse(metadata);
@@ -43,6 +46,8 @@ export function parseMessageMetadata(metadata: any): MessageMetadata | undefined
  * Processes raw message data into standardized Message format
  */
 export function processMessageData(msg: any, userId: string): Message {
+  console.log("Processing message:", msg.id, "with content:", msg.content);
+  
   // Create a base message with the required fields
   const baseMessage: Message = {
     id: msg.id,
@@ -54,45 +59,47 @@ export function processMessageData(msg: any, userId: string): Message {
     read: msg.receiver_id === userId ? true : msg.read,
   };
 
-  // Try to detect if this is a booking message based on the content (for backward compatibility)
-  if (msg.content && (
-    msg.content.includes('🗓️ **Požiadavka na termín**') || 
-    msg.content.includes('✅ **Požiadavka termínu akceptovaná**') ||
-    msg.content.includes('❌ **Požiadavka termínu zamietnutá**')
-  )) {
-    // Extract booking info from the content
-    let type = 'booking_request';
-    if (msg.content.includes('akceptovaná')) {
-      type = 'booking_response';
-    } else if (msg.content.includes('zamietnutá')) {
-      type = 'booking_response';
-    }
-
-    const lines = msg.content.split('\n');
-    const dateMatch = lines.length > 1 ? lines[1].match(/Dátum: (.+)/) : null;
-    const timeMatch = lines.length > 2 ? lines[2].match(/Čas: (.+)/) : null;
-    
-    if (dateMatch || timeMatch) {
-      baseMessage.metadata = {
-        type: type,
-        status: msg.content.includes('akceptovaná') ? 'accepted' : 
-               msg.content.includes('zamietnutá') ? 'rejected' : 'pending',
-        details: {
-          date: dateMatch ? dateMatch[1] : null,
-          time: timeMatch ? timeMatch[1] : null
-        }
-      };
-    }
-  }
-  
-  // Add metadata only if it exists and handle type conversion
-  // This will override the content-based metadata if both exist
+  // Add metadata handling with better debug output
   if (msg.metadata !== null && msg.metadata !== undefined) {
     try {
+      console.log(`Message ${msg.id} has raw metadata:`, msg.metadata);
       baseMessage.metadata = parseMessageMetadata(msg.metadata);
-      console.log("Processed message metadata:", baseMessage.metadata);
+      console.log(`Message ${msg.id} processed metadata:`, baseMessage.metadata);
     } catch (e) {
-      console.error("Error processing message metadata:", e);
+      console.error(`Error processing metadata for message ${msg.id}:`, e);
+      // Don't add metadata if parsing failed
+    }
+  } else {
+    // Try to detect if this is a booking message based on the content (for backward compatibility)
+    if (msg.content && (
+      msg.content.includes('🗓️ **Požiadavka na termín**') || 
+      msg.content.includes('✅ **Požiadavka termínu akceptovaná**') ||
+      msg.content.includes('❌ **Požiadavka termínu zamietnutá**')
+    )) {
+      // Extract booking info from the content
+      let type = 'booking_request';
+      if (msg.content.includes('akceptovaná')) {
+        type = 'booking_response';
+      } else if (msg.content.includes('zamietnutá')) {
+        type = 'booking_response';
+      }
+
+      const lines = msg.content.split('\n');
+      const dateMatch = lines.length > 1 ? lines[1].match(/Dátum: (.+)/) : null;
+      const timeMatch = lines.length > 2 ? lines[2].match(/Čas: (.+)/) : null;
+      
+      if (dateMatch || timeMatch) {
+        baseMessage.metadata = {
+          type: type,
+          status: msg.content.includes('akceptovaná') ? 'accepted' : 
+                 msg.content.includes('zamietnutá') ? 'rejected' : 'pending',
+          details: {
+            date: dateMatch ? dateMatch[1] : null,
+            time: timeMatch ? timeMatch[1] : null
+          }
+        };
+        console.log(`Created metadata from content for message ${msg.id}:`, baseMessage.metadata);
+      }
     }
   }
 

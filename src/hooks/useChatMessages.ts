@@ -23,10 +23,19 @@ export function useChatMessages(
       console.log(`Fetching messages for conversation ${selectedContact.conversation_id}`);
       
       try {
-        // Modified query to select all columns instead of specifying metadata
+        // Use a direct query with explicit columns to avoid issues with table structure changes
         const { data, error } = await supabase
           .from('chat_messages')
-          .select('*')
+          .select(`
+            id, 
+            conversation_id, 
+            sender_id, 
+            receiver_id, 
+            content, 
+            created_at, 
+            read, 
+            metadata
+          `)
           .eq('conversation_id', selectedContact.conversation_id)
           .order('created_at', { ascending: true });
           
@@ -37,7 +46,7 @@ export function useChatMessages(
         }
         
         console.log(`Retrieved ${data?.length || 0} messages`);
-        console.log("Raw message data:", data);
+        console.log("Raw message data sample:", data?.[0]);
         
         // Mark messages as read
         if (data && data.length > 0) {
@@ -82,5 +91,10 @@ export function useChatMessages(
     },
     enabled: !!selectedContact?.conversation_id && !!user,
     gcTime: 0, // Use gcTime instead of cacheTime
+    // Adding staleTime to prevent too frequent refetches
+    staleTime: 1000,
+    // Adding retry logic for better reliability
+    retry: 3,
+    retryDelay: attempt => Math.min(1000 * (2 ** attempt), 30000),
   });
 }

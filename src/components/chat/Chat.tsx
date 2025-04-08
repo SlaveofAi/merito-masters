@@ -22,7 +22,7 @@ const Chat: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Set up real-time updates
+  // Set up real-time updates with improved error handling
   useChatSubscription(selectedContact, refetchMessages, refetchContacts);
   
   // Debug output to help identify issues
@@ -31,6 +31,23 @@ const Chat: React.FC = () => {
     console.log("Current location:", location);
     console.log("Current location state:", location.state);
   }, [contacts, location]);
+  
+  // Manual refresh effect to ensure we're getting fresh data
+  useEffect(() => {
+    // Initial data fetch
+    refetchContacts();
+    
+    // Set up periodic refresh in case real-time fails
+    const refreshInterval = setInterval(() => {
+      console.log("Performing scheduled data refresh");
+      refetchContacts();
+      if (selectedContact) {
+        refetchMessages();
+      }
+    }, 15000); // Refresh every 15 seconds
+    
+    return () => clearInterval(refreshInterval);
+  }, [refetchContacts, refetchMessages, selectedContact]);
   
   // Check if we have a contact ID in the URL parameters or from navigation state
   useEffect(() => {

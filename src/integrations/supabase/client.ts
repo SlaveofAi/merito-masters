@@ -18,6 +18,13 @@ export const supabase = createClient<Database>(
     realtime: {
       params: {
         eventsPerSecond: 10
+      },
+      heartbeatIntervalMs: 5000,
+      reconnectAfterMs: (retryCount) => {
+        // Exponential backoff with a min delay of 1s and max of 15s
+        const delay = Math.min(1000 * (2 ** retryCount), 15000);
+        console.log(`Realtime reconnecting in ${delay}ms (attempt ${retryCount})`);
+        return delay;
       }
     }
   }
