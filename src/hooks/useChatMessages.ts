@@ -45,8 +45,14 @@ export function useChatMessages(
           return [];
         }
         
-        console.log(`Retrieved ${data?.length || 0} messages`);
-        console.log("Raw message data sample:", data?.[0]);
+        // Ensure data is an array before proceeding
+        if (!data || !Array.isArray(data)) {
+          console.error("No data returned or data is not an array");
+          return [];
+        }
+        
+        console.log(`Retrieved ${data.length} messages`);
+        console.log("Raw message data sample:", data[0]);
         
         // Mark messages as read
         if (data && data.length > 0) {
