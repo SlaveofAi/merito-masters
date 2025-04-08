@@ -78,12 +78,18 @@ export const useChatActions = (
       }
       
       // Insert the message
-      const newMessage = {
+      const newMessage: any = {
         conversation_id: convId,
         sender_id: user.id,
         receiver_id: contactId,
         content: content
       };
+
+      // Only add metadata if it exists
+      if (metadata) {
+        newMessage.metadata = metadata;
+        console.log("Adding metadata to message:", metadata);
+      }
 
       console.log("Sending message:", newMessage);
 
