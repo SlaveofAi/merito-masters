@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Upload, Euro, Clock, FileText, Image, X } from "lucide-react";
+import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
 import { Calendar as CalendarUI } from "@/components/ui/calendar";
@@ -12,24 +12,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { 
-  Form, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 
@@ -42,8 +24,6 @@ const ContactTab: React.FC = () => {
   const [isLoadingDates, setIsLoadingDates] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasShownFirstAvailableMonth, setHasShownFirstAvailableMonth] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const isCraftsmanProfile = profileData && 'trade_category' in profileData;
@@ -179,342 +159,6 @@ const ContactTab: React.FC = () => {
     );
   };
 
-  const BookingRequestForm = () => {
-    const form = useForm({
-      defaultValues: {
-        date: "",
-        time: "09:00",
-        message: "",
-        amount: ""
-      }
-    });
-
-    useEffect(() => {
-      if (selectedDate) {
-        form.setValue('date', format(selectedDate, 'yyyy-MM-dd'));
-      }
-    }, [selectedDate, form]);
-
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files[0]) {
-        const file = e.target.files[0];
-        setSelectedImage(file);
-        
-        const reader = new FileReader();
-        reader.onload = () => {
-          setImagePreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-    
-    const handleImageRemove = () => {
-      setSelectedImage(null);
-      setImagePreview(null);
-    };
-
-    const onSubmit = async (values: any) => {
-      if (!profileData?.id || !user) {
-        toast.error("Nemôžete poslať požiadavku, nie ste prihlásený");
-        return;
-      }
-      
-      // Validate required fields
-      if (!values.date) {
-        toast.error("Vyberte prosím dátum");
-        return;
-      }
-      
-      try {
-        let conversationId: string | null = null;
-        let imageUrl: string | null = null;
-        
-        if (selectedImage) {
-          const filePath = `booking-images/${user.id}/${Date.now()}_${selectedImage.name}`;
-          const { data: uploadResult, error: uploadError } = await supabase
-            .storage
-            .from('booking-images')
-            .upload(filePath, selectedImage);
-            
-          if (uploadError) {
-            console.error("Error uploading image:", uploadError);
-            toast.error("Nastala chyba pri nahrávaní obrázka");
-            return;
-          } else {
-            const { data: urlData } = supabase
-              .storage
-              .from('booking-images')
-              .getPublicUrl(filePath);
-              
-            imageUrl = urlData.publicUrl;
-          }
-        }
-        
-        const { data: existingConversation, error: convFetchError } = await supabase
-          .from('chat_conversations')
-          .select('id')
-          .eq('customer_id', user.id)
-          .eq('craftsman_id', profileData.id)
-          .maybeSingle();
-        
-        if (convFetchError) {
-          console.error("Error checking for existing conversation:", convFetchError);
-        }
-        
-        if (existingConversation) {
-          conversationId = existingConversation.id;
-          console.log("Found existing conversation:", conversationId);
-        } else {
-          const { data: newConversation, error: createConvError } = await supabase
-            .from('chat_conversations')
-            .insert({
-              customer_id: user.id,
-              craftsman_id: profileData.id
-            })
-            .select();
-          
-          if (createConvError) {
-            throw createConvError;
-          }
-          
-          conversationId = newConversation?.[0]?.id || null;
-          console.log("Created new conversation:", conversationId);
-        }
-        
-        if (!conversationId) {
-          throw new Error("Nepodarilo sa vytvoriť konverzáciu");
-        }
-        
-        const bookingData = {
-          conversation_id: conversationId,
-          craftsman_id: profileData.id,
-          customer_id: user.id,
-          customer_name: user.user_metadata?.name || "Zákazník",
-          date: values.date,
-          start_time: values.time,
-          end_time: "18:00",
-          message: values.message,
-          amount: values.amount ? values.amount : null,
-          image_url: imageUrl,
-          status: "pending"
-        };
-        
-        const { data, error } = await supabase
-          .from('booking_requests')
-          .insert(bookingData)
-          .select();
-          
-        if (error) throw error;
-        
-        const bookingMessage = `🗓️ **Požiadavka na termín**
-Dátum: ${values.date}
-Čas: ${values.time}
-${values.message ? `Správa: ${values.message}` : ''}
-${values.amount ? `Suma: ${values.amount}€` : ''}
-${imageUrl ? `Fotky: Priložená fotografia` : ''}`;
-
-        // Send a message with booking metadata
-        const { data: messageData, error: messageError } = await supabase
-          .from('chat_messages')
-          .insert({
-            conversation_id: conversationId,
-            sender_id: user.id,
-            receiver_id: profileData.id,
-            content: bookingMessage,
-            metadata: {
-              type: 'booking_request',
-              booking_id: data?.[0]?.id,
-              status: 'pending',
-              details: {
-                date: values.date,
-                time: values.time,
-                message: values.message,
-                amount: values.amount,
-                image_url: imageUrl
-              }
-            }
-          });
-        
-        if (messageError) {
-          console.error("Error sending chat message:", messageError);
-        }
-        
-        toast.success("Vaša požiadavka bola odoslaná remeselníkovi");
-        form.reset();
-        setSelectedDate(null);
-        setSelectedImage(null);
-        setImagePreview(null);
-        
-        navigate('/messages');
-      } catch (error: any) {
-        console.error("Error sending booking request:", error);
-        toast.error("Nastala chyba pri odosielaní požiadavky");
-      }
-    };
-
-    const timeOptions = Array.from({ length: 11 }, (_, i) => {
-      const hour = i + 8;
-      return `${hour.toString().padStart(2, '0')}:00`;
-    });
-
-    const formattedAvailableDates = availableDates
-      .sort((a, b) => a.getTime() - b.getTime())
-      .map(date => {
-        const formattedDate = format(date, 'yyyy-MM-dd');
-        const displayDate = format(date, 'dd.MM.yyyy');
-        return { value: formattedDate, label: displayDate };
-      });
-
-    return (
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Vyberte dátum</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  value={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Vyberte dostupný deň" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="bg-white">
-                    {formattedAvailableDates.length > 0 ? (
-                      formattedAvailableDates.map(date => (
-                        <SelectItem key={date.value} value={date.value}>
-                          {date.label}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="none" disabled>
-                        Žiadne dostupné dni
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="time"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Vyberte čas</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  value={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Vyberte čas" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="bg-white">
-                    {timeOptions.map(time => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="message"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Správa pre remeselníka</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Opíšte vašu požiadavku alebo projekt..."
-                    className="resize-none"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Navrhovaná cena (EUR)</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Input
-                      type="text"
-                      placeholder="0.00"
-                      className="w-full pr-8"
-                      {...field}
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <Euro className="h-4 w-4 text-gray-500" />
-                    </div>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <div className="space-y-2">
-            <FormLabel>Priložiť fotku (voliteľné)</FormLabel>
-            <div className="flex items-center space-x-2">
-              <label className="cursor-pointer">
-                <div className="flex items-center justify-center w-32 h-10 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors">
-                  <Upload className="h-4 w-4 mr-2" />
-                  <span className="text-sm">Nahrať</span>
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageChange}
-                />
-              </label>
-              
-              {imagePreview && (
-                <div className="relative">
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="h-16 w-auto rounded-md object-cover" 
-                  />
-                  <button
-                    type="button"
-                    onClick={handleImageRemove}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 w-5 h-5 flex items-center justify-center text-xs"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <Button type="submit" className="w-full">
-            Odoslať požiadavku
-          </Button>
-        </form>
-      </Form>
-    );
-  };
-
   const AvailabilityViewer = () => (
     <div className="w-full">
       <div className="p-3 border-b">
@@ -569,6 +213,20 @@ ${imageUrl ? `Fotky: Priložená fotografia` : ''}`;
     </div>
   );
 
+  const handleStartChat = () => {
+    if (!user) {
+      toast.error("Pre kontaktovanie remeselníka sa musíte prihlásiť");
+      return;
+    }
+
+    if (!profileData?.id) {
+      toast.error("Nepodarilo sa nájsť profil remeselníka");
+      return;
+    }
+
+    navigate('/messages');
+  };
+
   if (!profileData) return null;
 
   return (
@@ -619,8 +277,13 @@ ${imageUrl ? `Fotky: Priložená fotografia` : ''}`;
         {isCraftsmanProfile && userType === 'customer' && !isCurrentUser && (
           <Card className="border border-border/50 shadow-sm">
             <CardContent className="p-6">
-              <h4 className="text-lg font-medium mb-3">Rezervovať termín</h4>
-              <BookingRequestForm />
+              <h4 className="text-lg font-medium mb-3">Kontaktovať remeselníka</h4>
+              <p className="text-sm text-gray-500 mb-4">
+                Pre rezerváciu termínu a konzultáciu prejdite do správ, kde môžete odoslať vašu požiadavku.
+              </p>
+              <Button onClick={handleStartChat} className="w-full">
+                Prejsť do správ
+              </Button>
             </CardContent>
           </Card>
         )}

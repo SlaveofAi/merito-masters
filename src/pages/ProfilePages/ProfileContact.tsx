@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProfileContactContent: React.FC = () => {
   const {
@@ -23,6 +24,65 @@ const ProfileContactContent: React.FC = () => {
   } = useProfile();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Function to create or navigate to an existing conversation
+  const handleStartChat = async () => {
+    if (!user || !profileData?.id) return;
+    
+    try {
+      // Check if conversation already exists
+      const { data: existingConversation, error: fetchError } = await supabase
+        .from('chat_conversations')
+        .select('id')
+        .eq('customer_id', user.id)
+        .eq('craftsman_id', profileData.id)
+        .maybeSingle();
+        
+      if (fetchError) {
+        console.error("Error checking for conversation:", fetchError);
+        toast.error("Nastala chyba pri kontrole konverzácie");
+        return;
+      }
+      
+      let conversationId;
+      
+      if (existingConversation) {
+        // Use existing conversation
+        conversationId = existingConversation.id;
+      } else {
+        // Create new conversation
+        const { data: newConversation, error: createError } = await supabase
+          .from('chat_conversations')
+          .insert({
+            customer_id: user.id,
+            craftsman_id: profileData.id
+          })
+          .select();
+          
+        if (createError) {
+          console.error("Error creating conversation:", createError);
+          toast.error("Nepodarilo sa vytvoriť konverzáciu");
+          return;
+        }
+        
+        conversationId = newConversation?.[0]?.id;
+      }
+      
+      if (conversationId) {
+        // Navigate to messages with the conversation context
+        navigate('/messages', { 
+          state: { 
+            from: 'profile',
+            conversationId,
+            contactId: profileData.id 
+          } 
+        });
+      }
+    } catch (err) {
+      console.error("Error navigating to chat:", err);
+      toast.error("Nastala chyba pri presmerovaní do správ");
+    }
+  };
 
   if (loading || authLoading) {
     return (
