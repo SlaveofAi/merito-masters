@@ -52,30 +52,37 @@ export function useChatMessages(
         }
         
         console.log(`Retrieved ${data.length} messages`);
-        console.log("Raw message data sample:", data[0]);
+        if (data.length > 0) {
+          console.log("Raw message data sample:", data[0]);
+        }
         
-        // Mark messages as read
-        if (data && data.length > 0) {
-          const unreadMessages = data.filter(msg => 
-            msg.receiver_id === user.id && !msg.read
-          );
+        // Mark messages as read - safely check the data structure first
+        const unreadMessages = data.filter(msg => 
+          msg && typeof msg === 'object' && 
+          'receiver_id' in msg && 
+          'read' in msg &&
+          msg.receiver_id === user.id && 
+          !msg.read
+        );
           
-          if (unreadMessages.length > 0) {
-            console.log(`Marking ${unreadMessages.length} messages as read`);
-            
-            // Using a more reliable approach to update
-            const { error: updateError } = await supabase
+        if (unreadMessages.length > 0) {
+          console.log(`Marking ${unreadMessages.length} messages as read`);
+          
+          // Using a more reliable approach to update
+          const updatePromises = unreadMessages.map(msg => {
+            return supabase
               .from('chat_messages')
               .update({ read: true })
-              .in('id', unreadMessages.map(msg => msg.id));
-            
-            if (updateError) {
-              console.error("Error marking messages as read:", updateError);
-            } else {
-              console.log("All messages marked as read");
-              // Refresh contact list to update unread count
-              refetchContacts();
-            }
+              .eq('id', msg.id);
+          });
+          
+          try {
+            await Promise.all(updatePromises);
+            console.log("All messages marked as read");
+            // Refresh contact list to update unread count
+            refetchContacts();
+          } catch (updateError) {
+            console.error("Error marking messages as read:", updateError);
           }
         }
         

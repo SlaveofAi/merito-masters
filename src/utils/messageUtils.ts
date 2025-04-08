@@ -46,6 +46,21 @@ export function parseMessageMetadata(metadata: any): MessageMetadata | undefined
  * Processes raw message data into standardized Message format
  */
 export function processMessageData(msg: any, userId: string): Message {
+  // Validate that we have a valid message object
+  if (!msg || typeof msg !== 'object' || !('id' in msg)) {
+    console.error("Invalid message data:", msg);
+    // Return a minimal valid message object to prevent runtime errors
+    return {
+      id: 'invalid-message-' + Date.now(),
+      sender_id: '',
+      receiver_id: '',
+      conversation_id: '',
+      content: 'Error: Invalid message data',
+      created_at: new Date().toISOString(),
+      read: true
+    };
+  }
+
   console.log("Processing message:", msg.id, "with content:", msg.content);
   
   // Create a base message with the required fields
