@@ -23,17 +23,6 @@ export function useChatMessages(
       console.log(`Fetching messages for conversation ${selectedContact.conversation_id}`);
       
       try {
-        // Check if the column metadata exists in the table
-        const { data: tableInfo, error: tableError } = await supabase
-          .from('chat_messages')
-          .select('metadata')
-          .limit(1);
-          
-        if (tableError) {
-          console.error("Error checking metadata column:", tableError);
-          // Continue anyway - we'll handle missing metadata in the processMessageData function
-        }
-        
         const { data, error } = await supabase
           .from('chat_messages')
           .select('*')
@@ -77,7 +66,10 @@ export function useChatMessages(
         // Return the messages with updated read status and processed metadata
         const processedMessages = data.map(msg => {
           const processed = processMessageData(msg, user.id);
-          console.log("Processed message:", processed);
+          console.log("Processed message with ID:", processed.id);
+          if (processed.metadata) {
+            console.log("Message has metadata:", processed.metadata);
+          }
           return processed;
         });
         

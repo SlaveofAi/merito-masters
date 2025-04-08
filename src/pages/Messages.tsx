@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import Chat from "@/components/chat/Chat";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 const Messages = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
@@ -23,6 +24,14 @@ const Messages = () => {
       }
     }
   }, [user, loading, navigate]);
+
+  // Check if we were redirected from another page with a conversation parameter
+  useEffect(() => {
+    if (user && location.state?.from === 'booking') {
+      console.log("Redirected from booking page with conversation:", location.state);
+      // We'll handle this in the Chat component
+    }
+  }, [location, user]);
 
   if (loading || isCheckingAuth) {
     return (

@@ -31,12 +31,16 @@ export const useChatSubscription = (
       }, (payload) => {
         console.log("Received new message via realtime:", payload);
         
+        // Check if it's a booking request
+        const isBookingRequest = payload.new.metadata && 
+          payload.new.metadata.type === 'booking_request';
+        
         // Play notification sound
         const audio = new Audio('/message.mp3');
         audio.play().catch(e => console.log("Could not play notification sound", e));
         
         // Show toast notification
-        toast.success("Nová správa");
+        toast.success(isBookingRequest ? "Nová požiadavka na termín" : "Nová správa");
         
         // Refresh messages if conversation is selected
         if (selectedContact?.conversation_id === payload.new.conversation_id) {
@@ -94,6 +98,9 @@ export const useChatSubscription = (
       })
       .subscribe((status) => {
         console.log("Realtime subscription status:", status);
+        if (status !== 'SUBSCRIBED') {
+          console.error("Failed to subscribe to realtime updates:", status);
+        }
       });
       
     return () => {

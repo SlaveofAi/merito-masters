@@ -1,4 +1,3 @@
-
 import { ChatContact, Message, MessageMetadata } from "@/types/chat";
 
 /**
@@ -19,7 +18,12 @@ export function parseMessageMetadata(metadata: any): MessageMetadata | undefined
     if (typeof metadata === 'object') {
       // Convert any nested objects that might be strings
       if (metadata.details && typeof metadata.details === 'string') {
-        metadata.details = JSON.parse(metadata.details);
+        try {
+          metadata.details = JSON.parse(metadata.details);
+        } catch (e) {
+          // If parsing fails, keep it as is - it might be a simple string
+          console.log("Failed to parse metadata.details, but continuing", metadata.details);
+        }
       }
       return metadata;
     }
