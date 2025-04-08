@@ -58,12 +58,13 @@ export function useChatMessages(
         
         // Mark messages as read - safely check the data structure first
         // Filter unread messages that are valid and require marking as read
-        const unreadMessages = data.filter((msg): msg is any => {
+        const unreadMessages = data.filter((msg) => {
           // First ensure msg is not null
           if (msg === null) {
             return false;
           }
           
+          // Then check if it has the necessary properties
           return typeof msg === 'object' && 
                  'id' in msg &&
                  'receiver_id' in msg && 
@@ -77,7 +78,7 @@ export function useChatMessages(
           
           // Using a more reliable approach to update
           const updatePromises = unreadMessages.map(msg => {
-            if (msg && msg.id) {
+            if (msg && 'id' in msg) {
               return supabase
                 .from('chat_messages')
                 .update({ read: true })

@@ -25,7 +25,40 @@ export const supabase = createClient<Database>(
         const delay = Math.min(1000 * (2 ** retryCount), 15000);
         console.log(`Realtime reconnecting in ${delay}ms (attempt ${retryCount})`);
         return delay;
-      }
+      },
+      // Add more aggressive timeout to close stale connections
+      timeout: 30000
     }
   }
 );
+
+// Add a global utility to check if the WebSocket is working
+export const checkRealtimeConnection = async () => {
+  try {
+    // Create a test channel
+    const testChannel = supabase.channel('connection-test');
+    
+    return new Promise((resolve) => {
+      // Set a timeout for connection test
+      const timeoutId = setTimeout(() => {
+        resolve(false);  // Connection test failed
+      }, 5000);
+      
+      // Subscribe to the channel
+      testChannel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          clearTimeout(timeoutId);
+          // Clean up the test channel
+          supabase.removeChannel(testChannel);
+          resolve(true);  // Connection test successful
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          clearTimeout(timeoutId);
+          resolve(false);  // Connection test failed
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Error testing Realtime connection:', error);
+    return false;
+  }
+};

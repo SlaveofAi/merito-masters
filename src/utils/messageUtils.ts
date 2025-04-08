@@ -29,7 +29,7 @@ export function parseMessageMetadata(metadata: any): MessageMetadata | undefined
           console.log("Failed to parse metadata.details, but continuing", metadata.details);
         }
       }
-      return metadata;
+      return metadata as MessageMetadata;
     }
     
     // Return undefined on inconsistent data

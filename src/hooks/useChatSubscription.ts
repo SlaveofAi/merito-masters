@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ export const useChatSubscription = (
 ) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [subscriptionFailed, setSubscriptionFailed] = useState(false);
 
   // Subscribe to new messages and booking requests via Supabase realtime
   useEffect(() => {
@@ -103,19 +104,47 @@ export const useChatSubscription = (
           refetchContacts();
         });
 
-      // Add reconnection handling for WebSocket
+      // Add more robust reconnection and event handling
       channel
-        .subscribe((status) => {
+        .subscribe(async (status) => {
           console.log("Realtime subscription status:", status);
+          
           if (status === 'SUBSCRIBED') {
             console.log("Successfully subscribed to realtime updates");
-          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-            console.error("Realtime subscription failed or closed:", status);
+            if (subscriptionFailed) {
+              toast.success("Pripojenie k realtime obnovené");
+              setSubscriptionFailed(false);
+            }
+          } else if (status === 'CLOSED') {
+            console.error("Realtime subscription closed");
+            if (!subscriptionFailed) {
+              toast.warning("Realtime pripojenie bolo prerušené. Pokúšam sa znovu pripojiť...");
+              setSubscriptionFailed(true);
+            }
             // Try to reconnect after a delay
             setTimeout(() => {
               console.log("Attempting to reconnect to realtime...");
               setupChannel();
-            }, 3000);
+            }, 5000);
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error("Realtime subscription error");
+            if (!subscriptionFailed) {
+              toast.error("Chyba realtime pripojenia. Pokúšam sa znovu pripojiť...");
+              setSubscriptionFailed(true);
+            }
+            // Try to reconnect after a delay with exponential backoff
+            setTimeout(() => {
+              console.log("Attempting to reconnect to realtime after error...");
+              setupChannel();
+            }, 8000);
+          } else if (status === 'TIMED_OUT') {
+            console.error("Realtime subscription timed out");
+            if (!subscriptionFailed) {
+              toast.warning("Realtime pripojenie vypršalo. Pokúšam sa znovu pripojiť...");
+              setSubscriptionFailed(true);
+            }
+            // Immediate reconnect attempt
+            setupChannel();
           }
         });
 
@@ -124,12 +153,34 @@ export const useChatSubscription = (
 
     // Initial setup
     const channel = setupChannel();
+    
+    // Add a watchdog to check if the connection is still alive periodically
+    const watchdogInterval = setInterval(async () => {
+      try {
+        // Ping the channel - if this fails, the onError handler above will trigger
+        if (channel) {
+          const subscription = channel.subscription;
+          if (subscription && subscription.state === 'SUBSCRIBED') {
+            console.log("Realtime connection is active");
+          } else {
+            console.log("Realtime connection appears to be inactive, reconnecting...");
+            supabase.removeChannel(channel);
+            setupChannel();
+          }
+        }
+      } catch (e) {
+        console.error("Error in realtime watchdog:", e);
+      }
+    }, 30000); // Check every 30 seconds
       
     return () => {
       console.log("Cleaning up realtime subscription");
+      clearInterval(watchdogInterval);
       if (channel) {
         supabase.removeChannel(channel);
       }
     };
-  }, [user, selectedContact, refetchMessages, refetchContacts, queryClient]);
+  }, [user, selectedContact, refetchMessages, refetchContacts, queryClient, subscriptionFailed]);
+
+  return { subscriptionFailed };
 };

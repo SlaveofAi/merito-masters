@@ -106,14 +106,41 @@ export const useChatActions = (
 
       console.log("Final message to insert:", messageToInsert);
 
-      const { data: insertedMessage, error: msgError } = await supabase
-        .from('chat_messages')
-        .insert(messageToInsert)
-        .select();
-        
-      if (msgError) {
-        console.error("Error sending message:", msgError);
-        toast.error("Nastala chyba pri odosielaní správy");
+      // Retry sending the message up to 3 times if it fails
+      let retries = 0;
+      let messageSuccess = false;
+      let insertedMessage = null;
+      
+      while (!messageSuccess && retries < 3) {
+        try {
+          const { data, error: msgError } = await supabase
+            .from('chat_messages')
+            .insert(messageToInsert)
+            .select();
+            
+          if (msgError) {
+            console.error(`Error sending message (attempt ${retries + 1}):`, msgError);
+            retries++;
+            // Wait before retrying (exponential backoff)
+            if (retries < 3) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
+            }
+          } else {
+            messageSuccess = true;
+            insertedMessage = data;
+            break;
+          }
+        } catch (err) {
+          console.error(`Exception sending message (attempt ${retries + 1}):`, err);
+          retries++;
+          if (retries < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
+          }
+        }
+      }
+      
+      if (!messageSuccess) {
+        toast.error("Nastala chyba pri odosielaní správy po viacerých pokusoch");
         return null;
       }
       
@@ -258,7 +285,7 @@ export const useChatActions = (
     sendMessage: async (content: string, metadata?: MessageMetadata) => {
       if (!selectedContact || !content.trim() || !user) {
         console.error("Cannot send message - missing data", { selectedContact, content, user });
-        return;
+        return Promise.reject("Missing data for sending message");
       }
       
       console.log(`Sending message to ${selectedContact.name}:`, content);
@@ -267,11 +294,16 @@ export const useChatActions = (
       // Use contactId for the database operations
       const contactIdToUse = selectedContact.contactId || selectedContact.id;
       
-      sendMessageMutation.mutate({
-        content,
-        contactId: contactIdToUse,
-        conversationId: selectedContact.conversation_id,
-        metadata
+      return new Promise((resolve, reject) => {
+        sendMessageMutation.mutate({
+          content,
+          contactId: contactIdToUse,
+          conversationId: selectedContact.conversation_id,
+          metadata
+        }, {
+          onSuccess: () => resolve(true),
+          onError: (error) => reject(error)
+        });
       });
     },
     archiveConversation: async () => {
