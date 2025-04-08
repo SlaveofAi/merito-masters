@@ -77,19 +77,25 @@ export const useChatActions = (
         }
       }
       
-      // Insert the message
-      const newMessage = {
+      // Prepare the message data
+      const messageData: any = {
         conversation_id: convId,
         sender_id: user.id,
         receiver_id: contactId,
         content: content
       };
+      
+      // Add metadata if provided
+      if (metadata) {
+        messageData.metadata = metadata;
+      }
 
-      console.log("Sending message:", newMessage);
+      console.log("Sending message with data:", messageData);
 
+      // Insert the message
       const { data: insertedMessage, error: msgError } = await supabase
         .from('chat_messages')
-        .insert([newMessage])
+        .insert([messageData])
         .select();
         
       if (msgError) {
@@ -102,17 +108,22 @@ export const useChatActions = (
       
       // If this is a booking request, create entry in booking_requests table
       if (metadata?.type === 'booking_request' && metadata.booking_id) {
-        console.log("Creating booking request entry");
+        console.log("Creating booking request entry with metadata:", metadata);
         
         // Normalize userType for consistent comparison
         const normalizedUserType = userType?.toLowerCase() || '';
+        
+        const craftsman_id = normalizedUserType === 'customer' ? contactId : user.id;
+        const customer_id = normalizedUserType === 'customer' ? user.id : contactId;
+        
+        console.log("Booking participants - craftsman:", craftsman_id, "customer:", customer_id);
         
         // Create booking in booking_requests table
         const bookingData = {
           id: metadata.booking_id,
           conversation_id: convId,
-          craftsman_id: normalizedUserType === 'customer' ? contactId : user.id,
-          customer_id: normalizedUserType === 'customer' ? user.id : contactId,
+          craftsman_id,
+          customer_id,
           customer_name: normalizedUserType === 'customer' ? (user.user_metadata?.name || "Customer") : "Customer",
           date: metadata.details?.date || new Date().toISOString().split('T')[0],
           start_time: metadata.details?.time || "00:00",
@@ -243,6 +254,7 @@ export const useChatActions = (
       }
       
       console.log(`Sending message to ${selectedContact.name}:`, content);
+      console.log("With metadata:", metadata);
       
       // Use contactId for the database operations
       const contactIdToUse = selectedContact.contactId || selectedContact.id;
