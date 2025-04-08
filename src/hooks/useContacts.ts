@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -126,8 +125,8 @@ export const useContacts = () => {
           
           // Use a unique key for UI purposes but store the actual contactId separately
           return {
-            id: contact.id, // Use only the contact's real ID
-            contactId: contact.id, // Store the actual contact ID separately
+            id: contactId, // Use the contact's real ID as the primary ID
+            contactId: contactId, // Store the actual contact ID separately
             name: contact.name,
             avatar_url: contact.profile_image_url,
             last_message: lastMessage ? lastMessage.content : 'Kliknite pre zobrazenie správ',
@@ -143,10 +142,27 @@ export const useContacts = () => {
       });
       
       const resolvedContacts = await Promise.all(contactPromises);
-      // Filter out null values and ensure we have unique contacts
+      
+      // Filter out null values and ensure we have unique contacts by contact ID
       const filteredContacts = resolvedContacts.filter(contact => contact !== null) as ChatContact[];
-      console.log(`Retrieved ${filteredContacts.length} contacts with conversations`);
-      return filteredContacts;
+      
+      // Create a map to store unique contacts by contactId
+      const uniqueContactsMap = new Map<string, ChatContact>();
+      
+      // Process contacts to keep only the most recent conversation for each contact
+      filteredContacts.forEach(contact => {
+        // If this contact is not yet in our map, or if it has a more recent message than the stored one, update it
+        if (!uniqueContactsMap.has(contact.contactId) || 
+            (new Date(contact.last_message_time) > new Date(uniqueContactsMap.get(contact.contactId)!.last_message_time))) {
+          uniqueContactsMap.set(contact.contactId, contact);
+        }
+      });
+      
+      // Convert the map back to an array
+      const uniqueContacts = Array.from(uniqueContactsMap.values());
+      
+      console.log(`Retrieved ${uniqueContacts.length} unique contacts with conversations`);
+      return uniqueContacts;
     },
     enabled: !!user,
   });
