@@ -15,12 +15,7 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
       storage: localStorage
     },
-    // Enhanced configuration for better reliability
-    realtime: {
-      params: {
-        eventsPerSecond: 10
-      }
-    },
+    // Basic configuration for better reliability
     global: {
       fetch: (url: RequestInfo | URL, options?: RequestInit) => {
         // Add retry logic for fetch operations
@@ -36,45 +31,13 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Connection check function with retries
-export const checkRealtimeConnection = async (retries = 3): Promise<boolean> => {
-  let attempts = 0;
-  
-  while (attempts < retries) {
-    try {
-      console.log(`Attempting to check Supabase realtime connection (attempt ${attempts + 1}/${retries})`);
-      
-      // Create a temporary channel to test connection
-      const tempChannel = supabase.channel(`connection-test-${Date.now()}`);
-      
-      const status = await new Promise<string>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Connection check timeout'));
-        }, 5000);
-        
-        const subscription = tempChannel.subscribe((status) => {
-          clearTimeout(timeout);
-          resolve(status);
-          subscription.unsubscribe();
-        });
-      });
-      
-      await supabase.removeChannel(tempChannel);
-      console.log(`Realtime connection check result: ${status}`);
-      return status === 'SUBSCRIBED';
-    } catch (e) {
-      console.error(`Realtime connection check failed (attempt ${attempts + 1}/${retries}):`, e);
-      attempts++;
-      
-      if (attempts >= retries) {
-        console.error('All realtime connection check attempts failed');
-        return false;
-      }
-      
-      // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
+// Simple connection check function
+export const checkConnection = async (): Promise<boolean> => {
+  try {
+    const { error } = await supabase.from('profiles').select('id').limit(1);
+    return !error;
+  } catch (e) {
+    console.error('Connection check failed:', e);
+    return false;
   }
-  
-  return false;
 };

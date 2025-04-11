@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ChatContact, Message, MessageMetadata } from "@/types/chat";
+import { ChatContact, MessageMetadata } from "@/types/chat";
 import { v4 as uuidv4 } from 'uuid';
 
 export const useChatActions = (
@@ -29,169 +29,108 @@ export const useChatActions = (
     }) => {
       if (!user || !contactId || !content.trim()) {
         console.error("Missing required data for sending message", { user, contactId, content });
-        return null;
+        throw new Error("Missing data for sending message");
       }
       
+      // Get or create conversation
       let convId = conversationId;
       
-      // Check for existing conversation first
       if (!convId) {
-        console.log("No conversation ID provided, checking for existing conversation");
-        
-        // Normalize userType to lowercase for consistent comparison
+        // Determine customer and craftsman IDs based on user type
         const normalizedUserType = userType?.toLowerCase() || '';
+        const customerId = normalizedUserType === 'customer' ? user.id : contactId;
+        const craftsmanId = normalizedUserType === 'craftsman' ? user.id : contactId;
         
         try {
           // Check if conversation already exists
           const { data: existingConv, error: fetchError } = await supabase
             .from('chat_conversations')
             .select('id')
-            .eq('customer_id', normalizedUserType === 'customer' ? user.id : contactId)
-            .eq('craftsman_id', normalizedUserType === 'craftsman' ? user.id : contactId)
+            .eq('customer_id', customerId)
+            .eq('craftsman_id', craftsmanId)
             .maybeSingle();
             
           if (fetchError) {
             console.error("Error checking for existing conversation:", fetchError);
-            throw new Error("Nastala chyba pri overovaní existujúcej konverzácie");
-          } else if (existingConv) {
-            convId = existingConv.id;
-            console.log("Found existing conversation:", convId);
+            throw new Error("Error checking for existing conversation");
           }
-        } catch (err) {
-          console.error("Error checking for existing conversation:", err);
-          throw new Error("Nastala chyba pri overovaní existujúcej konverzácie");
-        }
-        
-        // Create a new conversation if it doesn't exist
-        if (!convId) {
-          console.log("Creating new conversation");
           
-          try {
-            const newConversation = {
-              customer_id: normalizedUserType === 'customer' ? user.id : contactId,
-              craftsman_id: normalizedUserType === 'craftsman' ? user.id : contactId,
-            };
-
-            console.log("New conversation data:", newConversation);
-
-            const { data: insertedConv, error: convError } = await supabase
+          if (existingConv) {
+            convId = existingConv.id;
+          } else {
+            // Create new conversation
+            const { data: newConv, error: insertError } = await supabase
               .from('chat_conversations')
-              .insert(newConversation)
+              .insert({
+                customer_id: customerId,
+                craftsman_id: craftsmanId
+              })
               .select();
               
-            if (convError) {
-              console.error("Error creating conversation:", convError);
-              throw new Error("Nastala chyba pri vytváraní konverzácie");
-            } else if (insertedConv && insertedConv.length > 0) {
-              convId = insertedConv[0].id;
-              console.log("Created new conversation:", convId);
-            } else {
-              throw new Error("Nastala chyba pri vytváraní konverzácie - žiadne dáta");
+            if (insertError) {
+              console.error("Error creating conversation:", insertError);
+              throw new Error("Error creating conversation");
             }
-          } catch (err) {
-            console.error("Error creating conversation:", err);
-            throw new Error("Nastala chyba pri vytváraní konverzácie");
+            
+            if (newConv && newConv.length > 0) {
+              convId = newConv[0].id;
+            } else {
+              throw new Error("Failed to create conversation");
+            }
           }
+        } catch (err) {
+          console.error("Error with conversation:", err);
+          throw err;
         }
       }
       
-      if (!convId) {
-        console.error("Failed to get or create conversation");
-        throw new Error("Nastala chyba pri vytváraní konverzácie");
-      }
-      
-      // Generate a booking_id if this is a booking request and doesn't have one
+      // Handle booking metadata
       if (metadata?.type === 'booking_request' && !metadata.booking_id) {
-        const bookingId = uuidv4();
-        console.log("Generated booking ID for request:", bookingId);
-        metadata.booking_id = bookingId;
+        metadata.booking_id = uuidv4();
       }
       
       // Prepare message data
-      const newMessage = {
+      const messageData: any = {
         conversation_id: convId,
         sender_id: user.id,
         receiver_id: contactId,
-        content: content,
+        content: content
       };
-
+      
       // Only add metadata if it exists
-      let messageToInsert: any = {...newMessage};
-      
-      if (metadata && Object.keys(metadata).length > 0) {
-        console.log("Adding metadata to message:", JSON.stringify(metadata));
-        messageToInsert.metadata = metadata;
-      } else {
-        console.log("Sending message without metadata");
-      }
-
-      console.log("Final message to insert:", JSON.stringify(messageToInsert));
-
-      // Retry sending the message up to 3 times if it fails
-      let retries = 0;
-      let messageSuccess = false;
-      let insertedMessage = null;
-      
-      while (!messageSuccess && retries < 3) {
-        try {
-          const { data, error: msgError } = await supabase
-            .from('chat_messages')
-            .insert(messageToInsert)
-            .select();
-            
-          if (msgError) {
-            console.error(`Error sending message (attempt ${retries + 1}):`, msgError);
-            retries++;
-            // Wait before retrying (exponential backoff)
-            if (retries < 3) {
-              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
-            }
-          } else {
-            messageSuccess = true;
-            insertedMessage = data && data.length > 0 ? data[0] : null;
-            break;
-          }
-        } catch (err) {
-          console.error(`Exception sending message (attempt ${retries + 1}):`, err);
-          retries++;
-          if (retries < 3) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
-          }
-        }
+      if (metadata) {
+        messageData.metadata = metadata;
       }
       
-      if (!messageSuccess) {
-        throw new Error("Nastala chyba pri odosielaní správy po viacerých pokusoch");
-      }
-      
-      console.log("Message sent successfully:", insertedMessage);
-      
-      // If this is a booking request, create entry in booking_requests table
-      if (metadata?.type === 'booking_request' && metadata.booking_id) {
-        console.log("Creating booking request entry with ID:", metadata.booking_id);
+      // Send message
+      const { data: message, error: messageError } = await supabase
+        .from('chat_messages')
+        .insert(messageData)
+        .select();
         
+      if (messageError) {
+        console.error("Error sending message:", messageError);
+        throw new Error("Error sending message");
+      }
+      
+      // Create booking request if needed
+      if (metadata?.type === 'booking_request' && metadata.booking_id) {
         try {
-          // Normalize userType for consistent comparison
           const normalizedUserType = userType?.toLowerCase() || '';
           
-          // Create booking in booking_requests table
           const bookingData = {
             id: metadata.booking_id,
             conversation_id: convId,
             craftsman_id: normalizedUserType === 'customer' ? contactId : user.id,
             customer_id: normalizedUserType === 'customer' ? user.id : contactId,
-            customer_name: normalizedUserType === 'customer' ? (user.user_metadata?.name || "Customer") : "Customer",
+            customer_name: user.user_metadata?.name || "Customer",
             date: metadata.details?.date || new Date().toISOString().split('T')[0],
             start_time: metadata.details?.time || "00:00",
             end_time: metadata.details?.time ? 
               (parseInt(metadata.details.time.split(':')[0]) + 1) + ":" + metadata.details.time.split(':')[1] : 
               "01:00",
-            message: metadata.details?.message || null,
-            amount: metadata.details?.amount || null,
-            image_url: metadata.details?.image_url || null
+            message: metadata.details?.message || null
           };
-          
-          console.log("Creating booking with data:", JSON.stringify(bookingData));
           
           const { error: bookingError } = await supabase
             .from('booking_requests')
@@ -199,60 +138,44 @@ export const useChatActions = (
             
           if (bookingError) {
             console.error("Error creating booking request:", bookingError);
-            // Log but don't throw - the message was already sent
-            console.warn("Booking request creation failed, but message was sent");
-          } else {
-            console.log("Booking request created successfully");
           }
         } catch (err) {
-          console.error("Error creating booking request:", err);
-          // Log but don't throw - the message was already sent
-          console.warn("Booking request creation failed with exception, but message was sent");
+          console.error("Error creating booking:", err);
         }
       }
       
+      // Update conversation timestamp
       try {
-        // Update conversation's updated_at timestamp
-        const { error: updateError } = await supabase
+        await supabase
           .from('chat_conversations')
           .update({ updated_at: new Date().toISOString() })
           .eq('id', convId);
-          
-        if (updateError) {
-          console.error("Error updating conversation timestamp:", updateError);
-        }
       } catch (err) {
         console.error("Error updating conversation timestamp:", err);
       }
       
-      return { message: insertedMessage, conversationId: convId };
+      return { message, conversationId: convId };
     },
     onSuccess: (data) => {
-      if (data) {
-        console.log("Send message mutation succeeded:", data);
-        
-        // If a new conversation was created, update the contact
-        if (selectedContact && !selectedContact.conversation_id && data.conversationId) {
-          setSelectedContact({
-            ...selectedContact,
-            conversation_id: data.conversationId
-          });
-        }
-        
-        // Refresh messages
-        refetchMessages();
-        
-        // Refresh contact list
-        queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+      // Update selected contact if needed
+      if (selectedContact && !selectedContact.conversation_id && data?.conversationId) {
+        setSelectedContact({
+          ...selectedContact,
+          conversation_id: data.conversationId
+        });
       }
+      
+      // Refresh data
+      refetchMessages();
+      queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
     },
     onError: (error: any) => {
-      console.error("Send message mutation failed:", error);
+      console.error("Error sending message:", error);
       toast.error(error?.message || "Nastala chyba pri odosielaní správy");
     }
   });
 
-  // Mutation for archiving and deleting conversations
+  // Mutation for archiving or deleting conversations
   const updateConversationMutation = useMutation({
     mutationFn: async ({ 
       conversationId, 
@@ -262,7 +185,6 @@ export const useChatActions = (
       action: 'archive' | 'delete';
     }) => {
       if (!conversationId || !userType) {
-        console.error("Missing required data for updating conversation", { conversationId, userType });
         return null;
       }
       
@@ -270,89 +192,53 @@ export const useChatActions = (
         ? (userType.toLowerCase() === 'customer' ? 'is_archived_by_customer' : 'is_archived_by_craftsman')
         : (userType.toLowerCase() === 'customer' ? 'is_deleted_by_customer' : 'is_deleted_by_craftsman');
         
-      console.log(`${action === 'archive' ? 'Archiving' : 'Deleting'} conversation ${conversationId}`);
-      
-      const updateData: Record<string, boolean> = {};
-      updateData[fieldToUpdate] = true;
-      
       const { error } = await supabase
         .from('chat_conversations')
-        .update(updateData)
+        .update({ [fieldToUpdate]: true })
         .eq('id', conversationId);
         
       if (error) {
-        console.error(`Error ${action}ing conversation:`, error);
-        return { success: false, error };
+        throw error;
       }
       
-      return { success: true, conversationId };
+      return { success: true };
     },
-    onSuccess: (data, variables) => {
-      if (data?.success) {
-        const action = variables.action;
-        console.log(`Conversation ${action} successful:`, data);
-        
-        // Reset selected contact
-        setSelectedContact(null);
-        
-        // Show success message
-        toast.success(action === 'archive' 
-          ? "Konverzácia bola archivovaná" 
-          : "Konverzácia bola zmazaná"
-        );
-        
-        // Refresh the contacts list
-        queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
-      }
+    onSuccess: () => {
+      setSelectedContact(null);
+      queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
     },
     onError: (error, variables) => {
       const action = variables.action;
-      console.error(`Conversation ${action} failed:`, error);
       toast.error(`Nastala chyba pri ${action === 'archive' ? 'archivácii' : 'mazaní'} konverzácie`);
     }
   });
 
+  // Public methods
   return {
     sendMessage: async (content: string, metadata?: MessageMetadata) => {
       if (!selectedContact || !content.trim() || !user) {
-        console.error("Cannot send message - missing data", { selectedContact, content, user });
         return Promise.reject("Missing data for sending message");
       }
       
-      console.log(`Sending message to ${selectedContact.name}:`, content);
-      console.log("With metadata:", JSON.stringify(metadata));
-      
-      // Use contactId for the database operations
       const contactIdToUse = selectedContact.contactId || selectedContact.id;
       
-      return new Promise((resolve, reject) => {
-        sendMessageMutation.mutate({
-          content,
-          contactId: contactIdToUse,
-          conversationId: selectedContact.conversation_id,
-          metadata
-        }, {
-          onSuccess: () => resolve(true),
-          onError: (error) => reject(error)
-        });
+      return sendMessageMutation.mutateAsync({
+        content,
+        contactId: contactIdToUse,
+        conversationId: selectedContact.conversation_id,
+        metadata
       });
     },
-    archiveConversation: async () => {
-      if (!selectedContact?.conversation_id || !user) {
-        console.error("Cannot archive - missing data", { selectedContact, user });
-        return;
-      }
+    archiveConversation: () => {
+      if (!selectedContact?.conversation_id || !user) return;
       
       updateConversationMutation.mutate({
         conversationId: selectedContact.conversation_id,
         action: 'archive'
       });
     },
-    deleteConversation: async () => {
-      if (!selectedContact?.conversation_id || !user) {
-        console.error("Cannot delete - missing data", { selectedContact, user });
-        return;
-      }
+    deleteConversation: () => {
+      if (!selectedContact?.conversation_id || !user) return;
       
       updateConversationMutation.mutate({
         conversationId: selectedContact.conversation_id,

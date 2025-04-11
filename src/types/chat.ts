@@ -2,7 +2,7 @@
 // Types for chat functionality
 export interface ChatContact {
   id: string;
-  contactId?: string;  // Added for distinguishing between UI id and actual contact id
+  contactId?: string;  // For distinguishing between UI id and actual contact id
   name: string;
   avatar_url?: string;
   last_message?: string;
