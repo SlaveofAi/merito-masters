@@ -1,8 +1,10 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message, MessageMetadata } from "@/types/chat";
+import { v4 as uuidv4 } from 'uuid';
 
 export const useChatActions = (
   selectedContact: ChatContact | null,
@@ -39,43 +41,56 @@ export const useChatActions = (
         // Normalize userType to lowercase for consistent comparison
         const normalizedUserType = userType?.toLowerCase() || '';
         
-        // Check if conversation already exists
-        const { data: existingConv, error: fetchError } = await supabase
-          .from('chat_conversations')
-          .select('id')
-          .eq('customer_id', normalizedUserType === 'customer' ? user.id : contactId)
-          .eq('craftsman_id', normalizedUserType === 'craftsman' ? user.id : contactId)
-          .maybeSingle();
-          
-        if (fetchError) {
-          console.error("Error checking for existing conversation:", fetchError);
-        } else if (existingConv) {
-          convId = existingConv.id;
-          console.log("Found existing conversation:", convId);
+        try {
+          // Check if conversation already exists
+          const { data: existingConv, error: fetchError } = await supabase
+            .from('chat_conversations')
+            .select('id')
+            .eq('customer_id', normalizedUserType === 'customer' ? user.id : contactId)
+            .eq('craftsman_id', normalizedUserType === 'craftsman' ? user.id : contactId)
+            .maybeSingle();
+            
+          if (fetchError) {
+            console.error("Error checking for existing conversation:", fetchError);
+            throw new Error("Nastala chyba pri overovaní existujúcej konverzácie");
+          } else if (existingConv) {
+            convId = existingConv.id;
+            console.log("Found existing conversation:", convId);
+          }
+        } catch (err) {
+          console.error("Error checking for existing conversation:", err);
+          throw new Error("Nastala chyba pri overovaní existujúcej konverzácie");
         }
         
         // Create a new conversation if it doesn't exist
         if (!convId) {
           console.log("Creating new conversation");
           
-          const newConversation = {
-            customer_id: normalizedUserType === 'customer' ? user.id : contactId,
-            craftsman_id: normalizedUserType === 'craftsman' ? user.id : contactId,
-          };
+          try {
+            const newConversation = {
+              customer_id: normalizedUserType === 'customer' ? user.id : contactId,
+              craftsman_id: normalizedUserType === 'craftsman' ? user.id : contactId,
+            };
 
-          console.log("New conversation data:", newConversation);
+            console.log("New conversation data:", newConversation);
 
-          const { data: insertedConv, error: convError } = await supabase
-            .from('chat_conversations')
-            .insert(newConversation)
-            .select();
-            
-          if (convError) {
-            console.error("Error creating conversation:", convError);
+            const { data: insertedConv, error: convError } = await supabase
+              .from('chat_conversations')
+              .insert(newConversation)
+              .select();
+              
+            if (convError) {
+              console.error("Error creating conversation:", convError);
+              throw new Error("Nastala chyba pri vytváraní konverzácie");
+            } else if (insertedConv && insertedConv.length > 0) {
+              convId = insertedConv[0].id;
+              console.log("Created new conversation:", convId);
+            } else {
+              throw new Error("Nastala chyba pri vytváraní konverzácie - žiadne dáta");
+            }
+          } catch (err) {
+            console.error("Error creating conversation:", err);
             throw new Error("Nastala chyba pri vytváraní konverzácie");
-          } else if (insertedConv && insertedConv.length > 0) {
-            convId = insertedConv[0].id;
-            console.log("Created new conversation:", convId);
           }
         }
       }
@@ -85,12 +100,19 @@ export const useChatActions = (
         throw new Error("Nastala chyba pri vytváraní konverzácie");
       }
       
+      // Generate a booking_id if this is a booking request and doesn't have one
+      if (metadata?.type === 'booking_request' && !metadata.booking_id) {
+        const bookingId = uuidv4();
+        console.log("Generated booking ID for request:", bookingId);
+        metadata.booking_id = bookingId;
+      }
+      
       // Prepare message data
       const newMessage = {
         conversation_id: convId,
         sender_id: user.id,
         receiver_id: contactId,
-        content: content
+        content: content,
       };
 
       // Only add metadata if it exists
@@ -126,7 +148,7 @@ export const useChatActions = (
             }
           } else {
             messageSuccess = true;
-            insertedMessage = data;
+            insertedMessage = data && data.length > 0 ? data[0] : null;
             break;
           }
         } catch (err) {
@@ -148,48 +170,59 @@ export const useChatActions = (
       if (metadata?.type === 'booking_request' && metadata.booking_id) {
         console.log("Creating booking request entry with ID:", metadata.booking_id);
         
-        // Normalize userType for consistent comparison
-        const normalizedUserType = userType?.toLowerCase() || '';
-        
-        // Create booking in booking_requests table
-        const bookingData = {
-          id: metadata.booking_id,
-          conversation_id: convId,
-          craftsman_id: normalizedUserType === 'customer' ? contactId : user.id,
-          customer_id: normalizedUserType === 'customer' ? user.id : contactId,
-          customer_name: normalizedUserType === 'customer' ? (user.user_metadata?.name || "Customer") : "Customer",
-          date: metadata.details?.date || new Date().toISOString().split('T')[0],
-          start_time: metadata.details?.time || "00:00",
-          end_time: metadata.details?.time ? 
-            (parseInt(metadata.details.time.split(':')[0]) + 1) + ":" + metadata.details.time.split(':')[1] : 
-            "01:00",
-          message: metadata.details?.message || null,
-          amount: metadata.details?.amount || null,
-          image_url: metadata.details?.image_url || null
-        };
-        
-        console.log("Creating booking with data:", JSON.stringify(bookingData));
-        
-        const { error: bookingError } = await supabase
-          .from('booking_requests')
-          .insert(bookingData);
+        try {
+          // Normalize userType for consistent comparison
+          const normalizedUserType = userType?.toLowerCase() || '';
           
-        if (bookingError) {
-          console.error("Error creating booking request:", bookingError);
-          // Don't throw error here - the message was already sent
-        } else {
-          console.log("Booking request created successfully");
+          // Create booking in booking_requests table
+          const bookingData = {
+            id: metadata.booking_id,
+            conversation_id: convId,
+            craftsman_id: normalizedUserType === 'customer' ? contactId : user.id,
+            customer_id: normalizedUserType === 'customer' ? user.id : contactId,
+            customer_name: normalizedUserType === 'customer' ? (user.user_metadata?.name || "Customer") : "Customer",
+            date: metadata.details?.date || new Date().toISOString().split('T')[0],
+            start_time: metadata.details?.time || "00:00",
+            end_time: metadata.details?.time ? 
+              (parseInt(metadata.details.time.split(':')[0]) + 1) + ":" + metadata.details.time.split(':')[1] : 
+              "01:00",
+            message: metadata.details?.message || null,
+            amount: metadata.details?.amount || null,
+            image_url: metadata.details?.image_url || null
+          };
+          
+          console.log("Creating booking with data:", JSON.stringify(bookingData));
+          
+          const { error: bookingError } = await supabase
+            .from('booking_requests')
+            .insert(bookingData);
+            
+          if (bookingError) {
+            console.error("Error creating booking request:", bookingError);
+            // Log but don't throw - the message was already sent
+            console.warn("Booking request creation failed, but message was sent");
+          } else {
+            console.log("Booking request created successfully");
+          }
+        } catch (err) {
+          console.error("Error creating booking request:", err);
+          // Log but don't throw - the message was already sent
+          console.warn("Booking request creation failed with exception, but message was sent");
         }
       }
       
-      // Update conversation's updated_at timestamp
-      const { error: updateError } = await supabase
-        .from('chat_conversations')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', convId);
-        
-      if (updateError) {
-        console.error("Error updating conversation timestamp:", updateError);
+      try {
+        // Update conversation's updated_at timestamp
+        const { error: updateError } = await supabase
+          .from('chat_conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', convId);
+          
+        if (updateError) {
+          console.error("Error updating conversation timestamp:", updateError);
+        }
+      } catch (err) {
+        console.error("Error updating conversation timestamp:", err);
       }
       
       return { message: insertedMessage, conversationId: convId };
@@ -328,5 +361,3 @@ export const useChatActions = (
     }
   };
 };
-
-const updateConversationMutation = { mutate: () => {} } as any;

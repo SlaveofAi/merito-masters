@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
 import { useContacts } from "@/hooks/useContacts";
@@ -8,6 +8,8 @@ import { useChatActions } from "@/hooks/useChatActions";
 import { useChatSubscription } from "@/hooks/useChatSubscription";
 import { ChatContact } from "@/types/chat";
 import { useNavigate, useLocation } from "react-router-dom";
+import { supabase, checkRealtimeConnection } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Chat: React.FC = () => {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
@@ -22,8 +24,39 @@ const Chat: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // We don't need to show subscription errors anymore
+  const [connectionChecked, setConnectionChecked] = useState(false);
+  
+  // Callback for refreshing data
+  const refreshData = useCallback(() => {
+    console.log("Manual data refresh triggered");
+    refetchContacts();
+    if (selectedContact) {
+      refetchMessages();
+    }
+  }, [refetchContacts, refetchMessages, selectedContact]);
+  
+  // We don't show subscription errors anymore
   useChatSubscription(selectedContact, refetchMessages, refetchContacts);
+  
+  // Check Supabase connection on component mount
+  useEffect(() => {
+    const checkSupabaseConnection = async () => {
+      try {
+        const isConnected = await checkRealtimeConnection(2);
+        setConnectionChecked(true);
+        console.log("Supabase connection check result:", isConnected);
+        
+        if (!isConnected) {
+          // Instead of showing an error, just log and ensure we use polling for updates
+          console.warn("Supabase realtime connection not available, using polling fallback");
+        }
+      } catch (err) {
+        console.error("Error checking Supabase connection:", err);
+      }
+    };
+    
+    checkSupabaseConnection();
+  }, []);
   
   useEffect(() => {
     console.log("Current contacts:", contacts);
@@ -36,14 +69,11 @@ const Chat: React.FC = () => {
     
     const refreshInterval = setInterval(() => {
       console.log("Performing scheduled data refresh");
-      refetchContacts();
-      if (selectedContact) {
-        refetchMessages();
-      }
-    }, 5000); // Refresh more frequently
+      refreshData();
+    }, 5000); // Refresh every 5 seconds
     
     return () => clearInterval(refreshInterval);
-  }, [refetchContacts, refetchMessages, selectedContact]);
+  }, [refetchContacts, refreshData]);
   
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -100,23 +130,31 @@ const Chat: React.FC = () => {
     setSelectedContact(contact);
   };
   
-  const handleSendMessage = (content: string, metadata?: any) => {
+  const handleSendMessage = async (content: string, metadata?: any) => {
     console.log("Sending message with content:", content);
     if (metadata) {
       console.log("With metadata:", metadata);
     }
     
-    sendMessage(content, metadata)
-      .then(() => {
-        // After sending a message, refetch messages to update the UI
-        setTimeout(() => {
-          refetchMessages();
-          refetchContacts();
-        }, 1000);
-      })
-      .catch((error) => {
-        console.error("Error sending message:", error);
-      });
+    try {
+      await sendMessage(content, metadata);
+      
+      // After sending a message, refetch messages to update the UI
+      setTimeout(() => {
+        console.log("Refreshing data after sending message");
+        refetchMessages();
+        refetchContacts();
+      }, 1000);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Nastala chyba pri odosielaní správy. Skúste to prosím znova.");
+      
+      // Still refresh to show any partial updates
+      setTimeout(() => {
+        refetchMessages();
+        refetchContacts();
+      }, 1000);
+    }
   };
   
   return (

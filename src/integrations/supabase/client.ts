@@ -15,31 +15,66 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
       storage: localStorage
     },
-    // Enhanced realtime configuration
+    // Enhanced configuration for better reliability
     realtime: {
       params: {
         eventsPerSecond: 10
+      }
+    },
+    global: {
+      fetch: (...args) => {
+        // Add retry logic for fetch operations
+        return fetch(...args).catch(err => {
+          console.error('Fetch error in Supabase client:', err);
+          return fetch(...args);
+        });
+      },
+      headers: {
+        'X-Client-Info': 'lovable-app',
       }
     }
   }
 );
 
-// Connection check function
-export const checkRealtimeConnection = async (): Promise<boolean> => {
-  try {
-    // Create a temporary channel to test connection
-    const tempChannel = supabase.channel('connection-test');
-    const status = await new Promise<string>((resolve) => {
-      const subscription = tempChannel.subscribe((status) => {
-        resolve(status);
-        subscription.unsubscribe();
+// Connection check function with retries
+export const checkRealtimeConnection = async (retries = 3): Promise<boolean> => {
+  let attempts = 0;
+  
+  while (attempts < retries) {
+    try {
+      console.log(`Attempting to check Supabase realtime connection (attempt ${attempts + 1}/${retries})`);
+      
+      // Create a temporary channel to test connection
+      const tempChannel = supabase.channel(`connection-test-${Date.now()}`);
+      
+      const status = await new Promise<string>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Connection check timeout'));
+        }, 5000);
+        
+        const subscription = tempChannel.subscribe((status) => {
+          clearTimeout(timeout);
+          resolve(status);
+          subscription.unsubscribe();
+        });
       });
-    });
-    
-    await supabase.removeChannel(tempChannel);
-    return status === 'SUBSCRIBED';
-  } catch (e) {
-    console.error('Realtime connection check failed:', e);
-    return false;
+      
+      await supabase.removeChannel(tempChannel);
+      console.log(`Realtime connection check result: ${status}`);
+      return status === 'SUBSCRIBED';
+    } catch (e) {
+      console.error(`Realtime connection check failed (attempt ${attempts + 1}/${retries}):`, e);
+      attempts++;
+      
+      if (attempts >= retries) {
+        console.error('All realtime connection check attempts failed');
+        return false;
+      }
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
   }
+  
+  return false;
 };
