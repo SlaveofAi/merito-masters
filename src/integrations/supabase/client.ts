@@ -41,3 +41,54 @@ export const checkConnection = async (): Promise<boolean> => {
     return false;
   }
 };
+
+// Check Supabase Realtime connection
+export const checkRealtimeConnection = async (retries = 1): Promise<boolean> => {
+  try {
+    // Create a temporary channel for testing realtime connection
+    const testChannelName = `test-connection-${Date.now()}`;
+    const channel = supabase.channel(testChannelName);
+    
+    // Subscribe to the channel and return a promise
+    const connectionPromise = new Promise<boolean>((resolve) => {
+      // Set a timeout in case subscription hangs
+      const timeout = setTimeout(() => {
+        console.log('Realtime connection check timed out');
+        resolve(false);
+      }, 3000);
+      
+      channel
+        .on('system', { event: 'connected' }, () => {
+          clearTimeout(timeout);
+          console.log('Realtime connection established');
+          resolve(true);
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            // Already handled by the 'connected' event
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            clearTimeout(timeout);
+            console.log(`Realtime subscription failed with status: ${status}`);
+            resolve(false);
+          }
+        });
+    });
+    
+    // Wait for the connection result
+    const isConnected = await connectionPromise;
+    
+    // Clean up the test channel
+    supabase.removeChannel(channel);
+    
+    // If connection failed and we have retries left, try again
+    if (!isConnected && retries > 0) {
+      console.log(`Retrying realtime connection check (${retries} attempts left)`);
+      return checkRealtimeConnection(retries - 1);
+    }
+    
+    return isConnected;
+  } catch (e) {
+    console.error('Realtime connection check error:', e);
+    return false;
+  }
+};
