@@ -1,4 +1,7 @@
 
+-- Enable full replica identity for realtime subscriptions on chat_messages
+ALTER TABLE public.chat_messages REPLICA IDENTITY FULL;
+
 -- Add metadata column to chat_messages if it doesn't exist
 DO $$ 
 BEGIN
@@ -28,5 +31,18 @@ BEGIN
           AND (auth.uid() = customer_id OR auth.uid() = craftsman_id)
         )
       );
+  END IF;
+END $$;
+
+-- Add table to realtime publication if not already added
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND schemaname = 'public' 
+    AND tablename = 'chat_messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_messages;
   END IF;
 END $$;

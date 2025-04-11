@@ -15,21 +15,31 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
       storage: localStorage
     },
-    // Configure automatic schema detection to fix metadata column issue
-    db: {
-      schema: 'public'
-    },
-    // Disable realtime to avoid connection issues
+    // Enhanced realtime configuration
     realtime: {
       params: {
-        eventsPerSecond: 1 // Reduce rate to avoid overloading
+        eventsPerSecond: 10
       }
     }
   }
 );
 
-// Enhanced connection check function
+// Connection check function
 export const checkRealtimeConnection = async (): Promise<boolean> => {
-  // Always return true, we're not using realtime
-  return true;
+  try {
+    // Create a temporary channel to test connection
+    const tempChannel = supabase.channel('connection-test');
+    const status = await new Promise<string>((resolve) => {
+      const subscription = tempChannel.subscribe((status) => {
+        resolve(status);
+        subscription.unsubscribe();
+      });
+    });
+    
+    await supabase.removeChannel(tempChannel);
+    return status === 'SUBSCRIBED';
+  } catch (e) {
+    console.error('Realtime connection check failed:', e);
+    return false;
+  }
 };

@@ -72,8 +72,7 @@ export const useChatActions = (
             
           if (convError) {
             console.error("Error creating conversation:", convError);
-            toast.error("Nastala chyba pri vytváraní konverzácie");
-            return null;
+            throw new Error("Nastala chyba pri vytváraní konverzácie");
           } else if (insertedConv && insertedConv.length > 0) {
             convId = insertedConv[0].id;
             console.log("Created new conversation:", convId);
@@ -83,8 +82,7 @@ export const useChatActions = (
       
       if (!convId) {
         console.error("Failed to get or create conversation");
-        toast.error("Nastala chyba pri vytváraní konverzácie");
-        return null;
+        throw new Error("Nastala chyba pri vytváraní konverzácie");
       }
       
       // Prepare message data
@@ -97,14 +95,15 @@ export const useChatActions = (
 
       // Only add metadata if it exists
       let messageToInsert: any = {...newMessage};
+      
       if (metadata && Object.keys(metadata).length > 0) {
-        console.log("Adding metadata to message:", metadata);
+        console.log("Adding metadata to message:", JSON.stringify(metadata));
         messageToInsert.metadata = metadata;
       } else {
         console.log("Sending message without metadata");
       }
 
-      console.log("Final message to insert:", messageToInsert);
+      console.log("Final message to insert:", JSON.stringify(messageToInsert));
 
       // Retry sending the message up to 3 times if it fails
       let retries = 0;
@@ -140,15 +139,14 @@ export const useChatActions = (
       }
       
       if (!messageSuccess) {
-        toast.error("Nastala chyba pri odosielaní správy po viacerých pokusoch");
-        return null;
+        throw new Error("Nastala chyba pri odosielaní správy po viacerých pokusoch");
       }
       
       console.log("Message sent successfully:", insertedMessage);
       
       // If this is a booking request, create entry in booking_requests table
       if (metadata?.type === 'booking_request' && metadata.booking_id) {
-        console.log("Creating booking request entry");
+        console.log("Creating booking request entry with ID:", metadata.booking_id);
         
         // Normalize userType for consistent comparison
         const normalizedUserType = userType?.toLowerCase() || '';
@@ -170,7 +168,7 @@ export const useChatActions = (
           image_url: metadata.details?.image_url || null
         };
         
-        console.log("Creating booking with data:", bookingData);
+        console.log("Creating booking with data:", JSON.stringify(bookingData));
         
         const { error: bookingError } = await supabase
           .from('booking_requests')
@@ -178,7 +176,7 @@ export const useChatActions = (
           
         if (bookingError) {
           console.error("Error creating booking request:", bookingError);
-          toast.error("Návrh termínu bol odoslaný, ale nastala chyba pri vytváraní požiadavky");
+          // Don't throw error here - the message was already sent
         } else {
           console.log("Booking request created successfully");
         }
@@ -215,9 +213,9 @@ export const useChatActions = (
         queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Send message mutation failed:", error);
-      toast.error("Nastala chyba pri odosielaní správy");
+      toast.error(error?.message || "Nastala chyba pri odosielaní správy");
     }
   });
 
@@ -289,7 +287,7 @@ export const useChatActions = (
       }
       
       console.log(`Sending message to ${selectedContact.name}:`, content);
-      console.log("With metadata:", metadata);
+      console.log("With metadata:", JSON.stringify(metadata));
       
       // Use contactId for the database operations
       const contactIdToUse = selectedContact.contactId || selectedContact.id;
@@ -330,3 +328,5 @@ export const useChatActions = (
     }
   };
 };
+
+const updateConversationMutation = { mutate: () => {} } as any;

@@ -54,6 +54,7 @@ ${message ? `Správa: ${message}` : ''}`;
       }
     };
     
+    console.log("Sending booking request with metadata:", JSON.stringify(metadata));
     onSubmit(content, metadata);
   };
   

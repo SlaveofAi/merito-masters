@@ -10,7 +10,6 @@ export function parseMessageMetadata(metadata: any): MessageMetadata | undefined
   }
   
   try {
-    // Log the incoming metadata for debugging
     console.log("Raw metadata to parse:", metadata);
     
     // If metadata is a string, parse it
@@ -23,17 +22,16 @@ export function parseMessageMetadata(metadata: any): MessageMetadata | undefined
       }
     }
     
-    // If it's already an object and has the expected properties, return as is
+    // If it's already an object, return as is
     if (typeof metadata === 'object') {
-      return metadata as MessageMetadata;
+      // Make a deep copy to avoid reference issues
+      return JSON.parse(JSON.stringify(metadata));
     }
     
-    // Return undefined on inconsistent data
     console.error("Unrecognized metadata format:", metadata);
     return undefined;
   } catch (e) {
     console.error("Error parsing message metadata:", e);
-    // Return undefined on parse error instead of returning malformed data
     return undefined;
   }
 }
@@ -42,10 +40,8 @@ export function parseMessageMetadata(metadata: any): MessageMetadata | undefined
  * Processes raw message data into standardized Message format
  */
 export function processMessageData(msg: any, userId: string): Message {
-  // Safety check for null/undefined
   if (!msg || typeof msg !== 'object') {
     console.error("Invalid message data:", msg);
-    // Return a minimal valid message object to prevent runtime errors
     return {
       id: 'invalid-message-' + Date.now(),
       sender_id: '',
@@ -57,7 +53,7 @@ export function processMessageData(msg: any, userId: string): Message {
     };
   }
 
-  // Create a base message with the required fields, using optional chaining
+  // Create a base message with the required fields
   const baseMessage: Message = {
     id: msg.id || 'missing-id-' + Date.now(),
     sender_id: msg.sender_id || '',
@@ -68,10 +64,16 @@ export function processMessageData(msg: any, userId: string): Message {
     read: msg.receiver_id === userId ? true : !!msg.read,
   };
 
-  // Add metadata if it exists in the message
-  if (msg.metadata) {
-    baseMessage.metadata = msg.metadata;
-    console.log(`Message ${msg.id} has metadata:`, baseMessage.metadata);
+  // Handle metadata - debug each step for troubleshooting
+  console.log(`Processing message ${msg.id} metadata:`, msg.metadata);
+  
+  if (msg.metadata !== null && msg.metadata !== undefined) {
+    try {
+      baseMessage.metadata = parseMessageMetadata(msg.metadata);
+      console.log(`Processed metadata for message ${msg.id}:`, baseMessage.metadata);
+    } catch (err) {
+      console.error(`Error parsing metadata for message ${msg.id}:`, err);
+    }
   } else {
     // Try to detect if this is a booking message based on the content (for backward compatibility)
     if (msg.content && (
