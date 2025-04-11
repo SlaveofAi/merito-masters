@@ -22,11 +22,11 @@ export const supabase = createClient<Database>(
       }
     },
     global: {
-      fetch: (...args) => {
+      fetch: (url: RequestInfo | URL, options?: RequestInit) => {
         // Add retry logic for fetch operations
-        return fetch(...args).catch(err => {
+        return fetch(url, options).catch(err => {
           console.error('Fetch error in Supabase client:', err);
-          return fetch(...args);
+          return fetch(url, options);
         });
       },
       headers: {
