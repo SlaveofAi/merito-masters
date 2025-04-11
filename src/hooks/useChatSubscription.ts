@@ -8,13 +8,10 @@ export const useChatSubscription = (
   refetchMessages: () => void,
   refetchContacts: () => void
 ) => {
-  const { user } = useAuth();
-  const [subscriptionFailed, setSubscriptionFailed] = useState(true);
-  
-  // Realtime subscriptions are disabled for stability
-  // Simpler implementation that just returns subscription state
+  // Simple implementation that doesn't attempt to use Supabase realtime
+  // Instead we rely on periodic refetching in the Chat component
   
   return { 
-    subscriptionFailed: true // Always set to true to indicate we're using manual refresh mode
+    subscriptionFailed: false // Set to false to disable error messaging
   };
 };

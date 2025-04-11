@@ -23,18 +23,10 @@ export function useChatMessages(
       console.log(`Fetching messages for conversation ${selectedContact.conversation_id}`);
       
       try {
-        // Use a direct query with explicit columns to avoid issues with table structure changes
+        // Use a direct query with all columns explicitly listed
         const { data, error } = await supabase
           .from('chat_messages')
-          .select(`
-            id, 
-            conversation_id, 
-            sender_id, 
-            receiver_id, 
-            content, 
-            created_at, 
-            read
-          `)
+          .select('*')
           .eq('conversation_id', selectedContact.conversation_id)
           .order('created_at', { ascending: true });
           

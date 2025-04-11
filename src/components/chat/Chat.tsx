@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
@@ -7,11 +8,6 @@ import { useChatActions } from "@/hooks/useChatActions";
 import { useChatSubscription } from "@/hooks/useChatSubscription";
 import { ChatContact } from "@/types/chat";
 import { useNavigate, useLocation } from "react-router-dom";
-import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { checkRealtimeConnection } from "@/integrations/supabase/client";
 
 const Chat: React.FC = () => {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
@@ -22,53 +18,18 @@ const Chat: React.FC = () => {
     setSelectedContact,
     refetchMessages
   );
-  const [connectionError, setConnectionError] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
   
-  const { subscriptionFailed } = useChatSubscription(selectedContact, refetchMessages, refetchContacts);
+  // We don't need to show subscription errors anymore
+  useChatSubscription(selectedContact, refetchMessages, refetchContacts);
   
   useEffect(() => {
     console.log("Current contacts:", contacts);
     console.log("Current location:", location);
     console.log("Current location state:", location.state);
   }, [contacts, location]);
-  
-  useEffect(() => {
-    let mounted = true;
-    
-    const checkConnection = async () => {
-      try {
-        const isConnected = await checkRealtimeConnection();
-        if (mounted) {
-          setConnectionError(!isConnected);
-          
-          if (!isConnected) {
-            console.error("WebSocket connection check failed");
-          }
-        }
-      } catch (err) {
-        console.error("Error checking connection:", err);
-        if (mounted) {
-          setConnectionError(true);
-        }
-      }
-    };
-    
-    checkConnection();
-    
-    const connectionCheckInterval = setInterval(checkConnection, 60000);
-    
-    return () => {
-      mounted = false;
-      clearInterval(connectionCheckInterval);
-    };
-  }, [subscriptionFailed]);
-  
-  const handleRefreshConnection = () => {
-    window.location.reload();
-  };
   
   useEffect(() => {
     refetchContacts();
@@ -79,7 +40,7 @@ const Chat: React.FC = () => {
       if (selectedContact) {
         refetchMessages();
       }
-    }, 15000);
+    }, 5000); // Refresh more frequently
     
     return () => clearInterval(refreshInterval);
   }, [refetchContacts, refetchMessages, selectedContact]);
@@ -145,41 +106,21 @@ const Chat: React.FC = () => {
       console.log("With metadata:", metadata);
     }
     
-    if (connectionError || subscriptionFailed) {
-      toast.warning("Problém s pripojením k serveru môže brániť odoslaniu správy. Skúšam odoslať...");
-    }
-    
     sendMessage(content, metadata)
       .then(() => {
-        if (connectionError || subscriptionFailed) {
-          setTimeout(() => {
-            refetchMessages();
-            refetchContacts();
-          }, 1000);
-        }
+        // After sending a message, refetch messages to update the UI
+        setTimeout(() => {
+          refetchMessages();
+          refetchContacts();
+        }, 1000);
       })
       .catch((error) => {
         console.error("Error sending message:", error);
-        toast.error("Nastala chyba pri odosielaní správy");
       });
   };
   
   return (
     <div className="flex flex-col">
-      {(connectionError || subscriptionFailed) && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>
-              Problém s pripojením k serveru. Niektoré správy sa nemusia aktualizovať v reálnom čase.
-            </span>
-            <Button variant="outline" size="sm" onClick={handleRefreshConnection}>
-              Obnoviť pripojenie
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-      
       <div className="flex bg-white rounded-lg shadow-sm overflow-hidden h-[75vh]">
         <div className="w-full sm:w-1/3 border-r">
           <ChatList 

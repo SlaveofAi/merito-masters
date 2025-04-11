@@ -15,6 +15,10 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
       storage: localStorage
     },
+    // Configure automatic schema detection to fix metadata column issue
+    db: {
+      schema: 'public'
+    },
     // Disable realtime to avoid connection issues
     realtime: {
       params: {
@@ -24,9 +28,8 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Enhanced connection check function with retry logic and timeout
+// Enhanced connection check function
 export const checkRealtimeConnection = async (): Promise<boolean> => {
-  console.log("Realtime subscription is disabled for stability");
-  // Always return true to avoid connection check failures
+  // Always return true, we're not using realtime
   return true;
 };

@@ -1,3 +1,4 @@
+
 import { ChatContact, Message, MessageMetadata } from "@/types/chat";
 
 /**
@@ -24,15 +25,6 @@ export function parseMessageMetadata(metadata: any): MessageMetadata | undefined
     
     // If it's already an object and has the expected properties, return as is
     if (typeof metadata === 'object') {
-      // Convert any nested objects that might be strings
-      if (metadata.details && typeof metadata.details === 'string') {
-        try {
-          metadata.details = JSON.parse(metadata.details);
-        } catch (e) {
-          // If parsing fails, keep it as is - it might be a simple string
-          console.log("Failed to parse metadata.details, but continuing", metadata.details);
-        }
-      }
       return metadata as MessageMetadata;
     }
     
@@ -76,16 +68,10 @@ export function processMessageData(msg: any, userId: string): Message {
     read: msg.receiver_id === userId ? true : !!msg.read,
   };
 
-  // Add metadata handling with better debug output
-  if (msg.metadata !== null && msg.metadata !== undefined) {
-    try {
-      console.log(`Message ${msg.id} has raw metadata:`, msg.metadata);
-      baseMessage.metadata = parseMessageMetadata(msg.metadata);
-      console.log(`Message ${msg.id} processed metadata:`, baseMessage.metadata);
-    } catch (e) {
-      console.error(`Error processing metadata for message ${msg.id}:`, e);
-      // Don't add metadata if parsing failed
-    }
+  // Add metadata if it exists in the message
+  if (msg.metadata) {
+    baseMessage.metadata = msg.metadata;
+    console.log(`Message ${msg.id} has metadata:`, baseMessage.metadata);
   } else {
     // Try to detect if this is a booking message based on the content (for backward compatibility)
     if (msg.content && (
