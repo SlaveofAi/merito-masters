@@ -9,6 +9,7 @@ import { ChatContact } from "@/types/chat";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import BookingRequestForm from "@/components/booking/BookingRequestForm";
 
 const Chat: React.FC = () => {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
@@ -24,7 +25,6 @@ const Chat: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Callback for refreshing data
   const refreshData = useCallback(() => {
     console.log("Manual data refresh triggered");
     refetchContacts();
@@ -33,7 +33,6 @@ const Chat: React.FC = () => {
     }
   }, [refetchContacts, refetchMessages, selectedContact]);
   
-  // We don't show subscription errors anymore
   useChatSubscription(selectedContact, refetchMessages, refetchContacts);
   
   useEffect(() => {
@@ -117,14 +116,12 @@ const Chat: React.FC = () => {
     try {
       await sendMessage(content, metadata);
       
-      // After sending a message, refetch messages to update the UI
       setTimeout(() => {
         console.log("Refreshing data after sending message");
         refetchMessages();
         refetchContacts();
       }, 1000);
       
-      // If this was a booking request, show a toast notification
       if (metadata?.type === 'booking_request') {
         toast.success("Požiadavka na rezerváciu odoslaná");
       }
@@ -132,7 +129,6 @@ const Chat: React.FC = () => {
       console.error("Error sending message:", error);
       toast.error("Nastala chyba pri odosielaní správy. Skúste to prosím znova.");
       
-      // Still refresh to show any partial updates
       setTimeout(() => {
         refetchMessages();
         refetchContacts();
@@ -171,7 +167,7 @@ const Chat: React.FC = () => {
             setShowBookingForm(false);
           }}
           onCancel={() => setShowBookingForm(false)}
-          craftsmanId={selectedContact?.contactId || ''}
+          craftsmanId={selectedContact?.contactId || selectedContact?.id || ''}
         />
       )}
     </div>

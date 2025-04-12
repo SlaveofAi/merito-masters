@@ -479,6 +479,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     );
   }
   
+  const getCraftsmanId = () => {
+    return contact?.contactId || contact?.id || '';
+  };
+  
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b flex justify-between items-center">
@@ -666,6 +670,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <BookingRequestForm 
             onSubmit={handleSendBookingRequest} 
             onCancel={() => setShowBookingForm(false)}
+            craftsmanId={getCraftsmanId()}
           />
         ) : (
           <div className="space-y-4">
