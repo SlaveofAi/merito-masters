@@ -136,6 +136,12 @@ const Chat: React.FC = () => {
     }
   };
   
+  const getCraftsmanId = () => {
+    const id = selectedContact?.contactId || selectedContact?.id || '';
+    console.log("Craftsman ID for booking form:", id, "Selected contact:", selectedContact);
+    return id;
+  };
+  
   return (
     <div className="flex flex-col">
       <div className="flex bg-white rounded-lg shadow-sm overflow-hidden h-[75vh]">
@@ -167,7 +173,7 @@ const Chat: React.FC = () => {
             setShowBookingForm(false);
           }}
           onCancel={() => setShowBookingForm(false)}
-          craftsmanId={selectedContact?.contactId || selectedContact?.id || ''}
+          craftsmanId={getCraftsmanId()}
         />
       )}
     </div>

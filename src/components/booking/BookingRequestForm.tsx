@@ -55,6 +55,7 @@ const BookingRequestForm: React.FC<BookingRequestFormProps> = ({
       setError(null);
 
       try {
+        console.log("BookingRequestForm: Fetching available dates for craftsman:", craftsmanId);
         const { data, error } = await supabase
           .from('craftsman_availability')
           .select('date')
@@ -70,10 +71,10 @@ const BookingRequestForm: React.FC<BookingRequestFormProps> = ({
         if (data && data.length > 0) {
           // Convert string dates to Date objects
           const parsedDates = data.map(item => new Date(item.date));
-          console.log("Craftsman available dates:", parsedDates);
+          console.log("BookingRequestForm: Craftsman available dates:", parsedDates);
           setAvailableDates(parsedDates);
         } else {
-          console.log("No available dates found for craftsman:", craftsmanId);
+          console.log("BookingRequestForm: No available dates found for craftsman:", craftsmanId);
           setAvailableDates([]);
         }
       } catch (err) {
