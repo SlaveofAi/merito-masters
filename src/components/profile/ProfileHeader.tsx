@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { User, UploadCloud, MapPin, Phone, MessageSquare, Star } from "lucide-react";
@@ -29,7 +28,6 @@ const ProfileHeader: React.FC = () => {
 
   if (!profileData) return null;
 
-  // Calculate average rating from reviews
   const calculateAverageRating = () => {
     if (!reviews || reviews.length === 0) return 0;
     const total = reviews.reduce((sum, review) => sum + review.rating, 0);
@@ -150,6 +148,11 @@ const ProfileHeader: React.FC = () => {
                 {userType === 'craftsman' && 'trade_category' in profileData && (
                   <div className="mb-3 font-medium text-lg">
                     {profileData.trade_category}
+                    {profileData.custom_specialization && (
+                      <span className="text-muted-foreground ml-2">
+                        - {profileData.custom_specialization}
+                      </span>
+                    )}
                   </div>
                 )}
                 

@@ -15,6 +15,7 @@ interface CraftsmanCardProps {
   rating?: number;
   reviewCount?: number;
   imageUrl: string;
+  customSpecialization?: string | null;
 }
 
 const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
@@ -25,6 +26,7 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
   rating: initialRating,
   reviewCount: initialReviewCount,
   imageUrl,
+  customSpecialization,
 }) => {
   // Fetch real reviews data for this craftsman
   const { data: reviewsData } = useQuery({
@@ -68,6 +70,9 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
         />
         <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white text-xs py-1 px-2 rounded-full z-20">
           {profession}
+          {customSpecialization && (
+            <span className="ml-1">- {customSpecialization}</span>
+          )}
         </div>
       </div>
       <CardContent className="p-5">

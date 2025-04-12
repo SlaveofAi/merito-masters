@@ -59,6 +59,7 @@ const FeaturedCraftsmen = () => {
         profession: craftsman.trade_category,
         location: craftsman.location,
         imageUrl: craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category),
+        customSpecialization: craftsman.custom_specialization,
       }));
 
   // Placeholder images for craftsmen without profile images
@@ -104,6 +105,7 @@ const FeaturedCraftsmen = () => {
             profession={craftsman.profession}
             location={craftsman.location}
             imageUrl={craftsman.imageUrl}
+            customSpecialization={craftsman.customSpecialization}
           />
         ))}
       </div>

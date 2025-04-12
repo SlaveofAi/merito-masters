@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import SpecializationInput from "@/components/profile/SpecializationInput";
+import { useProfile } from "@/contexts/ProfileContext";
 
 const craftCategories = [
   'Stolár',
@@ -49,6 +51,7 @@ type ProfileData = {
   trade_category?: string;
   description?: string | null;
   years_experience?: number | null;
+  custom_specialization?: string | null;
   [key: string]: any; // To allow any other properties
 };
 
@@ -61,6 +64,7 @@ interface EditProfileFormProps {
 const EditProfileForm = ({ profile, userType, onUpdate }: EditProfileFormProps) => {
   const { toast: uiToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { updateCustomSpecialization, customSpecialization, saving } = useProfile();
   
   const schema = userType === 'craftsman' ? craftsmanSchema : baseSchema;
   
@@ -133,6 +137,12 @@ const EditProfileForm = ({ profile, userType, onUpdate }: EditProfileFormProps) 
       toast.error("Chyba pri aktualizácii profilu");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveSpecialization = async (value: string) => {
+    if (updateCustomSpecialization) {
+      await updateCustomSpecialization(value);
     }
   };
 
@@ -215,6 +225,19 @@ const EditProfileForm = ({ profile, userType, onUpdate }: EditProfileFormProps) 
                     </FormItem>
                   )}
                 />
+                
+                {/* Custom specialization field */}
+                <div className="space-y-2">
+                  <FormLabel>Vlastná špecializácia (voliteľné)</FormLabel>
+                  <SpecializationInput 
+                    value={customSpecialization || ''}
+                    onSave={handleSaveSpecialization}
+                    isLoading={saving}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Ak vaše remeslo nie je v zozname, môžete pridať vlastnú špecializáciu.
+                  </p>
+                </div>
                 
                 <FormField
                   control={form.control}
