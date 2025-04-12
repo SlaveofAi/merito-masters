@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -115,6 +114,13 @@ export const useChatActions = (
       
       // Create booking request if needed
       if (metadata?.type === 'booking_request' && metadata.booking_id) {
+        console.log('Booking Request Created:', {
+          bookingId: metadata.booking_id,
+          date: metadata.details?.date,
+          time: metadata.details?.time,
+          message: metadata.details?.message
+        });
+        
         try {
           const normalizedUserType = userType?.toLowerCase() || '';
           
