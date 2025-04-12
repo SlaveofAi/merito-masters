@@ -102,6 +102,7 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          metadata: Json | null
           read: boolean
           receiver_id: string
           sender_id: string
@@ -111,6 +112,7 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          metadata?: Json | null
           read?: boolean
           receiver_id: string
           sender_id: string
@@ -120,6 +122,7 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          metadata?: Json | null
           read?: boolean
           receiver_id?: string
           sender_id?: string

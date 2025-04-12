@@ -12,12 +12,16 @@ export function parseMessageMetadata(rawMetadata: any): MessageMetadata | undefi
   try {
     // If already an object, return as is
     if (typeof rawMetadata === 'object' && rawMetadata !== null) {
+      console.log("Metadata is already an object:", rawMetadata);
       return rawMetadata;
     }
     
     // If a string, try to parse it
     if (typeof rawMetadata === 'string') {
-      return JSON.parse(rawMetadata);
+      console.log("Parsing metadata from string:", rawMetadata);
+      const parsed = JSON.parse(rawMetadata);
+      console.log("Parsed metadata:", parsed);
+      return parsed;
     }
     
     return undefined;
