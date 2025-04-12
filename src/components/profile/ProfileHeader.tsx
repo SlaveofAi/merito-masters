@@ -147,11 +147,10 @@ const ProfileHeader: React.FC = () => {
                 
                 {userType === 'craftsman' && 'trade_category' in profileData && (
                   <div className="mb-3 font-medium text-lg">
-                    {profileData.trade_category}
-                    {profileData.custom_specialization && (
-                      <span className="text-muted-foreground ml-2">
-                        - {profileData.custom_specialization}
-                      </span>
+                    {profileData.custom_specialization ? (
+                      <span>{profileData.custom_specialization}</span>
+                    ) : (
+                      <span>{profileData.trade_category}</span>
                     )}
                   </div>
                 )}

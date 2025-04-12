@@ -69,10 +69,7 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
         <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white text-xs py-1 px-2 rounded-full z-20">
-          {profession}
-          {customSpecialization && (
-            <span className="ml-1">- {customSpecialization}</span>
-          )}
+          {customSpecialization ? customSpecialization : profession}
         </div>
       </div>
       <CardContent className="p-5">
