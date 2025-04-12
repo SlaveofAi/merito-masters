@@ -187,8 +187,6 @@ const Index = () => {
                 name={craftsman.name}
                 profession={craftsman.trade_category}
                 location={craftsman.location}
-                rating={4.5} // Placeholder rating until reviews system is implemented
-                reviewCount={12} // Placeholder review count
                 imageUrl={craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category)}
               />
             ))}

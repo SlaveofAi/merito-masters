@@ -4,14 +4,16 @@ import { Link } from "react-router-dom";
 import { Star, MapPin, Phone, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CraftsmanCardProps {
   id: string;
   name: string;
   profession: string;
   location: string;
-  rating: number;
-  reviewCount: number;
+  rating?: number;
+  reviewCount?: number;
   imageUrl: string;
 }
 
@@ -20,10 +22,41 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
   name,
   profession,
   location,
-  rating,
-  reviewCount,
+  rating: initialRating,
+  reviewCount: initialReviewCount,
   imageUrl,
 }) => {
+  // Fetch real reviews data for this craftsman
+  const { data: reviewsData } = useQuery({
+    queryKey: ['reviews', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('craftsman_reviews')
+        .select('*')
+        .eq('craftsman_id', id);
+      
+      if (error) {
+        console.error("Error fetching reviews:", error);
+        return null;
+      }
+      
+      return data;
+    },
+  });
+
+  // Calculate the average rating from reviews
+  const calculateRating = () => {
+    if (!reviewsData || reviewsData.length === 0) {
+      return initialRating || 0;
+    }
+    
+    const total = reviewsData.reduce((sum, review) => sum + review.rating, 0);
+    return parseFloat((total / reviewsData.length).toFixed(1));
+  };
+
+  const rating = calculateRating();
+  const reviewCount = reviewsData?.length || initialReviewCount || 0;
+
   return (
     <Card className="overflow-hidden border border-border/50 shadow-sm hover:shadow-md transition-all duration-300 group">
       <div className="relative h-60 overflow-hidden">
@@ -41,8 +74,8 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
         <div className="flex justify-between items-start mb-3">
           <h3 className="font-semibold text-lg">{name}</h3>
           <div className="flex items-center">
-            <Star className="w-4 h-4 fill-current text-yellow-500 mr-1" />
-            <span className="text-sm font-medium">{rating.toFixed(1)}</span>
+            <Star className={`w-4 h-4 ${rating > 0 ? 'fill-current text-yellow-500' : 'text-gray-300'} mr-1`} />
+            <span className="text-sm font-medium">{rating > 0 ? rating.toFixed(1) : '0.0'}</span>
             <span className="text-xs text-muted-foreground ml-1">
               ({reviewCount})
             </span>
