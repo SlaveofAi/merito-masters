@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
@@ -13,6 +12,7 @@ import { toast } from "sonner";
 
 const Chat: React.FC = () => {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
+  const [showBookingForm, setShowBookingForm] = useState(false);
   const { contacts, contactsLoading, refetchContacts } = useContacts();
   const { messages, refetchMessages, contactDetails, customerReviews } = useMessages(selectedContact, refetchContacts);
   const { sendMessage, archiveConversation, deleteConversation } = useChatActions(
@@ -163,6 +163,17 @@ const Chat: React.FC = () => {
           />
         </div>
       </div>
+      
+      {showBookingForm && (
+        <BookingRequestForm
+          onSubmit={(content, metadata) => {
+            handleSendMessage(content, metadata);
+            setShowBookingForm(false);
+          }}
+          onCancel={() => setShowBookingForm(false)}
+          craftsmanId={selectedContact?.contactId || ''}
+        />
+      )}
     </div>
   );
 };
