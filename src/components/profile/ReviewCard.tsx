@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Reply, AlertCircle, Edit, Trash2 } from "lucide-react";
+import { Reply, AlertCircle, Edit, Trash2, Save } from "lucide-react";
 import { toast } from "sonner";
 import ReviewStarRating from "./ReviewStarRating";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,9 +31,14 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editingReply, setEditingReply] = useState(false);
+  const [editReplyText, setEditReplyText] = useState(review.reply || "");
 
   // Check if the current user is the author of this review
   const isReviewAuthor = user?.id === review.customer_id;
+  
+  // Check if the current user is the craftsman who can reply or edit reply
+  const isCraftsman = user?.id === review.craftsman_id || userId === review.craftsman_id;
 
   const handleSubmitReply = async () => {
     if (!userId || !replyText.trim()) return;
@@ -68,6 +73,39 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
       console.error("Error submitting reply:", error);
       setError(`Nastala chyba: ${error.message}`);
       toast.error("Nastala chyba pri odosielaní odpovede");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateReply = async () => {
+    if (!userId || !editReplyText.trim()) return;
+    
+    setIsSubmitting(true);
+    setError(null);
+    
+    try {
+      console.log("Updating reply:", {
+        reviewId: review.id,
+        craftsmanId: userId,
+        replyText: editReplyText
+      });
+      
+      // Update the reply in the database
+      const { error } = await supabase
+        .from('craftsman_review_replies')
+        .update({ reply: editReplyText })
+        .match({ review_id: review.id, craftsman_id: userId });
+      
+      if (error) throw error;
+      
+      toast.success("Odpoveď bola úspešne aktualizovaná");
+      setEditingReply(false);
+      onRefresh();
+    } catch (error: any) {
+      console.error("Error updating reply:", error);
+      setError(`Nastala chyba: ${error.message}`);
+      toast.error("Nastala chyba pri aktualizácii odpovede");
     } finally {
       setIsSubmitting(false);
     }
@@ -193,10 +231,59 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
         )}
         
         {/* Review reply section */}
-        {review.reply && (
+        {review.reply && !editingReply && (
           <div className="mt-4 pl-4 border-l-2 border-gray-200">
-            <div className="text-sm font-medium">Odpoveď remeselníka:</div>
+            <div className="flex justify-between items-start">
+              <div className="text-sm font-medium">Odpoveď remeselníka:</div>
+              {isCraftsman && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex items-center"
+                  onClick={() => {
+                    setEditingReply(true);
+                    setEditReplyText(review.reply);
+                  }}
+                >
+                  <Edit className="h-3 w-3 mr-1" />
+                  Upraviť
+                </Button>
+              )}
+            </div>
             <p className="text-gray-700 text-sm">{review.reply}</p>
+          </div>
+        )}
+        
+        {/* Edit reply form */}
+        {editingReply && (
+          <div className="mt-4 space-y-3">
+            <Textarea
+              placeholder="Upravte odpoveď na túto recenziu..."
+              value={editReplyText}
+              onChange={(e) => setEditReplyText(e.target.value)}
+              rows={3}
+            />
+            <div className="flex space-x-2">
+              <Button 
+                size="sm"
+                onClick={handleUpdateReply}
+                disabled={!editReplyText.trim() || isSubmitting}
+              >
+                <Save className="h-4 w-4 mr-1" />
+                {isSubmitting ? "Ukladám..." : "Uložiť"}
+              </Button>
+              <Button 
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setEditingReply(false);
+                  setEditReplyText(review.reply || "");
+                }}
+                disabled={isSubmitting}
+              >
+                Zrušiť
+              </Button>
+            </div>
           </div>
         )}
         
