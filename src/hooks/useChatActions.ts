@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -128,7 +127,9 @@ export const useChatActions = (
           bookingId: metadata.booking_id,
           date: metadata.details?.date,
           time: metadata.details?.time,
-          message: metadata.details?.message
+          message: metadata.details?.message,
+          amount: metadata.details?.amount,
+          image_url: metadata.details?.image_url
         });
         
         try {
@@ -145,7 +146,9 @@ export const useChatActions = (
             end_time: metadata.details?.time ? 
               (parseInt(metadata.details.time.split(':')[0]) + 1) + ":" + metadata.details.time.split(':')[1] : 
               "01:00",
-            message: metadata.details?.message || null
+            message: metadata.details?.message || null,
+            amount: metadata.details?.amount || null,
+            image_url: metadata.details?.image_url || null
           };
           
           console.log("Inserting booking request with data:", bookingData);
