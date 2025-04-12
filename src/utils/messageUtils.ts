@@ -44,6 +44,8 @@ export function processMessageData(msg: any, userId: string): Message {
     };
   }
 
+  console.log("Processing message data:", msg);
+
   // Create a base message with the required fields
   const baseMessage: Message = {
     id: msg.id || 'missing-id-' + Date.now(),
@@ -57,7 +59,12 @@ export function processMessageData(msg: any, userId: string): Message {
 
   // Process metadata if it exists
   if (msg.metadata !== null && msg.metadata !== undefined) {
-    baseMessage.metadata = parseMessageMetadata(msg.metadata);
+    try {
+      baseMessage.metadata = parseMessageMetadata(msg.metadata);
+      console.log("Processed message metadata:", baseMessage.metadata);
+    } catch (error) {
+      console.error("Error processing message metadata:", error);
+    }
   }
 
   return baseMessage;

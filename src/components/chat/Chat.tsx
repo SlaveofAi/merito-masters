@@ -8,7 +8,7 @@ import { useChatActions } from "@/hooks/useChatActions";
 import { useChatSubscription } from "@/hooks/useChatSubscription";
 import { ChatContact } from "@/types/chat";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase, checkRealtimeConnection } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Chat: React.FC = () => {
@@ -24,8 +24,6 @@ const Chat: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [connectionChecked, setConnectionChecked] = useState(false);
-  
   // Callback for refreshing data
   const refreshData = useCallback(() => {
     console.log("Manual data refresh triggered");
@@ -37,26 +35,6 @@ const Chat: React.FC = () => {
   
   // We don't show subscription errors anymore
   useChatSubscription(selectedContact, refetchMessages, refetchContacts);
-  
-  // Check Supabase connection on component mount
-  useEffect(() => {
-    const checkSupabaseConnection = async () => {
-      try {
-        const isConnected = await checkRealtimeConnection(2);
-        setConnectionChecked(true);
-        console.log("Supabase connection check result:", isConnected);
-        
-        if (!isConnected) {
-          // Instead of showing an error, just log and ensure we use polling for updates
-          console.warn("Supabase realtime connection not available, using polling fallback");
-        }
-      } catch (err) {
-        console.error("Error checking Supabase connection:", err);
-      }
-    };
-    
-    checkSupabaseConnection();
-  }, []);
   
   useEffect(() => {
     console.log("Current contacts:", contacts);
@@ -145,6 +123,11 @@ const Chat: React.FC = () => {
         refetchMessages();
         refetchContacts();
       }, 1000);
+      
+      // If this was a booking request, show a toast notification
+      if (metadata?.type === 'booking_request') {
+        toast.success("Požiadavka na rezerváciu odoslaná");
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Nastala chyba pri odosielaní správy. Skúste to prosím znova.");

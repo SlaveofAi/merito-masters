@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +32,8 @@ export const useChatActions = (
         throw new Error("Missing data for sending message");
       }
       
+      console.log("Starting sendMessageMutation with:", { content, contactId, conversationId, metadata });
+      
       // Get or create conversation
       let convId = conversationId;
       
@@ -56,6 +59,7 @@ export const useChatActions = (
           
           if (existingConv) {
             convId = existingConv.id;
+            console.log("Found existing conversation:", convId);
           } else {
             // Create new conversation
             const { data: newConv, error: insertError } = await supabase
@@ -73,6 +77,7 @@ export const useChatActions = (
             
             if (newConv && newConv.length > 0) {
               convId = newConv[0].id;
+              console.log("Created new conversation:", convId);
             } else {
               throw new Error("Failed to create conversation");
             }
@@ -86,6 +91,7 @@ export const useChatActions = (
       // Handle booking metadata
       if (metadata?.type === 'booking_request' && !metadata.booking_id) {
         metadata.booking_id = uuidv4();
+        console.log("Generated booking_id:", metadata.booking_id);
       }
       
       // Prepare message data
@@ -99,9 +105,11 @@ export const useChatActions = (
       // Only add metadata if it exists
       if (metadata) {
         messageData.metadata = metadata;
+        console.log("Adding metadata to message:", metadata);
       }
       
       // Send message
+      console.log("Sending message with data:", messageData);
       const { data: message, error: messageError } = await supabase
         .from('chat_messages')
         .insert(messageData)
@@ -112,9 +120,11 @@ export const useChatActions = (
         throw new Error("Error sending message");
       }
       
+      console.log("Message sent successfully:", message);
+      
       // Create booking request if needed
       if (metadata?.type === 'booking_request' && metadata.booking_id) {
-        console.log('Booking Request Created:', {
+        console.log('Creating booking request:', {
           bookingId: metadata.booking_id,
           date: metadata.details?.date,
           time: metadata.details?.time,
@@ -138,15 +148,21 @@ export const useChatActions = (
             message: metadata.details?.message || null
           };
           
-          const { error: bookingError } = await supabase
+          console.log("Inserting booking request with data:", bookingData);
+          const { data: bookingResult, error: bookingError } = await supabase
             .from('booking_requests')
-            .insert(bookingData);
+            .insert(bookingData)
+            .select();
             
           if (bookingError) {
             console.error("Error creating booking request:", bookingError);
+            throw bookingError;
           }
+          
+          console.log("Booking request created successfully:", bookingResult);
         } catch (err) {
           console.error("Error creating booking:", err);
+          // Don't throw here to prevent message from failing if booking fails
         }
       }
       
@@ -176,7 +192,7 @@ export const useChatActions = (
       queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
     },
     onError: (error: any) => {
-      console.error("Error sending message:", error);
+      console.error("Error in sendMessageMutation:", error);
       toast.error(error?.message || "Nastala chyba pri odosielaní správy");
     }
   });
@@ -223,8 +239,15 @@ export const useChatActions = (
   return {
     sendMessage: async (content: string, metadata?: MessageMetadata) => {
       if (!selectedContact || !content.trim() || !user) {
+        console.error("Missing data for sending message:", { selectedContact, content, user });
         return Promise.reject("Missing data for sending message");
       }
+      
+      console.log("Sending message:", {
+        content,
+        metadata,
+        contact: selectedContact
+      });
       
       const contactIdToUse = selectedContact.contactId || selectedContact.id;
       
