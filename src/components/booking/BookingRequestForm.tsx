@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
-import { CalendarIcon, Clock, FileText, Image, DollarSign, Loader2 } from "lucide-react";
+import { CalendarIcon, Clock, FileText, Image, DollarSign, Loader2, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { v4 as uuidv4 } from "uuid";
@@ -43,7 +42,6 @@ const BookingRequestForm: React.FC<BookingRequestFormProps> = ({
     "13:00", "14:00", "15:00", "16:00", "17:00"
   ];
 
-  // Fetch craftsman's available dates
   useEffect(() => {
     const fetchAvailableDates = async () => {
       if (!craftsmanId) {
@@ -69,7 +67,6 @@ const BookingRequestForm: React.FC<BookingRequestFormProps> = ({
         }
 
         if (data && data.length > 0) {
-          // Convert string dates to Date objects
           const parsedDates = data.map(item => new Date(item.date));
           console.log("BookingRequestForm: Craftsman available dates:", parsedDates);
           setAvailableDates(parsedDates);
@@ -92,14 +89,12 @@ const BookingRequestForm: React.FC<BookingRequestFormProps> = ({
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       
-      // Validate file type
       const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
       if (!validTypes.includes(file.type)) {
         toast.error("Prosím, nahrajte obrázok v podporovanom formáte (JPEG, PNG, WEBP, GIF)");
         return;
       }
       
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Obrázok je príliš veľký. Maximálna veľkosť je 5MB.");
         return;
@@ -107,7 +102,6 @@ const BookingRequestForm: React.FC<BookingRequestFormProps> = ({
       
       setImageFile(file);
       
-      // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -159,7 +153,6 @@ const BookingRequestForm: React.FC<BookingRequestFormProps> = ({
     try {
       setIsUploading(true);
       
-      // Upload image if provided
       let imageUrl = null;
       if (imageFile) {
         imageUrl = await uploadImage(imageFile, bookingId);
@@ -170,7 +163,6 @@ const BookingRequestForm: React.FC<BookingRequestFormProps> = ({
         }
       }
       
-      // Create message content for chat display
       const content = `🗓️ **Požiadavka na termín**
 Dátum: ${format(date, 'dd.MM.yyyy')}
 Čas: ${timeSlot}
@@ -178,7 +170,6 @@ ${amount ? `Odmena: ${amount} €` : ''}
 ${message ? `Správa: ${message}` : ''}
 ${imageUrl ? `[Priložený obrázok]` : ''}`;
       
-      // Create metadata for structured data handling
       const metadata = {
         type: 'booking_request',
         status: 'pending',
@@ -201,7 +192,6 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
     }
   };
 
-  // Check if a date is one of the craftsman's available dates
   const isDateAvailable = (date: Date) => {
     return availableDates.some(availableDate => 
       availableDate.getDate() === date.getDate() &&
@@ -227,15 +217,24 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
           <p>Načítavam dostupné termíny...</p>
         </div>
       ) : availableDates.length === 0 ? (
-        <Alert className="mb-4">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          <AlertDescription>
-            Remeselník momentálne nemá nastavené žiadne dostupné dni. Prosím, skúste kontaktovať remeselníka priamo.
-          </AlertDescription>
-        </Alert>
+        <div className="text-center space-y-4">
+          <Alert className="mb-4">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            <AlertDescription>
+              Remeselník momentálne nemá nastavené žiadne dostupné dni. Prosím, skúste kontaktovať remeselníka priamo.
+            </AlertDescription>
+          </Alert>
+          <Button 
+            variant="outline" 
+            onClick={onCancel}
+            className="w-full"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Späť do chatu
+          </Button>
+        </div>
       ) : (
         <div className="space-y-4">
-          {/* Date picker */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Vyberte dátum
@@ -279,7 +278,6 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
             </p>
           </div>
           
-          {/* Time slot selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Vyberte čas
@@ -299,7 +297,6 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
             </div>
           </div>
           
-          {/* Amount/Price */}
           <div>
             <Label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
               Odmena (voliteľné)
@@ -317,7 +314,6 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
             </div>
           </div>
           
-          {/* Image upload */}
           <div>
             <Label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
               Fotka (voliteľné)
@@ -371,7 +367,6 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
             </div>
           </div>
           
-          {/* Message */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Správa (voliteľné)
@@ -388,7 +383,6 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
             </div>
           </div>
           
-          {/* Action buttons */}
           <div className="flex justify-end space-x-3 mt-4">
             <Button variant="outline" onClick={onCancel}>
               Zrušiť
