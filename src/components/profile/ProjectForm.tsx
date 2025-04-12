@@ -22,6 +22,9 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
   const [currentEditImage, setCurrentEditImage] = useState<string | null>(null);
+  
+  // Track original images from the initialData
+  const [originalImages, setOriginalImages] = useState<{id: string, image_url: string}[]>([]);
 
   // Populate the form with initialData if provided (for editing)
   useEffect(() => {
@@ -29,9 +32,9 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
       setTitle(initialData.title);
       setDescription(initialData.description || "");
       
-      // We can't directly set the images from initialData because they're already uploaded
-      // Instead, we'll just set the preview URLs for display
+      // Store original images for reference
       if (initialData.images && initialData.images.length > 0) {
+        setOriginalImages(initialData.images);
         setPreviewUrls(initialData.images.map(img => img.image_url));
       }
     }
@@ -40,6 +43,15 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
   const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newImages = Array.from(e.target.files);
+      
+      // Check file size before processing
+      const oversizedFiles = newImages.filter(file => file.size > 5 * 1024 * 1024); // 5MB limit
+      if (oversizedFiles.length > 0) {
+        toast.error("Niektoré súbory sú príliš veľké. Maximálna veľkosť je 5MB.");
+        // Filter out oversized files
+        const validImages = newImages.filter(file => file.size <= 5 * 1024 * 1024);
+        if (validImages.length === 0) return;
+      }
       
       // Create preview URLs for the new images
       const newPreviewUrls = newImages.map(file => URL.createObjectURL(file));
@@ -52,18 +64,23 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
   const removeImage = (index: number) => {
     // If we're editing and there are existing images from initialData,
     // we need to distinguish between existing images and newly added ones
-    if (initialData && index < (initialData.images?.length || 0)) {
+    if (initialData && index < originalImages.length) {
       // For existing images, just remove from the preview
       const newPreviewUrls = [...previewUrls];
       newPreviewUrls.splice(index, 1);
       setPreviewUrls(newPreviewUrls);
+      
+      // Also update originalImages array to reflect the removal
+      const newOriginalImages = [...originalImages];
+      newOriginalImages.splice(index, 1);
+      setOriginalImages(newOriginalImages);
     } else {
       // For new images, remove from both images array and preview
-      const newImageIndex = initialData ? index - (initialData.images?.length || 0) : index;
+      const newImageIndex = initialData ? index - originalImages.length : index;
       const newImages = [...images];
       
       // Revoke the preview URL to prevent memory leaks
-      if (!initialData || index >= initialData.images.length) {
+      if (previewUrls[index].startsWith('blob:')) {
         URL.revokeObjectURL(previewUrls[index]);
       }
       
@@ -93,15 +110,17 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
     setPreviewUrls(newPreviewUrls);
     
     // If this is a new image, update the images array
-    if (!initialData || editingImageIndex >= (initialData.images?.length || 0)) {
-      const adjustedIndex = initialData ? editingImageIndex - initialData.images.length : editingImageIndex;
+    if (initialData && editingImageIndex < originalImages.length) {
+      // For existing images that are edited, add to images array
+      setImages(prev => [...prev, croppedImage]);
+      // Store metadata to know this is an update to an existing image
+      croppedImage.name = `update_${originalImages[editingImageIndex].id}_${croppedImage.name}`;
+    } else {
+      // For newly added images that are edited
+      const adjustedIndex = initialData ? editingImageIndex - originalImages.length : editingImageIndex;
       const newImages = [...images];
       newImages[adjustedIndex] = croppedImage;
       setImages(newImages);
-    } else {
-      // For existing images, add to images array with the same index
-      setImages(prev => [...prev, croppedImage]);
-      // We'll need special handling in onSubmit to know this is an update to an existing image
     }
     
     // Close the editor
@@ -117,13 +136,15 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
       return;
     }
     
-    if (images.length === 0 && (!initialData || previewUrls.length === 0)) {
+    if (previewUrls.length === 0) {
       toast.error("Pridajte aspoň jeden obrázok");
       return;
     }
     
     setUploading(true);
     try {
+      // If we're updating and there are removed original images, we need to handle that
+      // in the parent component using the onSubmit function
       await onSubmit(title, description, images);
       
       // Clean up preview URLs
@@ -139,6 +160,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
       setDescription("");
       setImages([]);
       setPreviewUrls([]);
+      setOriginalImages([]);
     } catch (error) {
       console.error("Error submitting project:", error);
       toast.error("Nastala chyba pri ukladaní projektu");
@@ -223,6 +245,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
           className="hidden"
           onChange={handleImagesChange}
         />
+        <p className="text-xs text-muted-foreground mt-1">Max veľkosť: 5MB. Podporované formáty: JPG, PNG, GIF.</p>
       </div>
       
       <div className="flex justify-end space-x-2 pt-2">

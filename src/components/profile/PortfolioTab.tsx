@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Image, UploadCloud, Plus, Edit, Trash2, X, MessageSquare } from "lucide-react";
@@ -15,8 +16,6 @@ const PortfolioTab: React.FC = () => {
     isCurrentUser,
     portfolioImages,
     profileData,
-    activeImageIndex,
-    handleImageClick,
     handlePortfolioImageUpload,
     uploading,
     fetchPortfolioImages
@@ -28,6 +27,7 @@ const PortfolioTab: React.FC = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [deletingImage, setDeletingImage] = useState<string | null>(null);
+  const [processingProject, setProcessingProject] = useState(false);
 
   useEffect(() => {
     if (portfolioImages.length > 0 && profileData) {
@@ -71,33 +71,78 @@ const PortfolioTab: React.FC = () => {
       return;
     }
     
+    setProcessingProject(true);
+    
     try {
-      const uploadedUrls = await uploadPortfolioImages(images, profileData.id);
-      
-      if (uploadedUrls.length > 0) {
-        const updatePromises = uploadedUrls.map(url => {
+      // Check if we're editing an existing project (editingProject is set)
+      if (editingProject) {
+        // First, update existing image records with the new title and description
+        const updatePromises = editingProject.images.map(img => {
           return supabase
             .from('portfolio_images')
             .update({ 
               title: title,
               description: description 
             })
-            .eq('image_url', url);
+            .eq('id', img.id);
         });
         
         await Promise.all(updatePromises);
         
-        toast.success("Projekt bol úspešne pridaný");
-        if (fetchPortfolioImages) {
-          await fetchPortfolioImages(profileData.id);
+        // Now handle any new images that need to be uploaded
+        if (images.length > 0) {
+          const uploadedUrls = await uploadPortfolioImages(images, profileData.id);
+          
+          if (uploadedUrls.length > 0) {
+            const newImageUpdatePromises = uploadedUrls.map(url => {
+              return supabase
+                .from('portfolio_images')
+                .update({ 
+                  title: title,
+                  description: description 
+                })
+                .eq('image_url', url);
+            });
+            
+            await Promise.all(newImageUpdatePromises);
+          }
         }
-        setShowProjectForm(false);
+        
+        toast.success("Projekt bol úspešne aktualizovaný");
       } else {
-        toast.error("Nepodarilo sa nahrať obrázky projektu");
+        // Creating a new project
+        const uploadedUrls = await uploadPortfolioImages(images, profileData.id);
+        
+        if (uploadedUrls.length > 0) {
+          const updatePromises = uploadedUrls.map(url => {
+            return supabase
+              .from('portfolio_images')
+              .update({ 
+                title: title,
+                description: description 
+              })
+              .eq('image_url', url);
+          });
+          
+          await Promise.all(updatePromises);
+          
+          toast.success("Projekt bol úspešne pridaný");
+        } else {
+          toast.error("Nepodarilo sa nahrať obrázky projektu");
+        }
       }
-    } catch (error) {
-      console.error("Error adding project:", error);
-      toast.error("Nastala chyba pri pridávaní projektu");
+      
+      if (fetchPortfolioImages) {
+        await fetchPortfolioImages(profileData.id);
+      }
+      
+      setShowProjectForm(false);
+      setEditingProject(null);
+    } catch (error: any) {
+      console.error("Error adding/updating project:", error);
+      toast.error(`Nastala chyba pri úprave projektu: ${error.message || 'Neznáma chyba'}`);
+    } finally {
+      setProcessingProject(false);
     }
   };
 
@@ -115,6 +160,18 @@ const PortfolioTab: React.FC = () => {
     try {
       setDeletingImage(imageId);
       
+      // First, get the image record to get the storage URL
+      const { data: imageData, error: fetchError } = await supabase
+        .from('portfolio_images')
+        .select('image_url')
+        .eq('id', imageId)
+        .single();
+        
+      if (fetchError) {
+        throw fetchError;
+      }
+      
+      // Delete the database record
       const { error } = await supabase
         .from('portfolio_images')
         .delete()
@@ -124,6 +181,24 @@ const PortfolioTab: React.FC = () => {
         throw error;
       }
       
+      // Try to delete the storage file if we have the URL
+      if (imageData && imageData.image_url) {
+        // Extract the path from the URL
+        const urlParts = imageData.image_url.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        const filePath = `portfolio/${fileName}`;
+        
+        // Delete from storage (this might fail if the file doesn't exist, which is fine)
+        try {
+          await supabase.storage
+            .from('profile_images')
+            .remove([filePath]);
+        } catch (storageError) {
+          console.warn("Could not delete file from storage:", storageError);
+        }
+      }
+      
+      // Update the local state
       const updatedPortfolioImages = portfolioImages.filter(img => img.id !== imageId);
       
       const updatedProjects = projects.map(project => {
@@ -149,9 +224,9 @@ const PortfolioTab: React.FC = () => {
       }
       
       toast.success("Obrázok bol odstránený");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting image:", error);
-      toast.error("Nastala chyba pri mazaní obrázka");
+      toast.error(`Nastala chyba pri mazaní obrázka: ${error.message || 'Neznáma chyba'}`);
     } finally {
       setDeletingImage(null);
     }

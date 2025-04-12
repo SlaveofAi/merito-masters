@@ -11,6 +11,12 @@ export const TABLES = {
 
 export const uploadProfileImage = async (file: File | Blob, userId: string, userType: string | null) => {
   try {
+    // Check file size
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast.error("Obrázok je príliš veľký. Maximálna veľkosť je 5MB.");
+      return null;
+    }
+
     const fileName = `profile-${userId}-${Math.random().toString(36).substring(2)}.jpg`;
     const filePath = `${fileName}`;
     
@@ -44,9 +50,9 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
     
     toast.success("Profilová fotka bola aktualizovaná");
     return data.publicUrl;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading image:', error);
-    toast.error("Nastala chyba pri nahrávaní obrázka");
+    toast.error(`Nastala chyba pri nahrávaní obrázka: ${error.message || 'Neznáma chyba'}`);
     return null;
   }
 };
@@ -55,12 +61,31 @@ export const uploadPortfolioImages = async (files: File[], userId: string) => {
   const uploadedUrls: string[] = [];
   
   try {
+    // Check file sizes
+    const oversizedFiles = files.filter(file => file.size > 5 * 1024 * 1024); // 5MB limit
+    if (oversizedFiles.length > 0) {
+      toast.error("Niektoré obrázky sú príliš veľké. Maximálna veľkosť je 5MB.");
+      // Filter out oversized files
+      files = files.filter(file => file.size <= 5 * 1024 * 1024);
+      if (files.length === 0) return [];
+    }
+
     for (const file of files) {
-      const fileExt = file.name.split('.').pop();
+      // Check if file name indicates it's an update to an existing image
+      let existingImageId = null;
+      if (file.name.startsWith('update_')) {
+        const parts = file.name.split('_');
+        if (parts.length > 1) {
+          existingImageId = parts[1];
+          console.log("Updating existing image:", existingImageId);
+        }
+      }
+
+      const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `${userId}-portfolio-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `portfolio/${fileName}`;
       
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('profile_images')
         .upload(filePath, file, { 
           upsert: true 
@@ -74,18 +99,34 @@ export const uploadPortfolioImages = async (files: File[], userId: string) => {
       const { data } = supabase.storage
         .from('profile_images')
         .getPublicUrl(filePath);
-        
-      const { error: insertError } = await supabase
-        .from(TABLES.PORTFOLIO_IMAGES)
-        .insert({
-          craftsman_id: userId,
-          image_url: data.publicUrl,
-          title: 'Moja práca'
-        });
-        
-      if (insertError) {
-        console.error("Portfolio DB insert error:", insertError);
-        throw insertError;
+      
+      if (existingImageId) {
+        // Update existing image record
+        const { error: updateError } = await supabase
+          .from(TABLES.PORTFOLIO_IMAGES)
+          .update({
+            image_url: data.publicUrl
+          })
+          .eq('id', existingImageId);
+          
+        if (updateError) {
+          console.error("Portfolio DB update error:", updateError);
+          throw updateError;
+        }
+      } else {
+        // Insert new image record
+        const { error: insertError } = await supabase
+          .from(TABLES.PORTFOLIO_IMAGES)
+          .insert({
+            craftsman_id: userId,
+            image_url: data.publicUrl,
+            title: 'Moja práca'
+          });
+          
+        if (insertError) {
+          console.error("Portfolio DB insert error:", insertError);
+          throw insertError;
+        }
       }
       
       uploadedUrls.push(data.publicUrl);
@@ -96,9 +137,9 @@ export const uploadPortfolioImages = async (files: File[], userId: string) => {
     }
     
     return uploadedUrls;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading portfolio images:', error);
-    toast.error("Nastala chyba pri nahrávaní obrázkov");
+    toast.error(`Nastala chyba pri nahrávaní obrázkov: ${error.message || 'Neznáma chyba'}`);
     return uploadedUrls;
   }
 };
