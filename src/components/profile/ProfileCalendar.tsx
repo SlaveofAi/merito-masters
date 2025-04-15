@@ -21,6 +21,8 @@ const ProfileCalendar: React.FC = () => {
   const [month, setMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [motivationalMessage, setMotivationalMessage] = useState<string>('');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Normalize today to start of day
 
   // Check if we're viewing a craftsman profile
   const isCraftsmanProfile = profileData?.user_type === 'craftsman';
@@ -36,13 +38,23 @@ const ProfileCalendar: React.FC = () => {
   // Set the month to the first available month for customers
   useEffect(() => {
     if (!isCurrentUser && selectedDates.length > 0) {
-      // Sort dates and get the earliest one
-      const sortedDates = [...selectedDates].sort((a, b) => a.getTime() - b.getTime());
-      const earliestDate = sortedDates[0];
-      // Set the month to the earliest available date
-      setMonth(earliestDate);
+      // Filter out past dates and sort the remaining
+      const futureDates = selectedDates.filter(date => {
+        // Normalize date to start of day for comparison
+        const normalizedDate = new Date(date);
+        normalizedDate.setHours(0, 0, 0, 0);
+        return normalizedDate >= today;
+      });
+
+      if (futureDates.length > 0) {
+        // Sort dates and get the earliest future date
+        const sortedDates = [...futureDates].sort((a, b) => a.getTime() - b.getTime());
+        const earliestDate = sortedDates[0];
+        // Set the month to the earliest available date
+        setMonth(earliestDate);
+      }
     }
-  }, [selectedDates, isCurrentUser]);
+  }, [selectedDates, isCurrentUser, today]);
 
   const fetchAvailableDates = async () => {
     if (!profileData?.id) {
@@ -174,34 +186,51 @@ const ProfileCalendar: React.FC = () => {
   }
 
   // Define the calendar component based on user type
-  const CraftsmanCalendar = () => (
-    <Calendar
-      mode="multiple"
-      selected={selectedDates}
-      onSelect={(dates) => {
-        if (Array.isArray(dates)) {
-          setSelectedDates(dates);
-        }
-      }}
-      className="p-3 pointer-events-auto h-auto"
-    />
-  );
+  const CraftsmanCalendar = () => {
+    // For craftsmen, we allow selecting even past dates
+    return (
+      <Calendar
+        mode="multiple"
+        selected={selectedDates}
+        onSelect={(dates) => {
+          if (Array.isArray(dates)) {
+            setSelectedDates(dates);
+          }
+        }}
+        className="p-3 pointer-events-auto h-auto"
+      />
+    );
+  };
 
-  const CustomerCalendar = () => (
-    <Calendar
-      mode="single"
-      selected={selectedDate}
-      onSelect={setSelectedDate}
-      disabled={(date) => !selectedDates.some(d => d.toDateString() === date.toDateString())}
-      modifiers={{
-        available: (date) => selectedDates.some(d => d.toDateString() === date.toDateString())
-      }}
-      modifiersStyles={{
-        available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700, border: '1px solid #86efac' }
-      }}
-      className="p-3 pointer-events-auto h-auto"
-    />
-  );
+  const CustomerCalendar = () => {
+    // For customers, we need to disable past dates
+    return (
+      <Calendar
+        mode="single"
+        selected={selectedDate}
+        onSelect={setSelectedDate}
+        disabled={(date) => {
+          // Disable dates that are:
+          // 1. In the past (before today)
+          // 2. Not in the craftsman's available dates
+          const isPastDate = date < today;
+          const isAvailable = selectedDates.some(d => d.toDateString() === date.toDateString());
+          return isPastDate || !isAvailable;
+        }}
+        modifiers={{
+          available: (date) => {
+            // Only mark future dates as available
+            const isPastDate = date < today;
+            return !isPastDate && selectedDates.some(d => d.toDateString() === date.toDateString());
+          }
+        }}
+        modifiersStyles={{
+          available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700, border: '1px solid #86efac' }
+        }}
+        className="p-3 pointer-events-auto h-auto"
+      />
+    );
+  };
 
   return (
     <Card className="shadow-sm">
@@ -250,13 +279,19 @@ const ProfileCalendar: React.FC = () => {
             
             {isCurrentUser ? <CraftsmanCalendar /> : <CustomerCalendar />}
             
-            <div className="mt-3 flex items-center">
-              <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
-              <span className="text-xs text-gray-500">
-                {isCurrentUser 
-                  ? "Vaše vybrané dostupné dni" 
-                  : "Remeselník je dostupný v označené dni"}
-              </span>
+            <div className="mt-3">
+              <div className="flex items-center mb-1">
+                <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
+                <span className="text-xs text-gray-500">
+                  {isCurrentUser 
+                    ? "Vaše vybrané dostupné dni" 
+                    : "Remeselník je dostupný v označené dni"}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-accent border border-accent/30 ring-2 ring-primary/30 mr-2 rounded"></div>
+                <span className="text-xs text-gray-500">Dnešný deň</span>
+              </div>
             </div>
           </div>
         )}
@@ -271,8 +306,9 @@ const ProfileCalendar: React.FC = () => {
                     .sort((a, b) => a.getTime() - b.getTime())
                     .slice(0, 5)
                     .map((date, i) => (
-                      <div key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
+                      <div key={i} className={`px-2 py-1 rounded-md text-xs ${date < today ? 'bg-gray-100 text-gray-400' : 'bg-green-50 text-gray-700'}`}>
                         {date.toLocaleDateString('sk-SK')}
+                        {date < today && ' (v minulosti)'}
                       </div>
                     ))}
                   {selectedDates.length > 5 && (

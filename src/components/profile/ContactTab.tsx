@@ -25,6 +25,8 @@ const ContactTab: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasShownFirstAvailableMonth, setHasShownFirstAvailableMonth] = useState(false);
   const navigate = useNavigate();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Normalize today to start of day
 
   const isCraftsmanProfile = profileData && 'trade_category' in profileData;
 
@@ -65,11 +67,20 @@ const ContactTab: React.FC = () => {
         setAvailableDates(parsedDates);
         
         if (!hasShownFirstAvailableMonth && !isCurrentUser && userType === 'customer') {
-          const sortedDates = [...parsedDates].sort((a, b) => a.getTime() - b.getTime());
-          if (sortedDates.length > 0) {
-            const firstDate = new Date(sortedDates[0]);
-            setMonth(new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
-            setHasShownFirstAvailableMonth(true);
+          // Filter to get only future dates
+          const futureDates = parsedDates.filter(date => {
+            const dateNormalized = new Date(date);
+            dateNormalized.setHours(0, 0, 0, 0);
+            return dateNormalized >= today;
+          });
+          
+          if (futureDates.length > 0) {
+            const sortedDates = [...futureDates].sort((a, b) => a.getTime() - b.getTime());
+            if (sortedDates.length > 0) {
+              const firstDate = new Date(sortedDates[0]);
+              setMonth(new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
+              setHasShownFirstAvailableMonth(true);
+            }
           }
         }
       } else {
@@ -85,7 +96,7 @@ const ContactTab: React.FC = () => {
   };
 
   const handleDateClick = (date: Date) => {
-    if (availableDates.some(d => d.toDateString() === date.toDateString())) {
+    if (availableDates.some(d => d.toDateString() === date.toDateString()) && date >= today) {
       setSelectedDate(date);
     }
   };
@@ -104,8 +115,20 @@ const ContactTab: React.FC = () => {
 
   const CraftsmanAvailabilityPanel = () => {
     const upcomingDates = availableDates
-      .filter(date => date >= new Date())
+      .filter(date => {
+        const dateNormalized = new Date(date);
+        dateNormalized.setHours(0, 0, 0, 0);
+        return dateNormalized >= today;
+      })
       .sort((a, b) => a.getTime() - b.getTime());
+    
+    const pastDates = availableDates
+      .filter(date => {
+        const dateNormalized = new Date(date);
+        dateNormalized.setHours(0, 0, 0, 0);
+        return dateNormalized < today;
+      })
+      .sort((a, b) => b.getTime() - a.getTime()); // Most recent past dates first
     
     return (
       <Card className="border border-border/50 shadow-sm mt-6">
@@ -117,7 +140,7 @@ const ContactTab: React.FC = () => {
                 Vaša dostupnosť
               </h3>
               <Badge variant="outline" className="bg-primary/10">
-                {availableDates.length} dní
+                {upcomingDates.length} budúcich dní
               </Badge>
             </div>
             
@@ -138,6 +161,24 @@ const ContactTab: React.FC = () => {
                     )}
                   </div>
                 </div>
+                
+                {pastDates.length > 0 && (
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">Dni v minulosti:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {pastDates.slice(0, 3).map((date, i) => (
+                        <Badge key={i} variant="outline" className="bg-gray-100 text-gray-500">
+                          {format(date, 'dd.MM.yyyy')}
+                        </Badge>
+                      ))}
+                      {pastDates.length > 3 && (
+                        <Badge variant="outline" className="text-gray-500">
+                          +{pastDates.length - 3} ďalších
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
                 
                 <div className="text-center p-3 bg-primary/5 rounded-lg">
                   <p className="font-medium text-gray-700">
@@ -187,22 +228,47 @@ const ContactTab: React.FC = () => {
           month={month}
           onMonthChange={setMonth}
           modifiers={{
-            available: (date) => availableDates.some(d => d.toDateString() === date.toDateString())
+            available: (date) => {
+              // Only mark future dates as available
+              const isPastDate = date < today;
+              return !isPastDate && availableDates.some(d => d.toDateString() === date.toDateString());
+            },
+            unavailable: (date) => {
+              // Mark past dates that were available as unavailable
+              const isPastDate = date < today;
+              return isPastDate && availableDates.some(d => d.toDateString() === date.toDateString());
+            }
           }}
           modifiersStyles={{
-            available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700 }
+            available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700 },
+            unavailable: { backgroundColor: '#f3f4f6', color: '#9ca3af', textDecoration: 'line-through' }
           }}
           className="p-3 pointer-events-auto w-full"
           showOutsideDays
-          disabled={(date) => !availableDates.some(d => d.toDateString() === date.toDateString())}
+          disabled={(date) => {
+            // Disable dates that are:
+            // 1. In the past (before today)
+            // 2. Not in the craftsman's available dates
+            return date < today || !availableDates.some(d => d.toDateString() === date.toDateString());
+          }}
         />
       </div>
       
-      <div className="mt-4 flex items-center justify-center">
-        <div className="w-4 h-4 bg-green-100 mr-2 rounded"></div>
-        <span className="text-sm text-gray-600">
-          Remeselník je dostupný v označené dni
-        </span>
+      <div className="mt-4 flex flex-col gap-1">
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-green-100 mr-2 rounded"></div>
+          <span className="text-sm text-gray-600">
+            Remeselník je dostupný v označené dni
+          </span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-accent border border-accent/30 ring-2 ring-primary/30 mr-2 rounded"></div>
+          <span className="text-sm text-gray-600">Dnešný deň</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-gray-100 text-gray-400 mr-2 rounded"></div>
+          <span className="text-sm text-gray-600">Minulé dni</span>
+        </div>
       </div>
       
       {availableDates.length === 0 && (
