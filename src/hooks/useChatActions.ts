@@ -148,7 +148,8 @@ export const useChatActions = (
               "01:00",
             message: metadata.details?.message || null,
             amount: metadata.details?.amount || null,
-            image_url: metadata.details?.image_url || null
+            image_url: metadata.details?.image_url || null,
+            status: 'pending' // Make sure to explicitly set this to pending
           };
           
           console.log("Inserting booking request with data:", bookingData);
