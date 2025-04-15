@@ -459,19 +459,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 <span className="text-sm">{bookingDetails.time}</span>
               </div>
             )}
-            
-            {isAccepted && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-2"
-                onClick={() => {
-                  window.location.href = '/orders';
-                }}
-              >
-                Zobraziť v Zákazkách
-              </Button>
-            )}
           </div>
           
           <div className="p-2 bg-white/50 border-t text-xs text-gray-500 text-right">
