@@ -59,8 +59,11 @@ const Navbar = () => {
       } fixed top-0 z-50`}
     >
       <div className="container mx-auto px-4 flex justify-between items-center">
-        <Link to="/" className="text-xl font-bold">
-          Majster
+        <Link 
+          to="/home" 
+          className="text-xl font-bold hover:opacity-80 transition-opacity"
+        >
+          Majstri.sk
         </Link>
 
         <div className="flex items-center gap-4">
