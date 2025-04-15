@@ -25,8 +25,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
   
   // Track original images from the initialData
   const [originalImages, setOriginalImages] = useState<{id: string, image_url: string}[]>([]);
-  // Map to track which images are updates to existing ones
-  const [imageMetadata, setImageMetadata] = useState<Map<File, string>>(new Map());
 
   // Populate the form with initialData if provided (for editing)
   useEffect(() => {
@@ -115,12 +113,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
     if (initialData && editingImageIndex < originalImages.length) {
       // For existing images that are edited, add to images array
       setImages(prev => [...prev, croppedImage]);
-      
       // Store metadata to know this is an update to an existing image
-      // Instead of modifying the read-only name property, use a Map to track metadata
-      const newMetadata = new Map(imageMetadata);
-      newMetadata.set(croppedImage, `update_${originalImages[editingImageIndex].id}`);
-      setImageMetadata(newMetadata);
+      croppedImage.name = `update_${originalImages[editingImageIndex].id}_${croppedImage.name}`;
     } else {
       // For newly added images that are edited
       const adjustedIndex = initialData ? editingImageIndex - originalImages.length : editingImageIndex;
@@ -149,21 +143,9 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
     
     setUploading(true);
     try {
-      // Prepare images with metadata for submission
-      // The server-side code will need to handle this information appropriately
-      const imagesToSubmit = images.map(file => {
-        const metadata = imageMetadata.get(file);
-        if (metadata) {
-          // Create a new File object with the metadata in the filename
-          // since we can't modify the name property directly
-          return new File([file], `${metadata}_${file.name}`, { type: file.type });
-        }
-        return file;
-      });
-      
       // If we're updating and there are removed original images, we need to handle that
       // in the parent component using the onSubmit function
-      await onSubmit(title, description, imagesToSubmit);
+      await onSubmit(title, description, images);
       
       // Clean up preview URLs
       previewUrls.forEach(url => {
@@ -179,7 +161,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
       setImages([]);
       setPreviewUrls([]);
       setOriginalImages([]);
-      setImageMetadata(new Map());
     } catch (error) {
       console.error("Error submitting project:", error);
       toast.error("Nastala chyba pri ukladaní projektu");

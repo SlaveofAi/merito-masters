@@ -14,10 +14,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { v4 as uuidv4 } from "uuid";
 
 const ContactTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
@@ -25,22 +21,12 @@ const ContactTab: React.FC = () => {
   const [month, setMonth] = useState<Date>(new Date());
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [isLoadingDates, setIsLoadingDates] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasShownFirstAvailableMonth, setHasShownFirstAvailableMonth] = useState(false);
-  const [message, setMessage] = useState("");
-  const [amount, setAmount] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Normalize today to start of day
 
   const isCraftsmanProfile = profileData && 'trade_category' in profileData;
-  const availableTimeSlots = [
-    "08:00", "09:00", "10:00", "11:00", "12:00", 
-    "13:00", "14:00", "15:00", "16:00", "17:00"
-  ];
 
   useEffect(() => {
     if (profileData?.id && isCraftsmanProfile) {
@@ -79,20 +65,11 @@ const ContactTab: React.FC = () => {
         setAvailableDates(parsedDates);
         
         if (!hasShownFirstAvailableMonth && !isCurrentUser && userType === 'customer') {
-          // Filter to get only future dates
-          const futureDates = parsedDates.filter(date => {
-            const dateNormalized = new Date(date);
-            dateNormalized.setHours(0, 0, 0, 0);
-            return dateNormalized >= today;
-          });
-          
-          if (futureDates.length > 0) {
-            const sortedDates = [...futureDates].sort((a, b) => a.getTime() - b.getTime());
-            if (sortedDates.length > 0) {
-              const firstDate = new Date(sortedDates[0]);
-              setMonth(new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
-              setHasShownFirstAvailableMonth(true);
-            }
+          const sortedDates = [...parsedDates].sort((a, b) => a.getTime() - b.getTime());
+          if (sortedDates.length > 0) {
+            const firstDate = new Date(sortedDates[0]);
+            setMonth(new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
+            setHasShownFirstAvailableMonth(true);
           }
         }
       } else {
@@ -108,9 +85,8 @@ const ContactTab: React.FC = () => {
   };
 
   const handleDateClick = (date: Date) => {
-    if (availableDates.some(d => d.toDateString() === date.toDateString()) && date >= today) {
+    if (availableDates.some(d => d.toDateString() === date.toDateString())) {
       setSelectedDate(date);
-      setSelectedTimeSlot(null); // Reset time slot when a new date is selected
     }
   };
 
@@ -126,166 +102,10 @@ const ContactTab: React.FC = () => {
     setMonth(prevMonth);
   };
 
-  const handleSendBookingRequest = async () => {
-    if (!user) {
-      toast.error("Pre odoslanie rezervácie sa musíte prihlásiť");
-      navigate('/login', { state: { from: 'profile' } });
-      return;
-    }
-
-    if (!selectedDate || !selectedTimeSlot || !profileData?.id) {
-      toast.error("Vyberte dátum a čas rezervácie");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      // Create a conversation if it doesn't exist
-      const customerId = user.id;
-      const craftsmanId = profileData.id;
-      
-      let conversationId;
-      
-      // Check if conversation already exists
-      const { data: existingConversation, error: fetchError } = await supabase
-        .from('chat_conversations')
-        .select('id')
-        .eq('customer_id', customerId)
-        .eq('craftsman_id', craftsmanId)
-        .maybeSingle();
-        
-      if (fetchError) {
-        console.error("Error checking for conversation:", fetchError);
-        toast.error("Nastala chyba pri kontrole konverzácie");
-        setIsSubmitting(false);
-        return;
-      }
-      
-      if (existingConversation) {
-        conversationId = existingConversation.id;
-      } else {
-        // Create new conversation
-        const { data: newConversation, error: createError } = await supabase
-          .from('chat_conversations')
-          .insert({
-            customer_id: customerId,
-            craftsman_id: craftsmanId
-          })
-          .select();
-          
-        if (createError) {
-          console.error("Error creating conversation:", createError);
-          toast.error("Nepodarilo sa vytvoriť konverzáciu");
-          setIsSubmitting(false);
-          return;
-        }
-        
-        conversationId = newConversation?.[0]?.id;
-      }
-      
-      if (!conversationId) {
-        toast.error("Chyba pri vytváraní konverzácie");
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Create the booking request
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-      const bookingId = uuidv4();
-      
-      // Create message with booking metadata
-      const messageMetadata = {
-        type: 'booking_request',
-        booking_id: bookingId,
-        status: 'pending',
-        details: {
-          date: formattedDate,
-          time: selectedTimeSlot,
-          message: message || null,
-          amount: amount || null
-        }
-      };
-      
-      const messageContent = `🗓️ **Požiadavka na termín**
-Dátum: ${format(selectedDate, 'dd.MM.yyyy')}
-Čas: ${selectedTimeSlot}
-${amount ? `Odmena: ${amount} €` : ''}
-${message ? `Správa: ${message}` : ''}`;
-      
-      // Send the message
-      const { error: messageError } = await supabase
-        .from('chat_messages')
-        .insert({
-          conversation_id: conversationId,
-          sender_id: customerId,
-          receiver_id: craftsmanId,
-          content: messageContent,
-          metadata: messageMetadata
-        });
-        
-      if (messageError) {
-        console.error("Error sending message:", messageError);
-        toast.error("Nastala chyba pri odosielaní správy");
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Create the booking request entry
-      const { error: bookingError } = await supabase
-        .from('booking_requests')
-        .insert({
-          id: bookingId,
-          conversation_id: conversationId,
-          craftsman_id: craftsmanId,
-          customer_id: customerId,
-          customer_name: user.user_metadata?.name || "Zákazník",
-          date: formattedDate,
-          start_time: selectedTimeSlot,
-          end_time: (parseInt(selectedTimeSlot.split(':')[0]) + 1) + ":" + selectedTimeSlot.split(':')[1],
-          message: message || null,
-          amount: amount || null
-        });
-        
-      if (bookingError) {
-        console.error("Error creating booking request:", bookingError);
-        toast.error("Nastala chyba pri vytváraní rezervácie");
-        setIsSubmitting(false);
-        return;
-      }
-      
-      toast.success("Rezervácia bola úspešne odoslaná");
-      // Navigate to messages
-      navigate('/messages', { 
-        state: { 
-          from: 'booking',
-          conversationId,
-          contactId: craftsmanId 
-        } 
-      });
-    } catch (error) {
-      console.error("Error submitting booking request:", error);
-      toast.error("Nastala chyba pri odosielaní rezervácie");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const CraftsmanAvailabilityPanel = () => {
     const upcomingDates = availableDates
-      .filter(date => {
-        const dateNormalized = new Date(date);
-        dateNormalized.setHours(0, 0, 0, 0);
-        return dateNormalized >= today;
-      })
+      .filter(date => date >= new Date())
       .sort((a, b) => a.getTime() - b.getTime());
-    
-    const pastDates = availableDates
-      .filter(date => {
-        const dateNormalized = new Date(date);
-        dateNormalized.setHours(0, 0, 0, 0);
-        return dateNormalized < today;
-      })
-      .sort((a, b) => b.getTime() - a.getTime()); // Most recent past dates first
     
     return (
       <Card className="border border-border/50 shadow-sm mt-6">
@@ -297,7 +117,7 @@ ${message ? `Správa: ${message}` : ''}`;
                 Vaša dostupnosť
               </h3>
               <Badge variant="outline" className="bg-primary/10">
-                {upcomingDates.length} budúcich dní
+                {availableDates.length} dní
               </Badge>
             </div>
             
@@ -318,24 +138,6 @@ ${message ? `Správa: ${message}` : ''}`;
                     )}
                   </div>
                 </div>
-                
-                {pastDates.length > 0 && (
-                  <div>
-                    <p className="text-sm text-gray-500 mb-2">Dni v minulosti:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {pastDates.slice(0, 3).map((date, i) => (
-                        <Badge key={i} variant="outline" className="bg-gray-100 text-gray-500">
-                          {format(date, 'dd.MM.yyyy')}
-                        </Badge>
-                      ))}
-                      {pastDates.length > 3 && (
-                        <Badge variant="outline" className="text-gray-500">
-                          +{pastDates.length - 3} ďalších
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                )}
                 
                 <div className="text-center p-3 bg-primary/5 rounded-lg">
                   <p className="font-medium text-gray-700">
@@ -385,47 +187,22 @@ ${message ? `Správa: ${message}` : ''}`;
           month={month}
           onMonthChange={setMonth}
           modifiers={{
-            available: (date) => {
-              // Only mark future dates as available
-              const isPastDate = date < today;
-              return !isPastDate && availableDates.some(d => d.toDateString() === date.toDateString());
-            },
-            unavailable: (date) => {
-              // Mark past dates that were available as unavailable
-              const isPastDate = date < today;
-              return isPastDate && availableDates.some(d => d.toDateString() === date.toDateString());
-            }
+            available: (date) => availableDates.some(d => d.toDateString() === date.toDateString())
           }}
           modifiersStyles={{
-            available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700 },
-            unavailable: { backgroundColor: '#f3f4f6', color: '#9ca3af', textDecoration: 'line-through' }
+            available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700 }
           }}
           className="p-3 pointer-events-auto w-full"
           showOutsideDays
-          disabled={(date) => {
-            // Disable dates that are:
-            // 1. In the past (before today)
-            // 2. Not in the craftsman's available dates
-            return date < today || !availableDates.some(d => d.toDateString() === date.toDateString());
-          }}
+          disabled={(date) => !availableDates.some(d => d.toDateString() === date.toDateString())}
         />
       </div>
       
-      <div className="mt-4 flex flex-col gap-1">
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-green-100 mr-2 rounded"></div>
-          <span className="text-sm text-gray-600">
-            Remeselník je dostupný v označené dni
-          </span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-accent border border-accent/30 ring-2 ring-primary/30 mr-2 rounded"></div>
-          <span className="text-sm text-gray-600">Dnešný deň</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-gray-100 text-gray-400 mr-2 rounded"></div>
-          <span className="text-sm text-gray-600">Minulé dni</span>
-        </div>
+      <div className="mt-4 flex items-center justify-center">
+        <div className="w-4 h-4 bg-green-100 mr-2 rounded"></div>
+        <span className="text-sm text-gray-600">
+          Remeselník je dostupný v označené dni
+        </span>
       </div>
       
       {availableDates.length === 0 && (
@@ -435,79 +212,6 @@ ${message ? `Správa: ${message}` : ''}`;
       )}
     </div>
   );
-
-  const BookingRequestForm = () => {
-    // Only show if there's a selected date
-    if (!selectedDate) return null;
-    
-    return (
-      <div className="mt-4 border-t pt-4">
-        <h4 className="font-medium mb-4">Rezervácia termínu</h4>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="time-slot" className="block text-sm font-medium mb-2">
-              Vyberte čas
-            </Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-              {availableTimeSlots.map((slot) => (
-                <Button
-                  key={slot}
-                  type="button"
-                  variant={selectedTimeSlot === slot ? "default" : "outline"}
-                  onClick={() => setSelectedTimeSlot(slot)}
-                  className="text-sm"
-                >
-                  {slot}
-                </Button>
-              ))}
-            </div>
-          </div>
-          
-          <div>
-            <Label htmlFor="amount" className="block text-sm font-medium mb-2">
-              Odmena (voliteľné)
-            </Label>
-            <Input
-              id="amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Napr. 50 €"
-              className="w-full"
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="message" className="block text-sm font-medium mb-2">
-              Správa (voliteľné)
-            </Label>
-            <Textarea
-              id="message"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Opíšte vašu požiadavku..."
-              rows={4}
-              className="w-full"
-            />
-          </div>
-          
-          <Button 
-            onClick={handleSendBookingRequest}
-            disabled={!selectedDate || !selectedTimeSlot || isSubmitting}
-            className="w-full"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Odosielam...
-              </>
-            ) : (
-              'Odoslať rezerváciu'
-            )}
-          </Button>
-        </div>
-      </div>
-    );
-  };
 
   const handleStartChat = () => {
     if (!user) {
@@ -575,7 +279,7 @@ ${message ? `Správa: ${message}` : ''}`;
             <CardContent className="p-6">
               <h4 className="text-lg font-medium mb-3">Kontaktovať remeselníka</h4>
               <p className="text-sm text-gray-500 mb-4">
-                Pre ďalšiu konzultáciu môžete remeselníka kontaktovať aj priamo cez správy.
+                Pre rezerváciu termínu a konzultáciu prejdite do správ, kde môžete odoslať vašu požiadavku.
               </p>
               <Button onClick={handleStartChat} className="w-full">
                 Prejsť do správ
@@ -590,7 +294,7 @@ ${message ? `Správa: ${message}` : ''}`;
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold mb-4 flex items-center">
               <Calendar className="w-5 h-5 mr-2" />
-              {isCurrentUser ? "Váš kalendár dostupnosti" : "Rezervovať termín"}
+              {isCurrentUser ? "Váš kalendár dostupnosti" : "Kalendár dostupnosti"}
             </h3>
             
             {error && (
@@ -606,15 +310,9 @@ ${message ? `Správa: ${message}` : ''}`;
                 <span className="ml-2">Načítavam dostupné termíny...</span>
               </div>
             ) : (
-              <>
-                <div className="max-h-[450px] overflow-auto">
-                  <AvailabilityViewer />
-                </div>
-                
-                {!isCurrentUser && userType === 'customer' && (
-                  <BookingRequestForm />
-                )}
-              </>
+              <div className="max-h-[450px] overflow-auto">
+                <AvailabilityViewer />
+              </div>
             )}
           </CardContent>
         </Card>
