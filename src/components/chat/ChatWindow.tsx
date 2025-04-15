@@ -1,8 +1,9 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message } from "@/types/chat";
@@ -303,10 +304,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`mb-2 flex flex-col ${message.isOwnMessage ? "items-end" : "items-start"}`}
+            className={`mb-2 flex flex-col ${message.sender_id === user?.id ? "items-end" : "items-start"}`}
           >
             <div
-              className={`rounded-xl px-3 py-2 text-sm ${message.isOwnMessage
+              className={`rounded-xl px-3 py-2 text-sm ${message.sender_id === user?.id
                   ? "bg-blue-600 text-white"
                   : "bg-gray-200 text-gray-800"
                 }`}
@@ -317,7 +318,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 message.content
               )}
               <div className="text-xs mt-1">
-                {format(new Date(message.createdAt), "HH:mm")}
+                {format(new Date(message.created_at), "HH:mm")}
               </div>
             </div>
           </div>

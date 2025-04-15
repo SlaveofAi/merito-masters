@@ -13,14 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { Home, User, MessageSquare, LogOut, Briefcase } from "lucide-react";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Navbar = () => {
-  const { user, userType, logout } = useAuth();
+  const { user, userType, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -33,7 +33,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut();
       navigate("/");
     } catch (error) {
       console.error("Error logging out:", error);
