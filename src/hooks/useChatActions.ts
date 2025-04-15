@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -200,6 +201,59 @@ export const useChatActions = (
     }
   });
 
+  // Mutation for updating booking request status
+  const updateBookingStatusMutation = useMutation({
+    mutationFn: async ({ 
+      bookingId, 
+      status 
+    }: { 
+      bookingId: string; 
+      status: 'accepted' | 'rejected' | 'completed';
+    }) => {
+      if (!bookingId || !status || !user) {
+        console.error("Missing required data for updating booking status", { bookingId, status, user });
+        throw new Error("Missing data for updating booking status");
+      }
+      
+      // Check if the user is a craftsman
+      const normalizedUserType = userType?.toLowerCase() || '';
+      if (normalizedUserType !== 'craftsman') {
+        throw new Error("Only craftsmen can update booking status");
+      }
+      
+      console.log("Updating booking status:", { bookingId, status });
+      
+      // Update the booking status
+      const { data, error } = await supabase
+        .from('booking_requests')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', bookingId)
+        .eq('craftsman_id', user.id) // Ensure the craftsman can only update their own bookings
+        .select();
+        
+      if (error) {
+        console.error("Error updating booking status:", error);
+        throw error;
+      }
+      
+      console.log("Booking status updated successfully:", data);
+      
+      return data;
+    },
+    onSuccess: (data) => {
+      // Refresh data after successful update
+      refetchMessages();
+      queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+      
+      // Notify user of successful update
+      toast.success(`Rezervácia bola úspešne ${data[0]?.status === 'accepted' ? 'akceptovaná' : (data[0]?.status === 'rejected' ? 'zamietnutá' : 'dokončená')}`);
+    },
+    onError: (error: any) => {
+      console.error("Error updating booking status:", error);
+      toast.error(error?.message || "Nastala chyba pri aktualizácii stavu rezervácie");
+    }
+  });
+
   // Mutation for archiving or deleting conversations
   const updateConversationMutation = useMutation({
     mutationFn: async ({ 
@@ -259,6 +313,30 @@ export const useChatActions = (
         contactId: contactIdToUse,
         conversationId: selectedContact.conversation_id,
         metadata
+      });
+    },
+    acceptBookingRequest: (bookingId: string) => {
+      if (!bookingId || !user) return;
+      
+      updateBookingStatusMutation.mutate({
+        bookingId,
+        status: 'accepted'
+      });
+    },
+    rejectBookingRequest: (bookingId: string) => {
+      if (!bookingId || !user) return;
+      
+      updateBookingStatusMutation.mutate({
+        bookingId,
+        status: 'rejected'
+      });
+    },
+    completeBookingRequest: (bookingId: string) => {
+      if (!bookingId || !user) return;
+      
+      updateBookingStatusMutation.mutate({
+        bookingId,
+        status: 'completed'
       });
     },
     archiveConversation: () => {

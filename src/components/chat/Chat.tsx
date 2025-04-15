@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
@@ -16,7 +17,14 @@ const Chat: React.FC = () => {
   const [showBookingForm, setShowBookingForm] = useState(false);
   const { contacts, contactsLoading, refetchContacts } = useContacts();
   const { messages, refetchMessages, contactDetails, customerReviews } = useMessages(selectedContact, refetchContacts);
-  const { sendMessage, archiveConversation, deleteConversation } = useChatActions(
+  const { 
+    sendMessage, 
+    archiveConversation, 
+    deleteConversation,
+    acceptBookingRequest,
+    rejectBookingRequest,
+    completeBookingRequest
+  } = useChatActions(
     selectedContact,
     setSelectedContact,
     refetchMessages
@@ -162,6 +170,9 @@ const Chat: React.FC = () => {
             onDelete={deleteConversation}
             contactDetails={contactDetails}
             customerReviews={customerReviews}
+            onAcceptBooking={acceptBookingRequest}
+            onRejectBooking={rejectBookingRequest}
+            onCompleteBooking={completeBookingRequest}
           />
         </div>
       </div>

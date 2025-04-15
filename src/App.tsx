@@ -13,6 +13,7 @@ import ProfilePortfolio from "./pages/ProfilePages/ProfilePortfolio";
 import ProfileReviews from "./pages/ProfilePages/ProfileReviews";
 import ProfileContact from "./pages/ProfilePages/ProfileContact";
 import Messages from "./pages/Messages";
+import Orders from "./pages/Orders";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/profile/:id/contact" element={<ProfileContact />} />
             
             <Route path="/messages" element={<Messages />} />
+            <Route path="/orders" element={<Orders />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
