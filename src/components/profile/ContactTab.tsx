@@ -1,190 +1,132 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Loader2, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatCurrency } from "@/utils/formatters";
 import { useProfile } from "@/contexts/ProfileContext";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { format } from "date-fns";
-import { sk } from "date-fns/locale";
-import { Calendar as CalendarUI } from "@/components/ui/calendar";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { formatCurrency } from "@/utils/formatters";
+import { format } from "date-fns";
+import { sk } from "date-fns/locale";
 
-const TIME_SLOTS = [
-  "08:00", "09:00", "10:00", "11:00", "12:00", 
-  "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"
-];
-
-const ContactTab: React.FC = () => {
-  const { profileData, isCurrentUser } = useProfile();
-  const { userType, user } = useAuth();
-  const [month, setMonth] = useState<Date>(new Date());
-  const [availableDates, setAvailableDates] = useState<Date[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [isLoadingDates, setIsLoadingDates] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [hasShownFirstAvailableMonth, setHasShownFirstAvailableMonth] = useState(false);
+const ContactTab = () => {
+  const { profileData, loading } = useProfile();
+  const { user } = useAuth();
   const navigate = useNavigate();
-
-  // Reservation system states
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-  const [bookingPrice, setBookingPrice] = useState<string>("");
-  const [bookingDescription, setBookingDescription] = useState<string>("");
-  const [address, setAddress] = useState<string>("");
+  
+  // Booking form state
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
+  const [bookingDescription, setBookingDescription] = useState("");
+  const [address, setAddress] = useState("");
+  const [bookingPrice, setBookingPrice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const isCraftsmanProfile = profileData && 'trade_category' in profileData;
+  
+  // Active tab state
+  const [activeTab, setActiveTab] = useState("booking");
 
   useEffect(() => {
-    if (profileData?.id && isCraftsmanProfile) {
-      fetchAvailableDates();
-    } else {
-      setIsLoadingDates(false);
+    if (selectedDate) {
+      fetchAvailableTimeSlots();
     }
-  }, [profileData?.id, isCraftsmanProfile]);
+  }, [selectedDate]);
 
-  const fetchAvailableDates = async () => {
-    if (!profileData?.id) {
-      setIsLoadingDates(false);
-      return;
-    }
-
-    setError(null);
-    setIsLoadingDates(true);
+  const fetchAvailableTimeSlots = async () => {
+    if (!selectedDate || !profileData?.id) return;
+    
+    const formattedDate = format(selectedDate, "yyyy-MM-dd");
     
     try {
-      console.log("Fetching available dates for:", profileData?.id);
       const { data, error } = await supabase
-        .from('craftsman_availability')
-        .select('date')
-        .eq('craftsman_id', profileData?.id);
-
-      if (error) {
-        console.error("Error fetching available dates:", error);
-        setError("Nepodarilo sa načítať dostupné dni.");
-        setIsLoadingDates(false);
+        .from("craftsman_availability")
+        .select("time_slots")
+        .eq("craftsman_id", profileData.id)
+        .eq("date", formattedDate)
+        .single();
+        
+      if (error && error.code !== "PGRST116") {
+        console.error("Error fetching available time slots:", error);
+        setAvailableTimeSlots([]);
         return;
       }
-
-      if (data && data.length > 0) {
-        const parsedDates = data.map(item => new Date(item.date));
-        console.log("Found available dates:", parsedDates);
-        setAvailableDates(parsedDates);
-        
-        if (!hasShownFirstAvailableMonth && !isCurrentUser && userType === 'customer') {
-          const sortedDates = [...parsedDates].sort((a, b) => a.getTime() - b.getTime());
-          if (sortedDates.length > 0) {
-            const firstDate = new Date(sortedDates[0]);
-            setMonth(new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
-            setHasShownFirstAvailableMonth(true);
-          }
+      
+      // If no data found, generate default time slots (9:00 to 17:00)
+      if (!data) {
+        const defaultSlots = [];
+        for (let i = 9; i <= 17; i++) {
+          defaultSlots.push(`${i}:00`);
         }
+        setAvailableTimeSlots(defaultSlots);
       } else {
-        console.log("No available dates found");
-        setAvailableDates([]);
+        // Use the retrieved time slots or empty array if none found
+        setAvailableTimeSlots(data.time_slots || []);
       }
-    } catch (err: any) {
-      console.error("Error processing available dates:", err);
-      setError(`Chyba: ${err.message}`);
-    } finally {
-      setIsLoadingDates(false);
+      
+      // Reset selected time slot if it was previously set
+      setSelectedTimeSlot("");
+    } catch (error) {
+      console.error("Error in fetch available time slots:", error);
+      setAvailableTimeSlots([]);
     }
   };
 
-  const handleDateClick = (date: Date) => {
-    if (availableDates.some(d => d.toDateString() === date.toDateString())) {
-      setSelectedDate(date);
-      setSelectedTimeSlot(null); // Reset time slot when date changes
-    }
-  };
-
-  const goToNextMonth = () => {
-    const nextMonth = new Date(month);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    setMonth(nextMonth);
-  };
-
-  const goToPreviousMonth = () => {
-    const prevMonth = new Date(month);
-    prevMonth.setMonth(prevMonth.getMonth() - 1);
-    setMonth(prevMonth);
-  };
-
-  // Handle booking submission
-  const handleBookingSubmit = async () => {
+  const handleSubmitBookingRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!user) {
-      toast.error("Pre rezerváciu termínu sa musíte prihlásiť");
-      navigate('/login', { state: { from: 'profile' } });
+      toast.error("Pre odoslanie požiadavky sa musíte prihlásiť");
+      navigate("/login", { state: { from: "profile-contact" } });
       return;
     }
-
-    if (!profileData?.id) {
-      toast.error("Nepodarilo sa nájsť profil remeselníka");
+    
+    if (!profileData || !selectedDate || !selectedTimeSlot) {
+      toast.error("Vyplňte prosím všetky povinné polia");
       return;
     }
-
-    if (!selectedDate || !selectedTimeSlot) {
-      toast.error("Vyberte si termín a čas");
-      return;
-    }
-
-    if (!bookingDescription) {
-      toast.error("Popis požiadavky je povinný");
-      return;
-    }
-
-    if (!address) {
-      toast.error("Adresa je povinná");
-      return;
-    }
-
-    setIsSubmitting(true);
-
+    
     try {
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      setIsSubmitting(true);
       
-      // Create conversation if it doesn't exist
-      let conversationId;
+      const formattedDate = format(selectedDate, "yyyy-MM-dd");
       
-      // Check if conversation already exists
-      const { data: existingConversation, error: fetchError } = await supabase
-        .from('chat_conversations')
-        .select('id')
-        .eq('customer_id', user.id)
-        .eq('craftsman_id', profileData.id)
+      // First check if conversation exists
+      const { data: existingConversation, error: convFetchError } = await supabase
+        .from("chat_conversations")
+        .select("id")
+        .eq("customer_id", user.id)
+        .eq("craftsman_id", profileData.id)
         .maybeSingle();
         
-      if (fetchError) {
-        throw fetchError;
+      if (convFetchError && convFetchError.code !== "PGRST116") {
+        throw convFetchError;
       }
+      
+      let conversationId;
       
       if (existingConversation) {
         conversationId = existingConversation.id;
       } else {
         // Create new conversation
-        const { data: newConversation, error: createError } = await supabase
-          .from('chat_conversations')
+        const { data: newConversation, error: convCreateError } = await supabase
+          .from("chat_conversations")
           .insert({
             customer_id: user.id,
             craftsman_id: profileData.id
           })
-          .select();
+          .select("id")
+          .single();
           
-        if (createError) {
-          throw createError;
+        if (convCreateError) {
+          throw convCreateError;
         }
         
-        conversationId = newConversation?.[0]?.id;
+        conversationId = newConversation.id;
       }
       
       if (!conversationId) {
@@ -203,7 +145,6 @@ const ContactTab: React.FC = () => {
           start_time: selectedTimeSlot, // Changed from requested_time to start_time
           end_time: (parseInt(selectedTimeSlot.split(':')[0]) + 1) + ":" + selectedTimeSlot.split(':')[1], // Added end_time
           message: bookingDescription, // Changed from description to message
-          address: address,
           amount: bookingPrice ? bookingPrice : null,
           status: 'pending'
         });
@@ -228,418 +169,221 @@ const ContactTab: React.FC = () => {
         throw messageError;
       }
       
-      toast.success("Rezervácia bola úspešne odoslaná");
-      
-      // Navigate to conversation to see the booking request
-      navigate('/messages', { 
-        state: { 
-          from: 'profile',
-          conversationId,
-          contactId: profileData.id 
-        } 
+      // Navigate to messages view with the conversation
+      navigate("/messages", {
+        state: {
+          from: "booking",
+          conversationId: conversationId,
+          contactId: profileData.id
+        }
       });
-    } catch (err: any) {
-      console.error("Error creating booking:", err);
-      toast.error(`Chyba pri vytváraní rezervácie: ${err.message}`);
+      
+      toast.success("Požiadavka na rezerváciu odoslaná");
+    } catch (error) {
+      console.error("Error submitting booking request:", error);
+      toast.error("Nastala chyba pri odoslaní požiadavky");
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const CraftsmanAvailabilityPanel = () => {
-    const upcomingDates = availableDates
-      .filter(date => date >= new Date())
-      .sort((a, b) => a.getTime() - b.getTime());
-    
-    return (
-      <Card className="border border-border/50 shadow-sm mt-6">
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium flex items-center">
-                <Calendar className="w-5 h-5 mr-2 text-primary" />
-                Vaša dostupnosť
-              </h3>
-              <Badge variant="outline" className="bg-primary/10">
-                {availableDates.length} dní
-              </Badge>
-            </div>
-            
-            {upcomingDates.length > 0 ? (
-              <>
-                <div>
-                  <p className="text-sm text-gray-500 mb-2">Najbližšie dostupné dni:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {upcomingDates.slice(0, 5).map((date, i) => (
-                      <Badge key={i} variant="outline" className="bg-green-50">
-                        {format(date, 'dd.MM.yyyy')}
-                      </Badge>
-                    ))}
-                    {upcomingDates.length > 5 && (
-                      <Badge variant="outline">
-                        +{upcomingDates.length - 5} ďalších
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="text-center p-3 bg-primary/5 rounded-lg">
-                  <p className="font-medium text-gray-700">
-                    Výborne! Vaša dostupnosť je nastavená, zákazníci vás môžu kontaktovať!
-                  </p>
-                </div>
-              </>
-            ) : (
-              <div className="text-center p-4">
-                <p className="text-gray-500 mb-2">Zatiaľ nemáte žiadne nastavené dni.</p>
-                <p className="text-sm text-gray-400">
-                  Nastavte dostupné dni v kalendári, aby vás zákazníci mohli kontaktovať.
-                </p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const AvailabilityViewer = () => (
-    <div className="w-full">
-      <div className="p-3 border-b">
-        <div className="flex items-center justify-between">
-          <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="text-sm font-medium capitalize">
-            {format(month, 'LLLL yyyy', { locale: sk })}
-          </div>
-          <Button variant="outline" size="sm" onClick={goToNextMonth}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex justify-center w-full">
-        <CalendarUI
-          mode="single"
-          selected={selectedDate}
-          onSelect={(date) => {
-            if (date) {
-              handleDateClick(date);
-            }
-          }}
-          month={month}
-          onMonthChange={setMonth}
-          modifiers={{
-            available: (date) => availableDates.some(d => d.toDateString() === date.toDateString())
-          }}
-          modifiersStyles={{
-            available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700 }
-          }}
-          className="p-3 pointer-events-auto w-full"
-          showOutsideDays
-          disabled={(date) => !availableDates.some(d => d.toDateString() === date.toDateString())}
-        />
-      </div>
-      
-      <div className="mt-4 flex items-center justify-center">
-        <div className="w-4 h-4 bg-green-100 mr-2 rounded"></div>
-        <span className="text-sm text-gray-600">
-          Remeselník je dostupný v označené dni
-        </span>
-      </div>
-      
-      {availableDates.length === 0 && (
-        <div className="mt-4 text-center p-4 bg-gray-50 rounded-md">
-          <p className="text-sm text-gray-500">Remeselník momentálne nemá nastavené žiadne dostupné dni.</p>
-        </div>
-      )}
-    </div>
-  );
-
-  const ReservationSystem = () => {
-    if (!selectedDate) {
-      return (
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg text-center">
-          <p className="text-gray-500">Pre zobrazenie voľných termínov vyberte dostupný deň v kalendári</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="mt-6">
-        <h4 className="font-medium mb-3">Dostupné časy pre {format(selectedDate, 'dd.MM.yyyy')}</h4>
-        
-        <div className="flex flex-wrap gap-2 mb-4">
-          {TIME_SLOTS.map((time) => (
-            <Button
-              key={time}
-              variant={selectedTimeSlot === time ? "default" : "outline"}
-              size="sm"
-              className="flex items-center"
-              onClick={() => setSelectedTimeSlot(time)}
-            >
-              <Clock className="h-3 w-3 mr-1" />
-              {time}
-            </Button>
-          ))}
-        </div>
-        
-        {selectedTimeSlot && (
-          <div className="space-y-4 mt-6 p-4 border border-green-100 bg-green-50/30 rounded-lg">
-            <div>
-              <Label htmlFor="description">Popis požiadavky</Label>
-              <Textarea
-                id="description"
-                placeholder="Opíšte čo potrebujete..."
-                value={bookingDescription}
-                onChange={(e) => setBookingDescription(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="address">Adresa</Label>
-              <Input
-                id="address"
-                placeholder="Zadajte adresu kde sa má vykonať práca"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="price">Navrhovaná cena (€)</Label>
-              <Input
-                id="price"
-                type="number"
-                placeholder="Nepovinné"
-                value={bookingPrice}
-                onChange={(e) => setBookingPrice(e.target.value)}
-                className="mt-1"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Zadávajte len čísla, napr. 50 pre 50€
-              </p>
-            </div>
-            
-            <Button 
-              className="w-full mt-4" 
-              onClick={handleBookingSubmit}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Odosielam...
-                </>
-              ) : (
-                "Odoslať rezerváciu"
-              )}
-            </Button>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const handleStartChat = () => {
+  
+  const handleSendMessage = async () => {
     if (!user) {
       toast.error("Pre kontaktovanie remeselníka sa musíte prihlásiť");
+      navigate("/login", { state: { from: "profile-contact" } });
       return;
     }
-
-    if (!profileData?.id) {
-      toast.error("Nepodarilo sa nájsť profil remeselníka");
+    
+    if (!profileData) {
+      toast.error("Nepodarilo sa načítať profil remeselníka");
       return;
     }
-
-    navigate('/messages');
+    
+    try {
+      // Check if conversation already exists
+      const { data: existingConversation, error: fetchError } = await supabase
+        .from("chat_conversations")
+        .select("id")
+        .eq("customer_id", user.id)
+        .eq("craftsman_id", profileData.id)
+        .maybeSingle();
+        
+      if (fetchError && fetchError.code !== "PGRST116") {
+        console.error("Error checking for conversation:", fetchError);
+        toast.error("Nastala chyba pri kontrole konverzácie");
+        return;
+      }
+      
+      let conversationId;
+      
+      if (existingConversation) {
+        // Use existing conversation
+        conversationId = existingConversation.id;
+      } else {
+        // Create new conversation
+        const { data: newConversation, error: createError } = await supabase
+          .from("chat_conversations")
+          .insert({
+            customer_id: user.id,
+            craftsman_id: profileData.id
+          })
+          .select();
+          
+        if (createError) {
+          console.error("Error creating conversation:", createError);
+          toast.error("Nepodarilo sa vytvoriť konverzáciu");
+          return;
+        }
+        
+        conversationId = newConversation?.[0]?.id;
+      }
+      
+      if (conversationId) {
+        // Navigate to messages with the conversation context
+        navigate("/messages", { 
+          state: { 
+            from: "profile",
+            conversationId,
+            contactId: profileData.id 
+          } 
+        });
+        toast.success("Presmerované do správ");
+      }
+    } catch (err) {
+      console.error("Error navigating to chat:", err);
+      toast.error("Nastala chyba pri presmerovaní do správ");
+    }
   };
 
-  if (!profileData) return null;
+  if (loading || !profileData) {
+    return <div className="py-8 text-center">Načítavam...</div>;
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <div className="space-y-6">
-        <Card className="border border-border/50 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-xl font-semibold mb-4">Kontaktné informácie</h3>
-            <div className="space-y-4">
-              {profileData.phone && (
-                <div className="flex items-start">
-                  <Phone className="w-5 h-5 mr-3 mt-0.5 text-primary" />
-                  <div>
-                    <p className="font-medium">Telefón</p>
-                    <p className="text-muted-foreground">
-                      {profileData.phone}
-                    </p>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-start">
-                <Mail className="w-5 h-5 mr-3 mt-0.5 text-primary" />
-                <div>
-                  <p className="font-medium">Email</p>
-                  <p className="text-muted-foreground">
-                    {profileData.email}
-                  </p>
+    <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-6 grid w-full grid-cols-2">
+          <TabsTrigger value="booking">Rezervácia termínu</TabsTrigger>
+          <TabsTrigger value="message">Poslať správu</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="booking">
+          <h3 className="text-xl font-semibold mb-6">Rezervácia termínu s {profileData.name}</h3>
+          
+          <form onSubmit={handleSubmitBookingRequest}>
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-medium mb-2">1. Vyberte dátum</h4>
+                <div className="bg-gray-50 p-4 rounded-md border">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    locale={sk}
+                    disabled={{
+                      before: new Date(),
+                    }}
+                  />
                 </div>
               </div>
               
-              <div className="flex items-start">
-                <MapPin className="w-5 h-5 mr-3 mt-0.5 text-primary" />
-                <div>
-                  <p className="font-medium">Región pôsobenia</p>
-                  <p className="text-muted-foreground">
-                    {profileData.location}
-                  </p>
+              <div>
+                <h4 className="font-medium mb-2">2. Vyberte čas</h4>
+                <div className="grid grid-cols-4 gap-2">
+                  {availableTimeSlots.length > 0 ? (
+                    availableTimeSlots.map((slot) => (
+                      <Button
+                        key={slot}
+                        type="button"
+                        variant={selectedTimeSlot === slot ? "default" : "outline"}
+                        className="text-sm"
+                        onClick={() => setSelectedTimeSlot(slot)}
+                      >
+                        {slot}
+                      </Button>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 col-span-4">Žiadne dostupné termíny</p>
+                  )}
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {isCurrentUser && userType === 'craftsman' && isCraftsmanProfile && (
-          <CraftsmanAvailabilityPanel />
-        )}
-        
-        {isCraftsmanProfile && userType === 'customer' && !isCurrentUser && (
-          <Card className="border border-border/50 shadow-sm">
-            <CardContent className="p-6">
-              <Tabs defaultValue="booking" className="w-full">
-                <TabsList className="w-full mb-4">
-                  <TabsTrigger value="booking" className="flex-1">Rezervácia termínu</TabsTrigger>
-                  <TabsTrigger value="message" className="flex-1">Poslať správu</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="booking">
-                  <div className="mb-4">
-                    <h4 className="text-lg font-medium mb-2">Rezervácia termínu</h4>
-                    <p className="text-sm text-gray-500">
-                      Vyberte si z dostupných dní v kalendári a rezervujte si termín u remeselníka.
-                      Po odoslaní rezervácie budete presmerovaní do správ, kde môžete komunikovať priamo s remeselníkom.
-                    </p>
+              
+              <div>
+                <h4 className="font-medium mb-2">3. Detaily požiadavky</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                      Popis práce*
+                    </label>
+                    <Textarea
+                      id="description"
+                      placeholder="Opíšte, akú prácu potrebujete vykonať..."
+                      value={bookingDescription}
+                      onChange={(e) => setBookingDescription(e.target.value)}
+                      className="min-h-[100px]"
+                      required
+                    />
                   </div>
                   
-                  {!user && (
-                    <div className="mt-4 p-4 bg-yellow-50 rounded-lg flex flex-col items-center">
-                      <p className="text-sm text-amber-800 mb-3">Pre rezerváciu termínu sa musíte prihlásiť</p>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => navigate('/login')}>Prihlásiť sa</Button>
-                        <Button size="sm" variant="outline" onClick={() => navigate('/register')}>
-                          Registrovať sa
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="message">
-                  <div className="mb-4">
-                    <h4 className="text-lg font-medium mb-2">Poslať správu</h4>
-                    <p className="text-sm text-gray-500">
-                      Prejdite do správ, kde môžete remeselníkovi napísať a prediskutovať vašu požiadavku.
-                    </p>
+                  <div>
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                      Adresa*
+                    </label>
+                    <Input
+                      id="address"
+                      placeholder="Zadajte adresu, kde sa má práca vykonať"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      required
+                    />
                   </div>
-                  <Button onClick={handleStartChat} className="w-full">
-                    Prejsť do správ
-                  </Button>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-      
-      {isCraftsmanProfile ? (
-        <Card className="border border-border/50 shadow-sm h-fit">
-          <CardContent className="p-6">
-            <h3 className="text-xl font-semibold mb-4 flex items-center">
-              <Calendar className="w-5 h-5 mr-2" />
-              {isCurrentUser ? "Váš kalendár dostupnosti" : "Rezervácia termínu"}
-            </h3>
-            
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4 mr-2" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            
-            {isLoadingDates ? (
-              <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2">Načítavam dostupné termíny...</span>
-              </div>
-            ) : (
-              <div>
-                <div className="max-h-[450px] overflow-auto">
-                  <AvailabilityViewer />
+                  
+                  <div>
+                    <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+                      Predpokladaná cena
+                    </label>
+                    <Input
+                      id="price"
+                      type="number"
+                      placeholder="Zadajte predpokladanú cenu"
+                      value={bookingPrice}
+                      onChange={(e) => setBookingPrice(e.target.value)}
+                    />
+                  </div>
                 </div>
+              </div>
+              
+              <div className="pt-4">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={!selectedDate || !selectedTimeSlot || !bookingDescription || isSubmitting}
+                >
+                  {isSubmitting ? "Odosielam..." : "Odoslať požiadavku"}
+                </Button>
                 
-                {!isCurrentUser && userType === 'customer' && (
-                  <ReservationSystem />
+                {profileData.hourly_rate && (
+                  <p className="mt-2 text-sm text-gray-500 text-center">
+                    Hodinová sadzba: {formatCurrency(profileData.hourly_rate)}
+                  </p>
                 )}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : !isCraftsmanProfile ? (
-        <Card className="border border-border/50 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-xl font-semibold mb-6">Poslať správu</h3>
-            <form className="space-y-4">
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium mb-2"
-                >
-                  Vaše meno
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  className="w-full p-3 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  placeholder="Zadajte vaše meno"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium mb-2"
-                >
-                  Váš email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  className="w-full p-3 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  placeholder="Zadajte váš email"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="message"
-                  className="block text-sm font-medium mb-2"
-                >
-                  Správa
-                </label>
-                <textarea
-                  id="message"
-                  rows={4}
-                  className="w-full p-3 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  placeholder="Opíšte vašu požiadavku..."
-                ></textarea>
-              </div>
-              <Button type="submit" className="w-full">
-                Odoslať správu
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+            </div>
+          </form>
+        </TabsContent>
+        
+        <TabsContent value="message">
+          <div className="text-center py-8">
+            <h3 className="text-xl font-semibold mb-4">Poslať správu remeselníkovi</h3>
+            <p className="mb-6 text-gray-600">
+              Kliknite na tlačidlo nižšie pre kontaktovanie remeselníka {profileData.name} priamo cez správy.
+            </p>
+            <Button onClick={handleSendMessage}>
+              Prejsť na správy
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
