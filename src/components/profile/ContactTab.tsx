@@ -191,18 +191,20 @@ const ContactTab: React.FC = () => {
         throw new Error("Nepodarilo sa vytvoriť konverzáciu");
       }
       
-      // Create booking request
+      // Create booking request - Fixed property names to match database schema
       const { error: bookingError } = await supabase
         .from('booking_requests')
         .insert({
           conversation_id: conversationId,
           customer_id: user.id,
           craftsman_id: profileData.id,
-          requested_date: formattedDate,
-          requested_time: selectedTimeSlot,
-          description: bookingDescription,
+          customer_name: user.user_metadata?.name || "Customer",
+          date: formattedDate,  // Changed from requested_date to date
+          start_time: selectedTimeSlot, // Changed from requested_time to start_time
+          end_time: (parseInt(selectedTimeSlot.split(':')[0]) + 1) + ":" + selectedTimeSlot.split(':')[1], // Added end_time
+          message: bookingDescription, // Changed from description to message
           address: address,
-          price: bookingPrice ? parseFloat(bookingPrice) : null,
+          amount: bookingPrice ? bookingPrice : null,
           status: 'pending'
         });
         
@@ -210,16 +212,16 @@ const ContactTab: React.FC = () => {
         throw bookingError;
       }
       
-      // Send system message to conversation about booking request
+      // Send system message to conversation about booking request - Fixed property names
       const { error: messageError } = await supabase
         .from('chat_messages')
         .insert({
           conversation_id: conversationId,
           sender_id: user.id,
-          recipient_id: profileData.id,
-          message: `Rezervácia: ${formattedDate} ${selectedTimeSlot}`,
-          message_type: 'booking_request',
-          is_system_message: true
+          receiver_id: profileData.id, // Changed from recipient_id to receiver_id
+          content: `Rezervácia: ${formattedDate} ${selectedTimeSlot}`,
+          metadata: { type: 'booking_request' }, // Added metadata object
+          read: false
         });
         
       if (messageError) {

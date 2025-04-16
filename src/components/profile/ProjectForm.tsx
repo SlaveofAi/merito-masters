@@ -113,8 +113,35 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onCancel, initialDa
     if (initialData && editingImageIndex < originalImages.length) {
       // For existing images that are edited, add to images array
       setImages(prev => [...prev, croppedImage]);
+      
       // Store metadata to know this is an update to an existing image
-      croppedImage.name = `update_${originalImages[editingImageIndex].id}_${croppedImage.name}`;
+      // Create a new File object with custom properties
+      const newFile = new File([croppedImage], croppedImage.name, { 
+        type: croppedImage.type,
+        lastModified: croppedImage.lastModified 
+      });
+      
+      // Instead of directly modifying the name property (which is read-only),
+      // use a Map or WeakMap to associate metadata with the file
+      const fileWithMetadata = new File(
+        [croppedImage], 
+        `update_${originalImages[editingImageIndex].id}_${croppedImage.name}`,
+        { type: croppedImage.type }
+      );
+      
+      // Replace the file in the images array
+      const updatedImages = [...images];
+      const existingUpdateIndex = updatedImages.findIndex(
+        img => img.name.startsWith(`update_${originalImages[editingImageIndex].id}_`)
+      );
+      
+      if (existingUpdateIndex !== -1) {
+        updatedImages[existingUpdateIndex] = fileWithMetadata;
+      } else {
+        updatedImages.push(fileWithMetadata);
+      }
+      
+      setImages(updatedImages);
     } else {
       // For newly added images that are edited
       const adjustedIndex = initialData ? editingImageIndex - originalImages.length : editingImageIndex;
