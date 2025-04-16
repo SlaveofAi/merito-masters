@@ -13,6 +13,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
+import { Image, Loader2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 const ContactTab = () => {
   const { profileData, loading } = useProfile();
@@ -27,6 +29,11 @@ const ContactTab = () => {
   const [address, setAddress] = useState("");
   const [bookingPrice, setBookingPrice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Image upload state
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   
   // Active tab state
   const [activeTab, setActiveTab] = useState("booking");
@@ -65,7 +72,18 @@ const ContactTab = () => {
         setAvailableTimeSlots(defaultSlots);
       } else {
         // Use the retrieved time slots or empty array if none found
-        setAvailableTimeSlots(data.time_slots || []);
+        const slots = data.time_slots;
+        // Check if slots is an array before setting
+        if (Array.isArray(slots)) {
+          setAvailableTimeSlots(slots);
+        } else {
+          // If not an array, set default slots
+          const defaultSlots = [];
+          for (let i = 9; i <= 17; i++) {
+            defaultSlots.push(`${i}:00`);
+          }
+          setAvailableTimeSlots(defaultSlots);
+        }
       }
       
       // Reset selected time slot if it was previously set
@@ -73,6 +91,63 @@ const ContactTab = () => {
     } catch (error) {
       console.error("Error in fetch available time slots:", error);
       setAvailableTimeSlots([]);
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Prosím, nahrajte obrázok v podporovanom formáte (JPEG, PNG, WEBP, GIF)");
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Obrázok je príliš veľký. Maximálna veľkosť je 5MB.");
+        return;
+      }
+      
+      setImageFile(file);
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const uploadImage = async (file: File): Promise<string | null> => {
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `booking-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `booking_images/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('booking_images')
+        .upload(filePath, file, {
+          upsert: true
+        });
+        
+      if (uploadError) {
+        console.error("Error uploading booking image:", uploadError);
+        throw uploadError;
+      }
+      
+      const { data } = supabase.storage
+        .from('booking_images')
+        .getPublicUrl(filePath);
+        
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading booking image:', error);
+      toast.error("Nastala chyba pri nahrávaní obrázku");
+      return null;
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -94,6 +169,17 @@ const ContactTab = () => {
       setIsSubmitting(true);
       
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
+      
+      // Upload image if provided
+      let imageUrl = null;
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+        if (!imageUrl) {
+          toast.error("Nepodarilo sa nahrať obrázok. Skúste to prosím znova.");
+          setIsSubmitting(false);
+          return;
+        }
+      }
       
       // First check if conversation exists
       const { data: existingConversation, error: convFetchError } = await supabase
@@ -141,27 +227,36 @@ const ContactTab = () => {
           customer_id: user.id,
           craftsman_id: profileData.id,
           customer_name: user.user_metadata?.name || "Customer",
-          date: formattedDate,  // Changed from requested_date to date
-          start_time: selectedTimeSlot, // Changed from requested_time to start_time
-          end_time: (parseInt(selectedTimeSlot.split(':')[0]) + 1) + ":" + selectedTimeSlot.split(':')[1], // Added end_time
-          message: bookingDescription, // Changed from description to message
+          date: formattedDate,
+          start_time: selectedTimeSlot,
+          end_time: (parseInt(selectedTimeSlot.split(':')[0]) + 1) + ":" + selectedTimeSlot.split(':')[1],
+          message: bookingDescription,
           amount: bookingPrice ? bookingPrice : null,
-          status: 'pending'
+          image_url: imageUrl
         });
         
       if (bookingError) {
         throw bookingError;
       }
       
-      // Send system message to conversation about booking request - Fixed property names
+      // Send system message to conversation about booking request
       const { error: messageError } = await supabase
         .from('chat_messages')
         .insert({
           conversation_id: conversationId,
           sender_id: user.id,
-          receiver_id: profileData.id, // Changed from recipient_id to receiver_id
+          receiver_id: profileData.id,
           content: `Rezervácia: ${formattedDate} ${selectedTimeSlot}`,
-          metadata: { type: 'booking_request' }, // Added metadata object
+          metadata: { 
+            type: 'booking_request',
+            details: {
+              date: formattedDate,
+              time: selectedTimeSlot,
+              message: bookingDescription,
+              amount: bookingPrice || null,
+              image_url: imageUrl
+            }
+          },
           read: false
         });
         
@@ -350,6 +445,59 @@ const ContactTab = () => {
                       onChange={(e) => setBookingPrice(e.target.value)}
                     />
                   </div>
+                  
+                  <div>
+                    <Label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
+                      Pridať fotografiu (voliteľné)
+                    </Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor="image-upload"
+                          className="flex items-center justify-center gap-2 cursor-pointer px-4 py-2 bg-gray-100 hover:bg-gray-200 border rounded-md text-sm font-medium"
+                        >
+                          <Image className="h-4 w-4" />
+                          Nahrať obrázok
+                        </Label>
+                        <Input
+                          id="image-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="hidden"
+                        />
+                        {imageFile && (
+                          <span className="text-sm text-gray-600 truncate max-w-[200px]">
+                            {imageFile.name}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {imagePreview && (
+                        <div className="mt-2">
+                          <div className="relative w-full max-w-xs">
+                            <img 
+                              src={imagePreview} 
+                              alt="Preview" 
+                              className="w-full h-auto rounded-md object-cover"
+                              style={{ maxHeight: '150px' }} 
+                            />
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-1 right-1 h-6 w-6 p-0"
+                              onClick={() => {
+                                setImageFile(null);
+                                setImagePreview(null);
+                              }}
+                            >
+                              &times;
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
               
@@ -357,14 +505,21 @@ const ContactTab = () => {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={!selectedDate || !selectedTimeSlot || !bookingDescription || isSubmitting}
+                  disabled={!selectedDate || !selectedTimeSlot || !bookingDescription || isSubmitting || isUploading}
                 >
-                  {isSubmitting ? "Odosielam..." : "Odoslať požiadavku"}
+                  {isSubmitting || isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                      Odosielam...
+                    </>
+                  ) : (
+                    "Odoslať požiadavku"
+                  )}
                 </Button>
                 
                 {profileData.hourly_rate && (
                   <p className="mt-2 text-sm text-gray-500 text-center">
-                    Hodinová sadzba: {formatCurrency(profileData.hourly_rate)}
+                    Hodinová sadzba: {formatCurrency(profileData.hourly_rate || 0)}
                   </p>
                 )}
               </div>
