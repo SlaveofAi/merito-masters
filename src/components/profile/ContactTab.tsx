@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Phone, Mail, MapPin, Calendar, ChevronLeft, ChevronRight, Loader2, Clock } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -14,6 +14,16 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { formatCurrency } from "@/utils/formatters";
+
+const TIME_SLOTS = [
+  "08:00", "09:00", "10:00", "11:00", "12:00", 
+  "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"
+];
 
 const ContactTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
@@ -25,6 +35,13 @@ const ContactTab: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasShownFirstAvailableMonth, setHasShownFirstAvailableMonth] = useState(false);
   const navigate = useNavigate();
+
+  // Reservation system states
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
+  const [bookingPrice, setBookingPrice] = useState<string>("");
+  const [bookingDescription, setBookingDescription] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isCraftsmanProfile = profileData && 'trade_category' in profileData;
 
@@ -87,6 +104,7 @@ const ContactTab: React.FC = () => {
   const handleDateClick = (date: Date) => {
     if (availableDates.some(d => d.toDateString() === date.toDateString())) {
       setSelectedDate(date);
+      setSelectedTimeSlot(null); // Reset time slot when date changes
     }
   };
 
@@ -100,6 +118,130 @@ const ContactTab: React.FC = () => {
     const prevMonth = new Date(month);
     prevMonth.setMonth(prevMonth.getMonth() - 1);
     setMonth(prevMonth);
+  };
+
+  // Handle booking submission
+  const handleBookingSubmit = async () => {
+    if (!user) {
+      toast.error("Pre rezerváciu termínu sa musíte prihlásiť");
+      navigate('/login', { state: { from: 'profile' } });
+      return;
+    }
+
+    if (!profileData?.id) {
+      toast.error("Nepodarilo sa nájsť profil remeselníka");
+      return;
+    }
+
+    if (!selectedDate || !selectedTimeSlot) {
+      toast.error("Vyberte si termín a čas");
+      return;
+    }
+
+    if (!bookingDescription) {
+      toast.error("Popis požiadavky je povinný");
+      return;
+    }
+
+    if (!address) {
+      toast.error("Adresa je povinná");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      
+      // Create conversation if it doesn't exist
+      let conversationId;
+      
+      // Check if conversation already exists
+      const { data: existingConversation, error: fetchError } = await supabase
+        .from('chat_conversations')
+        .select('id')
+        .eq('customer_id', user.id)
+        .eq('craftsman_id', profileData.id)
+        .maybeSingle();
+        
+      if (fetchError) {
+        throw fetchError;
+      }
+      
+      if (existingConversation) {
+        conversationId = existingConversation.id;
+      } else {
+        // Create new conversation
+        const { data: newConversation, error: createError } = await supabase
+          .from('chat_conversations')
+          .insert({
+            customer_id: user.id,
+            craftsman_id: profileData.id
+          })
+          .select();
+          
+        if (createError) {
+          throw createError;
+        }
+        
+        conversationId = newConversation?.[0]?.id;
+      }
+      
+      if (!conversationId) {
+        throw new Error("Nepodarilo sa vytvoriť konverzáciu");
+      }
+      
+      // Create booking request
+      const { error: bookingError } = await supabase
+        .from('booking_requests')
+        .insert({
+          conversation_id: conversationId,
+          customer_id: user.id,
+          craftsman_id: profileData.id,
+          requested_date: formattedDate,
+          requested_time: selectedTimeSlot,
+          description: bookingDescription,
+          address: address,
+          price: bookingPrice ? parseFloat(bookingPrice) : null,
+          status: 'pending'
+        });
+        
+      if (bookingError) {
+        throw bookingError;
+      }
+      
+      // Send system message to conversation about booking request
+      const { error: messageError } = await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          recipient_id: profileData.id,
+          message: `Rezervácia: ${formattedDate} ${selectedTimeSlot}`,
+          message_type: 'booking_request',
+          is_system_message: true
+        });
+        
+      if (messageError) {
+        throw messageError;
+      }
+      
+      toast.success("Rezervácia bola úspešne odoslaná");
+      
+      // Navigate to conversation to see the booking request
+      navigate('/messages', { 
+        state: { 
+          from: 'profile',
+          conversationId,
+          contactId: profileData.id 
+        } 
+      });
+    } catch (err: any) {
+      console.error("Error creating booking:", err);
+      toast.error(`Chyba pri vytváraní rezervácie: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const CraftsmanAvailabilityPanel = () => {
@@ -213,6 +355,93 @@ const ContactTab: React.FC = () => {
     </div>
   );
 
+  const ReservationSystem = () => {
+    if (!selectedDate) {
+      return (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg text-center">
+          <p className="text-gray-500">Pre zobrazenie voľných termínov vyberte dostupný deň v kalendári</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-6">
+        <h4 className="font-medium mb-3">Dostupné časy pre {format(selectedDate, 'dd.MM.yyyy')}</h4>
+        
+        <div className="flex flex-wrap gap-2 mb-4">
+          {TIME_SLOTS.map((time) => (
+            <Button
+              key={time}
+              variant={selectedTimeSlot === time ? "default" : "outline"}
+              size="sm"
+              className="flex items-center"
+              onClick={() => setSelectedTimeSlot(time)}
+            >
+              <Clock className="h-3 w-3 mr-1" />
+              {time}
+            </Button>
+          ))}
+        </div>
+        
+        {selectedTimeSlot && (
+          <div className="space-y-4 mt-6 p-4 border border-green-100 bg-green-50/30 rounded-lg">
+            <div>
+              <Label htmlFor="description">Popis požiadavky</Label>
+              <Textarea
+                id="description"
+                placeholder="Opíšte čo potrebujete..."
+                value={bookingDescription}
+                onChange={(e) => setBookingDescription(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="address">Adresa</Label>
+              <Input
+                id="address"
+                placeholder="Zadajte adresu kde sa má vykonať práca"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="price">Navrhovaná cena (€)</Label>
+              <Input
+                id="price"
+                type="number"
+                placeholder="Nepovinné"
+                value={bookingPrice}
+                onChange={(e) => setBookingPrice(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Zadávajte len čísla, napr. 50 pre 50€
+              </p>
+            </div>
+            
+            <Button 
+              className="w-full mt-4" 
+              onClick={handleBookingSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Odosielam...
+                </>
+              ) : (
+                "Odoslať rezerváciu"
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const handleStartChat = () => {
     if (!user) {
       toast.error("Pre kontaktovanie remeselníka sa musíte prihlásiť");
@@ -277,13 +506,46 @@ const ContactTab: React.FC = () => {
         {isCraftsmanProfile && userType === 'customer' && !isCurrentUser && (
           <Card className="border border-border/50 shadow-sm">
             <CardContent className="p-6">
-              <h4 className="text-lg font-medium mb-3">Kontaktovať remeselníka</h4>
-              <p className="text-sm text-gray-500 mb-4">
-                Pre rezerváciu termínu a konzultáciu prejdite do správ, kde môžete odoslať vašu požiadavku.
-              </p>
-              <Button onClick={handleStartChat} className="w-full">
-                Prejsť do správ
-              </Button>
+              <Tabs defaultValue="booking" className="w-full">
+                <TabsList className="w-full mb-4">
+                  <TabsTrigger value="booking" className="flex-1">Rezervácia termínu</TabsTrigger>
+                  <TabsTrigger value="message" className="flex-1">Poslať správu</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="booking">
+                  <div className="mb-4">
+                    <h4 className="text-lg font-medium mb-2">Rezervácia termínu</h4>
+                    <p className="text-sm text-gray-500">
+                      Vyberte si z dostupných dní v kalendári a rezervujte si termín u remeselníka.
+                      Po odoslaní rezervácie budete presmerovaní do správ, kde môžete komunikovať priamo s remeselníkom.
+                    </p>
+                  </div>
+                  
+                  {!user && (
+                    <div className="mt-4 p-4 bg-yellow-50 rounded-lg flex flex-col items-center">
+                      <p className="text-sm text-amber-800 mb-3">Pre rezerváciu termínu sa musíte prihlásiť</p>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => navigate('/login')}>Prihlásiť sa</Button>
+                        <Button size="sm" variant="outline" onClick={() => navigate('/register')}>
+                          Registrovať sa
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="message">
+                  <div className="mb-4">
+                    <h4 className="text-lg font-medium mb-2">Poslať správu</h4>
+                    <p className="text-sm text-gray-500">
+                      Prejdite do správ, kde môžete remeselníkovi napísať a prediskutovať vašu požiadavku.
+                    </p>
+                  </div>
+                  <Button onClick={handleStartChat} className="w-full">
+                    Prejsť do správ
+                  </Button>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         )}
@@ -294,7 +556,7 @@ const ContactTab: React.FC = () => {
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold mb-4 flex items-center">
               <Calendar className="w-5 h-5 mr-2" />
-              {isCurrentUser ? "Váš kalendár dostupnosti" : "Kalendár dostupnosti"}
+              {isCurrentUser ? "Váš kalendár dostupnosti" : "Rezervácia termínu"}
             </h3>
             
             {error && (
@@ -310,8 +572,14 @@ const ContactTab: React.FC = () => {
                 <span className="ml-2">Načítavam dostupné termíny...</span>
               </div>
             ) : (
-              <div className="max-h-[450px] overflow-auto">
-                <AvailabilityViewer />
+              <div>
+                <div className="max-h-[450px] overflow-auto">
+                  <AvailabilityViewer />
+                </div>
+                
+                {!isCurrentUser && userType === 'customer' && (
+                  <ReservationSystem />
+                )}
               </div>
             )}
           </CardContent>
