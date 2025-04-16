@@ -73,9 +73,10 @@ const ContactTab = () => {
       } else {
         // Use the retrieved time slots or empty array if none found
         const slots = data.time_slots;
-        // Check if slots is an array before setting
+        // Check if slots is an array before setting, and convert to string array
         if (Array.isArray(slots)) {
-          setAvailableTimeSlots(slots);
+          const stringSlots = slots.map(slot => String(slot));
+          setAvailableTimeSlots(stringSlots);
         } else {
           // If not an array, set default slots
           const defaultSlots = [];
@@ -124,7 +125,7 @@ const ContactTab = () => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `booking-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `booking_images/${fileName}`;
+      const filePath = `${fileName}`;
       
       const { error: uploadError } = await supabase.storage
         .from('booking_images')
@@ -354,6 +355,11 @@ const ContactTab = () => {
     return <div className="py-8 text-center">Načítavam...</div>;
   }
 
+  // Get hourly rate from profileData if it's a craftsman
+  const hourlyRate = profileData.user_type === 'craftsman' && 'hourly_rate' in profileData 
+    ? (profileData as any).hourly_rate 
+    : null;
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
@@ -517,9 +523,9 @@ const ContactTab = () => {
                   )}
                 </Button>
                 
-                {profileData.hourly_rate && (
+                {hourlyRate && (
                   <p className="mt-2 text-sm text-gray-500 text-center">
-                    Hodinová sadzba: {formatCurrency(profileData.hourly_rate || 0)}
+                    Hodinová sadzba: {formatCurrency(hourlyRate || 0)}
                   </p>
                 )}
               </div>

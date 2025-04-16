@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -172,7 +173,7 @@ const ProfileCalendar: React.FC = () => {
     return null;
   }
 
-  // Define the calendar component based on user type
+  // Define the calendar component for craftsman (with multi-select)
   const CraftsmanCalendar = () => (
     <Calendar
       mode="multiple"
@@ -180,17 +181,24 @@ const ProfileCalendar: React.FC = () => {
       onSelect={(dates) => {
         if (Array.isArray(dates)) {
           setSelectedDates(dates);
+        } else {
+          handleDateSelect(dates);
         }
       }}
+      month={month}
+      onMonthChange={setMonth}
       className="p-3 pointer-events-auto h-auto"
     />
   );
 
+  // Define the calendar component for customer (with single-select)
   const CustomerCalendar = () => (
     <Calendar
       mode="single"
       selected={selectedDate}
       onSelect={setSelectedDate}
+      month={month}
+      onMonthChange={setMonth}
       disabled={(date) => !selectedDates.some(d => d.toDateString() === date.toDateString())}
       modifiers={{
         available: (date) => selectedDates.some(d => d.toDateString() === date.toDateString())
