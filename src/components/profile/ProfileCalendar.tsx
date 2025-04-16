@@ -169,6 +169,7 @@ const ProfileCalendar: React.FC = () => {
     setMonth(prevMonth);
   };
 
+  // Don't render anything if this is not a craftsman profile
   if (!isCraftsmanProfile) {
     return null;
   }

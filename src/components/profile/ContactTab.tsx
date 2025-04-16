@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 
 const ContactTab = () => {
   const { profileData, loading } = useProfile();
-  const { user } = useAuth();
+  const { user, userType } = useAuth();
   const navigate = useNavigate();
   
   // Booking form state
@@ -37,6 +37,10 @@ const ContactTab = () => {
   
   // Active tab state
   const [activeTab, setActiveTab] = useState("booking");
+
+  // Check if the current user is a customer viewing a craftsman's profile
+  const isCustomerViewingCraftsman = user && userType === 'customer' && 
+    profileData && profileData.user_type === 'craftsman';
 
   useEffect(() => {
     if (selectedDate) {
@@ -355,10 +359,40 @@ const ContactTab = () => {
     return <div className="py-8 text-center">Načítavam...</div>;
   }
 
+  // Don't show booking functionality if the current user is a craftsman or viewing their own profile
+  if (userType === 'craftsman' || isCurrentUser) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto text-center">
+        <h3 className="text-xl font-semibold mb-4">Nastavenie dostupnosti</h3>
+        <p className="mb-6 text-gray-600">
+          Ako remeselník môžete nastaviť svoju dostupnosť v záložke "Portfolio" v časti "Kalendár dostupnosti".
+        </p>
+        <Button onClick={() => navigate('/profile/portfolio')}>
+          Prejsť na nastavenie dostupnosti
+        </Button>
+      </div>
+    );
+  }
+
   // Get hourly rate from profileData if it's a craftsman
   const hourlyRate = profileData.user_type === 'craftsman' && 'hourly_rate' in profileData 
     ? (profileData as any).hourly_rate 
     : null;
+
+  // Only show booking functionality for customers viewing a craftsman's profile
+  if (!isCustomerViewingCraftsman) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto text-center">
+        <h3 className="text-xl font-semibold mb-4">Kontaktujte nás</h3>
+        <p className="mb-6 text-gray-600">
+          Pre viac informácií nás prosím kontaktujte prostredníctvom správy.
+        </p>
+        <Button onClick={handleSendMessage}>
+          Poslať správu
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
