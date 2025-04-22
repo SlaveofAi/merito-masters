@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -17,7 +16,7 @@ import { Image, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
 const ContactTab = () => {
-  const { profileData, loading } = useProfile();
+  const { profileData, loading, isCurrentUser } = useProfile();
   const { user, userType } = useAuth();
   const navigate = useNavigate();
   
