@@ -68,10 +68,6 @@ const ProfileContactContent: React.FC = () => {
   // Check if user is attempting to send a booking request but not logged in
   const isCraftsmanProfile = profileData && profileData.user_type === 'craftsman';
   const showLoginPrompt = !user && !isCurrentUser && isCraftsmanProfile;
-  
-  // Show calendar if the profile is a craftsman profile
-  // We'll show it for both the craftsman viewing their own profile and for customers viewing a craftsman profile
-  const showCalendar = isCraftsmanProfile;
 
   return (
     <Layout>
@@ -82,8 +78,8 @@ const ProfileContactContent: React.FC = () => {
           <ProfileNavigation activeTab="contact" userType={profileData.user_type} />
           
           <div className="mt-8 space-y-6">
-            {/* Show availability calendar for craftsman */}
-            {showCalendar && (
+            {/* Always show availability calendar for craftsman profiles (both for viewing and editing) */}
+            {isCraftsmanProfile && (
               <div>
                 <h2 className="text-2xl font-semibold mb-4">Kalendár dostupnosti</h2>
                 <ProfileCalendar />

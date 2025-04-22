@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,7 +90,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
         replyText: editReplyText
       });
       
-      // Get the reply record ID if possible
+      // First check if a reply exists
       const { data: replyData, error: fetchError } = await supabase
         .from('craftsman_review_replies')
         .select('id')
@@ -100,15 +99,34 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
         
       if (fetchError && fetchError.code !== "PGRST116") {
         console.error("Error fetching reply record:", fetchError);
+        throw fetchError;
       }
       
-      // Update the reply in the database
-      const { error } = await supabase
-        .from('craftsman_review_replies')
-        .update({ reply: editReplyText })
-        .eq('review_id', review.id);
+      let updateError;
       
-      if (error) throw error;
+      if (replyData) {
+        // Update existing reply
+        const { error } = await supabase
+          .from('craftsman_review_replies')
+          .update({ reply: editReplyText })
+          .eq('id', replyData.id);
+        
+        updateError = error;
+      } else {
+        // If no reply exists, create a new one using the rpc function
+        const { error } = await (supabase.rpc as any)(
+          'add_review_reply',
+          {
+            p_review_id: review.id,
+            p_craftsman_id: userId,
+            p_reply: editReplyText
+          }
+        );
+        
+        updateError = error;
+      }
+      
+      if (updateError) throw updateError;
       
       toast.success("Odpoveď bola úspešne aktualizovaná");
       setEditingReply(false);
