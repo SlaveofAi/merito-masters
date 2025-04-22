@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,37 +85,39 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
     setError(null);
     
     try {
-      console.log("Updating reply:", {
+      console.log("Updating reply for review:", {
         reviewId: review.id,
         craftsmanId: userId,
         replyText: editReplyText
       });
       
-      // First check if a reply exists
-      const { data: replyData, error: fetchError } = await supabase
+      // Step 1: Find the specific reply record by review_id and craftsman_id
+      const { data: replyRecord, error: fetchError } = await supabase
         .from('craftsman_review_replies')
         .select('id')
         .eq('review_id', review.id)
+        .eq('craftsman_id', userId)
         .maybeSingle();
-        
+      
+      console.log("Reply record fetch result:", { replyRecord, fetchError });
+      
       if (fetchError && fetchError.code !== "PGRST116") {
-        console.error("Error fetching reply record:", fetchError);
         throw fetchError;
       }
       
-      let updateError;
+      let updateResult;
       
-      if (replyData) {
-        // Update existing reply
-        const { error } = await supabase
+      if (replyRecord) {
+        // Update existing reply using its specific ID
+        console.log("Updating existing reply with ID:", replyRecord.id);
+        updateResult = await supabase
           .from('craftsman_review_replies')
           .update({ reply: editReplyText })
-          .eq('id', replyData.id);
-        
-        updateError = error;
+          .eq('id', replyRecord.id);
       } else {
-        // If no reply exists, create a new one using the rpc function
-        const { error } = await (supabase.rpc as any)(
+        // Create new reply if none exists
+        console.log("No existing reply found, creating new one");
+        updateResult = await (supabase.rpc as any)(
           'add_review_reply',
           {
             p_review_id: review.id,
@@ -122,11 +125,11 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
             p_reply: editReplyText
           }
         );
-        
-        updateError = error;
       }
       
-      if (updateError) throw updateError;
+      console.log("Update/Create result:", updateResult);
+      
+      if (updateResult.error) throw updateResult.error;
       
       toast.success("Odpoveď bola úspešne aktualizovaná");
       setEditingReply(false);

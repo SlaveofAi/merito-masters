@@ -25,6 +25,17 @@ const ProfileContactContent: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
+  // Debug log to help troubleshoot
+  React.useEffect(() => {
+    console.log("ProfileContact rendering:", {
+      loading,
+      profileFound: !!profileData,
+      isCurrentUser,
+      profileType: profileData?.user_type,
+      isCraftsmanProfile: profileData?.user_type === 'craftsman'
+    });
+  }, [loading, profileData, isCurrentUser]);
+
   if (loading || authLoading) {
     return (
       <Layout>

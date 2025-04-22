@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,15 @@ const ProfileCalendar: React.FC = () => {
   const [motivationalMessage, setMotivationalMessage] = useState<string>('');
 
   const isCraftsmanProfile = profileData?.user_type === 'craftsman';
+
+  // Debug log
+  useEffect(() => {
+    console.log("ProfileCalendar component rendered", {
+      isCraftsmanProfile,
+      profileId: profileData?.id,
+      isCurrentUser
+    });
+  }, [profileData, isCurrentUser]);
 
   useEffect(() => {
     if (profileData?.id && isCraftsmanProfile) {
@@ -50,6 +60,7 @@ const ProfileCalendar: React.FC = () => {
     
     try {
       console.log("Running fetchAvailableDates for:", profileData?.id);
+      // Use standard JSON format instead of single object response
       const { data, error } = await supabase
         .from('craftsman_availability')
         .select('date')
@@ -138,6 +149,7 @@ const ProfileCalendar: React.FC = () => {
   const handleDateSelect = (date: Date | undefined) => {
     if (!date || !isCurrentUser) return;
     
+    // Toggle the date selection
     if (selectedDates.some(d => d.toDateString() === date.toDateString())) {
       setSelectedDates(prev => prev.filter(d => d.toDateString() !== date.toDateString()));
     } else {
