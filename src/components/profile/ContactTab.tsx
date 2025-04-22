@@ -362,13 +362,10 @@ const ContactTab = () => {
   if (userType === 'craftsman' || isCurrentUser) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto text-center">
-        <h3 className="text-xl font-semibold mb-4">Nastavenie dostupnosti</h3>
+        <h3 className="text-xl font-semibold mb-4">Kontakt</h3>
         <p className="mb-6 text-gray-600">
-          Ako remeselník môžete nastaviť svoju dostupnosť v záložke "Portfolio" v časti "Kalendár dostupnosti".
+          Nastavte svoju dostupnosť v sekcii "Kalendár dostupnosti" vyššie na tejto stránke.
         </p>
-        <Button onClick={() => navigate('/profile/portfolio')}>
-          Prejsť na nastavenie dostupnosti
-        </Button>
       </div>
     );
   }

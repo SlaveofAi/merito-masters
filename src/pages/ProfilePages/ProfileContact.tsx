@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import ProfileCalendar from "@/components/profile/ProfileCalendar";
 
 const ProfileContactContent: React.FC = () => {
   const {
@@ -67,6 +68,9 @@ const ProfileContactContent: React.FC = () => {
   // Check if user is attempting to send a booking request but not logged in
   const isCraftsmanProfile = profileData && profileData.user_type === 'craftsman';
   const showLoginPrompt = !user && !isCurrentUser && isCraftsmanProfile;
+  
+  // Show calendar if current user is a craftsman viewing their own profile
+  const showCalendar = isCurrentUser && isCraftsmanProfile;
 
   return (
     <Layout>
@@ -76,7 +80,15 @@ const ProfileContactContent: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <ProfileNavigation activeTab="contact" userType={profileData.user_type} />
           
-          <div className="mt-8">
+          <div className="mt-8 space-y-6">
+            {/* Show availability calendar for craftsman on their own profile */}
+            {showCalendar && (
+              <div>
+                <h2 className="text-2xl font-semibold mb-4">Kalendár dostupnosti</h2>
+                <ProfileCalendar />
+              </div>
+            )}
+            
             {showLoginPrompt ? (
               <div className="bg-white shadow rounded-lg p-6 max-w-2xl mx-auto text-center">
                 <h3 className="text-xl font-semibold mb-4">Pre rezerváciu termínu sa musíte prihlásiť</h3>

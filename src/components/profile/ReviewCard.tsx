@@ -91,11 +91,11 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
         replyText: editReplyText
       });
       
-      // Update the reply in the database
+      // Fix: Use the correct table and query to update the reply
       const { error } = await supabase
         .from('craftsman_review_replies')
         .update({ reply: editReplyText })
-        .match({ review_id: review.id, craftsman_id: userId });
+        .eq('review_id', review.id);
       
       if (error) throw error;
       
