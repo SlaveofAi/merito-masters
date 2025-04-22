@@ -60,7 +60,8 @@ const ProfileCalendar: React.FC = () => {
     
     try {
       console.log("Running fetchAvailableDates for:", profileData?.id);
-      // Use standard JSON format instead of single object response
+      
+      // Important: Use regular JSON response instead of expecting a single object
       const { data, error } = await supabase
         .from('craftsman_availability')
         .select('date')

@@ -3,58 +3,66 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Reply, AlertCircle, Edit, Trash2, Save } from "lucide-react";
-import { toast } from "sonner";
-import ReviewStarRating from "./ReviewStarRating";
-import { supabase } from "@/integrations/supabase/client";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
-import ReviewForm from "./ReviewForm";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { StarFilledIcon } from "@radix-ui/react-icons";
+import { AlertCircle, CheckCircle2, CornerDownLeft, Edit, ThumbsUp, User } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+type Review = {
+  id: string;
+  customer_id: string;
+  customer_name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+};
+
+type ReviewReply = {
+  id: string;
+  review_id: string;
+  craftsman_id: string;
+  reply: string;
+  created_at: string;
+};
 
 interface ReviewCardProps {
-  review: any;
-  canReplyToReview: boolean;
-  userId?: string;
-  onRefresh: () => void;
+  review: Review;
+  reply?: ReviewReply | null;
+  isCraftsman?: boolean;
+  onReplyUpdated?: () => void;
 }
 
-const ReviewCard: React.FC<ReviewCardProps> = ({
+export const ReviewCard: React.FC<ReviewCardProps> = ({
   review,
-  canReplyToReview,
-  userId,
-  onRefresh
+  reply,
+  isCraftsman = false,
+  onReplyUpdated
 }) => {
-  const { user } = useAuth();
-  const [replyText, setReplyText] = useState("");
+  const { user, userType } = useAuth();
   const [showReplyForm, setShowReplyForm] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [editingReply, setEditingReply] = useState(false);
+  const [editReplyText, setEditReplyText] = useState(reply?.reply || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [editingReply, setEditingReply] = useState(false);
-  const [editReplyText, setEditReplyText] = useState(review.reply || "");
-
-  // Check if the current user is the author of this review
-  const isReviewAuthor = user?.id === review.customer_id;
   
-  // Check if the current user is the craftsman who can reply or edit reply
-  const isCraftsman = user?.id === review.craftsman_id || userId === review.craftsman_id;
-
-  const handleSubmitReply = async () => {
-    if (!userId || !replyText.trim()) return;
+  const userId = user?.id;
+  const isReviewOwner = userId === review.customer_id;
+  const canManageReply = isCraftsman && userId;
+  const hasReply = !!reply;
+  
+  const handleReply = async () => {
+    if (!replyText.trim() || !userId || !isCraftsman) return;
     
     setIsSubmitting(true);
     setError(null);
     
     try {
-      console.log("Submitting reply:", {
-        reviewId: review.id,
-        craftsmanId: userId,
-        replyText
-      });
-      
-      // Type-cast supabase.rpc as any to avoid TypeScript errors with generated types
-      const { error } = await (supabase.rpc as any)(
+      // Use server-side function to add a reply
+      const { data, error } = await (supabase.rpc as any)(
         'add_review_reply',
         {
           p_review_id: review.id,
@@ -65,21 +73,23 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
       
       if (error) throw error;
       
-      toast.success("Odpoveď bola úspešne odoslaná");
+      toast.success("Odpoveď bola úspešne pridaná");
       setReplyText("");
       setShowReplyForm(false);
-      onRefresh();
+      
+      if (onReplyUpdated) {
+        onReplyUpdated();
+      }
     } catch (error: any) {
-      console.error("Error submitting reply:", error);
-      setError(`Nastala chyba: ${error.message}`);
-      toast.error("Nastala chyba pri odosielaní odpovede");
+      console.error("Error adding review reply:", error);
+      setError("Nastala chyba pri pridávaní odpovede.");
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   const handleUpdateReply = async () => {
-    if (!userId || !editReplyText.trim()) return;
+    if (!editReplyText.trim() || !userId || !isCraftsman) return;
     
     setIsSubmitting(true);
     setError(null);
@@ -97,7 +107,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
         .select('id')
         .eq('review_id', review.id)
         .eq('craftsman_id', userId)
-        .maybeSingle();
+        .single();
       
       console.log("Reply record fetch result:", { replyRecord, fetchError });
       
@@ -105,273 +115,180 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
         throw fetchError;
       }
       
-      let updateResult;
+      // Step 2: Update the reply using the standard update method
+      const { error: updateError } = await supabase
+        .from('craftsman_review_replies')
+        .update({ reply: editReplyText })
+        .eq('review_id', review.id)
+        .eq('craftsman_id', userId);
       
-      if (replyRecord) {
-        // Update existing reply using its specific ID
-        console.log("Updating existing reply with ID:", replyRecord.id);
-        updateResult = await supabase
-          .from('craftsman_review_replies')
-          .update({ reply: editReplyText })
-          .eq('id', replyRecord.id);
-      } else {
-        // Create new reply if none exists
-        console.log("No existing reply found, creating new one");
-        updateResult = await (supabase.rpc as any)(
-          'add_review_reply',
-          {
-            p_review_id: review.id,
-            p_craftsman_id: userId,
-            p_reply: editReplyText
-          }
-        );
-      }
-      
-      console.log("Update/Create result:", updateResult);
-      
-      if (updateResult.error) throw updateResult.error;
+      if (updateError) throw updateError;
       
       toast.success("Odpoveď bola úspešne aktualizovaná");
       setEditingReply(false);
-      onRefresh();
-    } catch (error: any) {
-      console.error("Error updating reply:", error);
-      setError(`Nastala chyba: ${error.message}`);
-      toast.error("Nastala chyba pri aktualizácii odpovede");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDeleteReview = async () => {
-    if (!isReviewAuthor) return;
-    
-    setIsSubmitting(true);
-    setError(null);
-    
-    try {
-      const { error } = await supabase
-        .from('craftsman_reviews')
-        .delete()
-        .eq('id', review.id);
-        
-      if (error) throw error;
       
-      toast.success("Hodnotenie bolo úspešne odstránené");
-      onRefresh();
+      if (onReplyUpdated) {
+        onReplyUpdated();
+      }
     } catch (error: any) {
-      console.error("Error deleting review:", error);
-      setError(`Nastala chyba: ${error.message}`);
-      toast.error("Nastala chyba pri odstraňovaní hodnotenia");
+      console.error("Error updating review reply:", error);
+      setError("Nastala chyba pri aktualizácii odpovede.");
     } finally {
       setIsSubmitting(false);
-      setConfirmDelete(false);
     }
   };
-
-  // If in editing mode, show the review form instead
-  if (isEditing && isReviewAuthor) {
-    return (
-      <div className="mb-4">
-        <ReviewForm 
-          userId={review.customer_id}
-          profileId={review.craftsman_id}
-          userName={review.customer_name}
-          onSuccess={() => {
-            setIsEditing(false);
-            onRefresh();
-          }}
-          existingReview={{
-            id: review.id,
-            rating: review.rating,
-            comment: review.comment
-          }}
-        />
-        <div className="mt-2">
-          <Button 
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsEditing(false)}
-          >
-            Zrušiť úpravu
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start mb-2">
-          <div>
-            <div className="font-medium">{review.customer_name}</div>
-            <div className="text-sm text-gray-500">
-              {new Date(review.created_at).toLocaleDateString("sk-SK")}
-            </div>
+    <Card className="mb-4">
+      <CardContent className="pt-6">
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+            <User className="h-5 w-5 text-gray-500" />
           </div>
-          <ReviewStarRating value={review.rating} readonly size="small" />
-        </div>
-        <p className="text-gray-700">{review.comment}</p>
-        
-        {/* User actions for their own reviews */}
-        {isReviewAuthor && (
-          <div className="mt-3 flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center"
-              onClick={() => setIsEditing(true)}
-            >
-              <Edit className="mr-1 h-4 w-4" />
-              Upraviť
-            </Button>
+          
+          <div className="flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
+              <div>
+                <h3 className="font-medium">{review.customer_name}</h3>
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <time dateTime={review.created_at}>
+                    {format(new Date(review.created_at), 'dd.MM.yyyy')}
+                  </time>
+                </div>
+              </div>
+              
+              <div className="flex items-center mt-1 sm:mt-0">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <StarFilledIcon
+                    key={index}
+                    className={`h-4 w-4 ${index < review.rating ? 'text-amber-400' : 'text-gray-200'}`}
+                  />
+                ))}
+              </div>
+            </div>
             
-            {confirmDelete ? (
-              <>
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  className="flex items-center"
-                  onClick={handleDeleteReview}
-                  disabled={isSubmitting}
-                >
-                  <Trash2 className="mr-1 h-4 w-4" />
-                  Potvrdiť
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setConfirmDelete(false)}
-                  disabled={isSubmitting}
-                >
-                  Zrušiť
-                </Button>
-              </>
-            ) : (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center text-red-500"
-                onClick={() => setConfirmDelete(true)}
-              >
-                <Trash2 className="mr-1 h-4 w-4" />
-                Odstrániť
-              </Button>
-            )}
-          </div>
-        )}
-        
-        {/* Review reply section */}
-        {review.reply && !editingReply && (
-          <div className="mt-4 pl-4 border-l-2 border-gray-200">
-            <div className="flex justify-between items-start">
-              <div className="text-sm font-medium">Odpoveď remeselníka:</div>
-              {isCraftsman && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex items-center"
-                  onClick={() => {
-                    setEditingReply(true);
-                    setEditReplyText(review.reply);
-                  }}
-                >
-                  <Edit className="h-3 w-3 mr-1" />
-                  Upraviť
-                </Button>
-              )}
-            </div>
-            <p className="text-gray-700 text-sm">{review.reply}</p>
-          </div>
-        )}
-        
-        {/* Edit reply form */}
-        {editingReply && (
-          <div className="mt-4 space-y-3">
-            <Textarea
-              placeholder="Upravte odpoveď na túto recenziu..."
-              value={editReplyText}
-              onChange={(e) => setEditReplyText(e.target.value)}
-              rows={3}
-            />
-            <div className="flex space-x-2">
-              <Button 
-                size="sm"
-                onClick={handleUpdateReply}
-                disabled={!editReplyText.trim() || isSubmitting}
-              >
-                <Save className="h-4 w-4 mr-1" />
-                {isSubmitting ? "Ukladám..." : "Uložiť"}
-              </Button>
-              <Button 
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setEditingReply(false);
-                  setEditReplyText(review.reply || "");
-                }}
-                disabled={isSubmitting}
-              >
-                Zrušiť
-              </Button>
-            </div>
-          </div>
-        )}
-        
-        {/* Reply form - only for craftsmen on their own profile */}
-        {canReplyToReview && !review.reply && (
-          <div className="mt-4">
-            {error && (
-              <Alert variant="destructive" className="mb-3">
-                <AlertCircle className="h-4 w-4 mr-2" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+            <p className="text-gray-700 mt-2">{review.comment}</p>
+            
+            {/* Reply section */}
+            {hasReply && (
+              <div className="mt-4 pl-4 border-l-2 border-gray-200">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 mt-1 text-green-500" />
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-sm font-medium text-gray-700">Odpoveď remeselníka</h4>
+                      {canManageReply && (
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-7 px-2" 
+                          onClick={() => setEditingReply(true)}
+                        >
+                          <Edit className="h-3.5 w-3.5 mr-1" />
+                          <span className="text-xs">Upraviť</span>
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">{reply.reply}</p>
+                    <span className="text-xs text-gray-400 block mt-1">
+                      {format(new Date(reply.created_at), 'dd.MM.yyyy')}
+                    </span>
+                  </div>
+                </div>
+              </div>
             )}
             
-            {showReplyForm ? (
-              <div className="space-y-3">
+            {/* Reply editing form */}
+            {editingReply && (
+              <div className="mt-4">
+                {error && (
+                  <Alert variant="destructive" className="mb-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
                 <Textarea
-                  placeholder="Napíšte odpoveď na túto recenziu..."
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  rows={3}
+                  value={editReplyText}
+                  onChange={(e) => setEditReplyText(e.target.value)}
+                  placeholder="Upravte vašu odpoveď..."
+                  className="mb-2"
                 />
-                <div className="flex space-x-2">
+                <div className="flex justify-end gap-2">
                   <Button 
-                    size="sm"
-                    onClick={handleSubmitReply}
-                    disabled={!replyText.trim() || isSubmitting}
-                  >
-                    {isSubmitting ? "Odosielam..." : "Odoslať"}
-                  </Button>
-                  <Button 
-                    size="sm"
-                    variant="outline"
+                    variant="outline" 
+                    size="sm" 
                     onClick={() => {
-                      setShowReplyForm(false);
-                      setReplyText("");
-                      setError(null);
+                      setEditingReply(false);
+                      setEditReplyText(reply?.reply || "");
                     }}
                     disabled={isSubmitting}
                   >
                     Zrušiť
                   </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={handleUpdateReply}
+                    disabled={isSubmitting || !editReplyText.trim()}
+                  >
+                    {isSubmitting ? "Ukladám..." : "Uložiť zmeny"}
+                  </Button>
                 </div>
               </div>
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex items-center mt-2"
-                onClick={() => setShowReplyForm(true)}
-              >
-                <Reply className="mr-1 h-4 w-4" />
-                Odpovedať
-              </Button>
+            )}
+            
+            {/* Reply form */}
+            {canManageReply && !hasReply && (
+              <div className="mt-4">
+                {showReplyForm ? (
+                  <div>
+                    {error && (
+                      <Alert variant="destructive" className="mb-2">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+                    <Textarea
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="Napíšte vašu odpoveď..."
+                      className="mb-2"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          setShowReplyForm(false);
+                          setReplyText("");
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        Zrušiť
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        onClick={handleReply}
+                        disabled={isSubmitting || !replyText.trim()}
+                      >
+                        {isSubmitting ? "Odosielam..." : "Odoslať odpoveď"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="mt-2" 
+                    onClick={() => setShowReplyForm(true)}
+                  >
+                    <CornerDownLeft className="h-4 w-4 mr-1" />
+                    <span>Odpovedať</span>
+                  </Button>
+                )}
+              </div>
             )}
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );
