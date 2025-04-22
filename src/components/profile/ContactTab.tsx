@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -363,9 +364,15 @@ const ContactTab = () => {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto text-center">
         <h3 className="text-xl font-semibold mb-4">Kontakt</h3>
-        <p className="mb-6 text-gray-600">
-          Nastavte svoju dostupnosť v sekcii "Kalendár dostupnosti" vyššie na tejto stránke.
-        </p>
+        {isCurrentUser && profileData.user_type === 'craftsman' ? (
+          <p className="mb-6 text-gray-600">
+            Nastavte svoju dostupnosť v sekcii "Kalendár dostupnosti" vyššie na tejto stránke.
+          </p>
+        ) : (
+          <p className="mb-6 text-gray-600">
+            Tu môžete vidieť dostupnosť remeselníka a kontaktovať ho prostredníctvom správy.
+          </p>
+        )}
       </div>
     );
   }

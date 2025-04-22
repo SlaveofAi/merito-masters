@@ -91,7 +91,18 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
         replyText: editReplyText
       });
       
-      // Fix: Use the correct table and query to update the reply
+      // Get the reply record ID if possible
+      const { data: replyData, error: fetchError } = await supabase
+        .from('craftsman_review_replies')
+        .select('id')
+        .eq('review_id', review.id)
+        .maybeSingle();
+        
+      if (fetchError && fetchError.code !== "PGRST116") {
+        console.error("Error fetching reply record:", fetchError);
+      }
+      
+      // Update the reply in the database
       const { error } = await supabase
         .from('craftsman_review_replies')
         .update({ reply: editReplyText })

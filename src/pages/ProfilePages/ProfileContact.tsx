@@ -69,8 +69,9 @@ const ProfileContactContent: React.FC = () => {
   const isCraftsmanProfile = profileData && profileData.user_type === 'craftsman';
   const showLoginPrompt = !user && !isCurrentUser && isCraftsmanProfile;
   
-  // Show calendar if current user is a craftsman viewing their own profile
-  const showCalendar = isCurrentUser && isCraftsmanProfile;
+  // Show calendar if the profile is a craftsman profile
+  // We'll show it for both the craftsman viewing their own profile and for customers viewing a craftsman profile
+  const showCalendar = isCraftsmanProfile;
 
   return (
     <Layout>
@@ -81,7 +82,7 @@ const ProfileContactContent: React.FC = () => {
           <ProfileNavigation activeTab="contact" userType={profileData.user_type} />
           
           <div className="mt-8 space-y-6">
-            {/* Show availability calendar for craftsman on their own profile */}
+            {/* Show availability calendar for craftsman */}
             {showCalendar && (
               <div>
                 <h2 className="text-2xl font-semibold mb-4">Kalendár dostupnosti</h2>

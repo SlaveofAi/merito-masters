@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,6 @@ const ProfileCalendar: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [motivationalMessage, setMotivationalMessage] = useState<string>('');
 
-  // Check if we're viewing a craftsman profile
   const isCraftsmanProfile = profileData?.user_type === 'craftsman';
 
   useEffect(() => {
@@ -33,13 +31,10 @@ const ProfileCalendar: React.FC = () => {
     }
   }, [profileData?.id, isCraftsmanProfile]);
 
-  // Set the month to the first available month for customers
   useEffect(() => {
     if (!isCurrentUser && selectedDates.length > 0) {
-      // Sort dates and get the earliest one
       const sortedDates = [...selectedDates].sort((a, b) => a.getTime() - b.getTime());
       const earliestDate = sortedDates[0];
-      // Set the month to the earliest available date
       setMonth(earliestDate);
     }
   }, [selectedDates, isCurrentUser]);
@@ -68,7 +63,6 @@ const ProfileCalendar: React.FC = () => {
       }
 
       if (data && data.length > 0) {
-        // Parse the dates from string to Date objects
         const parsedDates = data.map(item => new Date(item.date));
         console.log("Found available dates:", parsedDates);
         setSelectedDates(parsedDates);
@@ -84,7 +78,6 @@ const ProfileCalendar: React.FC = () => {
     }
   };
 
-  // Get motivational phrases for craftsman
   const getMotivationalPhrase = () => {
     const phrases = [
       "Výborne! Vaša dostupnosť je nastavená, zákazníci vás môžu kontaktovať!",
@@ -108,7 +101,6 @@ const ProfileCalendar: React.FC = () => {
     try {
       console.log("Saving dates for craftsman:", profileData.id, selectedDates);
       
-      // First delete all existing dates for this craftsman
       const { error: deleteError } = await supabase
         .from('craftsman_availability')
         .delete()
@@ -118,11 +110,10 @@ const ProfileCalendar: React.FC = () => {
         throw deleteError;
       }
       
-      // Then insert the new dates
       if (selectedDates.length > 0) {
         const datesToInsert = selectedDates.map(date => ({
           craftsman_id: profileData.id,
-          date: date.toISOString().split('T')[0], // Format as YYYY-MM-DD
+          date: date.toISOString().split('T')[0],
           time_slots: []
         }));
         
@@ -133,7 +124,6 @@ const ProfileCalendar: React.FC = () => {
         if (error) throw error;
       }
       
-      // Set a new motivational message after successful save
       setMotivationalMessage(getMotivationalPhrase());
       toast.success("Dostupné dni boli úspešne uložené");
     } catch (error: any) {
@@ -148,11 +138,9 @@ const ProfileCalendar: React.FC = () => {
   const handleDateSelect = (date: Date | undefined) => {
     if (!date || !isCurrentUser) return;
     
-    // If the date is already selected, remove it
     if (selectedDates.some(d => d.toDateString() === date.toDateString())) {
       setSelectedDates(prev => prev.filter(d => d.toDateString() !== date.toDateString()));
     } else {
-      // Otherwise add it to the selected dates
       setSelectedDates(prev => [...prev, date]);
     }
   };
@@ -169,12 +157,10 @@ const ProfileCalendar: React.FC = () => {
     setMonth(prevMonth);
   };
 
-  // Don't render anything if this is not a craftsman profile
   if (!isCraftsmanProfile) {
     return null;
   }
 
-  // Define the calendar component for craftsman (with multi-select)
   const CraftsmanCalendar = () => (
     <Calendar
       mode="multiple"
@@ -192,7 +178,6 @@ const ProfileCalendar: React.FC = () => {
     />
   );
 
-  // Define the calendar component for customer (with single-select)
   const CustomerCalendar = () => (
     <Calendar
       mode="single"
