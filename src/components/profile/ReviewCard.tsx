@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,14 +45,15 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [editingReply, setEditingReply] = useState(false);
-  const [editReplyText, setEditReplyText] = useState(reply?.reply || "");
+  const [editReplyText, setEditReplyText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [customerDisplayName, setCustomerDisplayName] = useState<string>(review.customer_name);
   
   const userId = user?.id;
   const isReviewOwner = userId === review.customer_id;
   const canManageReply = isCraftsman && userId;
-  const hasReply = !!reply;
+  const hasReply = !!reply && !!reply.reply;
   
   // Add some debug logging to help understand what's happening with replies
   console.log("ReviewCard rendering:", {
@@ -63,6 +64,48 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     isCraftsman,
     canManageReply
   });
+
+  // Initialize editReplyText when reply data changes
+  useEffect(() => {
+    if (reply && reply.reply) {
+      setEditReplyText(reply.reply);
+    }
+  }, [reply]);
+
+  // Fetch real customer name from their profile
+  useEffect(() => {
+    const fetchCustomerName = async () => {
+      if (!review.customer_id) return;
+
+      try {
+        // First try customer_profiles table
+        let { data: customerData, error: customerError } = await supabase
+          .from('customer_profiles')
+          .select('name')
+          .eq('id', review.customer_id)
+          .single();
+
+        if (customerError || !customerData) {
+          // Fall back to profiles table
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', review.customer_id)
+            .single();
+
+          if (!profileError && profileData && profileData.name) {
+            setCustomerDisplayName(profileData.name);
+          }
+        } else if (customerData && customerData.name) {
+          setCustomerDisplayName(customerData.name);
+        }
+      } catch (err) {
+        console.error("Error fetching customer name:", err);
+      }
+    };
+
+    fetchCustomerName();
+  }, [review.customer_id]);
   
   // Helper function to safely format dates
   const formatDate = (dateString: string | null | undefined): string => {
@@ -157,7 +200,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           <div className="flex-1">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
               <div>
-                <h3 className="font-medium">{review.customer_name}</h3>
+                <h3 className="font-medium">{customerDisplayName}</h3>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <time dateTime={review.created_at}>
                     {formatDate(review.created_at)}
