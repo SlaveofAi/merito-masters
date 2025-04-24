@@ -46,6 +46,14 @@ export type PortfolioImage = {
   created_at: string;
 };
 
+export type ReviewReply = {
+  id: string;
+  review_id: string;
+  craftsman_id: string;
+  reply: string;
+  created_at: string | null;
+};
+
 export type CraftsmanReview = {
   id: string;
   craftsman_id: string;
@@ -54,15 +62,8 @@ export type CraftsmanReview = {
   rating: number;
   comment: string | null;
   created_at: string;
-  reply?: string | null;
-};
-
-export type ReviewReply = {
-  id: string;
-  review_id: string;
-  craftsman_id: string;
-  reply: string;
-  created_at: string;
+  reply: ReviewReply | null;
+  customer_profile_image?: string | null;
 };
 
 // Adding a basic profile type for the minimal profile data from the profiles table

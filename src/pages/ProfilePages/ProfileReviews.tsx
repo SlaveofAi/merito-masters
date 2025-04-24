@@ -30,7 +30,8 @@ const ProfileReviewsContent: React.FC = () => {
       userType,
       profileUserType: profileData?.user_type,
       isCurrentUser,
-      canLeaveReview: userType === 'customer' && profileData?.user_type === 'craftsman' && !isCurrentUser
+      canLeaveReview: userType === 'customer' && profileData?.user_type === 'craftsman' && !isCurrentUser,
+      isCraftsmanProfile: profileData?.user_type === 'craftsman'
     });
   }, [loading, profileData, userType, isCurrentUser]);
 

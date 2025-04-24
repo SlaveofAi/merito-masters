@@ -58,7 +58,7 @@ export const useProfileReviews = (id?: string) => {
       
       console.log("Found replies:", repliesData ? repliesData.length : 0);
       
-      // Merge reviews with their replies
+      // Merge reviews with their replies - fix the type error by explicitly making reply a string | null | ReviewReply
       const reviewsWithReplies = reviewsData.map(review => {
         const replyData = repliesData && Array.isArray(repliesData) ? 
           repliesData.find(r => r.review_id === review.id) : 
@@ -69,10 +69,10 @@ export const useProfileReviews = (id?: string) => {
         return {
           ...review,
           reply: replyData || null
-        };
+        } as CraftsmanReview; // Cast to CraftsmanReview to fix type error
       });
       
-      return reviewsWithReplies as CraftsmanReview[];
+      return reviewsWithReplies;
     } catch (error) {
       console.error("Error in fetchReviews:", error);
       throw error;
