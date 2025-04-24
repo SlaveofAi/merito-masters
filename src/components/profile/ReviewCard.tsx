@@ -1,8 +1,9 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -52,6 +53,20 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   const isReviewOwner = userId === review.customer_id;
   const canManageReply = isCraftsman && userId;
   const hasReply = !!reply;
+  
+  // Helper function to safely format dates
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'N/A';
+    
+    try {
+      const date = new Date(dateString);
+      if (!isValid(date)) return 'N/A';
+      return format(date, 'dd.MM.yyyy');
+    } catch (err) {
+      console.error("Error formatting date:", dateString, err);
+      return 'N/A';
+    }
+  };
   
   const handleReply = async () => {
     if (!replyText.trim() || !userId || !isCraftsman) return;
@@ -135,7 +150,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                 <h3 className="font-medium">{review.customer_name}</h3>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <time dateTime={review.created_at}>
-                    {format(new Date(review.created_at), 'dd.MM.yyyy')}
+                    {formatDate(review.created_at)}
                   </time>
                 </div>
               </div>
@@ -172,9 +187,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                         </Button>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{reply.reply}</p>
+                    <p className="text-sm text-gray-600 mt-1">{reply?.reply}</p>
                     <span className="text-xs text-gray-400 block mt-1">
-                      {format(new Date(reply.created_at), 'dd.MM.yyyy')}
+                      {formatDate(reply?.created_at)}
                     </span>
                   </div>
                 </div>
