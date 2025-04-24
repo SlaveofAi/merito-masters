@@ -7,6 +7,7 @@ import ReviewsTab from "@/components/profile/ReviewsTab";
 import CustomerReviewsTab from "@/components/profile/CustomerReviewsTab";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
+import ProfileCalendar from "@/components/profile/ProfileCalendar";
 import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
 import { toast } from "sonner";
 
@@ -73,6 +74,8 @@ const ProfileReviewsContent: React.FC = () => {
     );
   }
 
+  const isCraftsmanProfile = profileData.user_type === 'craftsman';
+
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
@@ -81,11 +84,20 @@ const ProfileReviewsContent: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <ProfileNavigation activeTab="reviews" userType={profileData.user_type} />
           
-          <div className="mt-8">
-            {profileData.user_type && profileData.user_type.toLowerCase() === 'customer' ? (
-              <CustomerReviewsTab />
-            ) : (
-              <ReviewsTab />
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className={`${isCraftsmanProfile ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
+              {profileData.user_type && profileData.user_type.toLowerCase() === 'customer' ? (
+                <CustomerReviewsTab />
+              ) : (
+                <ReviewsTab />
+              )}
+            </div>
+            
+            {/* Show availability calendar for craftsmen profiles */}
+            {isCraftsmanProfile && (
+              <div className="lg:col-span-1">
+                <ProfileCalendar />
+              </div>
             )}
           </div>
         </div>

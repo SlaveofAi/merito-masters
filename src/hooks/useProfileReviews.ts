@@ -44,11 +44,11 @@ export const useProfileReviews = (id?: string) => {
         return reviewsData as CraftsmanReview[];
       }
       
-      // Use RPC function for getting review replies
-      const { data: repliesData, error: repliesError } = await (supabase.rpc as any)(
-        'get_review_replies_by_review_ids', 
-        { review_ids: reviewIds }
-      );
+      // Fetch replies directly from the craftsman_review_replies table
+      const { data: repliesData, error: repliesError } = await supabase
+        .from('craftsman_review_replies')
+        .select('*')
+        .in('review_id', reviewIds);
         
       if (repliesError) {
         console.error("Error fetching review replies:", repliesError);

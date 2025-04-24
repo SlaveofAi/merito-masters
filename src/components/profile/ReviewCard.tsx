@@ -10,9 +10,11 @@ import { toast } from "sonner";
 import { StarIcon } from "lucide-react";
 import { AlertCircle, CheckCircle2, CornerDownLeft, Edit, ThumbsUp, User } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 type Review = {
   id: string;
+  craftsman_id: string;
   customer_id: string;
   customer_name: string;
   rating: number;
@@ -49,6 +51,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [customerDisplayName, setCustomerDisplayName] = useState<string>(review.customer_name);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   
   const userId = user?.id;
   const isReviewOwner = userId === review.customer_id;
@@ -72,16 +75,16 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     }
   }, [reply]);
 
-  // Fetch real customer name from their profile
+  // Fetch real customer name and profile image from their profile
   useEffect(() => {
-    const fetchCustomerName = async () => {
+    const fetchCustomerProfile = async () => {
       if (!review.customer_id) return;
 
       try {
         // First try customer_profiles table
         let { data: customerData, error: customerError } = await supabase
           .from('customer_profiles')
-          .select('name')
+          .select('name, profile_image_url')
           .eq('id', review.customer_id)
           .single();
 
@@ -96,15 +99,20 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           if (!profileError && profileData && profileData.name) {
             setCustomerDisplayName(profileData.name);
           }
-        } else if (customerData && customerData.name) {
-          setCustomerDisplayName(customerData.name);
+        } else if (customerData) {
+          if (customerData.name) {
+            setCustomerDisplayName(customerData.name);
+          }
+          if (customerData.profile_image_url) {
+            setProfileImageUrl(customerData.profile_image_url);
+          }
         }
       } catch (err) {
-        console.error("Error fetching customer name:", err);
+        console.error("Error fetching customer profile:", err);
       }
     };
 
-    fetchCustomerName();
+    fetchCustomerProfile();
   }, [review.customer_id]);
   
   // Helper function to safely format dates
@@ -155,7 +163,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   };
   
   const handleUpdateReply = async () => {
-    if (!editReplyText.trim() || !userId || !isCraftsman) return;
+    if (!editReplyText.trim() || !userId || !isCraftsman || !reply) return;
     
     setIsSubmitting(true);
     setError(null);
@@ -164,13 +172,14 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       console.log("Updating reply for review:", {
         reviewId: review.id,
         craftsmanId: userId,
-        replyText: editReplyText
+        replyText: editReplyText,
+        replyId: reply.id
       });
       
       const { error: updateError } = await supabase
         .from('craftsman_review_replies')
         .update({ reply: editReplyText })
-        .eq('review_id', review.id)
+        .eq('id', reply.id)
         .eq('craftsman_id', userId);
       
       if (updateError) throw updateError;
@@ -193,9 +202,15 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     <Card className="mb-4">
       <CardContent className="pt-6">
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-            <User className="h-5 w-5 text-gray-500" />
-          </div>
+          <Avatar className="flex-shrink-0 w-10 h-10">
+            {profileImageUrl ? (
+              <AvatarImage src={profileImageUrl} alt={customerDisplayName} />
+            ) : (
+              <AvatarFallback>
+                <User className="h-5 w-5 text-gray-500" />
+              </AvatarFallback>
+            )}
+          </Avatar>
           
           <div className="flex-1">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
