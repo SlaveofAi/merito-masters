@@ -70,9 +70,9 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
         <ReviewCard 
           key={review.id}
           review={review}
-          canReplyToReview={canReplyToReview}
-          userId={userId}
-          onRefresh={onRefresh}
+          reply={review.reply}
+          isCraftsman={canReplyToReview}
+          onReplyUpdated={onRefresh}
         />
       ))}
     </div>

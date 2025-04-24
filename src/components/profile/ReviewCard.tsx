@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { StarFilledIcon } from "@radix-ui/react-icons";
+import { StarIcon } from "lucide-react";
 import { AlertCircle, CheckCircle2, CornerDownLeft, Edit, ThumbsUp, User } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -61,7 +60,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     setError(null);
     
     try {
-      // Use server-side function to add a reply
       const { data, error } = await (supabase.rpc as any)(
         'add_review_reply',
         {
@@ -101,21 +99,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         replyText: editReplyText
       });
       
-      // Step 1: Find the specific reply record by review_id and craftsman_id
-      const { data: replyRecord, error: fetchError } = await supabase
-        .from('craftsman_review_replies')
-        .select('id')
-        .eq('review_id', review.id)
-        .eq('craftsman_id', userId)
-        .single();
-      
-      console.log("Reply record fetch result:", { replyRecord, fetchError });
-      
-      if (fetchError && fetchError.code !== "PGRST116") {
-        throw fetchError;
-      }
-      
-      // Step 2: Update the reply using the standard update method
       const { error: updateError } = await supabase
         .from('craftsman_review_replies')
         .update({ reply: editReplyText })
@@ -159,9 +142,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               
               <div className="flex items-center mt-1 sm:mt-0">
                 {Array.from({ length: 5 }).map((_, index) => (
-                  <StarFilledIcon
+                  <StarIcon
                     key={index}
-                    className={`h-4 w-4 ${index < review.rating ? 'text-amber-400' : 'text-gray-200'}`}
+                    className={`h-4 w-4 ${index < review.rating ? 'text-amber-400 fill-current' : 'text-gray-200'}`}
                   />
                 ))}
               </div>
