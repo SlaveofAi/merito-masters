@@ -54,6 +54,16 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   const canManageReply = isCraftsman && userId;
   const hasReply = !!reply;
   
+  // Add some debug logging to help understand what's happening with replies
+  console.log("ReviewCard rendering:", {
+    reviewId: review.id,
+    hasReply,
+    replyData: reply,
+    replyText: reply?.reply || "No reply text",
+    isCraftsman,
+    canManageReply
+  });
+  
   // Helper function to safely format dates
   const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return 'N/A';
@@ -167,8 +177,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
             
             <p className="text-gray-700 mt-2">{review.comment}</p>
             
-            {/* Reply section */}
-            {hasReply && (
+            {/* Reply section - Improved handling of reply data */}
+            {reply && reply.reply && (
               <div className="mt-4 pl-4 border-l-2 border-gray-200">
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-1 text-green-500" />
@@ -187,9 +197,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                         </Button>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{reply?.reply}</p>
+                    <p className="text-sm text-gray-600 mt-1">{reply.reply}</p>
                     <span className="text-xs text-gray-400 block mt-1">
-                      {formatDate(reply?.created_at)}
+                      {formatDate(reply.created_at)}
                     </span>
                   </div>
                 </div>

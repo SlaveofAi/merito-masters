@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import ReviewCard from "./ReviewCard";
@@ -6,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase, checkConnection } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ReviewsListProps {
   reviews: any[];

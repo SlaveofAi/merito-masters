@@ -56,16 +56,19 @@ export const useProfileReviews = (id?: string) => {
         return reviewsData as CraftsmanReview[];
       }
       
+      console.log("Found replies:", repliesData ? repliesData.length : 0);
+      
       // Merge reviews with their replies
       const reviewsWithReplies = reviewsData.map(review => {
-        // Ensure repliesData is not null before accessing it
-        const reply = repliesData && Array.isArray(repliesData) ? 
+        const replyData = repliesData && Array.isArray(repliesData) ? 
           repliesData.find(r => r.review_id === review.id) : 
-          undefined;
+          null;
           
+        console.log(`Processing review ${review.id}, found reply:`, replyData);
+        
         return {
           ...review,
-          reply: reply ? reply.reply : null
+          reply: replyData || null
         };
       });
       
