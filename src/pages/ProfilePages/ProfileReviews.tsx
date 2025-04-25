@@ -94,7 +94,7 @@ const ProfileReviewsContent: React.FC = () => {
               )}
             </div>
             
-            {/* Show availability calendar for craftsmen profiles */}
+            {/* Show availability calendar for craftsmen profiles - regardless of current user */}
             {isCraftsmanProfile && (
               <div className="lg:col-span-1">
                 <ProfileCalendar />

@@ -88,30 +88,33 @@ const ProfileContactContent: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <ProfileNavigation activeTab="contact" userType={profileData.user_type} />
           
-          <div className="mt-8 space-y-6">
-            {/* Always show availability calendar for craftsman profiles (both for viewing and editing) */}
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Show calendar in a separate column for craftsman profiles */}
             {isCraftsmanProfile && (
-              <div>
+              <div className="lg:col-span-1 order-2 lg:order-1">
                 <h2 className="text-2xl font-semibold mb-4">Kalendár dostupnosti</h2>
                 <ProfileCalendar />
               </div>
             )}
             
-            {showLoginPrompt ? (
-              <div className="bg-white shadow rounded-lg p-6 max-w-2xl mx-auto text-center">
-                <h3 className="text-xl font-semibold mb-4">Pre rezerváciu termínu sa musíte prihlásiť</h3>
-                <p className="text-gray-600 mb-6">
-                  Ak chcete kontaktovať tohto remeselníka a rezervovať si termín, 
-                  musíte byť prihlásený ako zákazník.
-                </p>
-                <div className="flex gap-4 justify-center">
-                  <Button onClick={() => navigate('/login')}>Prihlásiť sa</Button>
-                  <Button variant="outline" onClick={() => navigate('/register')}>Registrovať sa</Button>
+            {/* Contact section - adjust width based on whether calendar is shown */}
+            <div className={`${isCraftsmanProfile ? 'lg:col-span-2' : 'lg:col-span-3'} order-1 lg:order-2`}>
+              {showLoginPrompt ? (
+                <div className="bg-white shadow rounded-lg p-6 max-w-2xl mx-auto text-center">
+                  <h3 className="text-xl font-semibold mb-4">Pre rezerváciu termínu sa musíte prihlásiť</h3>
+                  <p className="text-gray-600 mb-6">
+                    Ak chcete kontaktovať tohto remeselníka a rezervovať si termín, 
+                    musíte byť prihlásený ako zákazník.
+                  </p>
+                  <div className="flex gap-4 justify-center">
+                    <Button onClick={() => navigate('/login')}>Prihlásiť sa</Button>
+                    <Button variant="outline" onClick={() => navigate('/register')}>Registrovať sa</Button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <ContactTab />
-            )}
+              ) : (
+                <ContactTab />
+              )}
+            </div>
           </div>
         </div>
       </div>

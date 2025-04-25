@@ -22,6 +22,7 @@ const ProfileCalendar: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [motivationalMessage, setMotivationalMessage] = useState<string>('');
 
+  // Use a safer approach to determine if this is a craftsman profile
   const isCraftsmanProfile = profileData?.user_type === 'craftsman';
 
   // Debug log
@@ -29,14 +30,17 @@ const ProfileCalendar: React.FC = () => {
     console.log("ProfileCalendar component rendered", {
       isCraftsmanProfile,
       profileId: profileData?.id,
-      isCurrentUser
+      isCurrentUser,
+      userType
     });
-  }, [profileData, isCurrentUser]);
+  }, [profileData, isCurrentUser, userType]);
 
   useEffect(() => {
     if (profileData?.id && isCraftsmanProfile) {
+      console.log("Fetching available dates for craftsman:", profileData.id);
       fetchAvailableDates();
     } else {
+      console.log("Not fetching dates - not a craftsman profile or no profile ID");
       setIsLoadingDates(false);
     }
   }, [profileData?.id, isCraftsmanProfile]);
@@ -102,8 +106,8 @@ const ProfileCalendar: React.FC = () => {
   };
 
   const saveAvailableDates = async () => {
-    if (!user?.id || !profileData?.id || userType !== 'craftsman') {
-      toast.error("Nemôžem uložiť dostupnosť, chýba ID používateľa");
+    if (!user?.id || !profileData?.id || (userType !== 'craftsman' && !isCraftsmanProfile)) {
+      toast.error("Nemôžem uložiť dostupnosť, chýba ID používateľa alebo nie ste remeselník");
       return;
     }
 
@@ -170,9 +174,17 @@ const ProfileCalendar: React.FC = () => {
     setMonth(prevMonth);
   };
 
+  // Always show for craftsman profiles, even if viewing own profile
   if (!isCraftsmanProfile) {
+    console.log("Not showing calendar - not a craftsman profile");
     return null;
   }
+
+  console.log("Rendering calendar for craftsman profile:", {
+    isCurrentUser,
+    isCraftsmanProfile,
+    userType
+  });
 
   const CraftsmanCalendar = () => (
     <Calendar
