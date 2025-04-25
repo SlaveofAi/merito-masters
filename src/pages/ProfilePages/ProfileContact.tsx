@@ -6,12 +6,12 @@ import ProfileNavigation from "@/components/profile/ProfileNavigation";
 import ContactTab from "@/components/profile/ContactTab";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
+import ProfileCalendar from "@/components/profile/ProfileCalendar";
 import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import ProfileCalendar from "@/components/profile/ProfileCalendar";
 
 const ProfileContactContent: React.FC = () => {
   const {

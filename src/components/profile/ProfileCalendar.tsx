@@ -22,14 +22,15 @@ const ProfileCalendar: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [motivationalMessage, setMotivationalMessage] = useState<string>('');
 
-  // Use a safer approach to determine if this is a craftsman profile
-  const isCraftsmanProfile = profileData?.user_type === 'craftsman';
+  // Determine if this is a craftsman profile by checking the profileData directly
+  const isCraftsmanProfile = profileData && profileData.user_type === 'craftsman';
   
   // Debug log
   useEffect(() => {
     console.log("ProfileCalendar component rendered", {
       isCraftsmanProfile,
-      profileId: profileData?.id,
+      profileData,
+      profileType: profileData?.user_type,
       isCurrentUser,
       userType
     });
@@ -63,13 +64,13 @@ const ProfileCalendar: React.FC = () => {
     setIsLoadingDates(true);
     
     try {
-      console.log("Running fetchAvailableDates for:", profileData?.id);
+      console.log("Running fetchAvailableDates for:", profileData.id);
       
-      // Use direct SQL query instead of REST to avoid 406 errors
+      // Fetch all available dates directly (don't try to fetch as a single object)
       const { data, error } = await supabase
         .from('craftsman_availability')
         .select('date')
-        .eq('craftsman_id', profileData?.id);
+        .eq('craftsman_id', profileData.id);
 
       if (error) {
         console.error("Error fetching available dates:", error);
