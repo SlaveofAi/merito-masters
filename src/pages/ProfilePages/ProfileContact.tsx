@@ -89,16 +89,8 @@ const ProfileContactContent: React.FC = () => {
           <ProfileNavigation activeTab="contact" userType={profileData.user_type} />
           
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Show calendar in a separate column for craftsman profiles */}
-            {isCraftsmanProfile && (
-              <div className="lg:col-span-1 order-2 lg:order-1">
-                <h2 className="text-2xl font-semibold mb-4">Kalendár dostupnosti</h2>
-                <ProfileCalendar />
-              </div>
-            )}
-            
             {/* Contact section - adjust width based on whether calendar is shown */}
-            <div className={`${isCraftsmanProfile ? 'lg:col-span-2' : 'lg:col-span-3'} order-1 lg:order-2`}>
+            <div className={`${isCraftsmanProfile ? 'lg:col-span-2' : 'lg:col-span-3'} order-1`}>
               {showLoginPrompt ? (
                 <div className="bg-white shadow rounded-lg p-6 max-w-2xl mx-auto text-center">
                   <h3 className="text-xl font-semibold mb-4">Pre rezerváciu termínu sa musíte prihlásiť</h3>
@@ -115,6 +107,14 @@ const ProfileContactContent: React.FC = () => {
                 <ContactTab />
               )}
             </div>
+            
+            {/* Show calendar in a separate column for craftsman profiles */}
+            {isCraftsmanProfile && (
+              <div className="lg:col-span-1 order-2">
+                <h2 className="text-2xl font-semibold mb-4">Kalendár dostupnosti</h2>
+                <ProfileCalendar />
+              </div>
+            )}
           </div>
         </div>
       </div>

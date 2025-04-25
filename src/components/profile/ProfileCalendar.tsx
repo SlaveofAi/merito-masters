@@ -24,7 +24,7 @@ const ProfileCalendar: React.FC = () => {
 
   // Use a safer approach to determine if this is a craftsman profile
   const isCraftsmanProfile = profileData?.user_type === 'craftsman';
-
+  
   // Debug log
   useEffect(() => {
     console.log("ProfileCalendar component rendered", {
@@ -65,7 +65,7 @@ const ProfileCalendar: React.FC = () => {
     try {
       console.log("Running fetchAvailableDates for:", profileData?.id);
       
-      // Important: Use regular JSON response instead of expecting a single object
+      // Use direct SQL query instead of REST to avoid 406 errors
       const { data, error } = await supabase
         .from('craftsman_availability')
         .select('date')
@@ -174,7 +174,7 @@ const ProfileCalendar: React.FC = () => {
     setMonth(prevMonth);
   };
 
-  // Always show for craftsman profiles, even if viewing own profile
+  // Return null if not a craftsman profile - we only want to show the calendar for craftsmen
   if (!isCraftsmanProfile) {
     console.log("Not showing calendar - not a craftsman profile");
     return null;
