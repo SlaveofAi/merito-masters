@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileNavigation from "@/components/profile/ProfileNavigation";
@@ -22,19 +22,37 @@ const ProfileContactContent: React.FC = () => {
     error,
     createDefaultProfileIfNeeded
   } = useProfile();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, userType } = useAuth();
   const navigate = useNavigate();
 
   // Debug log to help troubleshoot
-  React.useEffect(() => {
+  useEffect(() => {
     console.log("ProfileContact rendering:", {
       loading,
       profileFound: !!profileData,
       isCurrentUser,
       profileType: profileData?.user_type,
-      isCraftsmanProfile: profileData?.user_type === 'craftsman'
+      isCraftsmanProfile: profileData?.user_type === 'craftsman',
+      userType,
+      userId: user?.id,
+      profileId: profileData?.id
     });
-  }, [loading, profileData, isCurrentUser]);
+  }, [loading, profileData, isCurrentUser, userType, user]);
+  
+  // If user is logged in as craftsman but doesn't have a profile, create one
+  useEffect(() => {
+    if (isCurrentUser && profileNotFound && userType === 'craftsman') {
+      console.log("Craftsman profile not found, will try to create default profile");
+      setTimeout(() => {
+        createDefaultProfileIfNeeded?.()
+          .then(() => toast.success("Profil remeselníka bol vytvorený"))
+          .catch(err => {
+            console.error("Failed to create craftsman profile:", err);
+            toast.error("Nepodarilo sa vytvoriť profil remeselníka");
+          });
+      }, 500);
+    }
+  }, [isCurrentUser, profileNotFound, userType, createDefaultProfileIfNeeded]);
 
   if (loading || authLoading) {
     return (
@@ -108,8 +126,8 @@ const ProfileContactContent: React.FC = () => {
               )}
             </div>
             
-            {/* Show calendar in a separate column for craftsman profiles */}
-            {isCraftsmanProfile && (
+            {/* Show calendar in a separate column for craftsman profiles or for craftsmen editing their profile */}
+            {(isCraftsmanProfile || (isCurrentUser && userType === 'craftsman')) && (
               <div className="lg:col-span-1 order-2">
                 <h2 className="text-2xl font-semibold mb-4">Kalendár dostupnosti</h2>
                 <ProfileCalendar />

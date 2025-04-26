@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -31,9 +32,11 @@ const ProfileCalendar: React.FC = () => {
       profileData,
       profileType: profileData?.user_type,
       isCurrentUser,
-      userType
+      userType,
+      userId: user?.id,
+      profileId: profileData?.id
     });
-  }, [profileData, isCurrentUser, userType]);
+  }, [profileData, isCurrentUser, userType, user]);
 
   useEffect(() => {
     if (profileData?.id && isCraftsmanProfile) {
@@ -106,7 +109,7 @@ const ProfileCalendar: React.FC = () => {
   };
 
   const saveAvailableDates = async () => {
-    if (!user?.id || !profileData?.id || (userType !== 'craftsman' && !isCraftsmanProfile)) {
+    if (!user?.id || !profileData?.id) {
       toast.error("Nemôžem uložiť dostupnosť, chýba ID používateľa alebo nie ste remeselník");
       return;
     }
@@ -175,15 +178,16 @@ const ProfileCalendar: React.FC = () => {
   };
 
   // Return null if not a craftsman profile - we only want to show the calendar for craftsmen
-  if (!isCraftsmanProfile) {
-    console.log("Not showing calendar - not a craftsman profile");
+  if (!isCraftsmanProfile && !profileData?.user_type) {
+    console.log("Not showing calendar - not a craftsman profile or profile data not loaded");
     return null;
   }
 
-  console.log("Rendering calendar for craftsman profile:", {
+  console.log("Rendering calendar for profile:", {
     isCurrentUser,
     isCraftsmanProfile,
-    userType
+    userType,
+    profileType: profileData?.user_type
   });
 
   const CraftsmanCalendar = () => (
@@ -268,6 +272,16 @@ const ProfileCalendar: React.FC = () => {
                   : "Remeselník je dostupný v označené dni"}
               </span>
             </div>
+
+            {selectedDates.length === 0 && (
+              <div className="text-center py-4">
+                <p className="text-gray-500 text-sm">
+                  {isCurrentUser 
+                    ? "Zatiaľ ste nepridali žiadne dostupné termíny." 
+                    : "Remeselník momentálne nemá stanovené žiadne dostupné termíny."}
+                </p>
+              </div>
+            )}
           </div>
         )}
         
