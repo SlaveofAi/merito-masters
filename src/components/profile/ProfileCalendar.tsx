@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -74,7 +73,7 @@ const ProfileCalendar: React.FC = () => {
 
       if (error) {
         console.error("Error fetching available dates:", error);
-        setError("Nepodarilo sa načítať dostupné dni. Skúste obnoviť stránku.");
+        setError(`Nepodarilo sa načítať dostupné dni: ${error.message}`);
         setIsLoadingDates(false);
         return;
       }
@@ -98,7 +97,7 @@ const ProfileCalendar: React.FC = () => {
   const getMotivationalPhrase = () => {
     const phrases = [
       "Výborne! Vaša dostupnosť je nastavená, zákazníci vás môžu kontaktovať!",
-      "Super! Vaše termíny sú pripravené na rezervácie!",
+      "Super! Vaše termíny sú pripravené na rezerváciu!",
       "Skvelá práca! Teraz ste viditeľný pre potenciálnych zákazníkov!",
       "Fantastické! Váš kalendár je pripravený prijímať rezervácie!",
       "Perfektné! Ste na ceste k novým zákazkám!"
@@ -242,14 +241,6 @@ const ProfileCalendar: React.FC = () => {
           <div className="text-center py-8">
             <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
             <p className="mt-2 text-sm text-gray-500">Načítavam kalendár dostupnosti...</p>
-          </div>
-        ) : selectedDates.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500">
-              {isCurrentUser 
-                ? "Zatiaľ ste nepridali žiadne dostupné termíny. Pridajte termíny nižšie." 
-                : "Remeselník momentálne nemá stanovené žiadne dostupné termíny."}
-            </p>
           </div>
         ) : (
           <div className="flex flex-col">
