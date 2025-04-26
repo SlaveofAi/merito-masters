@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,10 +6,21 @@ import { format, isValid } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { StarIcon } from "lucide-react";
-import { AlertCircle, CheckCircle2, CornerDownLeft, Edit, ThumbsUp, User } from "lucide-react";
+import { StarIcon, Trash2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, CornerDownLeft, Edit, User } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 type Review = {
   id: string;
@@ -58,7 +68,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   const canManageReply = isCraftsman && userId;
   const hasReply = !!reply && !!reply.reply;
   
-  // Add some debug logging to help understand what's happening with replies
   console.log("ReviewCard rendering:", {
     reviewId: review.id,
     hasReply,
@@ -68,20 +77,17 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     canManageReply
   });
 
-  // Initialize editReplyText when reply data changes
   useEffect(() => {
     if (reply && reply.reply) {
       setEditReplyText(reply.reply);
     }
   }, [reply]);
 
-  // Fetch real customer name and profile image from their profile
   useEffect(() => {
     const fetchCustomerProfile = async () => {
       if (!review.customer_id) return;
 
       try {
-        // First try customer_profiles table
         let { data: customerData, error: customerError } = await supabase
           .from('customer_profiles')
           .select('name, profile_image_url')
@@ -89,7 +95,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           .single();
 
         if (customerError || !customerData) {
-          // Fall back to profiles table
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('name')
@@ -115,7 +120,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     fetchCustomerProfile();
   }, [review.customer_id]);
   
-  // Helper function to safely format dates
   const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return 'N/A';
     
@@ -198,6 +202,44 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     }
   };
 
+  const handleDeleteReview = async () => {
+    try {
+      const { error } = await supabase
+        .from('craftsman_reviews')
+        .delete()
+        .eq('id', review.id)
+        .eq('customer_id', userId);
+
+      if (error) throw error;
+
+      toast.success("Hodnotenie bolo úspešne vymazané");
+      if (onReplyUpdated) onReplyUpdated();
+    } catch (err) {
+      console.error("Error deleting review:", err);
+      toast.error("Nastala chyba pri mazaní hodnotenia");
+    }
+  };
+
+  const handleDeleteReply = async () => {
+    if (!reply) return;
+    
+    try {
+      const { error } = await supabase
+        .from('craftsman_review_replies')
+        .delete()
+        .eq('id', reply.id)
+        .eq('craftsman_id', userId);
+
+      if (error) throw error;
+
+      toast.success("Odpoveď bola úspešne vymazaná");
+      if (onReplyUpdated) onReplyUpdated();
+    } catch (err) {
+      console.error("Error deleting reply:", err);
+      toast.error("Nastala chyba pri mazaní odpovede");
+    }
+  };
+
   return (
     <Card className="mb-4">
       <CardContent className="pt-6">
@@ -223,19 +265,51 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                 </div>
               </div>
               
-              <div className="flex items-center mt-1 sm:mt-0">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <StarIcon
-                    key={index}
-                    className={`h-4 w-4 ${index < review.rating ? 'text-amber-400 fill-current' : 'text-gray-200'}`}
-                  />
-                ))}
+              <div className="flex items-center mt-1 sm:mt-0 gap-2">
+                <div className="flex">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <StarIcon
+                      key={index}
+                      className={`h-4 w-4 ${index < review.rating ? 'text-amber-400 fill-current' : 'text-gray-200'}`}
+                    />
+                  ))}
+                </div>
+
+                {isReviewOwner && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive/90"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Vymazať hodnotenie</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Naozaj chcete vymazať toto hodnotenie? Túto akciu nie je možné vrátiť späť.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Zrušiť</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleDeleteReview}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Vymazať
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             </div>
             
             <p className="text-gray-700 mt-2">{review.comment}</p>
             
-            {/* Reply section - Improved handling of reply data */}
             {reply && reply.reply && (
               <div className="mt-4 pl-4 border-l-2 border-gray-200">
                 <div className="flex items-start gap-2">
@@ -243,17 +317,51 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                   <div className="flex-1">
                     <div className="flex justify-between items-center">
                       <h4 className="text-sm font-medium text-gray-700">Odpoveď remeselníka</h4>
-                      {canManageReply && (
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-7 px-2" 
-                          onClick={() => setEditingReply(true)}
-                        >
-                          <Edit className="h-3.5 w-3.5 mr-1" />
-                          <span className="text-xs">Upraviť</span>
-                        </Button>
-                      )}
+                      <div className="flex gap-2">
+                        {canManageReply && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 px-2" 
+                              onClick={() => setEditingReply(true)}
+                            >
+                              <Edit className="h-3.5 w-3.5 mr-1" />
+                              <span className="text-xs">Upraviť</span>
+                            </Button>
+
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-destructive hover:text-destructive/90"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                  <span className="text-xs">Vymazať</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Vymazať odpoveď</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Naozaj chcete vymazať túto odpoveď? Túto akciu nie je možné vrátiť späť.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Zrušiť</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={handleDeleteReply}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Vymazať
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <p className="text-sm text-gray-600 mt-1">{reply.reply}</p>
                     <span className="text-xs text-gray-400 block mt-1">
@@ -264,7 +372,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               </div>
             )}
             
-            {/* Reply editing form */}
             {editingReply && (
               <div className="mt-4">
                 {error && (
@@ -302,7 +409,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               </div>
             )}
             
-            {/* Reply form */}
             {canManageReply && !hasReply && (
               <div className="mt-4">
                 {showReplyForm ? (
