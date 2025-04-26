@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -126,11 +125,13 @@ const ProfileContactContent: React.FC = () => {
               )}
             </div>
             
-            {/* Show calendar in a separate column for craftsman profiles or for craftsmen editing their profile */}
+            {/* Always show calendar for craftsman profiles or for craftsmen viewing their profile */}
             {(isCraftsmanProfile || (isCurrentUser && userType === 'craftsman')) && (
               <div className="lg:col-span-1 order-2">
-                <h2 className="text-2xl font-semibold mb-4">Kalendár dostupnosti</h2>
-                <ProfileCalendar />
+                <div className="sticky top-6">
+                  <h2 className="text-2xl font-semibold mb-4">Kalendár dostupnosti</h2>
+                  <ProfileCalendar />
+                </div>
               </div>
             )}
           </div>

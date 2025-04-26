@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/contexts/ProfileContext";
 import { toast } from "sonner";
-import { CalendarIcon, ChevronRight, ChevronLeft } from "lucide-react";
+import { CalendarIcon, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
@@ -19,40 +19,40 @@ const ProfileCalendar: React.FC = () => {
   const [isLoadingDates, setIsLoadingDates] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [month, setMonth] = useState<Date>(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [motivationalMessage, setMotivationalMessage] = useState<string>('');
 
-  // Determine if this is a craftsman profile by checking the profileData directly
-  const isCraftsmanProfile = profileData && profileData.user_type === 'craftsman';
+  // Determine if this is a craftsman's calendar
+  const isCraftsmanProfile = profileData?.user_type === 'craftsman';
+  const canEditCalendar = isCurrentUser && (isCraftsmanProfile || userType === 'craftsman');
   
-  // Debug log
   useEffect(() => {
     console.log("ProfileCalendar component rendered", {
       isCraftsmanProfile,
-      profileData,
-      profileType: profileData?.user_type,
       isCurrentUser,
       userType,
+      profileType: profileData?.user_type,
       userId: user?.id,
-      profileId: profileData?.id
+      profileId: profileData?.id,
+      canEditCalendar
     });
-  }, [profileData, isCurrentUser, userType, user]);
+  }, [profileData, isCurrentUser, userType, user, canEditCalendar]);
 
+  // Fetch available dates when component mounts
   useEffect(() => {
-    if (profileData?.id && isCraftsmanProfile) {
-      console.log("Fetching available dates for craftsman:", profileData.id);
+    if (profileData?.id) {
+      console.log("Fetching available dates for:", profileData.id);
       fetchAvailableDates();
     } else {
-      console.log("Not fetching dates - not a craftsman profile or no profile ID");
+      console.log("No profile ID available, skipping date fetch");
       setIsLoadingDates(false);
     }
-  }, [profileData?.id, isCraftsmanProfile]);
+  }, [profileData?.id]);
 
+  // Update month when dates are loaded for customers
   useEffect(() => {
     if (!isCurrentUser && selectedDates.length > 0) {
       const sortedDates = [...selectedDates].sort((a, b) => a.getTime() - b.getTime());
-      const earliestDate = sortedDates[0];
-      setMonth(earliestDate);
+      setMonth(sortedDates[0]);
     }
   }, [selectedDates, isCurrentUser]);
 
@@ -68,7 +68,6 @@ const ProfileCalendar: React.FC = () => {
     try {
       console.log("Running fetchAvailableDates for:", profileData.id);
       
-      // Fetch all available dates directly (don't try to fetch as a single object)
       const { data, error } = await supabase
         .from('craftsman_availability')
         .select('date')
@@ -97,20 +96,9 @@ const ProfileCalendar: React.FC = () => {
     }
   };
 
-  const getMotivationalPhrase = () => {
-    const phrases = [
-      "Výborne! Vaša dostupnosť je nastavená, zákazníci vás môžu kontaktovať!",
-      "Super! Vaše termíny sú pripravené na rezerváciu!",
-      "Skvelá práca! Teraz ste viditeľný pre potenciálnych zákazníkov!",
-      "Fantastické! Váš kalendár je pripravený prijímať rezervácie!",
-      "Perfektné! Ste na ceste k novým zákazkám!"
-    ];
-    return phrases[Math.floor(Math.random() * phrases.length)];
-  };
-
   const saveAvailableDates = async () => {
     if (!user?.id || !profileData?.id) {
-      toast.error("Nemôžem uložiť dostupnosť, chýba ID používateľa alebo nie ste remeselník");
+      toast.error("Nemôžem uložiť dostupnosť, chýba ID používateľa alebo nie ste prihlásený");
       return;
     }
 
@@ -120,15 +108,15 @@ const ProfileCalendar: React.FC = () => {
     try {
       console.log("Saving dates for craftsman:", profileData.id, selectedDates);
       
+      // First delete all existing dates
       const { error: deleteError } = await supabase
         .from('craftsman_availability')
         .delete()
         .eq('craftsman_id', profileData.id);
         
-      if (deleteError) {
-        throw deleteError;
-      }
+      if (deleteError) throw deleteError;
       
+      // Insert new dates if there are any
       if (selectedDates.length > 0) {
         const datesToInsert = selectedDates.map(date => ({
           craftsman_id: profileData.id,
@@ -143,7 +131,7 @@ const ProfileCalendar: React.FC = () => {
         if (error) throw error;
       }
       
-      setMotivationalMessage(getMotivationalPhrase());
+      setMotivationalMessage("Vaša dostupnosť bola úspešne aktualizovaná!");
       toast.success("Dostupné dni boli úspešne uložené");
     } catch (error: any) {
       console.error("Error saving available dates:", error);
@@ -155,14 +143,16 @@ const ProfileCalendar: React.FC = () => {
   };
 
   const handleDateSelect = (date: Date | undefined) => {
-    if (!date || !isCurrentUser) return;
+    if (!date || !canEditCalendar) return;
     
-    // Toggle the date selection
-    if (selectedDates.some(d => d.toDateString() === date.toDateString())) {
-      setSelectedDates(prev => prev.filter(d => d.toDateString() !== date.toDateString()));
-    } else {
-      setSelectedDates(prev => [...prev, date]);
-    }
+    setSelectedDates(prev => {
+      const dateExists = prev.some(d => d.toDateString() === date.toDateString());
+      if (dateExists) {
+        return prev.filter(d => d.toDateString() !== date.toDateString());
+      } else {
+        return [...prev, date];
+      }
+    });
   };
 
   const goToNextMonth = () => {
@@ -177,53 +167,16 @@ const ProfileCalendar: React.FC = () => {
     setMonth(prevMonth);
   };
 
-  // Return null if not a craftsman profile - we only want to show the calendar for craftsmen
-  if (!isCraftsmanProfile && !profileData?.user_type) {
-    console.log("Not showing calendar - not a craftsman profile or profile data not loaded");
-    return null;
+  if (isLoadingDates) {
+    return (
+      <Card className="shadow-sm">
+        <CardContent className="p-6 text-center">
+          <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+          <p className="mt-2 text-sm text-gray-500">Načítavam kalendár dostupnosti...</p>
+        </CardContent>
+      </Card>
+    );
   }
-
-  console.log("Rendering calendar for profile:", {
-    isCurrentUser,
-    isCraftsmanProfile,
-    userType,
-    profileType: profileData?.user_type
-  });
-
-  const CraftsmanCalendar = () => (
-    <Calendar
-      mode="multiple"
-      selected={selectedDates}
-      onSelect={(dates) => {
-        if (Array.isArray(dates)) {
-          setSelectedDates(dates);
-        } else {
-          handleDateSelect(dates);
-        }
-      }}
-      month={month}
-      onMonthChange={setMonth}
-      className="p-3 pointer-events-auto h-auto"
-    />
-  );
-
-  const CustomerCalendar = () => (
-    <Calendar
-      mode="single"
-      selected={selectedDate}
-      onSelect={setSelectedDate}
-      month={month}
-      onMonthChange={setMonth}
-      disabled={(date) => !selectedDates.some(d => d.toDateString() === date.toDateString())}
-      modifiers={{
-        available: (date) => selectedDates.some(d => d.toDateString() === date.toDateString())
-      }}
-      modifiersStyles={{
-        available: { backgroundColor: '#dcfce7', color: '#111827', fontWeight: 700, border: '1px solid #86efac' }
-      }}
-      className="p-3 pointer-events-auto h-auto"
-    />
-  );
 
   return (
     <Card className="shadow-sm">
@@ -241,51 +194,58 @@ const ProfileCalendar: React.FC = () => {
           </Alert>
         )}
         
-        {isLoadingDates ? (
-          <div className="text-center py-8">
-            <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-            <p className="mt-2 text-sm text-gray-500">Načítavam kalendár dostupnosti...</p>
-          </div>
-        ) : (
-          <div className="flex flex-col">
-            <div className="p-3 border-b">
-              <div className="flex items-center justify-between">
-                <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <div className="text-sm font-medium capitalize">
-                  {month.toLocaleString('sk-SK', { month: 'long', year: 'numeric' })}
-                </div>
-                <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+        <div className="flex flex-col">
+          <div className="p-3 border-b">
+            <div className="flex items-center justify-between">
+              <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="text-sm font-medium capitalize">
+                {month.toLocaleString('sk-SK', { month: 'long', year: 'numeric' })}
               </div>
+              <Button variant="outline" size="sm" onClick={goToNextMonth}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-            
-            {isCurrentUser ? <CraftsmanCalendar /> : <CustomerCalendar />}
-            
-            <div className="mt-3 flex items-center">
-              <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
-              <span className="text-xs text-gray-500">
-                {isCurrentUser 
-                  ? "Vaše vybrané dostupné dni" 
-                  : "Remeselník je dostupný v označené dni"}
-              </span>
-            </div>
+          </div>
+          
+          <Calendar
+            mode="multiple"
+            selected={selectedDates}
+            onSelect={(dates) => {
+              if (Array.isArray(dates)) {
+                setSelectedDates(dates);
+              } else {
+                handleDateSelect(dates);
+              }
+            }}
+            month={month}
+            onMonthChange={setMonth}
+            className="p-3 pointer-events-auto h-auto"
+            disabled={!canEditCalendar}
+          />
+          
+          <div className="mt-3 flex items-center">
+            <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
+            <span className="text-xs text-gray-500">
+              {canEditCalendar 
+                ? "Vaše vybrané dostupné dni" 
+                : "Remeselník je dostupný v označené dni"}
+            </span>
+          </div>
 
-            {selectedDates.length === 0 && (
-              <div className="text-center py-4">
-                <p className="text-gray-500 text-sm">
-                  {isCurrentUser 
-                    ? "Zatiaľ ste nepridali žiadne dostupné termíny." 
-                    : "Remeselník momentálne nemá stanovené žiadne dostupné termíny."}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+          {selectedDates.length === 0 && (
+            <div className="text-center py-4">
+              <p className="text-gray-500 text-sm">
+                {canEditCalendar 
+                  ? "Zatiaľ ste nepridali žiadne dostupné termíny." 
+                  : "Remeselník momentálne nemá stanovené žiadne dostupné termíny."}
+              </p>
+            </div>
+          )}
+        </div>
         
-        {isCurrentUser && (
+        {canEditCalendar && (
           <div className="mt-4">
             {selectedDates.length > 0 && (
               <div className="mb-4">
@@ -319,7 +279,12 @@ const ProfileCalendar: React.FC = () => {
               className="w-full"
               disabled={saving}
             >
-              {saving ? "Ukladám..." : "Uložiť dostupné dni"}
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Ukladám...
+                </>
+              ) : "Uložiť dostupné dni"}
             </Button>
           </div>
         )}
