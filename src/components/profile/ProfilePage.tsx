@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -226,11 +227,11 @@ const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null }> = ({
   
   // Default tabs for craftsman profiles
   return (
-    <Tabs defaultValue="contact" className="w-full">
+    <Tabs defaultValue="calendar" className="w-full">
       <TabsList className="grid w-full max-w-md mx-auto md:grid-cols-3 mb-8">
         <TabsTrigger value="portfolio">Portfólio</TabsTrigger>
         <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>
-        <TabsTrigger value="contact">Kontakt</TabsTrigger>
+        <TabsTrigger value="calendar">Kalendár</TabsTrigger>
       </TabsList>
       
       <TabsContent value="portfolio" className="animate-fade-in">
@@ -241,7 +242,7 @@ const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null }> = ({
         <ReviewsTab />
       </TabsContent>
       
-      <TabsContent value="contact" className="animate-fade-in">
+      <TabsContent value="calendar" className="animate-fade-in">
         <ContactTab />
       </TabsContent>
     </Tabs>
