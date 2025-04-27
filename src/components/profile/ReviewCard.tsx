@@ -180,14 +180,19 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         replyId: reply.id
       });
       
-      const { error: updateError } = await supabase
+      const { data, error: updateError } = await supabase
         .from('craftsman_review_replies')
         .update({ reply: editReplyText })
         .eq('id', reply.id)
-        .eq('craftsman_id', userId);
+        .eq('craftsman_id', userId)
+        .select();
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Error updating reply:", updateError);
+        throw updateError;
+      }
       
+      console.log("Update response:", data);
       toast.success("Odpoveď bola úspešne aktualizovaná");
       setEditingReply(false);
       
@@ -210,7 +215,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         .eq('id', review.id)
         .eq('customer_id', userId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error deleting review:", error);
+        throw error;
+      }
 
       toast.success("Hodnotenie bolo úspešne vymazané");
       if (onReplyUpdated) onReplyUpdated();
@@ -224,13 +232,21 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     if (!reply) return;
     
     try {
+      console.log("Deleting reply:", {
+        replyId: reply.id,
+        craftsmanId: userId
+      });
+      
       const { error } = await supabase
         .from('craftsman_review_replies')
         .delete()
         .eq('id', reply.id)
         .eq('craftsman_id', userId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error deleting reply:", error);
+        throw error;
+      }
 
       toast.success("Odpoveď bola úspešne vymazaná");
       if (onReplyUpdated) onReplyUpdated();

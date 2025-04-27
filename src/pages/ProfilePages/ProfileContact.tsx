@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -103,7 +104,7 @@ const ProfileContactContent: React.FC = () => {
         <ProfileHeader />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <ProfileNavigation activeTab="contact" userType={profileData.user_type} />
+          <ProfileNavigation activeTab="calendar" userType={profileData?.user_type} />
           
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Contact section - adjust width based on whether calendar is shown */}

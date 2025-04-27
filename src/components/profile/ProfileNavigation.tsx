@@ -4,7 +4,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/ProfileContext";
 
-type TabType = 'portfolio' | 'reviews' | 'contact';
+type TabType = 'portfolio' | 'reviews' | 'calendar';
 
 interface ProfileNavigationProps {
   activeTab: TabType;
@@ -57,12 +57,12 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
           </Button>
         </Link>
         
-        <Link to={getTabUrl('contact')}>
+        <Link to={getTabUrl('calendar')}>
           <Button 
-            variant={activeTab === 'contact' ? 'default' : 'ghost'} 
+            variant={activeTab === 'calendar' ? 'default' : 'ghost'} 
             className="rounded-none rounded-t-lg h-12"
           >
-            Kontakt
+            Kalendár
           </Button>
         </Link>
       </nav>
