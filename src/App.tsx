@@ -11,7 +11,7 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import ProfilePortfolio from "./pages/ProfilePages/ProfilePortfolio";
 import ProfileReviews from "./pages/ProfilePages/ProfileReviews";
-import ProfileCalendar from "./pages/ProfilePages/ProfileContact";
+import ProfileCalendar from "./pages/ProfilePages/ProfileCalendar";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";

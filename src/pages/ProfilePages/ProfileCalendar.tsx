@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-const ProfileContactContent: React.FC = () => {
+const ProfileCalendarContent: React.FC = () => {
   const {
     loading,
     profileData,
@@ -27,7 +27,7 @@ const ProfileContactContent: React.FC = () => {
 
   // Debug log to help troubleshoot
   useEffect(() => {
-    console.log("ProfileContact rendering:", {
+    console.log("ProfileCalendar rendering:", {
       loading,
       profileFound: !!profileData,
       isCurrentUser,
@@ -143,12 +143,12 @@ const ProfileContactContent: React.FC = () => {
 };
 
 // Wrapper component that provides the ProfileProvider context
-const ProfileContact: React.FC = () => {
+const ProfileCalendarPage: React.FC = () => {
   return (
     <ProfileProvider>
-      <ProfileContactContent />
+      <ProfileCalendarContent />
     </ProfileProvider>
   );
 };
 
-export default ProfileContact;
+export default ProfileCalendarPage;
