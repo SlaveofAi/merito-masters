@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,26 +63,36 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [customerDisplayName, setCustomerDisplayName] = useState<string>(review.customer_name);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [localReply, setLocalReply] = useState<ReviewReply | null>(reply || null);
   
   const userId = user?.id;
   const isReviewOwner = userId === review.customer_id;
   const canManageReply = isCraftsman && userId;
-  const hasReply = !!reply && !!reply.reply;
+  const hasReply = !!localReply && !!localReply.reply;
   
   console.log("ReviewCard rendering:", {
     reviewId: review.id,
     hasReply,
-    replyData: reply,
-    replyText: reply?.reply || "No reply text",
+    replyData: localReply,
+    replyText: localReply?.reply || "No reply text",
     isCraftsman,
     canManageReply
   });
 
+  // Update local state when reply prop changes
   useEffect(() => {
-    if (reply && reply.reply) {
-      setEditReplyText(reply.reply);
+    if (reply) {
+      setLocalReply(reply);
+      setEditReplyText(reply.reply || "");
     }
   }, [reply]);
+
+  // Update edit text when localReply changes
+  useEffect(() => {
+    if (localReply && localReply.reply) {
+      setEditReplyText(localReply.reply);
+    }
+  }, [localReply]);
 
   useEffect(() => {
     const fetchCustomerProfile = async () => {
@@ -151,6 +162,17 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       
       if (error) throw error;
       
+      // Get the newly created reply
+      const { data: newReply, error: fetchError } = await supabase
+        .from('craftsman_review_replies')
+        .select('*')
+        .eq('review_id', review.id)
+        .single();
+        
+      if (!fetchError && newReply) {
+        setLocalReply(newReply as ReviewReply);
+      }
+      
       toast.success("Odpoveď bola úspešne pridaná");
       setReplyText("");
       setShowReplyForm(false);
@@ -167,7 +189,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   };
   
   const handleUpdateReply = async () => {
-    if (!editReplyText.trim() || !userId || !isCraftsman || !reply) return;
+    if (!editReplyText.trim() || !userId || !isCraftsman || !localReply) return;
     
     setIsSubmitting(true);
     setError(null);
@@ -179,7 +201,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           reply: editReplyText,
           created_at: new Date().toISOString()
         })
-        .eq('id', reply.id)
+        .eq('id', localReply.id)
         .eq('craftsman_id', userId)
         .select();
       
@@ -189,16 +211,22 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       }
       
       console.log("Update response:", data);
+      
+      if (data && data[0]) {
+        // Update the local reply state immediately
+        const updatedReply = {
+          ...localReply,
+          reply: editReplyText,
+          created_at: data[0].created_at
+        };
+        setLocalReply(updatedReply);
+      }
+      
       toast.success("Odpoveď bola úspešne aktualizovaná");
       setEditingReply(false);
       
       if (onReplyUpdated) {
         onReplyUpdated();
-      }
-      
-      if (data && data[0]) {
-        reply.reply = data[0].reply;
-        reply.created_at = data[0].created_at;
       }
     } catch (error: any) {
       console.error("Error updating review reply:", error);
@@ -231,18 +259,18 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   };
 
   const handleDeleteReply = async () => {
-    if (!reply) return;
+    if (!localReply) return;
     
     try {
       console.log("Deleting reply:", {
-        replyId: reply.id,
+        replyId: localReply.id,
         craftsmanId: userId
       });
       
       const { error } = await supabase
         .from('craftsman_review_replies')
         .delete()
-        .eq('id', reply.id)
+        .eq('id', localReply.id)
         .eq('craftsman_id', userId);
 
       if (error) {
@@ -250,6 +278,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         throw error;
       }
 
+      // Update local state to remove reply
+      setLocalReply(null);
       toast.success("Odpoveď bola úspešne vymazaná");
       if (onReplyUpdated) onReplyUpdated();
     } catch (err) {
@@ -328,7 +358,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
             
             <p className="text-gray-700 mt-2">{review.comment}</p>
             
-            {reply && reply.reply && (
+            {localReply && localReply.reply && (
               <div className="mt-4 pl-4 border-l-2 border-gray-200">
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-1 text-green-500" />
@@ -381,9 +411,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                         )}
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{reply.reply}</p>
+                    <p className="text-sm text-gray-600 mt-1">{localReply.reply}</p>
                     <span className="text-xs text-gray-400 block mt-1">
-                      {formatDate(reply.created_at)}
+                      {formatDate(localReply.created_at)}
                     </span>
                   </div>
                 </div>
@@ -410,7 +440,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                     size="sm" 
                     onClick={() => {
                       setEditingReply(false);
-                      setEditReplyText(reply?.reply || "");
+                      setEditReplyText(localReply?.reply || "");
                     }}
                     disabled={isSubmitting}
                   >

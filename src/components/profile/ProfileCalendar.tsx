@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,7 @@ const ProfileCalendar: React.FC = () => {
     }
   }, [selectedDates, isCurrentUser]);
 
-  // Update the fetchAvailableDates function to allow customers to see dates
+  // Function to fetch available dates - accessible for both craftsman and customers
   const fetchAvailableDates = async () => {
     if (!profileData?.id) {
       setIsLoadingDates(false);
@@ -214,7 +215,7 @@ const ProfileCalendar: React.FC = () => {
             }}
             month={month}
             onMonthChange={setMonth}
-            className="p-3 pointer-events-auto h-auto"
+            className="p-3 h-auto"
             disabled={!canEditCalendar}
           />
           

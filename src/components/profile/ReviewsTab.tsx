@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/contexts/ProfileContext";
@@ -49,6 +50,11 @@ const ReviewsTab: React.FC = () => {
     }
   }, [profileData?.id, refetchReviews]);
 
+  const handleRefresh = () => {
+    console.log("Manual refresh of reviews requested");
+    refetchReviews();
+  };
+
   return (
     <div className="space-y-6">
       {error && (
@@ -59,7 +65,7 @@ const ReviewsTab: React.FC = () => {
             <Button 
               variant="link" 
               className="ml-2 p-0 h-auto" 
-              onClick={() => refetchReviews()}
+              onClick={handleRefresh}
             >
               <RefreshCw className="h-3 w-3 mr-1" /> Obnoviť
             </Button>
@@ -86,10 +92,7 @@ const ReviewsTab: React.FC = () => {
           isLoading={isLoadingReviews}
           canReplyToReview={canReplyToReview}
           userId={user?.id}
-          onRefresh={() => {
-            console.log("Refreshing reviews after update");
-            refetchReviews();
-          }}
+          onRefresh={handleRefresh}
           error={error}
         />
       </div>
