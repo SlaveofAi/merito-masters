@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -56,6 +55,7 @@ const ProfileCalendar: React.FC = () => {
     }
   }, [selectedDates, isCurrentUser]);
 
+  // Update the fetchAvailableDates function to allow customers to see dates
   const fetchAvailableDates = async () => {
     if (!profileData?.id) {
       setIsLoadingDates(false);
@@ -73,12 +73,7 @@ const ProfileCalendar: React.FC = () => {
         .select('date')
         .eq('craftsman_id', profileData.id);
 
-      if (error) {
-        console.error("Error fetching available dates:", error);
-        setError(`Nepodarilo sa načítať dostupné dni: ${error.message}`);
-        setIsLoadingDates(false);
-        return;
-      }
+      if (error) throw error;
 
       if (data && data.length > 0) {
         const parsedDates = data.map(item => new Date(item.date));
@@ -213,10 +208,8 @@ const ProfileCalendar: React.FC = () => {
             mode="multiple"
             selected={selectedDates}
             onSelect={(dates) => {
-              if (Array.isArray(dates)) {
+              if (canEditCalendar && Array.isArray(dates)) {
                 setSelectedDates(dates);
-              } else {
-                handleDateSelect(dates);
               }
             }}
             month={month}

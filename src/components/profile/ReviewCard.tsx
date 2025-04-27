@@ -173,16 +173,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     setError(null);
     
     try {
-      console.log("Updating reply for review:", {
-        reviewId: review.id,
-        craftsmanId: userId,
-        replyText: editReplyText,
-        replyId: reply.id
-      });
-      
       const { data, error: updateError } = await supabase
         .from('craftsman_review_replies')
-        .update({ reply: editReplyText })
+        .update({ 
+          reply: editReplyText,
+          created_at: new Date().toISOString()
+        })
         .eq('id', reply.id)
         .eq('craftsman_id', userId)
         .select();
@@ -199,9 +195,15 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       if (onReplyUpdated) {
         onReplyUpdated();
       }
+      
+      if (data && data[0]) {
+        reply.reply = data[0].reply;
+        reply.created_at = data[0].created_at;
+      }
     } catch (error: any) {
       console.error("Error updating review reply:", error);
       setError("Nastala chyba pri aktualizácii odpovede.");
+      toast.error("Nastala chyba pri aktualizácii odpovede");
     } finally {
       setIsSubmitting(false);
     }

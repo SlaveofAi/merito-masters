@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/contexts/ProfileContext";
@@ -18,23 +17,18 @@ const ReviewsTab: React.FC = () => {
     refetchReviews
   } = useProfile();
 
-  // Check if the current profile belongs to the logged-in user
   const isCurrentUser = profileData?.id === user?.id;
   
-  // Use a safer approach to determine if this is a craftsman profile
   const isCraftsmanProfile = profileData?.user_type === 'craftsman' || 
                            (profileData && 'trade_category' in profileData);
   
-  // Only customers can leave reviews for craftsmen profiles that aren't their own
   const canLeaveReview = user && 
     userType && userType.toLowerCase() === 'customer' && 
     isCraftsmanProfile && 
     !isCurrentUser;
   
-  // Only craftsmen can reply to reviews on their own profiles
   const canReplyToReview = user && userType && userType.toLowerCase() === 'craftsman' && isCurrentUser;
 
-  // Enhanced debug logs for troubleshooting the review form visibility
   console.log("Reviews tab rendering with critical variables:", { 
     reviews: reviews?.length, 
     isCurrentUser, 
@@ -48,7 +42,6 @@ const ReviewsTab: React.FC = () => {
     error
   });
 
-  // Fetch reviews when component mounts
   useEffect(() => {
     if (profileData?.id) {
       console.log("Fetching reviews for profile:", profileData.id);
@@ -74,7 +67,6 @@ const ReviewsTab: React.FC = () => {
         </Alert>
       )}
       
-      {/* Review submission form - only for customers viewing craftsman profiles */}
       {canLeaveReview && user && profileData && (
         <div className="mb-6 border p-4 rounded-md bg-white shadow-sm">
           <h3 className="text-lg font-medium mb-3">Pridať hodnotenie</h3>
@@ -87,7 +79,6 @@ const ReviewsTab: React.FC = () => {
         </div>
       )}
       
-      {/* Reviews list */}
       <div>
         <h3 className="text-xl font-semibold mb-4">Hodnotenia a recenzie</h3>
         <ReviewsList
@@ -95,7 +86,10 @@ const ReviewsTab: React.FC = () => {
           isLoading={isLoadingReviews}
           canReplyToReview={canReplyToReview}
           userId={user?.id}
-          onRefresh={refetchReviews}
+          onRefresh={() => {
+            console.log("Refreshing reviews after update");
+            refetchReviews();
+          }}
           error={error}
         />
       </div>
