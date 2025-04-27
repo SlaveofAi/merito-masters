@@ -174,6 +174,91 @@ const ProfileCalendar: React.FC = () => {
     );
   }
 
+  // Special case for customers viewing a craftsman's profile
+  // We want to show a simplified view with just available days
+  if (!isCurrentUser && !canEditCalendar && isCraftsmanProfile) {
+    return (
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <CalendarIcon className="mr-2 h-5 w-5" />
+            <span>Kalendár dostupnosti</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
+          <div className="flex flex-col">
+            <div className="p-3 border-b">
+              <div className="flex items-center justify-between">
+                <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="text-sm font-medium capitalize">
+                  {month.toLocaleString('sk-SK', { month: 'long', year: 'numeric' })}
+                </div>
+                <Button variant="outline" size="sm" onClick={goToNextMonth}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <Calendar
+              mode="multiple"
+              selected={selectedDates}
+              onSelect={() => {}} // Customers can't select dates
+              month={month}
+              onMonthChange={setMonth}
+              className="p-3 h-auto"
+              disabled
+            />
+            
+            <div className="mt-3 flex items-center">
+              <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
+              <span className="text-xs text-gray-500">
+                Remeselník je dostupný v označené dni
+              </span>
+            </div>
+
+            {selectedDates.length === 0 && (
+              <div className="text-center py-4">
+                <p className="text-gray-500 text-sm">
+                  Remeselník momentálne nemá stanovené žiadne dostupné termíny.
+                </p>
+              </div>
+            )}
+
+            {selectedDates.length > 0 && (
+              <div className="mt-4">
+                <p className="font-medium text-sm mb-2">Dostupné dni ({selectedDates.length}):</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedDates
+                    .sort((a, b) => a.getTime() - b.getTime())
+                    .slice(0, 5)
+                    .map((date, i) => (
+                      <div key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
+                        {date.toLocaleDateString('sk-SK')}
+                      </div>
+                    ))}
+                  {selectedDates.length > 5 && (
+                    <div className="px-2 py-1 bg-gray-100 rounded-md text-xs">
+                      +{selectedDates.length - 5} ďalších
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="shadow-sm">
       <CardHeader>
