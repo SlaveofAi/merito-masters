@@ -74,7 +74,10 @@ const ProfileCalendar: React.FC = () => {
         .select('date')
         .eq('craftsman_id', profileData.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching availability:", error);
+        throw error;
+      }
 
       if (data && data.length > 0) {
         const parsedDates = data.map(item => new Date(item.date));
