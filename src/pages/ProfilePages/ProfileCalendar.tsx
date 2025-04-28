@@ -25,19 +25,24 @@ const ProfileCalendarContent: React.FC = () => {
   const { user, loading: authLoading, userType } = useAuth();
   const navigate = useNavigate();
 
-  // Debug log to help troubleshoot
+  // Enhanced craftsman detection - check both user_type field and trade_category existence
+  const isCraftsmanProfile = profileData?.user_type === 'craftsman' || 
+                             (profileData && 'trade_category' in profileData);
+
+  // Enhanced debug log to help troubleshoot
   useEffect(() => {
-    console.log("ProfileCalendar rendering:", {
+    console.log("ProfileCalendar page rendering:", {
       loading,
       profileFound: !!profileData,
       isCurrentUser,
       profileType: profileData?.user_type,
-      isCraftsmanProfile: profileData?.user_type === 'craftsman',
+      isCraftsmanProfile,
+      hasTrade: profileData && 'trade_category' in profileData,
       userType,
       userId: user?.id,
       profileId: profileData?.id
     });
-  }, [loading, profileData, isCurrentUser, userType, user]);
+  }, [loading, profileData, isCurrentUser, userType, user, isCraftsmanProfile]);
   
   // If user is logged in as craftsman but doesn't have a profile, create one
   useEffect(() => {
@@ -95,7 +100,6 @@ const ProfileCalendarContent: React.FC = () => {
   }
 
   // Check if user is attempting to send a booking request but not logged in
-  const isCraftsmanProfile = profileData && profileData.user_type === 'craftsman';
   const showLoginPrompt = !user && !isCurrentUser && isCraftsmanProfile;
 
   return (

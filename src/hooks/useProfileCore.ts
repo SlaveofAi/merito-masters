@@ -98,7 +98,15 @@ export const useProfileCore = (id?: string) => {
         setProfileNotFound(true);
       } else if (profileData) {
         console.log("Profile data found:", profileData);
-        setProfileData(profileData as ProfileData);
+        
+        // Explicitly add user_type to the profile data to ensure it's always available
+        const enrichedProfileData = {
+          ...profileData,
+          user_type: fetchedUserType
+        };
+
+        console.log("Enriched profile data:", enrichedProfileData);
+        setProfileData(enrichedProfileData as ProfileData);
         setProfileNotFound(false);
       } else {
         console.log("No profile data found for:", userId);

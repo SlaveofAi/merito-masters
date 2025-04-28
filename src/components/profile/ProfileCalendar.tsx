@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -21,13 +20,17 @@ const ProfileCalendar: React.FC = () => {
   const [month, setMonth] = useState<Date>(new Date());
   const [motivationalMessage, setMotivationalMessage] = useState<string>('');
 
-  // Determine if this is a craftsman's calendar
-  const isCraftsmanProfile = profileData?.user_type === 'craftsman';
+  // Enhanced craftsman detection - check both user_type field and trade_category existence
+  const isCraftsmanProfile = profileData?.user_type === 'craftsman' || 
+                             (profileData && 'trade_category' in profileData);
   const canEditCalendar = isCurrentUser && (isCraftsmanProfile || userType === 'craftsman');
   
   useEffect(() => {
     console.log("ProfileCalendar component rendered", {
       isCraftsmanProfile,
+      hasUserType: !!profileData?.user_type,
+      profileUserType: profileData?.user_type,
+      hasTrade: profileData && 'trade_category' in profileData,
       isCurrentUser,
       userType,
       profileType: profileData?.user_type,
@@ -35,7 +38,7 @@ const ProfileCalendar: React.FC = () => {
       profileId: profileData?.id,
       canEditCalendar
     });
-  }, [profileData, isCurrentUser, userType, user, canEditCalendar]);
+  }, [profileData, isCurrentUser, userType, user, canEditCalendar, isCraftsmanProfile]);
 
   // Fetch available dates when component mounts
   useEffect(() => {
@@ -177,9 +180,17 @@ const ProfileCalendar: React.FC = () => {
     );
   }
 
+  console.log("Calendar rendering conditions:", {
+    isCurrentUser,
+    canEditCalendar,
+    isCraftsmanProfile,
+    selectedDates: selectedDates.length
+  });
+
   // Special case for customers viewing a craftsman's profile
   // We want to show a simplified view with just available days
   if (!isCurrentUser && !canEditCalendar && isCraftsmanProfile) {
+    console.log("Rendering customer view of craftsman calendar");
     return (
       <Card className="shadow-sm">
         <CardHeader>
