@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -420,7 +419,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                   <CheckCircle2 className="h-4 w-4 mt-1 text-green-500" />
                   <div className="flex-1">
                     <div className="flex justify-between items-center">
-                      {craftsmanName && (
+                      {craftsmanName ? (
                         <div className="flex items-center gap-2">
                           <Link to={`/profile/${review.craftsman_id}/portfolio`}>
                             <Avatar className="flex-shrink-0 w-6 h-6 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
