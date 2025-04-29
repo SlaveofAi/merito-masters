@@ -20,7 +20,8 @@ const ProfileCalendarContent: React.FC = () => {
     isCurrentUser,
     profileNotFound,
     error,
-    createDefaultProfileIfNeeded
+    createDefaultProfileIfNeeded,
+    userType: profileUserType
   } = useProfile();
   const { user, loading: authLoading, userType } = useAuth();
   const navigate = useNavigate();
@@ -28,7 +29,10 @@ const ProfileCalendarContent: React.FC = () => {
   // Enhanced craftsman detection - check both user_type field and trade_category existence
   const isCraftsmanProfile = profileData?.user_type === 'craftsman' || 
                              (profileData && 'trade_category' in profileData);
-
+                            
+  // Check if this is a customer profile
+  const isCustomerProfile = profileData?.user_type === 'customer';
+  
   // Enhanced debug log to help troubleshoot
   useEffect(() => {
     console.log("ProfileCalendar page rendering:", {
@@ -37,12 +41,13 @@ const ProfileCalendarContent: React.FC = () => {
       isCurrentUser,
       profileType: profileData?.user_type,
       isCraftsmanProfile,
+      isCustomerProfile,
       hasTrade: profileData && 'trade_category' in profileData,
       userType,
       userId: user?.id,
       profileId: profileData?.id
     });
-  }, [loading, profileData, isCurrentUser, userType, user, isCraftsmanProfile]);
+  }, [loading, profileData, isCurrentUser, userType, user, isCraftsmanProfile, isCustomerProfile]);
   
   // If user is logged in as craftsman but doesn't have a profile, create one
   useEffect(() => {
@@ -59,10 +64,30 @@ const ProfileCalendarContent: React.FC = () => {
     }
   }, [isCurrentUser, profileNotFound, userType, createDefaultProfileIfNeeded]);
 
+  // Redirect customer profiles to reviews page
+  useEffect(() => {
+    if (isCustomerProfile && !loading && !authLoading) {
+      console.log("Customer profile detected, redirecting to reviews");
+      const profileIdParam = profileData?.id !== user?.id ? `/${profileData?.id}` : '';
+      navigate(`/profile${profileIdParam}/reviews`);
+    }
+  }, [isCustomerProfile, loading, authLoading, profileData?.id, user?.id, navigate]);
+
   if (loading || authLoading) {
     return (
       <Layout>
         <ProfileSkeleton />
+      </Layout>
+    );
+  }
+
+  // If it's a customer profile, don't show the calendar page at all
+  if (isCustomerProfile) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex justify-center items-center">
+          <p>Presmerovanie na stránku hodnotení...</p>
+        </div>
       </Layout>
     );
   }

@@ -227,7 +227,7 @@ const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null }> = ({
   
   // Default tabs for craftsman profiles
   return (
-    <Tabs defaultValue="calendar" className="w-full">
+    <Tabs defaultValue="portfolio" className="w-full">
       <TabsList className="grid w-full max-w-md mx-auto md:grid-cols-3 mb-8">
         <TabsTrigger value="portfolio">Portfólio</TabsTrigger>
         <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>

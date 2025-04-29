@@ -26,11 +26,18 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
   
   // Determine if a tab should be shown based on user type - using safer check
   const showTab = (tab: TabType) => {
+    const isCustomer = userType && userType.toLowerCase() === 'customer';
+    
     if (tab === 'portfolio') {
       // Only hide portfolio tab if we're absolutely sure this is a customer
-      const isCustomer = userType && userType.toLowerCase() === 'customer';
       return !isCustomer;
     }
+    
+    if (tab === 'calendar') {
+      // Hide calendar tab for customers
+      return !isCustomer;
+    }
+    
     return true;
   };
 
@@ -57,14 +64,16 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
           </Button>
         </Link>
         
-        <Link to={getTabUrl('calendar')}>
-          <Button 
-            variant={activeTab === 'calendar' ? 'default' : 'ghost'} 
-            className="rounded-none rounded-t-lg h-12"
-          >
-            Kalendár
-          </Button>
-        </Link>
+        {showTab('calendar') && (
+          <Link to={getTabUrl('calendar')}>
+            <Button 
+              variant={activeTab === 'calendar' ? 'default' : 'ghost'} 
+              className="rounded-none rounded-t-lg h-12"
+            >
+              Kalendár
+            </Button>
+          </Link>
+        )}
       </nav>
     </div>
   );

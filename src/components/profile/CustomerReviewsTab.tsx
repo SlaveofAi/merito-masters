@@ -9,6 +9,7 @@ import { CraftsmanReview } from "@/types/profile";
 import ReviewForm from "./ReviewForm";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 const CustomerReviewsTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
@@ -21,18 +22,29 @@ const CustomerReviewsTab: React.FC = () => {
     queryFn: async () => {
       if (!profileData?.id) return [];
       
+      console.log("Fetching reviews for customer:", profileData.id);
+      
       const { data, error } = await supabase
         .from('craftsman_reviews')
-        .select('*, craftsman:craftsman_id(name)')
+        .select(`
+          *,
+          craftsman:craftsman_id (
+            id, 
+            name,
+            trade_category,
+            profile_image_url
+          )
+        `)
         .eq('customer_id', profileData.id)
         .order('created_at', { ascending: false });
       
       if (error) {
         console.error("Error fetching customer reviews:", error);
-        return [];
+        throw error;
       }
       
-      return data as (CraftsmanReview & { craftsman: { name: string } })[];
+      console.log("Customer reviews fetched:", data?.length || 0);
+      return data as (CraftsmanReview & { craftsman: { id: string, name: string, trade_category: string, profile_image_url: string | null } })[];
     },
     enabled: !!profileData?.id,
   });
@@ -59,7 +71,7 @@ const CustomerReviewsTab: React.FC = () => {
     <div>
       <h3 className="text-xl font-semibold mb-4">Hodnotenia remeselníkov</h3>
       
-      {canAddReview && (
+      {canAddReview && isCurrentUser && (
         <div className="mb-6">
           {!showAddForm ? (
             <button 
@@ -96,13 +108,37 @@ const CustomerReviewsTab: React.FC = () => {
           {reviews.map((review) => (
             <Card key={review.id} className="overflow-hidden">
               <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <div className="font-medium">
-                      Hodnotenie pre: {review.craftsman?.name || 'Neznámy remeselník'}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {new Date(review.created_at).toLocaleDateString("sk-SK")}
+                <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                  <div className="flex items-start space-x-3">
+                    {review.craftsman?.profile_image_url ? (
+                      <img 
+                        src={review.craftsman.profile_image_url} 
+                        alt={review.craftsman?.name || 'Remeselník'} 
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                        <span className="text-gray-500 text-xs">Foto</span>
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-medium">
+                        {review.craftsman?.name || 'Neznámy remeselník'}
+                      </div>
+                      {review.craftsman?.trade_category && (
+                        <Badge variant="outline" className="mt-1">
+                          {review.craftsman.trade_category}
+                        </Badge>
+                      )}
+                      <div className="text-sm text-gray-500 mt-1">
+                        {new Date(review.created_at).toLocaleString("sk-SK", {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center">
@@ -118,7 +154,7 @@ const CustomerReviewsTab: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <p className="text-gray-700">{review.comment}</p>
+                <p className="text-gray-700 mt-4">{review.comment || "Bez komentára"}</p>
               </CardContent>
             </Card>
           ))}

@@ -30,7 +30,8 @@ const ProfileReviewsContent: React.FC = () => {
       profileUserType: profileData?.user_type,
       isCurrentUser,
       canLeaveReview: userType === 'customer' && profileData?.user_type === 'craftsman' && !isCurrentUser,
-      isCraftsmanProfile: profileData?.user_type === 'craftsman'
+      isCraftsmanProfile: profileData?.user_type === 'craftsman',
+      isCustomerProfile: profileData?.user_type === 'customer'
     });
   }, [loading, profileData, userType, isCurrentUser]);
 
@@ -74,6 +75,9 @@ const ProfileReviewsContent: React.FC = () => {
     );
   }
 
+  const isCustomerProfile = profileData.user_type && 
+                           profileData.user_type.toLowerCase() === 'customer';
+
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
@@ -83,7 +87,7 @@ const ProfileReviewsContent: React.FC = () => {
           <ProfileNavigation activeTab="reviews" userType={profileData.user_type} />
           
           <div className="mt-8">
-            {profileData.user_type && profileData.user_type.toLowerCase() === 'customer' ? (
+            {isCustomerProfile ? (
               <CustomerReviewsTab />
             ) : (
               <ReviewsTab />
