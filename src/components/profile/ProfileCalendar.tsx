@@ -20,6 +20,7 @@ const ProfileCalendar: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [month, setMonth] = useState<Date>(new Date());
   const [motivationalMessage, setMotivationalMessage] = useState<string>('');
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
 
   // Enhanced craftsman detection - check both user_type field and trade_category existence
   const isCraftsmanProfile = profileData?.user_type === 'craftsman' || 
@@ -75,7 +76,7 @@ const ProfileCalendar: React.FC = () => {
       
       const { data, error } = await supabase
         .from('craftsman_availability')
-        .select('date')
+        .select('date, time_slots')
         .eq('craftsman_id', profileData.id);
 
       if (error) {
@@ -87,6 +88,21 @@ const ProfileCalendar: React.FC = () => {
         const parsedDates = data.map(item => new Date(item.date));
         console.log("Found available dates:", parsedDates);
         setSelectedDates(parsedDates);
+        
+        // Initialize time slots for the first date if we're looking at a specific date
+        if (parsedDates.length > 0) {
+          // Find time slots for the current date if it's one of the available dates
+          const today = new Date();
+          const todayString = today.toISOString().split('T')[0];
+          const todayData = data.find(item => item.date === todayString);
+          
+          if (todayData && Array.isArray(todayData.time_slots)) {
+            setAvailableTimeSlots(todayData.time_slots.map(slot => String(slot)));
+          } else {
+            // Set default time slots
+            setAvailableTimeSlots(['9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']);
+          }
+        }
       } else {
         console.log("No available dates found");
         setSelectedDates([]);
@@ -124,7 +140,7 @@ const ProfileCalendar: React.FC = () => {
         const datesToInsert = selectedDates.map(date => ({
           craftsman_id: profileData.id,
           date: date.toISOString().split('T')[0],
-          time_slots: []
+          time_slots: ["9:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"]
         }));
         
         const { error } = await supabase
@@ -200,7 +216,7 @@ const ProfileCalendar: React.FC = () => {
     return (
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center">
+          <CardTitle className="flex items-center justify-center">
             <CalendarIcon className="mr-2 h-5 w-5" />
             <span>Kalendár dostupnosti</span>
           </CardTitle>
@@ -247,7 +263,7 @@ const ProfileCalendar: React.FC = () => {
               }}
             />
             
-            <div className="mt-3 flex items-center">
+            <div className="mt-3 flex items-center justify-center">
               <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
               <span className="text-xs text-gray-500">
                 Remeselník je dostupný v označené dni
@@ -263,22 +279,24 @@ const ProfileCalendar: React.FC = () => {
             )}
 
             {selectedDates.length > 0 && (
-              <div className="mt-4">
-                <p className="font-medium text-sm mb-2">Dostupné dni ({selectedDates.length}):</p>
-                <div className="flex flex-wrap gap-2">
-                  {selectedDates
-                    .sort((a, b) => a.getTime() - b.getTime())
-                    .slice(0, 5)
-                    .map((date, i) => (
-                      <div key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                        {date.toLocaleDateString('sk-SK')}
+              <div className="mt-4 flex justify-center">
+                <div className="text-center">
+                  <p className="font-medium text-sm mb-2">Dostupné dni ({selectedDates.length}):</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {selectedDates
+                      .sort((a, b) => a.getTime() - b.getTime())
+                      .slice(0, 5)
+                      .map((date, i) => (
+                        <div key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
+                          {date.toLocaleDateString('sk-SK')}
+                        </div>
+                      ))}
+                    {selectedDates.length > 5 && (
+                      <div className="px-2 py-1 bg-gray-100 rounded-md text-xs">
+                        +{selectedDates.length - 5} ďalších
                       </div>
-                    ))}
-                  {selectedDates.length > 5 && (
-                    <div className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                      +{selectedDates.length - 5} ďalších
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -291,7 +309,7 @@ const ProfileCalendar: React.FC = () => {
   return (
     <Card className="shadow-sm">
       <CardHeader>
-        <CardTitle className="flex items-center">
+        <CardTitle className="flex items-center justify-center">
           <CalendarIcon className="mr-2 h-5 w-5" />
           <span>Kalendár dostupnosti</span>
         </CardTitle>
@@ -304,8 +322,8 @@ const ProfileCalendar: React.FC = () => {
           </Alert>
         )}
         
-        <div className="flex flex-col">
-          <div className="p-3 border-b">
+        <div className="flex flex-col items-center">
+          <div className="p-3 border-b w-full">
             <div className="flex items-center justify-between">
               <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
                 <ChevronLeft className="h-4 w-4" />
@@ -333,7 +351,7 @@ const ProfileCalendar: React.FC = () => {
             disabled={!canEditCalendar}
           />
           
-          <div className="mt-3 flex items-center">
+          <div className="mt-3 flex items-center justify-center">
             <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
             <span className="text-xs text-gray-500">
               {canEditCalendar 
@@ -357,8 +375,8 @@ const ProfileCalendar: React.FC = () => {
           <div className="mt-4">
             {selectedDates.length > 0 && (
               <div className="mb-4">
-                <p className="font-medium text-sm mb-2">Vaše dostupné dni ({selectedDates.length}):</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="font-medium text-sm mb-2 text-center">Vaše dostupné dni ({selectedDates.length}):</p>
+                <div className="flex flex-wrap gap-2 justify-center">
                   {selectedDates
                     .sort((a, b) => a.getTime() - b.getTime())
                     .slice(0, 5)
