@@ -4,7 +4,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/ProfileContext";
 
-type TabType = 'portfolio' | 'reviews' | 'calendar';
+type TabType = 'portfolio' | 'reviews';
 
 interface ProfileNavigationProps {
   activeTab: TabType;
@@ -33,11 +33,6 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
       return !isCustomer;
     }
     
-    if (tab === 'calendar') {
-      // Hide calendar tab for customers
-      return !isCustomer;
-    }
-    
     return true;
   };
 
@@ -63,17 +58,6 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
             Hodnotenia
           </Button>
         </Link>
-        
-        {showTab('calendar') && (
-          <Link to={getTabUrl('calendar')}>
-            <Button 
-              variant={activeTab === 'calendar' ? 'default' : 'ghost'} 
-              className="rounded-none rounded-t-lg h-12"
-            >
-              Kalendár
-            </Button>
-          </Link>
-        )}
       </nav>
     </div>
   );

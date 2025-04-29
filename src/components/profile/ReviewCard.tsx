@@ -11,6 +11,7 @@ import { StarIcon, Trash2 } from "lucide-react";
 import { AlertCircle, CheckCircle2, CornerDownLeft, Edit, User } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Link } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,6 +65,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   const [customerDisplayName, setCustomerDisplayName] = useState<string>(review.customer_name);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [localReply, setLocalReply] = useState<ReviewReply | null>(reply || null);
+  const [craftsmanName, setCraftsmanName] = useState<string>('');
+  const [craftsmanImageUrl, setCraftsmanImageUrl] = useState<string | null>(null);
   
   const userId = user?.id;
   const isReviewOwner = userId === review.customer_id;
@@ -94,6 +97,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     }
   }, [localReply]);
 
+  // Fetch customer profile data
   useEffect(() => {
     const fetchCustomerProfile = async () => {
       if (!review.customer_id) return;
@@ -130,6 +134,38 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 
     fetchCustomerProfile();
   }, [review.customer_id]);
+  
+  // Fetch craftsman profile data
+  useEffect(() => {
+    const fetchCraftsmanProfile = async () => {
+      if (!review.craftsman_id) return;
+
+      try {
+        const { data: craftsmanData, error: craftsmanError } = await supabase
+          .from('craftsman_profiles')
+          .select('name, profile_image_url')
+          .eq('id', review.craftsman_id)
+          .single();
+
+        if (craftsmanError || !craftsmanData) {
+          console.error("Error fetching craftsman profile:", craftsmanError);
+        } else if (craftsmanData) {
+          if (craftsmanData.name) {
+            setCraftsmanName(craftsmanData.name);
+          }
+          if (craftsmanData.profile_image_url) {
+            setCraftsmanImageUrl(craftsmanData.profile_image_url);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching craftsman profile:", err);
+      }
+    };
+
+    if (review.craftsman_id) {
+      fetchCraftsmanProfile();
+    }
+  }, [review.craftsman_id]);
   
   const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return 'N/A';
@@ -288,24 +324,44 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     }
   };
 
+  const CustomerProfileLink = () => (
+    <Link 
+      to={`/profile/${review.customer_id}/reviews`}
+      className="hover:underline hover:text-primary transition-colors"
+    >
+      <h3 className="font-medium">{customerDisplayName}</h3>
+    </Link>
+  );
+
+  const CraftsmanProfileLink = () => (
+    <Link 
+      to={`/profile/${review.craftsman_id}/portfolio`}
+      className="hover:underline hover:text-primary transition-colors"
+    >
+      <h4 className="text-sm font-medium">{craftsmanName || 'Remeselník'}</h4>
+    </Link>
+  );
+
   return (
     <Card className="mb-4">
       <CardContent className="pt-6">
         <div className="flex items-start gap-4">
-          <Avatar className="flex-shrink-0 w-10 h-10">
-            {profileImageUrl ? (
-              <AvatarImage src={profileImageUrl} alt={customerDisplayName} />
-            ) : (
-              <AvatarFallback>
-                <User className="h-5 w-5 text-gray-500" />
-              </AvatarFallback>
-            )}
-          </Avatar>
+          <Link to={`/profile/${review.customer_id}/reviews`}>
+            <Avatar className="flex-shrink-0 w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+              {profileImageUrl ? (
+                <AvatarImage src={profileImageUrl} alt={customerDisplayName} />
+              ) : (
+                <AvatarFallback>
+                  <User className="h-5 w-5 text-gray-500" />
+                </AvatarFallback>
+              )}
+            </Avatar>
+          </Link>
           
           <div className="flex-1">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
               <div>
-                <h3 className="font-medium">{customerDisplayName}</h3>
+                <CustomerProfileLink />
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <time dateTime={review.created_at}>
                     {formatDate(review.created_at)}
@@ -364,7 +420,25 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                   <CheckCircle2 className="h-4 w-4 mt-1 text-green-500" />
                   <div className="flex-1">
                     <div className="flex justify-between items-center">
-                      <h4 className="text-sm font-medium text-gray-700">Odpoveď remeselníka</h4>
+                      {craftsmanName && (
+                        <div className="flex items-center gap-2">
+                          <Link to={`/profile/${review.craftsman_id}/portfolio`}>
+                            <Avatar className="flex-shrink-0 w-6 h-6 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                              {craftsmanImageUrl ? (
+                                <AvatarImage src={craftsmanImageUrl} alt={craftsmanName} />
+                              ) : (
+                                <AvatarFallback>
+                                  <User className="h-3 w-3 text-gray-500" />
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                          </Link>
+                          <CraftsmanProfileLink />
+                        </div>
+                      ) : (
+                        <h4 className="text-sm font-medium text-gray-700">Odpoveď remeselníka</h4>
+                      )}
+                      
                       <div className="flex gap-2">
                         {canManageReply && (
                           <>

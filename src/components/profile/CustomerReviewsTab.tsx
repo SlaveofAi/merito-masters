@@ -10,6 +10,9 @@ import ReviewForm from "./ReviewForm";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { User } from "lucide-react";
 
 const CustomerReviewsTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
@@ -110,21 +113,28 @@ const CustomerReviewsTab: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                   <div className="flex items-start space-x-3">
-                    {review.craftsman?.profile_image_url ? (
-                      <img 
-                        src={review.craftsman.profile_image_url} 
-                        alt={review.craftsman?.name || 'Remeselník'} 
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                        <span className="text-gray-500 text-xs">Foto</span>
-                      </div>
-                    )}
+                    <Link to={`/profile/${review.craftsman?.id}/portfolio`}>
+                      <Avatar className="w-12 h-12 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                        {review.craftsman?.profile_image_url ? (
+                          <AvatarImage 
+                            src={review.craftsman.profile_image_url} 
+                            alt={review.craftsman?.name || 'Remeselník'} 
+                            className="object-cover"
+                          />
+                        ) : (
+                          <AvatarFallback className="bg-gray-200">
+                            <User className="text-gray-500" />
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                    </Link>
                     <div>
-                      <div className="font-medium">
+                      <Link 
+                        to={`/profile/${review.craftsman?.id}/portfolio`}
+                        className="font-medium hover:text-primary hover:underline transition-colors"
+                      >
                         {review.craftsman?.name || 'Neznámy remeselník'}
-                      </div>
+                      </Link>
                       {review.craftsman?.trade_category && (
                         <Badge variant="outline" className="mt-1">
                           {review.craftsman.trade_category}

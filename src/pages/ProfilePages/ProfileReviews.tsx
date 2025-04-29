@@ -8,7 +8,6 @@ import CustomerReviewsTab from "@/components/profile/CustomerReviewsTab";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
-import { toast } from "sonner";
 
 const ProfileReviewsContent: React.FC = () => {
   const {
