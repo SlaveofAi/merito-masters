@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -230,10 +231,13 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     setError(null);
     
     try {
+      // Fixed: Store the updated reply text before making the request
+      const updatedReplyText = editReplyText;
+      
       const { data, error: updateError } = await supabase
         .from('craftsman_review_replies')
         .update({ 
-          reply: editReplyText,
+          reply: updatedReplyText,
           created_at: new Date().toISOString()
         })
         .eq('id', localReply.id)
@@ -247,21 +251,23 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       
       console.log("Update response:", data);
       
-      if (data && data[0]) {
+      // Fix: Update the local reply state regardless of what the response contains
+      // as long as there was no error
+      if (!updateError) {
         // Update the local reply state immediately
         const updatedReply = {
           ...localReply,
-          reply: editReplyText,
-          created_at: data[0].created_at
+          reply: updatedReplyText,
+          created_at: new Date().toISOString()
         };
         setLocalReply(updatedReply);
-      }
-      
-      toast.success("Odpoveď bola úspešne aktualizovaná");
-      setEditingReply(false);
-      
-      if (onReplyUpdated) {
-        onReplyUpdated();
+        
+        toast.success("Odpoveď bola úspešne aktualizovaná");
+        setEditingReply(false);
+        
+        if (onReplyUpdated) {
+          onReplyUpdated();
+        }
       }
     } catch (error: any) {
       console.error("Error updating review reply:", error);
