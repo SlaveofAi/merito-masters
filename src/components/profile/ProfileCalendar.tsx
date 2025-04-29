@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -169,6 +170,11 @@ const ProfileCalendar: React.FC = () => {
     setMonth(prevMonth);
   };
 
+  // Helper function to check if a date is in the selected dates array
+  const isDateAvailable = (date: Date): boolean => {
+    return selectedDates.some(d => d.toDateString() === date.toDateString());
+  };
+
   if (isLoadingDates) {
     return (
       <Card className="shadow-sm">
@@ -228,8 +234,17 @@ const ProfileCalendar: React.FC = () => {
               onSelect={() => {}} // Customers can't select dates
               month={month}
               onMonthChange={setMonth}
-              className="p-3 h-auto"
-              disabled
+              className="p-3 h-auto pointer-events-auto"
+              modifiers={{
+                available: selectedDates
+              }}
+              modifiersStyles={{
+                available: { backgroundColor: '#e6f7e6', color: '#111827', fontWeight: 'bold' }
+              }}
+              disabled={(date) => {
+                // A date is disabled if it's not in the selected dates (craftsman's available dates)
+                return !isDateAvailable(date);
+              }}
             />
             
             <div className="mt-3 flex items-center">
@@ -314,7 +329,7 @@ const ProfileCalendar: React.FC = () => {
             }}
             month={month}
             onMonthChange={setMonth}
-            className="p-3 h-auto"
+            className="p-3 h-auto pointer-events-auto"
             disabled={!canEditCalendar}
           />
           

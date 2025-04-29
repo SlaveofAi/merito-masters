@@ -36,23 +36,87 @@ const ContactTab = () => {
   
   // Active tab state
   const [activeTab, setActiveTab] = useState("booking");
+  
+  // Available dates state
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [isLoadingDates, setIsLoadingDates] = useState(true);
 
   // Check if the current user is a customer viewing a craftsman's profile
   const isCustomerViewingCraftsman = user && userType === 'customer' && 
     profileData && profileData.user_type === 'craftsman';
 
+  // Fetch available dates when component mounts
+  useEffect(() => {
+    if (isCustomerViewingCraftsman && profileData?.id) {
+      fetchAvailableDates();
+    } else {
+      setIsLoadingDates(false);
+    }
+  }, [profileData?.id, isCustomerViewingCraftsman]);
+
+  const fetchAvailableDates = async () => {
+    if (!profileData?.id) {
+      setIsLoadingDates(false);
+      return;
+    }
+    
+    try {
+      console.log("Fetching craftsman available dates for booking");
+      const { data, error } = await supabase
+        .from('craftsman_availability')
+        .select('date')
+        .eq('craftsman_id', profileData.id);
+
+      if (error) {
+        console.error("Error fetching availability:", error);
+        setAvailableDates([]);
+        setIsLoadingDates(false);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const parsedDates = data.map(item => new Date(item.date));
+        console.log("Found available dates for booking:", parsedDates);
+        setAvailableDates(parsedDates);
+        
+        // Set the selected date to the first available date if available
+        if (parsedDates.length > 0) {
+          const sortedDates = [...parsedDates].sort((a, b) => a.getTime() - b.getTime());
+          const firstValidDate = sortedDates.find(date => date >= new Date());
+          if (firstValidDate) {
+            setSelectedDate(firstValidDate);
+            fetchAvailableTimeSlots(firstValidDate);
+          }
+        }
+      } else {
+        console.log("No available dates found for booking");
+        setAvailableDates([]);
+      }
+    } catch (err) {
+      console.error("Error processing available dates:", err);
+    } finally {
+      setIsLoadingDates(false);
+    }
+  };
+
+  // Helper function to check if a date is in the available dates array
+  const isDateAvailable = (date: Date): boolean => {
+    return availableDates.some(d => d.toDateString() === date.toDateString());
+  };
+
   useEffect(() => {
     if (selectedDate) {
-      fetchAvailableTimeSlots();
+      fetchAvailableTimeSlots(selectedDate);
     }
   }, [selectedDate]);
 
-  const fetchAvailableTimeSlots = async () => {
-    if (!selectedDate || !profileData?.id) return;
+  const fetchAvailableTimeSlots = async (date: Date) => {
+    if (!date || !profileData?.id) return;
     
-    const formattedDate = format(selectedDate, "yyyy-MM-dd");
+    const formattedDate = format(date, "yyyy-MM-dd");
     
     try {
+      console.log("Fetching time slots for date:", formattedDate);
       const { data, error } = await supabase
         .from("craftsman_availability")
         .select("time_slots")
@@ -98,6 +162,20 @@ const ContactTab = () => {
     }
   };
 
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    
+    // Only set the selected date if it's one of the available dates
+    if (isDateAvailable(date)) {
+      console.log("Selected available date:", date);
+      setSelectedDate(date);
+      fetchAvailableTimeSlots(date);
+    } else {
+      console.log("Attempted to select unavailable date:", date);
+      toast.warning("Tento deň nie je dostupný");
+    }
+  };
+  
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -411,17 +489,39 @@ const ContactTab = () => {
             <div className="space-y-6">
               <div>
                 <h4 className="font-medium mb-2">1. Vyberte dátum</h4>
-                <div className="bg-gray-50 p-4 rounded-md border">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    locale={sk}
-                    disabled={{
-                      before: new Date(),
-                    }}
-                  />
-                </div>
+                {isLoadingDates ? (
+                  <div className="bg-gray-50 p-4 rounded-md border flex justify-center items-center">
+                    <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+                    <p className="ml-2 text-sm text-gray-500">Načítavam dostupné termíny...</p>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 p-4 rounded-md border">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={handleDateSelect}
+                      locale={sk}
+                      className="pointer-events-auto"
+                      modifiers={{
+                        available: availableDates
+                      }}
+                      modifiersStyles={{
+                        available: { backgroundColor: '#e6f7e6', color: '#111827', fontWeight: 'bold' }
+                      }}
+                      disabled={(date) => {
+                        // A date is disabled if it's before today or not in the available dates
+                        const isBeforeToday = date < new Date(new Date().setHours(0, 0, 0, 0));
+                        return isBeforeToday || !isDateAvailable(date);
+                      }}
+                    />
+                    <div className="mt-3 flex items-center">
+                      <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
+                      <span className="text-xs text-gray-500">
+                        Remeselník je dostupný v označené dni
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div>
