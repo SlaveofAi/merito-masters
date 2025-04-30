@@ -34,8 +34,8 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
     }
     
     if (tab === 'calendar') {
-      // Only show calendar tab for craftsmen
-      return !isCustomer;
+      // Show calendar tab for both user types
+      return true;
     }
     
     return true;
