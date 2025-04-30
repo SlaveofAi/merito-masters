@@ -51,9 +51,9 @@ const BookingsList = () => {
           query = query.eq('craftsman_id', user.id);
         }
         
-        // Filter by status
+        // Filter by status - Fixed here to handle 'accepted' status too
         if (activeTab === 'approved') {
-          query = query.eq('status', 'approved');
+          query = query.or('status.eq.approved,status.eq.accepted');
         } else if (activeTab === 'pending') {
           query = query.eq('status', 'pending');
         }
