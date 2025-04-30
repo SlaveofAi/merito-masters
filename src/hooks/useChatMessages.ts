@@ -16,6 +16,8 @@ export function useChatMessages(
       if (!selectedContact?.conversation_id || !user) return [];
       
       try {
+        console.log(`Fetching messages for conversation: ${selectedContact.conversation_id}`);
+        
         // Fetch messages
         const { data, error } = await supabase
           .from('chat_messages')
@@ -29,7 +31,10 @@ export function useChatMessages(
           return [];
         }
         
+        console.log(`Retrieved ${data?.length || 0} messages for conversation ${selectedContact.conversation_id}`);
+        
         if (!data || !Array.isArray(data)) {
+          console.log("No messages found or data is not an array");
           return [];
         }
         
@@ -39,6 +44,8 @@ export function useChatMessages(
         );
         
         if (unreadMessages.length > 0) {
+          console.log(`Marking ${unreadMessages.length} messages as read`);
+          
           // Mark each message as read individually to avoid race conditions
           for (const msg of unreadMessages) {
             await supabase
@@ -52,7 +59,9 @@ export function useChatMessages(
         }
         
         // Process messages
-        return data.map(msg => processMessageData(msg, user.id));
+        const processedMessages = data.map(msg => processMessageData(msg, user.id));
+        console.log(`Processed ${processedMessages.length} messages`);
+        return processedMessages;
       } catch (error) {
         console.error("Error processing messages:", error);
         return [];
@@ -61,5 +70,6 @@ export function useChatMessages(
     enabled: !!selectedContact?.conversation_id && !!user,
     staleTime: 5000,
     refetchInterval: 10000, // Poll every 10 seconds as a fallback
+    gcTime: 0, // Don't keep old data in cache
   });
 }
