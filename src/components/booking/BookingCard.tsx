@@ -50,7 +50,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking }) => {
     <Card className="w-full cursor-pointer hover:shadow-md transition-shadow" onClick={handleCardClick}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="flex items-center space-x-4">
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-12 w-12 border">
             <AvatarImage src={avatarImage || ''} alt={displayName || ''} />
             <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
           </Avatar>
@@ -65,7 +65,8 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking }) => {
           {booking.status === 'approved' ? 'Schválená' : 
            booking.status === 'pending' ? 'Čaká na schválenie' : 
            booking.status === 'rejected' ? 'Zamietnutá' : 
-           booking.status === 'completed' ? 'Dokončená' : booking.status}
+           booking.status === 'completed' ? 'Dokončená' : 
+           booking.status === 'accepted' ? 'Schválená' : booking.status}
         </Badge>
       </CardHeader>
       <CardContent>
