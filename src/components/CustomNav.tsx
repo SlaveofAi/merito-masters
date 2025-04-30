@@ -47,7 +47,7 @@ export const BookingsNavLink: React.FC = () => {
   
   return (
     <NavLink 
-      to="/bookings" 
+      to="/jobs" 
       label="Zákazky" 
       className="ml-4 whitespace-nowrap text-base font-medium text-gray-700 hover:text-gray-900"
     />
