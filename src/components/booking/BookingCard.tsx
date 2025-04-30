@@ -22,18 +22,19 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking }) => {
   const formattedDate = formatDate(booking.date);
   const timeRange = `${booking.start_time} - ${booking.end_time}`;
   
-  // Decide which name to display based on user type
+  // Decide which name and image to display based on user type
   const isCustomer = userType?.toLowerCase() === 'customer';
-  const displayName = isCustomer ? booking.craftsman_name : booking.customer_name;
   
-  // Get avatar initials or image
+  // If customer is viewing → show craftsman details
+  // If craftsman is viewing → show customer details
+  const displayName = isCustomer ? booking.craftsman_name : booking.customer_name;
+  const profileImage = isCustomer ? booking.craftsman_image : booking.customer_image;
+  
+  // Get avatar initials
   const getAvatarFallback = () => {
     const name = displayName || '';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
-  
-  // Avatar image based on user type
-  const avatarImage = isCustomer ? booking.craftsman_image : '';
   
   // Handle card click to navigate to the conversation
   const handleCardClick = () => {
@@ -51,7 +52,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking }) => {
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="flex items-center space-x-4">
           <Avatar className="h-12 w-12 border">
-            <AvatarImage src={avatarImage || ''} alt={displayName || ''} />
+            <AvatarImage src={profileImage || ''} alt={displayName || ''} />
             <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
           </Avatar>
           <div>
