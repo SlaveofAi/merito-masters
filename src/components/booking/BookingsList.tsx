@@ -25,6 +25,7 @@ export interface BookingRequest {
   craftsman_name?: string;
   craftsman_trade?: string;
   craftsman_image?: string;
+  customer_image?: string; // New field for customer profile image
 }
 
 const BookingsList = () => {
@@ -70,13 +71,16 @@ const BookingsList = () => {
           return [];
         }
         
-        // Now we need to get the craftsman details separately
-        // We'll collect all craftsman IDs from the bookings
+        // Collect all profile IDs we need to fetch
         const craftsmanIds = bookingData
           .map(booking => booking.craftsman_id)
-          .filter((id, index, self) => self.indexOf(id) === index); // get unique IDs
+          .filter((id, index, self) => self.indexOf(id) === index);
+          
+        const customerIds = bookingData
+          .map(booking => booking.customer_id)
+          .filter((id, index, self) => self.indexOf(id) === index);
         
-        // Only fetch craftsman profiles if we have IDs and the user is a customer
+        // Fetch craftsman profiles if needed
         let craftsmanProfiles = {};
         if (craftsmanIds.length > 0) {
           const { data: craftsmanData, error: craftsmanError } = await supabase
@@ -86,10 +90,9 @@ const BookingsList = () => {
             
           if (craftsmanError) {
             console.error("Error fetching craftsman profiles:", craftsmanError);
-            // We can still continue with the booking data
+            // Continue with what we have
           }
           
-          // Create a lookup object for quick access
           if (craftsmanData) {
             craftsmanProfiles = craftsmanData.reduce((acc, profile) => {
               acc[profile.id] = profile;
@@ -98,14 +101,38 @@ const BookingsList = () => {
           }
         }
         
-        // Merge booking data with craftsman profiles
+        // Fetch customer profiles if needed
+        let customerProfiles = {};
+        if (customerIds.length > 0) {
+          const { data: customerData, error: customerError } = await supabase
+            .from('customer_profiles')
+            .select('id, name, profile_image_url')
+            .in('id', customerIds);
+            
+          if (customerError) {
+            console.error("Error fetching customer profiles:", customerError);
+            // Continue with what we have
+          }
+          
+          if (customerData) {
+            customerProfiles = customerData.reduce((acc, profile) => {
+              acc[profile.id] = profile;
+              return acc;
+            }, {});
+          }
+        }
+        
+        // Merge booking data with profiles
         const enhancedBookings = bookingData.map(booking => {
           const craftsmanProfile = craftsmanProfiles[booking.craftsman_id];
+          const customerProfile = customerProfiles[booking.customer_id];
+          
           return {
             ...booking,
             craftsman_name: craftsmanProfile?.name,
             craftsman_trade: craftsmanProfile?.trade_category,
-            craftsman_image: craftsmanProfile?.profile_image_url
+            craftsman_image: craftsmanProfile?.profile_image_url,
+            customer_image: customerProfile?.profile_image_url
           };
         });
         
