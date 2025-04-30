@@ -25,7 +25,7 @@ export interface BookingRequest {
   craftsman_name?: string;
   craftsman_trade?: string;
   craftsman_image?: string;
-  customer_image?: string; // New field for customer profile image
+  customer_image?: string;
 }
 
 const BookingsList = () => {
@@ -80,7 +80,7 @@ const BookingsList = () => {
           .map(booking => booking.customer_id)
           .filter((id, index, self) => self.indexOf(id) === index);
         
-        // Fetch craftsman profiles if needed
+        // Fetch craftsman profiles
         let craftsmanProfiles = {};
         if (craftsmanIds.length > 0) {
           const { data: craftsmanData, error: craftsmanError } = await supabase
@@ -90,10 +90,7 @@ const BookingsList = () => {
             
           if (craftsmanError) {
             console.error("Error fetching craftsman profiles:", craftsmanError);
-            // Continue with what we have
-          }
-          
-          if (craftsmanData) {
+          } else if (craftsmanData) {
             craftsmanProfiles = craftsmanData.reduce((acc, profile) => {
               acc[profile.id] = profile;
               return acc;
@@ -101,7 +98,7 @@ const BookingsList = () => {
           }
         }
         
-        // Fetch customer profiles if needed
+        // Fetch customer profiles - FIXED: make sure we always fetch customer profiles
         let customerProfiles = {};
         if (customerIds.length > 0) {
           const { data: customerData, error: customerError } = await supabase
@@ -111,14 +108,32 @@ const BookingsList = () => {
             
           if (customerError) {
             console.error("Error fetching customer profiles:", customerError);
-            // Continue with what we have
-          }
-          
-          if (customerData) {
+          } else if (customerData) {
             customerProfiles = customerData.reduce((acc, profile) => {
               acc[profile.id] = profile;
               return acc;
             }, {});
+          }
+          
+          // If customer profile not found, try fetching from profiles table as fallback
+          const missingCustomerIds = customerIds.filter(id => !customerProfiles[id]);
+          if (missingCustomerIds.length > 0) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('id, name')
+              .in('id', missingCustomerIds);
+              
+            if (profileData) {
+              profileData.forEach(profile => {
+                if (!customerProfiles[profile.id]) {
+                  customerProfiles[profile.id] = {
+                    id: profile.id,
+                    name: profile.name,
+                    profile_image_url: null
+                  };
+                }
+              });
+            }
           }
         }
         
@@ -129,9 +144,11 @@ const BookingsList = () => {
           
           return {
             ...booking,
-            craftsman_name: craftsmanProfile?.name,
+            craftsman_name: craftsmanProfile?.name || "Neznámy majster",
             craftsman_trade: craftsmanProfile?.trade_category,
             craftsman_image: craftsmanProfile?.profile_image_url,
+            // Make sure customer data is properly assigned
+            customer_name: customerProfile?.name || booking.customer_name || "Neznámy zákazník",
             customer_image: customerProfile?.profile_image_url
           };
         });

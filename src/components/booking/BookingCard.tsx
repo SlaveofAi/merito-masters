@@ -25,8 +25,8 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking }) => {
   // Determine whether current user is a customer or craftsman
   const isCustomer = userType?.toLowerCase() === 'customer';
   
+  // Fixed: If craftsman is viewing → show customer details
   // If customer is viewing → show craftsman details
-  // If craftsman is viewing → show customer details
   const displayName = isCustomer 
     ? booking.craftsman_name 
     : booking.customer_name;
