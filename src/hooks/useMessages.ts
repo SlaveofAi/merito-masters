@@ -1,9 +1,33 @@
 
-// This file re-exports the useChatMessages hook as useMessages for backward compatibility
+// This file re-exports a combined hook for Chat.tsx that includes messages, contact details, and reviews
 import { useChatMessages } from './useChatMessages';
+import { useContactDetails } from './useContactDetails';
+import { useCustomerReviews } from './useCustomerReviews';
+import { ChatContact, Message } from "@/types/chat";
 
-// Export the useChatMessages hook with the name useMessages
-export const useMessages = useChatMessages;
+// Create a combined hook that returns all the data needed for the chat
+export function useMessages(selectedContact: ChatContact | null, refetchContacts: () => void) {
+  // Get the user from the auth context
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  
+  // Get messages data
+  const messagesQuery = useChatMessages(selectedContact, user, refetchContacts);
+  
+  // Get contact details
+  const contactDetailsQuery = useContactDetails(selectedContact, user);
+  
+  // Get customer reviews if relevant
+  const customerReviewsQuery = useCustomerReviews(selectedContact, user);
+  
+  // Return a combined object with all data needed by Chat.tsx
+  return {
+    messages: messagesQuery.data || [],
+    refetchMessages: messagesQuery.refetch,
+    isLoading: messagesQuery.isLoading,
+    contactDetails: contactDetailsQuery.data,
+    customerReviews: customerReviewsQuery.data || [],
+  };
+}
 
-// Also export the original hook name for completeness
+// Also export the individual hooks for direct usage if needed
 export { useChatMessages };
