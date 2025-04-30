@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { BookingCard } from "./BookingCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 export interface BookingRequest {
   id: string;
@@ -30,12 +31,14 @@ const BookingsList = () => {
   const { user, userType } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("approved");
 
-  const { data: bookings, isLoading, error } = useQuery({
-    queryKey: ['approved-bookings', user?.id, activeTab],
+  const { data: bookings, isLoading, error, refetch } = useQuery({
+    queryKey: ['bookings', user?.id, activeTab],
     queryFn: async () => {
       if (!user) return [];
       
       try {
+        console.log(`Fetching bookings with activeTab: ${activeTab}`);
+        
         // Build the query based on the user type and active tab
         let query = supabase
           .from('booking_requests')
@@ -51,9 +54,10 @@ const BookingsList = () => {
           query = query.eq('craftsman_id', user.id);
         }
         
-        // Filter by status - Fixed here to handle 'accepted' status too
+        // Filter by status
         if (activeTab === 'approved') {
-          query = query.or('status.eq.approved,status.eq.accepted');
+          // Use in() filter for better readability and reliability
+          query = query.in('status', ['approved', 'accepted']);
         } else if (activeTab === 'pending') {
           query = query.eq('status', 'pending');
         }
@@ -65,6 +69,9 @@ const BookingsList = () => {
           console.error("Error fetching booking requests:", error);
           throw error;
         }
+        
+        console.log(`Fetched ${data?.length || 0} booking requests with status: ${activeTab}`);
+        console.log("Booking statuses:", data?.map(b => b.status).join(', '));
         
         // Process the data to include craftsman details
         return data.map((booking: any) => {
@@ -78,11 +85,18 @@ const BookingsList = () => {
         });
       } catch (err) {
         console.error("Error in booking request query:", err);
+        toast.error("Nastala chyba pri načítaní zákaziek");
         return [];
       }
     },
     enabled: !!user
   });
+
+  useEffect(() => {
+    if (user) {
+      refetch();
+    }
+  }, [user, refetch]);
 
   if (error) {
     console.error("Error loading bookings:", error);
