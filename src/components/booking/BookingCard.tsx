@@ -22,13 +22,18 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking }) => {
   const formattedDate = formatDate(booking.date);
   const timeRange = `${booking.start_time} - ${booking.end_time}`;
   
-  // Decide which name and image to display based on user type
+  // Determine whether current user is a customer or craftsman
   const isCustomer = userType?.toLowerCase() === 'customer';
   
   // If customer is viewing → show craftsman details
   // If craftsman is viewing → show customer details
-  const displayName = isCustomer ? booking.craftsman_name : booking.customer_name;
-  const profileImage = isCustomer ? booking.craftsman_image : booking.customer_image;
+  const displayName = isCustomer 
+    ? booking.craftsman_name 
+    : booking.customer_name;
+    
+  const profileImage = isCustomer 
+    ? booking.craftsman_image 
+    : booking.customer_image;
   
   // Get avatar initials
   const getAvatarFallback = () => {
