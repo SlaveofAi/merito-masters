@@ -56,9 +56,6 @@ const BookingsList = () => {
           query = query.eq('status', 'approved');
         } else if (activeTab === 'pending') {
           query = query.eq('status', 'pending');
-        } else {
-          // All other statuses (rejected, completed, etc.)
-          query = query.not('status', 'in', '("approved","pending")');
         }
         
         // Order by date (newest first)
@@ -98,10 +95,9 @@ const BookingsList = () => {
         className="w-full" 
         onValueChange={(value) => setActiveTab(value)}
       >
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="approved">Schválené</TabsTrigger>
           <TabsTrigger value="pending">Čakajúce</TabsTrigger>
-          <TabsTrigger value="others">Ostatné</TabsTrigger>
         </TabsList>
         
         <TabsContent value="approved" className="mt-2">
@@ -140,26 +136,6 @@ const BookingsList = () => {
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500">Žiadne čakajúce zákazky</p>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="others" className="mt-2">
-          {isLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="w-full h-36" />
-              ))}
-            </div>
-          ) : bookings && bookings.length > 0 ? (
-            <div className="space-y-4">
-              {bookings.map((booking: BookingRequest) => (
-                <BookingCard key={booking.id} booking={booking} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Žiadne ďalšie zákazky</p>
             </div>
           )}
         </TabsContent>
