@@ -24,7 +24,7 @@ const Messages = () => {
       } else {
         // Store user in localStorage for components that need it
         localStorage.setItem('user', JSON.stringify(user));
-        console.log("User stored in localStorage:", user.id, "type:", user.user_metadata?.user_type || user.userType);
+        console.log("User stored in localStorage:", user.id, "type:", user.user_metadata?.user_type);
       }
     }
   }, [user, loading, navigate]);
