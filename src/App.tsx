@@ -13,6 +13,7 @@ import ProfilePortfolio from "./pages/ProfilePages/ProfilePortfolio";
 import ProfileReviews from "./pages/ProfilePages/ProfileReviews";
 import ProfileCalendar from "./pages/ProfilePages/ProfileCalendar";
 import Messages from "./pages/Messages";
+import ApprovedBookings from "./pages/ApprovedBookings";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 
@@ -44,6 +45,8 @@ const App = () => (
             <Route path="/profile/:id/calendar" element={<ProfileCalendar />} />
             
             <Route path="/messages" element={<Messages />} />
+            {/* New bookings route */}
+            <Route path="/bookings" element={<ApprovedBookings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

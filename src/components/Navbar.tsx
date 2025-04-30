@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Menu, X, User, Hammer, Home, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const Navbar = () => {
+const CustomNavigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
@@ -260,4 +259,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default CustomNavigation;
