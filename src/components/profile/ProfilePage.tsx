@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -209,17 +208,12 @@ const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null }> = ({
   if (userType === 'customer') {
     return (
       <Tabs defaultValue="reviews" className="w-full">
-        <TabsList className="grid w-full max-w-md mx-auto md:grid-cols-2 mb-8">
-          <TabsTrigger value="reviews">Moje hodnotenia</TabsTrigger>
-          <TabsTrigger value="info">Údaje</TabsTrigger>
+        <TabsList className="grid w-full max-w-md mx-auto md:grid-cols-1 mb-8">
+          <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>
         </TabsList>
         
         <TabsContent value="reviews" className="animate-fade-in">
           <CustomerReviewsTab />
-        </TabsContent>
-        
-        <TabsContent value="info" className="animate-fade-in">
-          <ContactTab />
         </TabsContent>
       </Tabs>
     );
