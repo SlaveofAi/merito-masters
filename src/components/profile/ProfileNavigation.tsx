@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/ProfileContext";
 
@@ -24,20 +24,21 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
     return `/profile/${profileId}/${tab}`;
   };
   
-  // Determine if a tab should be shown based on user type - using safer check
+  // Determine if a tab should be shown based on user type
   const showTab = (tab: TabType) => {
     const isCustomer = userType && userType.toLowerCase() === 'customer';
     
     if (tab === 'portfolio') {
-      // Only hide portfolio tab if we're absolutely sure this is a customer
+      // Only show portfolio tab for craftsmen
       return !isCustomer;
     }
     
     if (tab === 'calendar') {
-      // Show calendar tab for both user types
-      return true;
+      // Only show calendar tab for craftsmen
+      return !isCustomer;
     }
     
+    // Reviews tab is shown for all user types
     return true;
   };
 
