@@ -3,7 +3,6 @@ import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileNavigation from "@/components/profile/ProfileNavigation";
-import ContactTab from "@/components/profile/ContactTab";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import ProfileCalendar from "@/components/profile/ProfileCalendar";
@@ -135,34 +134,26 @@ const ProfileCalendarContent: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <ProfileNavigation activeTab="calendar" userType={profileData?.user_type} />
           
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Contact section - only show for customers viewing a craftsman profile */}
-            {!isCurrentUser && isCraftsmanProfile && (
-              <div className="lg:col-span-2 order-1">
-                {showLoginPrompt ? (
-                  <div className="bg-white shadow rounded-lg p-6 max-w-2xl mx-auto text-center">
-                    <h3 className="text-xl font-semibold mb-4">Pre rezerváciu termínu sa musíte prihlásiť</h3>
-                    <p className="text-gray-600 mb-6">
-                      Ak chcete kontaktovať tohto remeselníka a rezervovať si termín, 
-                      musíte byť prihlásený ako zákazník.
-                    </p>
-                    <div className="flex gap-4 justify-center">
-                      <Button onClick={() => navigate('/login')}>Prihlásiť sa</Button>
-                      <Button variant="outline" onClick={() => navigate('/register')}>Registrovať sa</Button>
-                    </div>
+          <div className="mt-8 flex justify-center">
+            {/* Calendar section - centered for all users */}
+            <div className="w-full max-w-md">
+              <h2 className="text-2xl font-semibold mb-4 text-center">Kalendár dostupnosti</h2>
+              <ProfileCalendar />
+              
+              {/* Login prompt for non-logged in users */}
+              {showLoginPrompt && (
+                <div className="bg-white shadow rounded-lg p-6 mt-6 text-center">
+                  <h3 className="text-xl font-semibold mb-4">Pre rezerváciu termínu sa musíte prihlásiť</h3>
+                  <p className="text-gray-600 mb-6">
+                    Ak chcete kontaktovať tohto remeselníka a rezervovať si termín, 
+                    musíte byť prihlásený ako zákazník.
+                  </p>
+                  <div className="flex gap-4 justify-center">
+                    <Button onClick={() => navigate('/login')}>Prihlásiť sa</Button>
+                    <Button variant="outline" onClick={() => navigate('/register')}>Registrovať sa</Button>
                   </div>
-                ) : (
-                  <ContactTab />
-                )}
-              </div>
-            )}
-            
-            {/* Calendar section - center it when it's the only component */}
-            <div className={`${(!isCurrentUser && isCraftsmanProfile) ? 'lg:col-span-1 order-2' : 'lg:col-span-full mx-auto max-w-md order-1'}`}>
-              <div className="sticky top-6">
-                <h2 className="text-2xl font-semibold mb-4 text-center">Kalendár dostupnosti</h2>
-                <ProfileCalendar />
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
