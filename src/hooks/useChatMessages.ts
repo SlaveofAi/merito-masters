@@ -17,6 +17,8 @@ export function useChatMessages(
       
       try {
         console.log(`Fetching messages for conversation: ${selectedContact.conversation_id}`);
+        console.log(`Current user type: ${user.user_type || user?.user_metadata?.user_type}`);
+        console.log(`Current user ID: ${user.id}`);
         
         // Fetch messages
         const { data, error } = await supabase
@@ -38,7 +40,7 @@ export function useChatMessages(
           return [];
         }
         
-        // Mark unread messages as read
+        // Mark unread messages as read if they are sent to the current user
         const unreadMessages = data.filter(msg => 
           msg.receiver_id === user.id && !msg.read
         );

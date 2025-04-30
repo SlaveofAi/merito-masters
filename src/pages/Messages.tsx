@@ -21,6 +21,10 @@ const Messages = () => {
       if (!user) {
         toast.error("Pre prístup k správam sa musíte prihlásiť");
         navigate("/login", { replace: true, state: { from: "messages" } });
+      } else {
+        // Store user in localStorage for components that need it
+        localStorage.setItem('user', JSON.stringify(user));
+        console.log("User stored in localStorage:", user.id, "type:", user.user_metadata?.user_type || user.userType);
       }
     }
   }, [user, loading, navigate]);

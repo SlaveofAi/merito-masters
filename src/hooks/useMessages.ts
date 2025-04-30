@@ -10,6 +10,9 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
   // Get the user from the auth context
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   
+  console.log('useMessages hook initialized with user:', user?.id, 'type:', user?.user_metadata?.user_type);
+  console.log('Selected contact:', selectedContact);
+  
   // Get messages data
   const messagesQuery = useChatMessages(selectedContact, user, refetchContacts);
   
