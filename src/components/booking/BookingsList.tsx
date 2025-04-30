@@ -39,13 +39,8 @@ const BookingsList = () => {
       try {
         console.log(`Fetching bookings with activeTab: ${activeTab}`);
         
-        // Build the query based on the user type and active tab
-        let query = supabase
-          .from('booking_requests')
-          .select(`
-            *,
-            craftsman_profiles:craftsman_id(name, trade_category, profile_image_url)
-          `);
+        // First, let's fetch the booking requests based on user type and status
+        let query = supabase.from('booking_requests').select('*');
         
         // Filter by user type
         if (userType?.toLowerCase() === 'customer') {
@@ -56,33 +51,66 @@ const BookingsList = () => {
         
         // Filter by status
         if (activeTab === 'approved') {
-          // Use in() filter for better readability and reliability
           query = query.in('status', ['approved', 'accepted']);
         } else if (activeTab === 'pending') {
           query = query.eq('status', 'pending');
         }
         
         // Order by date (newest first)
-        const { data, error } = await query.order('date', { ascending: false });
+        const { data: bookingData, error: bookingError } = await query.order('date', { ascending: false });
         
-        if (error) {
-          console.error("Error fetching booking requests:", error);
-          throw error;
+        if (bookingError) {
+          console.error("Error fetching booking requests:", bookingError);
+          throw bookingError;
         }
         
-        console.log(`Fetched ${data?.length || 0} booking requests with status: ${activeTab}`);
-        console.log("Booking statuses:", data?.map(b => b.status).join(', '));
+        console.log(`Fetched ${bookingData?.length || 0} booking requests with status: ${activeTab}`);
         
-        // Process the data to include craftsman details
-        return data.map((booking: any) => {
-          const craftsmanData = booking.craftsman_profiles;
+        if (!bookingData || bookingData.length === 0) {
+          return [];
+        }
+        
+        // Now we need to get the craftsman details separately
+        // We'll collect all craftsman IDs from the bookings
+        const craftsmanIds = bookingData
+          .map(booking => booking.craftsman_id)
+          .filter((id, index, self) => self.indexOf(id) === index); // get unique IDs
+        
+        // Only fetch craftsman profiles if we have IDs and the user is a customer
+        let craftsmanProfiles = {};
+        if (craftsmanIds.length > 0) {
+          const { data: craftsmanData, error: craftsmanError } = await supabase
+            .from('craftsman_profiles')
+            .select('id, name, trade_category, profile_image_url')
+            .in('id', craftsmanIds);
+            
+          if (craftsmanError) {
+            console.error("Error fetching craftsman profiles:", craftsmanError);
+            // We can still continue with the booking data
+          }
+          
+          // Create a lookup object for quick access
+          if (craftsmanData) {
+            craftsmanProfiles = craftsmanData.reduce((acc, profile) => {
+              acc[profile.id] = profile;
+              return acc;
+            }, {});
+          }
+        }
+        
+        // Merge booking data with craftsman profiles
+        const enhancedBookings = bookingData.map(booking => {
+          const craftsmanProfile = craftsmanProfiles[booking.craftsman_id];
           return {
             ...booking,
-            craftsman_name: craftsmanData?.name,
-            craftsman_trade: craftsmanData?.trade_category,
-            craftsman_image: craftsmanData?.profile_image_url
+            craftsman_name: craftsmanProfile?.name,
+            craftsman_trade: craftsmanProfile?.trade_category,
+            craftsman_image: craftsmanProfile?.profile_image_url
           };
         });
+        
+        console.log("Enhanced bookings:", enhancedBookings.length);
+        return enhancedBookings;
       } catch (err) {
         console.error("Error in booking request query:", err);
         toast.error("Nastala chyba pri načítaní zákaziek");
