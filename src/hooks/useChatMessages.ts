@@ -60,9 +60,16 @@ export function useChatMessages(
             console.error("Error marking messages as read:", updateError);
           } else {
             console.log(`Successfully marked ${unreadMessages.length} messages as read`);
-            // Immediately update the contacts list to reflect the updated unread counts
-            setTimeout(() => refetchContacts(), 300);
+            
+            // Force immediate refetch of contacts to update unread counts
+            // Use a small delay to ensure the database has time to update
+            setTimeout(() => {
+              console.log("Triggering contact list refresh after marking messages as read");
+              refetchContacts();
+            }, 300);
           }
+        } else {
+          console.log("No unread messages to mark as read");
         }
         
         // Process messages
@@ -75,8 +82,8 @@ export function useChatMessages(
       }
     },
     enabled: !!selectedContact?.conversation_id && !!user,
-    staleTime: 5000,
-    refetchInterval: 10000, // Poll every 10 seconds as a fallback
+    staleTime: 0, // Don't cache data to ensure we always get fresh data
+    refetchInterval: 5000, // Poll more frequently (every 5 seconds) for better reliability
     gcTime: 0, // Don't keep old data in cache
   });
 }
