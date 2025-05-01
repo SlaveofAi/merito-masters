@@ -32,10 +32,19 @@ export const useChatSubscription = (
           // Always refetch contacts to update unread counts
           refetchContacts();
           
-          // Also refetch after a delay to ensure counts are updated
+          // Also refetch messages if we're in the conversation
+          if (selectedContact?.conversation_id === payload.new.conversation_id) {
+            refetchMessages();
+          }
+          
+          // Also refetch after delays to ensure counts are updated
           setTimeout(() => {
             refetchContacts();
-          }, 500);
+          }, 300);
+          
+          setTimeout(() => {
+            refetchContacts();
+          }, 1000);
         }
       )
       .subscribe((status) => {
@@ -87,11 +96,11 @@ export const useChatSubscription = (
             // Also refetch contacts to update unread counts
             refetchContacts();
             
-            // Additional refetch with delay to ensure changes are reflected
+            // Additional refetches with delays to ensure changes are reflected
             setTimeout(() => {
               refetchContacts();
               refetchMessages();
-            }, 1000);
+            }, 500);
           }
         )
         .subscribe((status) => {

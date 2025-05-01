@@ -26,16 +26,22 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
   useEffect(() => {
     if (selectedContact?.conversation_id) {
       console.log("Conversation selected, refetching contacts to update unread counts");
+      
       // Immediate refetch
       refetchContacts();
       
-      // Additional refetch after a delay to ensure changes are reflected
-      const timeouts = [500, 1500];
-      timeouts.forEach(delay => {
+      // Multiple refetches with increasing delays to ensure unread counts are updated
+      const timeoutIds = [100, 500, 1000, 2000].map(delay => 
         setTimeout(() => {
+          console.log(`Refetching contacts after ${delay}ms delay`);
           refetchContacts();
-        }, delay);
-      });
+        }, delay)
+      );
+      
+      return () => {
+        // Clean up timeouts if component unmounts or contact changes
+        timeoutIds.forEach(id => clearTimeout(id));
+      };
     }
   }, [selectedContact?.conversation_id, refetchContacts]);
   

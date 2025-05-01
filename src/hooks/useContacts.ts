@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -101,7 +102,7 @@ export const useContacts = () => {
               return createFallbackContact();
             }
             
-            // Get last message and unread count
+            // Get last message
             const { data: lastMessageData, error: lastMessageError } = await supabase
               .from('chat_messages')
               .select('*')
@@ -111,7 +112,7 @@ export const useContacts = () => {
               
             const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
             
-            // Get unread message count - direct count query
+            // Direct unread count query - more reliable than filtering messages
             const { count, error: countError } = await supabase
               .from('chat_messages')
               .select('*', { count: 'exact', head: true })

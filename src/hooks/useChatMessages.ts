@@ -51,38 +51,38 @@ export function useChatMessages(
           const messageIds = unreadMessages.map(msg => msg.id);
           
           try {
-            // First attempt to mark messages as read
-            const { error: updateError } = await supabase
-              .from('chat_messages')
-              .update({ read: true })
-              .in('id', messageIds);
-              
-            if (updateError) {
-              console.error("First attempt - Error marking messages as read:", updateError);
-              
-              // If bulk update fails, try individual updates
-              const updatePromises = messageIds.map(id => 
-                supabase
-                  .from('chat_messages')
-                  .update({ read: true })
-                  .eq('id', id)
-              );
-              
-              await Promise.allSettled(updatePromises);
-            }
+            // Perform the update with immediate retry if it fails
+            const updateMessage = async () => {
+              const { error: updateError } = await supabase
+                .from('chat_messages')
+                .update({ read: true })
+                .in('id', messageIds);
+                
+              if (updateError) {
+                console.error("Error marking messages as read:", updateError);
+                
+                // If bulk update fails, try individual updates as fallback
+                console.log("Attempting individual message updates as fallback");
+                
+                for (const id of messageIds) {
+                  await supabase
+                    .from('chat_messages')
+                    .update({ read: true })
+                    .eq('id', id);
+                }
+              }
+            };
+            
+            // Execute update
+            await updateMessage();
             
             console.log(`Successfully marked ${messageIds.length} messages as read`);
             
-            // Create a series of refetch attempts with increasing delays
-            // This helps ensure contacts are updated after messages are marked as read
-            const refetchWaves = [100, 500, 1000, 2000];
-            
-            refetchWaves.forEach(delay => {
-              setTimeout(() => {
-                console.log(`Refetching contacts after ${delay}ms delay`);
-                refetchContacts();
-              }, delay);
-            });
+            // Trigger multiple contact refetches with increasing delays
+            // This ensures the contact list updates with correct unread counts
+            setTimeout(() => refetchContacts(), 100);
+            setTimeout(() => refetchContacts(), 500);
+            setTimeout(() => refetchContacts(), 1500);
           } catch (updateErr) {
             console.error("Error in update process:", updateErr);
           }
