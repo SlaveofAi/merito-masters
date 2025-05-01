@@ -17,8 +17,7 @@ export function useChatMessages(
       
       try {
         console.log(`Fetching messages for conversation: ${selectedContact.conversation_id}`);
-        console.log(`Current user type: ${user.user_type || user?.user_metadata?.user_type}`);
-        console.log(`Current user ID: ${user.id}`);
+        console.log(`Current user: ${user.id}, type: ${user.user_type || user?.user_metadata?.user_type}`);
         
         // Fetch messages
         const { data, error } = await supabase
@@ -29,7 +28,6 @@ export function useChatMessages(
           
         if (error) {
           console.error("Error fetching messages:", error);
-          toast.error("Nastala chyba pri načítaní správ");
           return [];
         }
         
@@ -48,43 +46,60 @@ export function useChatMessages(
         if (unreadMessages.length > 0) {
           console.log(`Marking ${unreadMessages.length} messages as read for conversation ${selectedContact.conversation_id}`);
           
-          // Use a single batch update instead of individual updates for better performance
-          const messageIds = unreadMessages.map(msg => msg.id);
-          
-          // CRITICAL FIX: Force immediate update in the database with explicit transaction
-          const { error: updateError } = await supabase
-            .from('chat_messages')
-            .update({ read: true })
-            .in('id', messageIds);
-          
-          if (updateError) {
-            console.error("Error marking messages as read:", updateError);
-          } else {
-            console.log(`Successfully marked ${unreadMessages.length} messages as read`);
+          try {
+            // Use a single batch update instead of individual updates for better performance
+            const messageIds = unreadMessages.map(msg => msg.id);
             
-            // Update the local data to reflect read status changes immediately
-            data.forEach(msg => {
-              if (messageIds.includes(msg.id)) {
-                msg.read = true;
+            // CRITICAL FIX: Immediately update the read status in the database with retry mechanism
+            let updateAttempts = 0;
+            const maxAttempts = 3;
+            let updateSuccess = false;
+            
+            while (updateAttempts < maxAttempts && !updateSuccess) {
+              const { error: updateError } = await supabase
+                .from('chat_messages')
+                .update({ read: true })
+                .in('id', messageIds);
+                
+              if (updateError) {
+                console.error(`Attempt ${updateAttempts + 1} - Error marking messages as read:`, updateError);
+                updateAttempts++;
+                // Wait before retry
+                await new Promise(resolve => setTimeout(resolve, 500));
+              } else {
+                console.log(`Successfully marked ${unreadMessages.length} messages as read (attempt ${updateAttempts + 1})`);
+                updateSuccess = true;
+                
+                // Update the local data to reflect read status changes immediately
+                data.forEach(msg => {
+                  if (messageIds.includes(msg.id)) {
+                    msg.read = true;
+                  }
+                });
+                
+                // Force multiple waves of contacts refetches with increasing delays
+                // to ensure the database has time to complete its operations
+                const refetchWaves = [
+                  { delay: 500, message: "First wave contact refetch" },
+                  { delay: 1500, message: "Second wave contact refetch" },
+                  { delay: 3000, message: "Final contact refetch" },
+                  { delay: 6000, message: "Extended contact refetch" }
+                ];
+                
+                refetchWaves.forEach(wave => {
+                  setTimeout(() => {
+                    console.log(wave.message);
+                    refetchContacts();
+                  }, wave.delay);
+                });
               }
-            });
+            }
             
-            // Force multiple waves of contacts refetches with increasing delays
-            // to ensure the database has time to complete its operations
-            setTimeout(() => {
-              console.log("First wave of contacts refetch after marking messages as read");
-              refetchContacts();
-            }, 500);
-            
-            setTimeout(() => {
-              console.log("Second wave of contacts refetch to ensure unread counts are updated");
-              refetchContacts();
-            }, 1500);
-            
-            setTimeout(() => {
-              console.log("Final contacts refetch to ensure UI is fully up to date");
-              refetchContacts();
-            }, 3000);
+            if (!updateSuccess) {
+              console.error("Failed to mark messages as read after multiple attempts");
+            }
+          } catch (err) {
+            console.error("Critical error in read status update:", err);
           }
         } else {
           console.log("No unread messages to mark as read");
@@ -95,7 +110,7 @@ export function useChatMessages(
         console.log(`Processed ${processedMessages.length} messages`);
         return processedMessages;
       } catch (error) {
-        console.error("Error processing messages:", error);
+        console.error("Error in useChatMessages:", error);
         return [];
       }
     },

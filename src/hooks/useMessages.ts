@@ -4,13 +4,14 @@ import { useChatMessages } from './useChatMessages';
 import { useContactDetails } from './useContactDetails';
 import { useCustomerReviews } from './useCustomerReviews';
 import { ChatContact, Message } from "@/types/chat";
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 
 // Create a combined hook that returns all the data needed for the chat
 export function useMessages(selectedContact: ChatContact | null, refetchContacts: () => void) {
   // Get the user from the auth context
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const previousContactRef = useRef<ChatContact | null>(null);
+  const [lastSwitchTime, setLastSwitchTime] = useState<number>(0);
   
   console.log('useMessages hook initialized with user:', user?.id, 'type:', user?.user_metadata?.user_type);
   console.log('Selected contact:', selectedContact);
@@ -26,32 +27,38 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
   
   // Critical fix: Force refetch when switching conversations to ensure read status is properly updated
   useEffect(() => {
-    if (selectedContact && previousContactRef.current?.id !== selectedContact.id) {
+    if (selectedContact && (
+      previousContactRef.current?.id !== selectedContact.id || 
+      previousContactRef.current?.conversation_id !== selectedContact.conversation_id
+    )) {
+      const now = Date.now();
       console.log(`Selected contact changed from ${previousContactRef.current?.name || 'none'} to ${selectedContact.name}, refetching data`);
+      console.log(`Time since last switch: ${now - lastSwitchTime}ms`);
       
-      // Update previous contact reference
+      // Update previous contact reference and switch time
       previousContactRef.current = selectedContact;
+      setLastSwitchTime(now);
       
-      // First refetch messages to mark them as read
+      // Force immediate refetch of messages to mark them as read
       messagesQuery.refetch().then(() => {
         // Then update the contacts list to reflect new unread counts with multiple waves of refetches
-        setTimeout(() => {
-          console.log("First contacts refetch after conversation switch");
-          refetchContacts();
-        }, 500);
+        const refetchWaves = [
+          { delay: 500, message: "Initial contacts refetch" },
+          { delay: 1500, message: "Secondary contacts refetch" },
+          { delay: 3000, message: "Final contacts refetch" },
+          { delay: 6000, message: "Extended contacts refetch" },
+          { delay: 10000, message: "Final cleanup contacts refetch" }
+        ];
         
-        setTimeout(() => {
-          console.log("Second contacts refetch to ensure unread counts are updated");
-          refetchContacts();
-        }, 1500);
-        
-        setTimeout(() => {
-          console.log("Final contacts refetch to ensure UI is fully updated");
-          refetchContacts();
-        }, 3000);
+        refetchWaves.forEach(wave => {
+          setTimeout(() => {
+            console.log(wave.message);
+            refetchContacts();
+          }, wave.delay);
+        });
       });
     }
-  }, [selectedContact, messagesQuery, refetchContacts]);
+  }, [selectedContact, messagesQuery, refetchContacts, lastSwitchTime]);
   
   // Additional forced refresh of contacts whenever messages change
   useEffect(() => {
@@ -62,11 +69,11 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
       // Use multiple waves of refetches with increasing delays
       setTimeout(() => {
         refetchContacts();
-      }, 500);
+      }, 800);
       
       setTimeout(() => {
         refetchContacts();
-      }, 2000);
+      }, 2500);
     }
   }, [messagesQuery.data, refetchContacts]);
   
