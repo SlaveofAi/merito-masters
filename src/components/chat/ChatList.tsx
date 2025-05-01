@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Search } from "lucide-react";
@@ -17,28 +17,10 @@ interface ChatListProps {
 
 const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSelectContact, loading }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [forceRender, setForceRender] = useState<number>(0);
   
-  // Force re-render periodically to ensure UI is updated
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setForceRender(prev => prev + 1);
-    }, 5000);
-    
-    return () => clearInterval(intervalId);
-  }, []);
-  
-  // Use useMemo for filtered contacts to prevent unnecessary re-renders
-  const filteredContacts = useMemo(() => {
-    const filtered = contacts.filter(contact => 
-      contact.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    
-    console.log("Filtered contacts in ChatList:", filtered.map(c => 
-      `${c.name} (${c.id}): ${c.unread_count || 0} unread, selected: ${c.id === selectedContactId}`));
-    
-    return filtered;
-  }, [contacts, searchTerm, selectedContactId, forceRender]);
+  const filteredContacts = contacts.filter(contact => 
+    contact.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
   return (
     <div className="flex flex-col h-full">
@@ -82,24 +64,6 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
               const timeAgo = contact.last_message_time 
                 ? formatDistanceToNow(new Date(contact.last_message_time), { addSuffix: true, locale: sk }) 
                 : '';
-              
-              // CRITICAL FIX: More robust unread badge display logic
-              const unreadCount = Number(contact.unread_count); 
-              const hasUnread = !isNaN(unreadCount) && unreadCount > 0;
-              
-              // IMPORTANT: Only show badge if contact is NOT selected AND has positive unread count
-              const showBadge = !isSelected && hasUnread;
-              
-              // Log detailed information for debugging
-              console.log(
-                `Contact ${contact.name} (${contact.id}): ` +
-                `Raw unread count: ${contact.unread_count}, ` + 
-                `Parsed unread count: ${unreadCount}, ` +
-                `Has unread: ${hasUnread}, ` +
-                `Selected: ${isSelected}, ` +
-                `Show badge: ${showBadge}, ` +
-                `Selection match: ${contact.id === selectedContactId}`
-              );
                 
               return (
                 <li 
@@ -109,9 +73,6 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                     ${isSelected ? 'bg-gray-50' : ''}
                   `}
                   onClick={() => onSelectContact(contact)}
-                  data-selected={isSelected ? "true" : "false"}
-                  data-unread-count={unreadCount}
-                  data-show-badge={showBadge ? "true" : "false"}
                 >
                   <div className="flex items-start gap-3">
                     <Avatar className="h-10 w-10">
@@ -127,14 +88,11 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                         <p className="text-sm text-gray-500 truncate pr-2">
                           {contact.last_message}
                         </p>
-                        {showBadge && (
-                          <Badge 
-                            variant="default" 
-                            className="rounded-full px-2 py-0.5 text-xs"
-                          >
-                            {unreadCount}
+                        {(contact.unread_count && contact.unread_count > 0) ? (
+                          <Badge variant="default" className="rounded-full px-2 py-0.5 text-xs">
+                            {contact.unread_count}
                           </Badge>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>
