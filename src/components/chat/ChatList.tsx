@@ -66,7 +66,7 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                 : '';
               
               // Only show badge when there are unread messages AND the contact is not currently selected
-              // AND the unread count is greater than 0
+              // AND the unread count is STRICTLY greater than 0 (not just truthy)
               const showBadge = !isSelected && contact.unread_count && contact.unread_count > 0;
                 
               return (
@@ -92,8 +92,8 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                         <p className="text-sm text-gray-500 truncate pr-2">
                           {contact.last_message}
                         </p>
-                        {/* Only render the badge when showBadge is true */}
-                        {showBadge && (
+                        {/* Only render the badge when showBadge is true and unread_count is strictly greater than 0 */}
+                        {showBadge && contact.unread_count > 0 && (
                           <Badge 
                             variant="default" 
                             className="rounded-full px-2 py-0.5 text-xs bg-primary text-white"
