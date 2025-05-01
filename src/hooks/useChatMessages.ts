@@ -68,8 +68,12 @@ export function useChatMessages(
               }
             });
             
-            // Force immediate refetch of contacts to update unread counts
-            setTimeout(() => refetchContacts(), 100);
+            // Force immediate and thorough refetch of contacts to update unread counts
+            // Use a debounced approach to ensure the update has time to propagate
+            setTimeout(() => {
+              console.log("Triggering contacts refetch after marking messages as read");
+              refetchContacts();
+            }, 300);
           }
         } else {
           console.log("No unread messages to mark as read");

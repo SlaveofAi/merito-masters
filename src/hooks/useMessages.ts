@@ -35,13 +35,23 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
       // First refetch messages to mark them as read
       messagesQuery.refetch().then(() => {
         // Then update the contacts list to reflect new unread counts
-        // Small delay to ensure database operations complete
+        // Larger delay to ensure database operations complete
         setTimeout(() => {
+          console.log("Refetching contacts after conversation switch");
           refetchContacts();
-        }, 300);
+        }, 500);
       });
     }
   }, [selectedContact, messagesQuery, refetchContacts]);
+  
+  // Additional forced refresh of contacts whenever messages change
+  useEffect(() => {
+    if (messagesQuery.data && messagesQuery.data.length > 0) {
+      // Something changed in messages, make sure contacts are up to date
+      console.log("Messages data changed, ensuring contacts are up to date");
+      refetchContacts();
+    }
+  }, [messagesQuery.data, refetchContacts]);
   
   // Return a combined object with all data needed by Chat.tsx
   return {

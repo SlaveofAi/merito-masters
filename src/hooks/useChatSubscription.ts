@@ -31,6 +31,8 @@ export const useChatSubscription = (
         },
         (payload) => {
           console.log('New message received for user:', payload);
+          // Always refetch both messages and contacts on new message
+          refetchMessages();
           refetchContacts();
         }
       )
@@ -44,7 +46,8 @@ export const useChatSubscription = (
         },
         (payload) => {
           console.log('Message updated for user (read status):', payload);
-          // Force refetch contacts to update unread counts properly
+          // Force refetch contacts AND messages to ensure everything is in sync
+          refetchMessages();
           refetchContacts();
         }
       )

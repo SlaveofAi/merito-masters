@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Search } from "lucide-react";
@@ -17,10 +17,19 @@ interface ChatListProps {
 
 const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSelectContact, loading }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [renderedContacts, setRenderedContacts] = useState<ChatContact[]>([]);
   
+  // Filter contacts based on search term
   const filteredContacts = contacts.filter(contact => 
     contact.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  // Update rendered contacts whenever filtered contacts change
+  useEffect(() => {
+    console.log("Updating rendered contacts in ChatList", filteredContacts.map(c => 
+      `${c.name} (${c.id}): ${c.unread_count || 0} unread`));
+    setRenderedContacts(filteredContacts);
+  }, [filteredContacts]);
   
   return (
     <div className="flex flex-col h-full">
@@ -49,7 +58,7 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
               </div>
             ))}
           </div>
-        ) : filteredContacts.length === 0 ? (
+        ) : renderedContacts.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             {searchTerm ? (
               <p>Žiadne výsledky pre "{searchTerm}"</p>
@@ -59,7 +68,7 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
           </div>
         ) : (
           <ul>
-            {filteredContacts.map((contact) => {
+            {renderedContacts.map((contact) => {
               const isSelected = contact.id === selectedContactId;
               const timeAgo = contact.last_message_time 
                 ? formatDistanceToNow(new Date(contact.last_message_time), { addSuffix: true, locale: sk }) 
@@ -68,7 +77,14 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
               // Only show badge if there are unread messages AND this isn't the currently selected contact
               // Making sure unread_count is actually defined and greater than 0
               const hasUnreadMessages = typeof contact.unread_count === 'number' && contact.unread_count > 0;
+              
+              // Never show badge for selected contacts and make triple sure unread count is valid
               const showBadge = !isSelected && hasUnreadMessages;
+              
+              // Debug logging for badge display
+              if (hasUnreadMessages) {
+                console.log(`Contact ${contact.name} has ${contact.unread_count} unread messages. Selected: ${isSelected}. Show badge: ${showBadge}`);
+              }
                 
               return (
                 <li 
