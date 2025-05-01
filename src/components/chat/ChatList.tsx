@@ -17,19 +17,19 @@ interface ChatListProps {
 
 const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSelectContact, loading }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [renderedContacts, setRenderedContacts] = useState<ChatContact[]>([]);
+  const [filteredContacts, setFilteredContacts] = useState<ChatContact[]>([]);
   
-  // Filter contacts based on search term
-  const filteredContacts = contacts.filter(contact => 
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  // Update rendered contacts whenever filtered contacts change
+  // Filter contacts based on search term and update whenever contacts change
   useEffect(() => {
-    console.log("Updating rendered contacts in ChatList", filteredContacts.map(c => 
+    const filtered = contacts.filter(contact => 
+      contact.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    console.log("Filtered contacts in ChatList:", filtered.map(c => 
       `${c.name} (${c.id}): ${c.unread_count || 0} unread`));
-    setRenderedContacts(filteredContacts);
-  }, [filteredContacts]);
+      
+    setFilteredContacts(filtered);
+  }, [contacts, searchTerm]);
   
   return (
     <div className="flex flex-col h-full">
@@ -58,7 +58,7 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
               </div>
             ))}
           </div>
-        ) : renderedContacts.length === 0 ? (
+        ) : filteredContacts.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             {searchTerm ? (
               <p>Žiadne výsledky pre "{searchTerm}"</p>
@@ -68,23 +68,20 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
           </div>
         ) : (
           <ul>
-            {renderedContacts.map((contact) => {
+            {filteredContacts.map((contact) => {
               const isSelected = contact.id === selectedContactId;
               const timeAgo = contact.last_message_time 
                 ? formatDistanceToNow(new Date(contact.last_message_time), { addSuffix: true, locale: sk }) 
                 : '';
               
-              // Only show badge if there are unread messages AND this isn't the currently selected contact
-              // Making sure unread_count is actually defined and greater than 0
-              const hasUnreadMessages = typeof contact.unread_count === 'number' && contact.unread_count > 0;
+              // Make triple sure unread count is valid
+              const unreadCount = typeof contact.unread_count === 'number' ? contact.unread_count : 0;
               
-              // Never show badge for selected contacts and make triple sure unread count is valid
-              const showBadge = !isSelected && hasUnreadMessages;
+              // Never show badge for selected contacts
+              const showBadge = !isSelected && unreadCount > 0;
               
               // Debug logging for badge display
-              if (hasUnreadMessages) {
-                console.log(`Contact ${contact.name} has ${contact.unread_count} unread messages. Selected: ${isSelected}. Show badge: ${showBadge}`);
-              }
+              console.log(`Contact ${contact.name} has ${unreadCount} unread messages. Selected: ${isSelected}. Show badge: ${showBadge}`);
                 
               return (
                 <li 
@@ -111,7 +108,7 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                         </p>
                         {showBadge ? (
                           <Badge variant="default" className="rounded-full px-2 py-0.5 text-xs">
-                            {contact.unread_count}
+                            {unreadCount}
                           </Badge>
                         ) : null}
                       </div>

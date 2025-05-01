@@ -33,7 +33,10 @@ export const useChatSubscription = (
           console.log('New message received for user:', payload);
           // Always refetch both messages and contacts on new message
           refetchMessages();
-          refetchContacts();
+          // Use a timeout to ensure DB operations complete
+          setTimeout(() => {
+            refetchContacts();
+          }, 500);
         }
       )
       .on(
@@ -48,7 +51,10 @@ export const useChatSubscription = (
           console.log('Message updated for user (read status):', payload);
           // Force refetch contacts AND messages to ensure everything is in sync
           refetchMessages();
-          refetchContacts();
+          // Use a timeout to ensure DB operations complete
+          setTimeout(() => {
+            refetchContacts();
+          }, 500);
         }
       )
       .subscribe((status) => {
@@ -75,7 +81,10 @@ export const useChatSubscription = (
           (payload) => {
             console.log('New message received in conversation:', payload);
             refetchMessages();
-            refetchContacts();
+            // Use a timeout to ensure DB operations complete
+            setTimeout(() => {
+              refetchContacts();
+            }, 500);
           }
         )
         .on(
@@ -89,7 +98,10 @@ export const useChatSubscription = (
           (payload) => {
             console.log('Message updated in conversation:', payload);
             refetchMessages();
-            refetchContacts();
+            // Use a timeout to ensure DB operations complete
+            setTimeout(() => {
+              refetchContacts();
+            }, 500);
           }
         )
         .subscribe((status) => {

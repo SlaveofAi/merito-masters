@@ -46,7 +46,7 @@ export function useChatMessages(
         );
         
         if (unreadMessages.length > 0) {
-          console.log(`Marking ${unreadMessages.length} messages as read`);
+          console.log(`Marking ${unreadMessages.length} messages as read for conversation ${selectedContact.conversation_id}`);
           
           // Use a single batch update instead of individual updates for better performance
           const messageIds = unreadMessages.map(msg => msg.id);
@@ -69,11 +69,17 @@ export function useChatMessages(
             });
             
             // Force immediate and thorough refetch of contacts to update unread counts
-            // Use a debounced approach to ensure the update has time to propagate
+            // Using a longer timeout to ensure database operations have fully completed
             setTimeout(() => {
               console.log("Triggering contacts refetch after marking messages as read");
               refetchContacts();
-            }, 300);
+            }, 800);
+
+            // Force a second refetch after an additional delay to ensure UI is updated
+            setTimeout(() => {
+              console.log("Secondary contacts refetch to ensure unread counts are updated");
+              refetchContacts();
+            }, 1500);
           }
         } else {
           console.log("No unread messages to mark as read");

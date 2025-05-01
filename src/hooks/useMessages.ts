@@ -39,7 +39,13 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
         setTimeout(() => {
           console.log("Refetching contacts after conversation switch");
           refetchContacts();
-        }, 500);
+          
+          // Add a second refetch with an even longer delay to ensure everything is updated
+          setTimeout(() => {
+            console.log("Secondary contacts refetch to ensure unread counts are updated");
+            refetchContacts();
+          }, 1000);
+        }, 800);
       });
     }
   }, [selectedContact, messagesQuery, refetchContacts]);
@@ -49,7 +55,11 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
     if (messagesQuery.data && messagesQuery.data.length > 0) {
       // Something changed in messages, make sure contacts are up to date
       console.log("Messages data changed, ensuring contacts are up to date");
-      refetchContacts();
+      
+      // Use a delay to ensure database operations have time to complete
+      setTimeout(() => {
+        refetchContacts();
+      }, 500);
     }
   }, [messagesQuery.data, refetchContacts]);
   
