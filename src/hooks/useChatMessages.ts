@@ -46,22 +46,36 @@ export function useChatMessages(
         );
         
         if (unreadMessages.length > 0) {
-          console.log(`Marking ${unreadMessages.length} messages as read`);
+          console.log(`Marking ${unreadMessages.length} messages as read for user ${user.id}`);
           
-          // Mark each message as read individually to avoid race conditions
-          for (const msg of unreadMessages) {
-            await supabase
-              .from('chat_messages')
-              .update({ read: true })
-              .eq('id', msg.id);
+          // Use a single update query for all unread messages
+          const messageIds = unreadMessages.map(msg => msg.id);
+          
+          const { error: updateError } = await supabase
+            .from('chat_messages')
+            .update({ read: true })
+            .in('id', messageIds);
+            
+          if (updateError) {
+            console.error("Error marking messages as read:", updateError);
+          } else {
+            console.log(`Successfully marked ${messageIds.length} messages as read`);
+            // Immediately refresh contacts to update unread counts
+            setTimeout(() => {
+              refetchContacts();
+            }, 300);
           }
-          
-          // Refresh contact list to update unread counts
-          refetchContacts();
         }
         
         // Process messages
-        const processedMessages = data.map(msg => processMessageData(msg, user.id));
+        const processedMessages = data.map(msg => {
+          // Mark messages as read in the returned data if they were just updated
+          if (msg.receiver_id === user.id && !msg.read) {
+            msg.read = true;
+          }
+          return processMessageData(msg, user.id);
+        });
+        
         console.log(`Processed ${processedMessages.length} messages`);
         return processedMessages;
       } catch (error) {
@@ -70,8 +84,8 @@ export function useChatMessages(
       }
     },
     enabled: !!selectedContact?.conversation_id && !!user,
-    staleTime: 5000,
-    refetchInterval: 10000, // Poll every 10 seconds as a fallback
+    staleTime: 0, // Always refetch when query is invalidated
+    refetchOnWindowFocus: true, // Refetch when window regains focus
     gcTime: 0, // Don't keep old data in cache
   });
 }

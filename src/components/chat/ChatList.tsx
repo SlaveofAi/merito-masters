@@ -64,6 +64,9 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
               const timeAgo = contact.last_message_time 
                 ? formatDistanceToNow(new Date(contact.last_message_time), { addSuffix: true, locale: sk }) 
                 : '';
+              
+              // Log the unread count to debug  
+              console.log(`Contact ${contact.name} has ${contact.unread_count} unread messages`);
                 
               return (
                 <li 
@@ -88,7 +91,8 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                         <p className="text-sm text-gray-500 truncate pr-2">
                           {contact.last_message}
                         </p>
-                        {(contact.unread_count && contact.unread_count > 0) ? (
+                        {/* Only show badge if unread count exists and is greater than 0 */}
+                        {contact.unread_count && contact.unread_count > 0 ? (
                           <Badge variant="default" className="rounded-full px-2 py-0.5 text-xs">
                             {contact.unread_count}
                           </Badge>

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -113,7 +114,7 @@ export const useContacts = () => {
             
           const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
           
-          // Count unread messages
+          // Get unread message count using direct query
           const { count, error: countError } = await supabase
             .from('chat_messages')
             .select('*', { count: 'exact', head: true })
@@ -121,7 +122,12 @@ export const useContacts = () => {
             .eq('receiver_id', user.id)
             .eq('read', false);
             
-          console.log(`Found contact ${contact.name} with ${count || 0} unread messages`);
+          if (countError) {
+            console.error(`Error counting unread messages for conversation ${conv.id}:`, countError);
+          }
+          
+          const unreadCount = count || 0;
+          console.log(`Found contact ${contact.name} with ${unreadCount} unread messages`);
           
           // Use a unique key for UI purposes but store the actual contactId separately
           return {
@@ -131,7 +137,7 @@ export const useContacts = () => {
             avatar_url: contact.profile_image_url,
             last_message: lastMessage ? lastMessage.content : 'Kliknite pre zobrazenie správ',
             last_message_time: lastMessage ? lastMessage.created_at : conv.created_at,
-            unread_count: count || 0,
+            unread_count: unreadCount,
             user_type: contactType,
             conversation_id: conv.id
           } as ChatContact;
@@ -165,6 +171,8 @@ export const useContacts = () => {
       return uniqueContacts;
     },
     enabled: !!user,
+    staleTime: 0, // Always refetch when triggered
+    refetchInterval: 15000, // Refresh every 15 seconds as background polling
   });
 
   // Update loading state
