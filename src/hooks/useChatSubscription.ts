@@ -14,6 +14,8 @@ export const useChatSubscription = (
   useEffect(() => {
     if (!user) return;
     
+    console.log("Setting up chat subscriptions for user:", user.id);
+    
     // Subscribe to all new messages for user to update unread counts
     const userMessagesChannel = supabase
       .channel('user-messages')
@@ -29,14 +31,29 @@ export const useChatSubscription = (
           console.log('New message received:', payload);
           // Always refetch contacts to update unread counts
           refetchContacts();
+          
+          // Also refetch after a delay to ensure counts are updated
+          setTimeout(() => {
+            refetchContacts();
+          }, 500);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`User messages subscription status: ${status}`);
+        if (status === 'CHANNEL_ERROR') {
+          console.error("Error with user messages channel. Reconnecting...");
+          setTimeout(() => {
+            userMessagesChannel.subscribe();
+          }, 2000);
+        }
+      });
 
     // If a specific conversation is selected, subscribe to it
     let conversationChannel;
     if (selectedContact?.conversation_id) {
       const channelName = `conversation-${selectedContact.conversation_id}`;
+      console.log(`Setting up subscription for conversation: ${selectedContact.conversation_id}`);
+      
       conversationChannel = supabase
         .channel(channelName)
         .on(
@@ -51,6 +68,8 @@ export const useChatSubscription = (
             console.log(`New message in conversation ${selectedContact.conversation_id}:`, payload);
             // Refetch messages for the current conversation
             refetchMessages();
+            // Also refetch contacts to update unread counts
+            refetchContacts();
           }
         )
         .on(
@@ -67,14 +86,31 @@ export const useChatSubscription = (
             refetchMessages();
             // Also refetch contacts to update unread counts
             refetchContacts();
+            
+            // Additional refetch with delay to ensure changes are reflected
+            setTimeout(() => {
+              refetchContacts();
+              refetchMessages();
+            }, 1000);
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log(`Conversation subscription status: ${status}`);
+          if (status === 'CHANNEL_ERROR') {
+            console.error("Error with conversation channel. Reconnecting...");
+            setTimeout(() => {
+              conversationChannel.subscribe();
+            }, 2000);
+          }
+        });
     }
     
     // Cleanup function
     return () => {
-      supabase.removeChannel(userMessagesChannel);
+      console.log("Cleaning up chat subscriptions");
+      if (userMessagesChannel) {
+        supabase.removeChannel(userMessagesChannel);
+      }
       if (conversationChannel) {
         supabase.removeChannel(conversationChannel);
       }

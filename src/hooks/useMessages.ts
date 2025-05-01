@@ -25,8 +25,17 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
   // Effect to refetch contacts when a conversation is selected
   useEffect(() => {
     if (selectedContact?.conversation_id) {
-      // Refetch contacts to update unread counts when a conversation is selected
+      console.log("Conversation selected, refetching contacts to update unread counts");
+      // Immediate refetch
       refetchContacts();
+      
+      // Additional refetch after a delay to ensure changes are reflected
+      const timeouts = [500, 1500];
+      timeouts.forEach(delay => {
+        setTimeout(() => {
+          refetchContacts();
+        }, delay);
+      });
     }
   }, [selectedContact?.conversation_id, refetchContacts]);
   

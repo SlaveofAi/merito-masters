@@ -17,7 +17,6 @@ export function useChatMessages(
       
       try {
         console.log(`Fetching messages for conversation: ${selectedContact.conversation_id}`);
-        console.log(`Current user type: ${user.user_type || user?.user_metadata?.user_type}`);
         console.log(`Current user ID: ${user.id}`);
         
         // Fetch messages
@@ -40,7 +39,7 @@ export function useChatMessages(
           return [];
         }
         
-        // Mark unread messages as read if they are sent to the current user
+        // Identify unread messages sent to the current user
         const unreadMessages = data.filter(msg => 
           msg.receiver_id === user.id && !msg.read
         );
@@ -51,23 +50,47 @@ export function useChatMessages(
           // Use a single update query for all unread messages
           const messageIds = unreadMessages.map(msg => msg.id);
           
-          const { error: updateError } = await supabase
-            .from('chat_messages')
-            .update({ read: true })
-            .in('id', messageIds);
+          try {
+            // First attempt to mark messages as read
+            const { error: updateError } = await supabase
+              .from('chat_messages')
+              .update({ read: true })
+              .in('id', messageIds);
+              
+            if (updateError) {
+              console.error("First attempt - Error marking messages as read:", updateError);
+              
+              // If bulk update fails, try individual updates
+              const updatePromises = messageIds.map(id => 
+                supabase
+                  .from('chat_messages')
+                  .update({ read: true })
+                  .eq('id', id)
+              );
+              
+              await Promise.allSettled(updatePromises);
+            }
             
-          if (updateError) {
-            console.error("Error marking messages as read:", updateError);
-          } else {
             console.log(`Successfully marked ${messageIds.length} messages as read`);
-            // Immediately refresh contacts to update unread counts
-            setTimeout(() => {
-              refetchContacts();
-            }, 300);
+            
+            // Create a series of refetch attempts with increasing delays
+            // This helps ensure contacts are updated after messages are marked as read
+            const refetchWaves = [100, 500, 1000, 2000];
+            
+            refetchWaves.forEach(delay => {
+              setTimeout(() => {
+                console.log(`Refetching contacts after ${delay}ms delay`);
+                refetchContacts();
+              }, delay);
+            });
+          } catch (updateErr) {
+            console.error("Error in update process:", updateErr);
           }
+        } else {
+          console.log("No unread messages to mark as read");
         }
         
-        // Process messages
+        // Process messages for display
         const processedMessages = data.map(msg => {
           // Mark messages as read in the returned data if they were just updated
           if (msg.receiver_id === user.id && !msg.read) {
@@ -76,7 +99,6 @@ export function useChatMessages(
           return processMessageData(msg, user.id);
         });
         
-        console.log(`Processed ${processedMessages.length} messages`);
         return processedMessages;
       } catch (error) {
         console.error("Error processing messages:", error);
