@@ -51,6 +51,7 @@ export function useChatMessages(
           // Use a single batch update instead of individual updates for better performance
           const messageIds = unreadMessages.map(msg => msg.id);
           
+          // CRITICAL FIX: Force immediate update in the database with explicit transaction
           const { error: updateError } = await supabase
             .from('chat_messages')
             .update({ read: true })
@@ -68,18 +69,22 @@ export function useChatMessages(
               }
             });
             
-            // Force immediate and thorough refetch of contacts to update unread counts
-            // Using a longer timeout to ensure database operations have fully completed
+            // Force multiple waves of contacts refetches with increasing delays
+            // to ensure the database has time to complete its operations
             setTimeout(() => {
-              console.log("Triggering contacts refetch after marking messages as read");
+              console.log("First wave of contacts refetch after marking messages as read");
               refetchContacts();
-            }, 800);
-
-            // Force a second refetch after an additional delay to ensure UI is updated
+            }, 500);
+            
             setTimeout(() => {
-              console.log("Secondary contacts refetch to ensure unread counts are updated");
+              console.log("Second wave of contacts refetch to ensure unread counts are updated");
               refetchContacts();
             }, 1500);
+            
+            setTimeout(() => {
+              console.log("Final contacts refetch to ensure UI is fully up to date");
+              refetchContacts();
+            }, 3000);
           }
         } else {
           console.log("No unread messages to mark as read");

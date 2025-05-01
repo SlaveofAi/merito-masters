@@ -15,7 +15,7 @@ export const useChatSubscription = (
     if (!user) return;
     
     // Create a unique channel name for the user
-    const userChannelName = `user-messages-${user.id}`;
+    const userChannelName = `user-messages-${user.id}-${Date.now()}`;
     console.log(`Setting up global user subscription for ${userChannelName}`);
     
     // Set up a global subscription for the user to track all message changes
@@ -33,10 +33,7 @@ export const useChatSubscription = (
           console.log('New message received for user:', payload);
           // Always refetch both messages and contacts on new message
           refetchMessages();
-          // Use a timeout to ensure DB operations complete
-          setTimeout(() => {
-            refetchContacts();
-          }, 500);
+          refetchContacts();
         }
       )
       .on(
@@ -51,10 +48,7 @@ export const useChatSubscription = (
           console.log('Message updated for user (read status):', payload);
           // Force refetch contacts AND messages to ensure everything is in sync
           refetchMessages();
-          // Use a timeout to ensure DB operations complete
-          setTimeout(() => {
-            refetchContacts();
-          }, 500);
+          refetchContacts();
         }
       )
       .subscribe((status) => {
@@ -65,7 +59,7 @@ export const useChatSubscription = (
     let conversationChannel = null;
     
     if (selectedContact?.conversation_id) {
-      const channelName = `conversation-${selectedContact.conversation_id}`;
+      const channelName = `conversation-${selectedContact.conversation_id}-${Date.now()}`;
       console.log(`Setting up conversation subscription for ${channelName}`);
       
       conversationChannel = supabase
@@ -81,10 +75,7 @@ export const useChatSubscription = (
           (payload) => {
             console.log('New message received in conversation:', payload);
             refetchMessages();
-            // Use a timeout to ensure DB operations complete
-            setTimeout(() => {
-              refetchContacts();
-            }, 500);
+            refetchContacts();
           }
         )
         .on(
@@ -98,10 +89,7 @@ export const useChatSubscription = (
           (payload) => {
             console.log('Message updated in conversation:', payload);
             refetchMessages();
-            // Use a timeout to ensure DB operations complete
-            setTimeout(() => {
-              refetchContacts();
-            }, 500);
+            refetchContacts();
           }
         )
         .subscribe((status) => {
@@ -115,7 +103,7 @@ export const useChatSubscription = (
       supabase.removeChannel(userChannel);
       
       if (conversationChannel) {
-        const channelName = `conversation-${selectedContact?.conversation_id}`;
+        const channelName = `conversation-${selectedContact?.conversation_id}-${Date.now()}`;
         console.log(`Removing conversation channel ${channelName}`);
         supabase.removeChannel(conversationChannel);
       }

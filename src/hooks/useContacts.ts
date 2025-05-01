@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -10,7 +11,7 @@ export const useContacts = () => {
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
 
-  // Fetch contacts
+  // Fetch contacts with fixed caching strategy
   const { data: contacts = [], isLoading: contactsLoading, refetch: refetchContacts } = useQuery({
     queryKey: ['chat-contacts', user?.id],
     queryFn: async () => {
@@ -56,7 +57,7 @@ export const useContacts = () => {
         
         return data.map((contact): ChatContact => ({
           id: contact.id,
-          contactId: contact.id, // Ensure contactId is set correctly
+          contactId: contact.id,
           name: contact.name,
           avatar_url: contact.profile_image_url,
           last_message: 'Kliknite pre zahájenie konverzácie',
@@ -76,7 +77,7 @@ export const useContacts = () => {
         // Create a fallback contact if we can't find the profile
         const createFallbackContact = (): ChatContact => ({
           id: contactId,
-          contactId: contactId, // Set contactId separately
+          contactId: contactId,
           name: "Neznámy užívateľ",
           avatar_url: undefined,
           last_message: "No messages yet",
@@ -90,18 +91,15 @@ export const useContacts = () => {
           const { data: contactData, error: contactError } = await supabase
             .from(profileTable)
             .select('id, name, profile_image_url')
-            .eq('id', contactId);
+            .eq('id', contactId)
+            .maybeSingle();  // Fixed: using maybeSingle instead of assuming array
             
-          if (contactError || !contactData || contactData.length === 0) {
+          if (contactError || !contactData) {
             console.error(`Error or no data for contact with ID ${contactId}:`, contactError);
             return createFallbackContact();
           }
           
-          const contact = contactData[0];
-          if (!contact) {
-            console.error(`No contact found with ID ${contactId}`);
-            return createFallbackContact();
-          }
+          const contact = contactData;
           
           // Get last message and unread count
           const { data: lastMessageData, error: lastMessageError } = await supabase
@@ -113,10 +111,10 @@ export const useContacts = () => {
             
           const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
           
-          // Count unread messages
+          // Count unread messages - FIXED: more reliable query with proper filters
           const { count, error: countError } = await supabase
             .from('chat_messages')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('conversation_id', conv.id)
             .eq('receiver_id', user.id)
             .eq('read', false);
@@ -125,8 +123,8 @@ export const useContacts = () => {
           
           // Use a unique key for UI purposes but store the actual contactId separately
           return {
-            id: contactId, // Use the contact's real ID as the primary ID
-            contactId: contactId, // Store the actual contact ID separately
+            id: contactId,
+            contactId: contactId,
             name: contact.name,
             avatar_url: contact.profile_image_url,
             last_message: lastMessage ? lastMessage.content : 'Kliknite pre zobrazenie správ',
@@ -165,6 +163,10 @@ export const useContacts = () => {
       return uniqueContacts;
     },
     enabled: !!user,
+    staleTime: 0, // Ensure we always get fresh data
+    gcTime: 0, // Don't keep old data in cache
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Update loading state

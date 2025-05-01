@@ -24,7 +24,7 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
   // Get customer reviews if relevant
   const customerReviewsQuery = useCustomerReviews(selectedContact, user);
   
-  // Force refetch when switching conversations to ensure read status is properly updated
+  // Critical fix: Force refetch when switching conversations to ensure read status is properly updated
   useEffect(() => {
     if (selectedContact && previousContactRef.current?.id !== selectedContact.id) {
       console.log(`Selected contact changed from ${previousContactRef.current?.name || 'none'} to ${selectedContact.name}, refetching data`);
@@ -34,18 +34,21 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
       
       // First refetch messages to mark them as read
       messagesQuery.refetch().then(() => {
-        // Then update the contacts list to reflect new unread counts
-        // Larger delay to ensure database operations complete
+        // Then update the contacts list to reflect new unread counts with multiple waves of refetches
         setTimeout(() => {
-          console.log("Refetching contacts after conversation switch");
+          console.log("First contacts refetch after conversation switch");
           refetchContacts();
-          
-          // Add a second refetch with an even longer delay to ensure everything is updated
-          setTimeout(() => {
-            console.log("Secondary contacts refetch to ensure unread counts are updated");
-            refetchContacts();
-          }, 1000);
-        }, 800);
+        }, 500);
+        
+        setTimeout(() => {
+          console.log("Second contacts refetch to ensure unread counts are updated");
+          refetchContacts();
+        }, 1500);
+        
+        setTimeout(() => {
+          console.log("Final contacts refetch to ensure UI is fully updated");
+          refetchContacts();
+        }, 3000);
       });
     }
   }, [selectedContact, messagesQuery, refetchContacts]);
@@ -56,10 +59,14 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
       // Something changed in messages, make sure contacts are up to date
       console.log("Messages data changed, ensuring contacts are up to date");
       
-      // Use a delay to ensure database operations have time to complete
+      // Use multiple waves of refetches with increasing delays
       setTimeout(() => {
         refetchContacts();
       }, 500);
+      
+      setTimeout(() => {
+        refetchContacts();
+      }, 2000);
     }
   }, [messagesQuery.data, refetchContacts]);
   

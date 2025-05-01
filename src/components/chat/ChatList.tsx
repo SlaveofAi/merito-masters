@@ -26,10 +26,10 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
     );
     
     console.log("Filtered contacts in ChatList:", filtered.map(c => 
-      `${c.name} (${c.id}): ${c.unread_count || 0} unread`));
+      `${c.name} (${c.id}): ${c.unread_count || 0} unread, selected: ${c.id === selectedContactId}`));
       
     setFilteredContacts(filtered);
-  }, [contacts, searchTerm]);
+  }, [contacts, searchTerm, selectedContactId]);
   
   return (
     <div className="flex flex-col h-full">
@@ -74,14 +74,12 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                 ? formatDistanceToNow(new Date(contact.last_message_time), { addSuffix: true, locale: sk }) 
                 : '';
               
-              // Make triple sure unread count is valid
+              // Critical fix: Make triple sure unread count is valid and NEVER show badge for selected contacts
               const unreadCount = typeof contact.unread_count === 'number' ? contact.unread_count : 0;
-              
-              // Never show badge for selected contacts
               const showBadge = !isSelected && unreadCount > 0;
               
-              // Debug logging for badge display
-              console.log(`Contact ${contact.name} has ${unreadCount} unread messages. Selected: ${isSelected}. Show badge: ${showBadge}`);
+              // More detailed debug logging for badge display
+              console.log(`Contact ${contact.name} (${contact.id}): Has ${unreadCount} unread. Selected: ${isSelected}. Show badge: ${showBadge}`);
                 
               return (
                 <li 
@@ -106,11 +104,11 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                         <p className="text-sm text-gray-500 truncate pr-2">
                           {contact.last_message}
                         </p>
-                        {showBadge ? (
+                        {showBadge && (
                           <Badge variant="default" className="rounded-full px-2 py-0.5 text-xs">
                             {unreadCount}
                           </Badge>
-                        ) : null}
+                        )}
                       </div>
                     </div>
                   </div>
