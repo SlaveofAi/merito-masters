@@ -43,7 +43,8 @@ export const useChatSubscription = (
           filter: `receiver_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Message read status updated for user:', payload);
+          console.log('Message updated for user (read status):', payload);
+          // Force refetch contacts to update unread counts properly
           refetchContacts();
         }
       )

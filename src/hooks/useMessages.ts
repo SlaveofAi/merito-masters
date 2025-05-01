@@ -4,12 +4,13 @@ import { useChatMessages } from './useChatMessages';
 import { useContactDetails } from './useContactDetails';
 import { useCustomerReviews } from './useCustomerReviews';
 import { ChatContact, Message } from "@/types/chat";
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 
 // Create a combined hook that returns all the data needed for the chat
 export function useMessages(selectedContact: ChatContact | null, refetchContacts: () => void) {
   // Get the user from the auth context
   const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const previousContactRef = useRef<ChatContact | null>(null);
   
   console.log('useMessages hook initialized with user:', user?.id, 'type:', user?.user_metadata?.user_type);
   console.log('Selected contact:', selectedContact);
@@ -25,12 +26,19 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
   
   // Force refetch when switching conversations to ensure read status is properly updated
   useEffect(() => {
-    if (selectedContact) {
-      console.log(`Selected contact changed to ${selectedContact.name}, refetching data`);
+    if (selectedContact && previousContactRef.current?.id !== selectedContact.id) {
+      console.log(`Selected contact changed from ${previousContactRef.current?.name || 'none'} to ${selectedContact.name}, refetching data`);
+      
+      // Update previous contact reference
+      previousContactRef.current = selectedContact;
+      
       // First refetch messages to mark them as read
       messagesQuery.refetch().then(() => {
         // Then update the contacts list to reflect new unread counts
-        setTimeout(() => refetchContacts(), 300);
+        // Small delay to ensure database operations complete
+        setTimeout(() => {
+          refetchContacts();
+        }, 300);
       });
     }
   }, [selectedContact, messagesQuery, refetchContacts]);

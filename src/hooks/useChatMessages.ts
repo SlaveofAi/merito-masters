@@ -61,8 +61,15 @@ export function useChatMessages(
           } else {
             console.log(`Successfully marked ${unreadMessages.length} messages as read`);
             
+            // Update the local data to reflect read status changes immediately
+            data.forEach(msg => {
+              if (messageIds.includes(msg.id)) {
+                msg.read = true;
+              }
+            });
+            
             // Force immediate refetch of contacts to update unread counts
-            refetchContacts();
+            setTimeout(() => refetchContacts(), 100);
           }
         } else {
           console.log("No unread messages to mark as read");
