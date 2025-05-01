@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import ReviewCard from "./ReviewCard";
@@ -26,15 +27,6 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
 }) => {
   const [connectionStatus, setConnectionStatus] = useState<boolean | null>(null);
   const [checkingConnection, setCheckingConnection] = useState(false);
-
-  // For debugging
-  console.log("ReviewsList rendering", {
-    reviewsCount: reviews?.length,
-    isLoading,
-    canReply: canReplyToReview,
-    userId,
-    connectionStatus
-  });
 
   // Check Supabase connection on component mount
   useEffect(() => {
@@ -78,15 +70,15 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
   if (connectionStatus === false) {
     return (
       <Alert variant="destructive" className="mb-4 bg-red-50">
-        <WifiOff className="h-4 w-4 mr-2" />
-        <AlertDescription className="flex items-center justify-between w-full">
+        <WifiOff className="h-4 w-4 mr-2 flex-shrink-0" />
+        <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-2">
           <span>Chyba pripojenia k databáze. Skúste stránku obnoviť alebo to skúste neskôr.</span>
           <Button 
             variant="outline" 
             size="sm"
             onClick={handleRetryConnection}
             disabled={checkingConnection}
-            className="ml-2"
+            className="sm:ml-2 whitespace-nowrap"
           >
             <RefreshCw className={`h-3 w-3 mr-1 ${checkingConnection ? 'animate-spin' : ''}`} />
             Skúsiť znova
@@ -99,7 +91,7 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
   if (error) {
     return (
       <Alert variant="destructive" className="mb-4">
-        <AlertTriangle className="h-4 w-4 mr-2" />
+        <AlertTriangle className="h-4 w-4 mr-2 flex-shrink-0" />
         <AlertDescription>
           {typeof error === 'string' 
             ? error 

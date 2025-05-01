@@ -110,7 +110,7 @@ const CustomerReviewsTab: React.FC = () => {
         <div className="space-y-4">
           {reviews.map((review) => (
             <Card key={review.id} className="overflow-hidden">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                   <div className="flex items-start space-x-3">
                     <Link to={`/profile/${review.craftsman?.id}/portfolio`}>
@@ -164,7 +164,8 @@ const CustomerReviewsTab: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <p className="text-gray-700 mt-4">{review.comment || "Bez komentára"}</p>
+                {/* Added break-words to wrap text properly on mobile */}
+                <p className="text-gray-700 mt-4 break-words whitespace-normal">{review.comment || "Bez komentára"}</p>
               </CardContent>
             </Card>
           ))}

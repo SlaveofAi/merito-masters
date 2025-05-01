@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,15 +71,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   const isReviewOwner = userId === review.customer_id;
   const canManageReply = isCraftsman && userId;
   const hasReply = !!localReply && !!localReply.reply;
-  
-  console.log("ReviewCard rendering:", {
-    reviewId: review.id,
-    hasReply,
-    replyData: localReply,
-    replyText: localReply?.reply || "No reply text",
-    isCraftsman,
-    canManageReply
-  });
 
   // Update local state when reply prop changes
   useEffect(() => {
@@ -350,7 +340,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   return (
     <Card className="mb-4">
       <CardContent className="pt-6">
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3">
           <Link to={`/profile/${review.customer_id}/reviews`}>
             <Avatar className="flex-shrink-0 w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
               {profileImageUrl ? (
@@ -363,8 +353,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
             </Avatar>
           </Link>
           
-          <div className="flex-1">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
               <div>
                 <CustomerProfileLink />
                 <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -395,15 +385,15 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="max-w-[95%] w-[450px] rounded-lg">
                       <AlertDialogHeader>
                         <AlertDialogTitle>Vymazať hodnotenie</AlertDialogTitle>
                         <AlertDialogDescription>
                           Naozaj chcete vymazať toto hodnotenie? Túto akciu nie je možné vrátiť späť.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Zrušiť</AlertDialogCancel>
+                      <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                        <AlertDialogCancel className="mt-2 sm:mt-0">Zrušiť</AlertDialogCancel>
                         <AlertDialogAction 
                           onClick={handleDeleteReview}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -417,14 +407,16 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               </div>
             </div>
             
-            <p className="text-gray-700 mt-2">{review.comment}</p>
+            {/* Review text with proper wrapping for mobile */}
+            <p className="text-gray-700 mt-2 break-words whitespace-normal">{review.comment}</p>
             
+            {/* Reply section */}
             {localReply && localReply.reply && (
-              <div className="mt-4 pl-4 border-l-2 border-gray-200">
+              <div className="mt-4 pl-3 border-l-2 border-gray-200">
                 <div className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 mt-1 text-green-500" />
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center">
+                  <CheckCircle2 className="h-4 w-4 mt-1 text-green-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1">
                       {craftsmanName ? (
                         <div className="flex items-center gap-2">
                           <Link to={`/profile/${review.craftsman_id}/portfolio`}>
@@ -444,53 +436,52 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                         <h4 className="text-sm font-medium text-gray-700">Odpoveď remeselníka</h4>
                       )}
                       
-                      <div className="flex gap-2">
-                        {canManageReply && (
-                          <>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="h-7 px-2" 
-                              onClick={() => setEditingReply(true)}
-                            >
-                              <Edit className="h-3.5 w-3.5 mr-1" />
-                              <span className="text-xs">Upraviť</span>
-                            </Button>
+                      {canManageReply && (
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-7 px-2" 
+                            onClick={() => setEditingReply(true)}
+                          >
+                            <Edit className="h-3.5 w-3.5 mr-1" />
+                            <span className="text-xs">Upraviť</span>
+                          </Button>
 
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button 
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 px-2 text-destructive hover:text-destructive/90"
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-destructive hover:text-destructive/90"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                <span className="text-xs">Vymazať</span>
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="max-w-[95%] w-[450px] rounded-lg">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Vymazať odpoveď</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Naozaj chcete vymazať túto odpoveď? Túto akciu nie je možné vrátiť späť.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                                <AlertDialogCancel className="mt-2 sm:mt-0">Zrušiť</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={handleDeleteReply}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5 mr-1" />
-                                  <span className="text-xs">Vymazať</span>
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Vymazať odpoveď</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Naozaj chcete vymazať túto odpoveď? Túto akciu nie je možné vrátiť späť.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Zrušiť</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    onClick={handleDeleteReply}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Vymazať
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </>
-                        )}
-                      </div>
+                                  Vymazať
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{localReply.reply}</p>
+                    {/* Reply text with proper wrapping for mobile */}
+                    <p className="text-sm text-gray-600 mt-1 break-words whitespace-normal">{localReply.reply}</p>
                     <span className="text-xs text-gray-400 block mt-1">
                       {formatDate(localReply.created_at)}
                     </span>
@@ -499,6 +490,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               </div>
             )}
             
+            {/* Reply form */}
             {editingReply && (
               <div className="mt-4">
                 {error && (
