@@ -18,22 +18,31 @@ export const supabase = createClient<Database>(
     global: {
       fetch: (url: RequestInfo | URL, options?: RequestInit) => {
         // Enhanced fetch with retry mechanism for better reliability
-        const maxRetries = 3;
+        const maxRetries = 5; // Increased from 3 to 5
         let retryCount = 0;
         
         const fetchWithRetry = async (): Promise<Response> => {
           try {
             const response = await fetch(url, {
               ...options,
-              // Add timeout to prevent hanging requests
-              signal: options?.signal || (AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined),
+              // Add timeout to prevent hanging requests - extended timeout
+              signal: options?.signal || (AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined),
+              // Add cache control headers to avoid caching issues
+              headers: {
+                ...(options?.headers || {}),
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+              } as HeadersInit,
             });
             
-            // If we get a 503, retry after a delay
-            if (response.status === 503 && retryCount < maxRetries) {
+            // If we get a server error (503, 502, 500, etc), retry after a delay
+            if ((response.status === 503 || response.status === 502 || response.status === 500) && retryCount < maxRetries) {
               retryCount++;
-              const delay = Math.min(1000 * Math.pow(2, retryCount), 10000); // Exponential backoff
-              console.log(`Got 503 response, retrying in ${delay}ms (attempt ${retryCount} of ${maxRetries})`);
+              // Use exponential backoff with jitter for better distribution of retries
+              const baseDelay = Math.min(1000 * Math.pow(2, retryCount), 15000);
+              const jitter = Math.random() * 1000; // Add up to 1 second of random jitter
+              const delay = baseDelay + jitter;
+              console.log(`Got ${response.status} response, retrying in ${Math.round(delay)}ms (attempt ${retryCount} of ${maxRetries})`);
               
               return new Promise(resolve => {
                 setTimeout(() => resolve(fetchWithRetry()), delay);
@@ -48,8 +57,11 @@ export const supabase = createClient<Database>(
               // Retry if we haven't exceeded max retries
               if (retryCount < maxRetries) {
                 retryCount++;
-                const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-                console.log(`Request timed out, retrying in ${delay}ms (attempt ${retryCount} of ${maxRetries})`);
+                // Exponential backoff with jitter
+                const baseDelay = Math.min(1000 * Math.pow(2, retryCount), 15000);
+                const jitter = Math.random() * 1000;
+                const delay = baseDelay + jitter;
+                console.log(`Request timed out, retrying in ${Math.round(delay)}ms (attempt ${retryCount} of ${maxRetries})`);
                 
                 return new Promise(resolve => {
                   setTimeout(() => resolve(fetchWithRetry()), delay);
@@ -66,12 +78,17 @@ export const supabase = createClient<Database>(
       headers: {
         'X-Client-Info': 'lovable-app',
       }
+    },
+    // Increase realtime timeout settings
+    realtime: {
+      timeout: 60000, // 60 seconds
+      heartbeatIntervalMs: 30000 // 30 seconds
     }
   }
 );
 
 // Simple connection check function with retry
-export const checkConnection = async (retries = 3): Promise<boolean> => {
+export const checkConnection = async (retries = 5): Promise<boolean> => { // Increased from 3 to 5
   let attempt = 0;
   
   while (attempt < retries) {
@@ -81,11 +98,11 @@ export const checkConnection = async (retries = 3): Promise<boolean> => {
       
       attempt++;
       console.log(`Connection check failed (attempt ${attempt}/${retries}): ${error.message}`);
-      await new Promise(r => setTimeout(r, 1000 * attempt));
+      await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
     } catch (e) {
       attempt++;
       console.error(`Connection check exception (attempt ${attempt}/${retries}):`, e);
-      await new Promise(r => setTimeout(r, 1000 * attempt));
+      await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
     }
   }
   
@@ -93,7 +110,7 @@ export const checkConnection = async (retries = 3): Promise<boolean> => {
 };
 
 // Check Supabase Realtime connection with improved reliability
-export const checkRealtimeConnection = async (retries = 3): Promise<boolean> => {
+export const checkRealtimeConnection = async (retries = 5): Promise<boolean> => { // Increased from 3 to 5
   let attempt = 0;
   
   while (attempt < retries) {
@@ -104,11 +121,11 @@ export const checkRealtimeConnection = async (retries = 3): Promise<boolean> => 
       
       // Subscribe to the channel and return a promise
       const connectionPromise = new Promise<boolean>((resolve) => {
-        // Set a timeout in case subscription hangs
+        // Set a timeout in case subscription hangs - extended timeout
         const timeout = setTimeout(() => {
           console.log(`Realtime connection check timed out (attempt ${attempt + 1}/${retries})`);
           resolve(false);
-        }, 5000);
+        }, 10000); // Extended from 5000 to 10000
         
         channel
           .on('system', { event: 'connected' }, () => {
@@ -136,14 +153,16 @@ export const checkRealtimeConnection = async (retries = 3): Promise<boolean> => 
       // If connection successful, return true
       if (isConnected) return true;
       
-      // Otherwise retry
+      // Otherwise retry with exponential backoff
       attempt++;
-      await new Promise(r => setTimeout(r, 1000 * attempt));
+      const delay = 1000 * Math.pow(2, attempt);
+      console.log(`Will retry realtime connection in ${delay}ms`);
+      await new Promise(r => setTimeout(r, delay));
       
     } catch (e) {
       attempt++;
       console.error(`Realtime connection check error (attempt ${attempt}/${retries}):`, e);
-      await new Promise(r => setTimeout(r, 1000 * attempt));
+      await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
     }
   }
   

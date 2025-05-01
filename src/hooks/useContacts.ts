@@ -92,7 +92,7 @@ export const useContacts = () => {
             .from(profileTable)
             .select('id, name, profile_image_url')
             .eq('id', contactId)
-            .maybeSingle();  // Fixed: using maybeSingle instead of assuming array
+            .maybeSingle();
             
           if (contactError || !contactData) {
             console.error(`Error or no data for contact with ID ${contactId}:`, contactError);
@@ -111,15 +111,42 @@ export const useContacts = () => {
             
           const lastMessage = lastMessageData && lastMessageData.length > 0 ? lastMessageData[0] : null;
           
-          // Count unread messages - FIXED: more reliable query with proper filters
-          const { count, error: countError } = await supabase
-            .from('chat_messages')
-            .select('id', { count: 'exact', head: true })
-            .eq('conversation_id', conv.id)
-            .eq('receiver_id', user.id)
-            .eq('read', false);
-            
-          console.log(`Found contact ${contact.name} with ${count || 0} unread messages`);
+          // IMPROVED: More reliable unread count query with retries
+          let unreadCount = 0;
+          let retryAttempts = 0;
+          const maxRetries = 3;
+          let countSuccess = false;
+          
+          while (retryAttempts < maxRetries && !countSuccess) {
+            try {
+              // Use a direct SQL count query which should be more reliable
+              const { count, error: countError } = await supabase
+                .from('chat_messages')
+                .select('id', { count: 'exact', head: true })
+                .eq('conversation_id', conv.id)
+                .eq('receiver_id', user.id)
+                .eq('read', false);
+                
+              if (!countError) {
+                unreadCount = count || 0;
+                countSuccess = true;
+                console.log(`Found contact ${contact.name} with ${unreadCount} unread messages`);
+              } else {
+                retryAttempts++;
+                console.error(`Error counting unread messages (attempt ${retryAttempts}):`, countError);
+                await new Promise(r => setTimeout(r, 500 * retryAttempts));
+              }
+            } catch (err) {
+              retryAttempts++;
+              console.error(`Exception counting unread messages (attempt ${retryAttempts}):`, err);
+              await new Promise(r => setTimeout(r, 500 * retryAttempts));
+            }
+          }
+          
+          if (!countSuccess) {
+            console.error(`Failed to count unread messages after ${maxRetries} attempts`);
+            unreadCount = 0; // Default to 0 if we can't get a count
+          }
           
           // Use a unique key for UI purposes but store the actual contactId separately
           return {
@@ -129,7 +156,7 @@ export const useContacts = () => {
             avatar_url: contact.profile_image_url,
             last_message: lastMessage ? lastMessage.content : 'Kliknite pre zobrazenie správ',
             last_message_time: lastMessage ? lastMessage.created_at : conv.created_at,
-            unread_count: count || 0,
+            unread_count: unreadCount,
             user_type: contactType,
             conversation_id: conv.id
           } as ChatContact;

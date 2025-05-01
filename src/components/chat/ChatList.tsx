@@ -17,6 +17,16 @@ interface ChatListProps {
 
 const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSelectContact, loading }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [forceRender, setForceRender] = useState<number>(0);
+  
+  // Force re-render periodically to ensure UI is updated
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setForceRender(prev => prev + 1);
+    }, 5000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
   
   // Use useMemo for filtered contacts to prevent unnecessary re-renders
   const filteredContacts = useMemo(() => {
@@ -28,7 +38,7 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
       `${c.name} (${c.id}): ${c.unread_count || 0} unread, selected: ${c.id === selectedContactId}`));
     
     return filtered;
-  }, [contacts, searchTerm, selectedContactId]);
+  }, [contacts, searchTerm, selectedContactId, forceRender]);
   
   return (
     <div className="flex flex-col h-full">
@@ -73,21 +83,22 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                 ? formatDistanceToNow(new Date(contact.last_message_time), { addSuffix: true, locale: sk }) 
                 : '';
               
-              // CRITICAL FIX: Proper badge display logic with extra safeguards
-              // Never show badge for selected contact and ensure count is a positive number
-              const unreadCount = typeof contact.unread_count === 'number' && contact.unread_count > 0 
-                ? contact.unread_count 
-                : 0;
-                
-              // IMPORTANT: Only show badge if contact is NOT selected AND has positive unread count
-              const showBadge = !isSelected && unreadCount > 0;
+              // CRITICAL FIX: More robust unread badge display logic
+              const unreadCount = Number(contact.unread_count); 
+              const hasUnread = !isNaN(unreadCount) && unreadCount > 0;
               
-              // Detailed debug logging for badge display
+              // IMPORTANT: Only show badge if contact is NOT selected AND has positive unread count
+              const showBadge = !isSelected && hasUnread;
+              
+              // Log detailed information for debugging
               console.log(
                 `Contact ${contact.name} (${contact.id}): ` +
-                `Has ${unreadCount} unread. Selected: ${isSelected}. ` +
-                `Show badge: ${showBadge}. Contact data:`, 
-                contact
+                `Raw unread count: ${contact.unread_count}, ` + 
+                `Parsed unread count: ${unreadCount}, ` +
+                `Has unread: ${hasUnread}, ` +
+                `Selected: ${isSelected}, ` +
+                `Show badge: ${showBadge}, ` +
+                `Selection match: ${contact.id === selectedContactId}`
               );
                 
               return (
@@ -98,6 +109,9 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                     ${isSelected ? 'bg-gray-50' : ''}
                   `}
                   onClick={() => onSelectContact(contact)}
+                  data-selected={isSelected ? "true" : "false"}
+                  data-unread-count={unreadCount}
+                  data-show-badge={showBadge ? "true" : "false"}
                 >
                   <div className="flex items-start gap-3">
                     <Avatar className="h-10 w-10">
@@ -113,7 +127,6 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                         <p className="text-sm text-gray-500 truncate pr-2">
                           {contact.last_message}
                         </p>
-                        {/* Only render badge if specifically needed */}
                         {showBadge && (
                           <Badge 
                             variant="default" 

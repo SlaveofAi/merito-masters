@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact } from "@/types/chat";
@@ -15,15 +14,28 @@ export const useChatSubscription = (
     conversationChannel: null
   });
   
+  // Keep track of setup attempts to avoid infinite retries
+  const setupAttemptsRef = useRef({
+    userChannel: 0,
+    conversationChannel: 0
+  });
+  
   useEffect(() => {
     if (!user) return;
     
-    // Create a unique channel name for the user
-    const userChannelName = `user-messages-${user.id}-${Date.now()}`;
+    // Create a unique channel name for the user with timestamp to avoid conflicts
+    const userChannelName = `user-messages-${user.id}-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
     console.log(`Setting up global user subscription for ${userChannelName}`);
     
     const setupUserChannel = () => {
       try {
+        // Remove any existing subscription to avoid duplicates
+        if (subscriptionsRef.current.userChannel) {
+          console.log("Removing existing user channel subscription");
+          supabase.removeChannel(subscriptionsRef.current.userChannel);
+          subscriptionsRef.current.userChannel = null;
+        }
+        
         // Set up a global subscription for the user to track all message changes
         const userChannel = supabase
           .channel(userChannelName)
@@ -39,7 +51,11 @@ export const useChatSubscription = (
               console.log('New message received for user:', payload);
               // Always refetch both messages and contacts on new message
               refetchMessages();
-              refetchContacts();
+              
+              // Staggered refetches for contacts to ensure UI is updated
+              setTimeout(() => refetchContacts(), 100);
+              setTimeout(() => refetchContacts(), 1000);
+              setTimeout(() => refetchContacts(), 3000);
             }
           )
           .on(
@@ -54,43 +70,54 @@ export const useChatSubscription = (
               console.log('Message updated for user (read status):', payload);
               // Force refetch contacts AND messages to ensure everything is in sync
               refetchMessages();
-              refetchContacts();
+              
+              // Staggered refetches for contacts
+              setTimeout(() => refetchContacts(), 100);
+              setTimeout(() => refetchContacts(), 1000);
+              setTimeout(() => refetchContacts(), 3000);
             }
           )
           .subscribe((status) => {
             console.log(`User channel subscription status for ${userChannelName}:`, status);
+            
+            // If subscription failed, try again unless we've exceeded max attempts
+            if (status === 'CHANNEL_ERROR' && setupAttemptsRef.current.userChannel < 3) {
+              setupAttemptsRef.current.userChannel++;
+              console.log(`Retrying user channel setup (attempt ${setupAttemptsRef.current.userChannel})`);
+              setTimeout(setupUserChannel, 1000 * setupAttemptsRef.current.userChannel);
+            }
           });
           
         subscriptionsRef.current.userChannel = userChannel;
       } catch (err) {
         console.error("Error setting up user subscription:", err);
-      }
-    };
-    
-    // Set up user channel with retry logic
-    let retryAttempt = 0;
-    const maxRetries = 3;
-    
-    const attemptSetup = () => {
-      try {
-        setupUserChannel();
-      } catch (err) {
-        retryAttempt++;
-        if (retryAttempt < maxRetries) {
-          console.log(`Retrying subscription setup (attempt ${retryAttempt})`);
-          setTimeout(attemptSetup, 1000);
-        } else {
-          console.error("Failed to set up subscription after multiple attempts");
+        
+        // Retry with backoff unless we've exceeded max attempts
+        if (setupAttemptsRef.current.userChannel < 3) {
+          setupAttemptsRef.current.userChannel++;
+          console.log(`Will retry user subscription setup in ${1000 * setupAttemptsRef.current.userChannel}ms`);
+          setTimeout(setupUserChannel, 1000 * setupAttemptsRef.current.userChannel);
         }
       }
     };
     
-    attemptSetup();
+    // Set up user channel
+    setupUserChannel();
     
     // Also set up specific conversation subscription if a contact is selected
-    if (selectedContact?.conversation_id) {
+    const setupConversationChannel = () => {
+      if (!selectedContact?.conversation_id) return;
+      
       try {
-        const channelName = `conversation-${selectedContact.conversation_id}-${Date.now()}`;
+        // Remove any existing conversation channel
+        if (subscriptionsRef.current.conversationChannel) {
+          console.log("Removing existing conversation channel subscription");
+          supabase.removeChannel(subscriptionsRef.current.conversationChannel);
+          subscriptionsRef.current.conversationChannel = null;
+        }
+        
+        // Create unique channel name with random component to avoid conflicts
+        const channelName = `conversation-${selectedContact.conversation_id}-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
         console.log(`Setting up conversation subscription for ${channelName}`);
         
         const conversationChannel = supabase
@@ -106,7 +133,11 @@ export const useChatSubscription = (
             (payload) => {
               console.log('New message received in conversation:', payload);
               refetchMessages();
-              refetchContacts();
+              
+              // Staggered refetches
+              setTimeout(() => refetchContacts(), 100);
+              setTimeout(() => refetchContacts(), 1000);
+              setTimeout(() => refetchContacts(), 3000);
             }
           )
           .on(
@@ -120,18 +151,60 @@ export const useChatSubscription = (
             (payload) => {
               console.log('Message updated in conversation:', payload);
               refetchMessages();
-              refetchContacts();
+              
+              // Staggered refetches
+              setTimeout(() => refetchContacts(), 100);
+              setTimeout(() => refetchContacts(), 1000);
+              setTimeout(() => refetchContacts(), 3000);
             }
           )
           .subscribe((status) => {
             console.log(`Conversation subscription status for ${channelName}:`, status);
+            
+            // If subscription failed, retry unless we've exceeded max attempts
+            if (status === 'CHANNEL_ERROR' && setupAttemptsRef.current.conversationChannel < 3) {
+              setupAttemptsRef.current.conversationChannel++;
+              console.log(`Retrying conversation channel setup (attempt ${setupAttemptsRef.current.conversationChannel})`);
+              setTimeout(setupConversationChannel, 1000 * setupAttemptsRef.current.conversationChannel);
+            }
           });
           
         subscriptionsRef.current.conversationChannel = conversationChannel;
       } catch (err) {
         console.error("Error setting up conversation subscription:", err);
+        
+        // Retry with backoff unless we've exceeded max attempts
+        if (setupAttemptsRef.current.conversationChannel < 3) {
+          setupAttemptsRef.current.conversationChannel++;
+          console.log(`Will retry conversation subscription setup in ${1000 * setupAttemptsRef.current.conversationChannel}ms`);
+          setTimeout(setupConversationChannel, 1000 * setupAttemptsRef.current.conversationChannel);
+        }
       }
+    };
+    
+    // Set up conversation channel if we have a selected contact
+    if (selectedContact?.conversation_id) {
+      // Reset attempt counter when contact changes
+      setupAttemptsRef.current.conversationChannel = 0;
+      setupConversationChannel();
     }
+    
+    // Periodically check and reestablish subscriptions if needed
+    const checkSubscriptionsInterval = setInterval(() => {
+      // Check user channel
+      if (!subscriptionsRef.current.userChannel && setupAttemptsRef.current.userChannel < 3) {
+        console.log("User channel subscription not found, attempting to reestablish");
+        setupUserChannel();
+      }
+      
+      // Check conversation channel
+      if (selectedContact?.conversation_id && 
+          !subscriptionsRef.current.conversationChannel && 
+          setupAttemptsRef.current.conversationChannel < 3) {
+        console.log("Conversation channel subscription not found, attempting to reestablish");
+        setupConversationChannel();
+      }
+    }, 30000); // Check every 30 seconds
     
     // Cleanup function
     return () => {
@@ -139,12 +212,16 @@ export const useChatSubscription = (
         console.log(`Removing user channel ${userChannelName}`);
         if (subscriptionsRef.current.userChannel) {
           supabase.removeChannel(subscriptionsRef.current.userChannel);
+          subscriptionsRef.current.userChannel = null;
         }
         
         if (subscriptionsRef.current.conversationChannel) {
           console.log(`Removing conversation channel for ${selectedContact?.conversation_id}`);
           supabase.removeChannel(subscriptionsRef.current.conversationChannel);
+          subscriptionsRef.current.conversationChannel = null;
         }
+        
+        clearInterval(checkSubscriptionsInterval);
       } catch (err) {
         console.error("Error cleaning up channels:", err);
       }
