@@ -34,6 +34,19 @@ export const useChatSubscription = (
           refetchContacts();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE', 
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `conversation_id=eq.${selectedContact.conversation_id}`
+        },
+        () => {
+          // On message updates (like read status)
+          refetchContacts();
+        }
+      )
       .subscribe();
     
     // Cleanup function

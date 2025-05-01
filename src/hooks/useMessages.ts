@@ -4,6 +4,7 @@ import { useChatMessages } from './useChatMessages';
 import { useContactDetails } from './useContactDetails';
 import { useCustomerReviews } from './useCustomerReviews';
 import { ChatContact, Message } from "@/types/chat";
+import { useEffect } from 'react';
 
 // Create a combined hook that returns all the data needed for the chat
 export function useMessages(selectedContact: ChatContact | null, refetchContacts: () => void) {
@@ -21,6 +22,14 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
   
   // Get customer reviews if relevant
   const customerReviewsQuery = useCustomerReviews(selectedContact, user);
+  
+  // Effect to refetch contacts when the selected contact changes
+  // This ensures unread counts are updated when switching between conversations
+  useEffect(() => {
+    if (selectedContact) {
+      refetchContacts();
+    }
+  }, [selectedContact, refetchContacts]);
   
   // Return a combined object with all data needed by Chat.tsx
   return {

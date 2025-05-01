@@ -48,16 +48,21 @@ export function useChatMessages(
         if (unreadMessages.length > 0) {
           console.log(`Marking ${unreadMessages.length} messages as read`);
           
-          // Mark each message as read individually to avoid race conditions
-          for (const msg of unreadMessages) {
-            await supabase
-              .from('chat_messages')
-              .update({ read: true })
-              .eq('id', msg.id);
-          }
+          // Use a single batch update instead of individual updates for better performance
+          const messageIds = unreadMessages.map(msg => msg.id);
           
-          // Refresh contact list to update unread counts
-          refetchContacts();
+          const { error: updateError } = await supabase
+            .from('chat_messages')
+            .update({ read: true })
+            .in('id', messageIds);
+          
+          if (updateError) {
+            console.error("Error marking messages as read:", updateError);
+          } else {
+            console.log(`Successfully marked ${unreadMessages.length} messages as read`);
+            // Immediately update the contacts list to reflect the updated unread counts
+            setTimeout(() => refetchContacts(), 300);
+          }
         }
         
         // Process messages
