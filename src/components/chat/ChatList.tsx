@@ -65,10 +65,8 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                 ? formatDistanceToNow(new Date(contact.last_message_time), { addSuffix: true, locale: sk }) 
                 : '';
               
-              // Log the unread count for debugging
-              console.log(`Contact ${contact.name} (${contact.id}) has ${contact.unread_count} unread messages. isSelected: ${isSelected}`);
-              
               // Only show badge when there are unread messages AND the contact is not currently selected
+              // AND the unread count is greater than 0
               const showBadge = !isSelected && contact.unread_count && contact.unread_count > 0;
                 
               return (
@@ -94,6 +92,7 @@ const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSele
                         <p className="text-sm text-gray-500 truncate pr-2">
                           {contact.last_message}
                         </p>
+                        {/* Only render the badge when showBadge is true */}
                         {showBadge && (
                           <Badge 
                             variant="default" 
