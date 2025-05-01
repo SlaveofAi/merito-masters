@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +28,20 @@ const ProfilePage: React.FC = () => {
     userType: profileUserType
   } = useProfile();
 
+  // Debug log to help with troubleshooting
+  useEffect(() => {
+    console.log("ProfilePage rendering with:", {
+      loading,
+      authUserType: userType,
+      profileUserType,
+      profileDataExists: !!profileData,
+      isCurrentUser,
+      profileNotFound,
+      userLoggedIn: !!user,
+      error: error || "none"
+    });
+  }, [loading, userType, profileUserType, profileData, isCurrentUser, profileNotFound, user, error]);
+
   useEffect(() => {
     if (isCurrentUser && profileNotFound && createDefaultProfileIfNeeded) {
       console.log("Profile not found for current user, attempting to create default profile");
@@ -41,6 +56,7 @@ const ProfilePage: React.FC = () => {
     }
   }, [isCurrentUser, profileNotFound, createDefaultProfileIfNeeded]);
 
+  // For current user but no user type detected
   if (user && !userType && isCurrentUser) {
     return (
       <Layout>
@@ -189,13 +205,17 @@ const ProfilePage: React.FC = () => {
     );
   }
 
+  // Use the most reliable source for user type
+  const effectiveUserType = profileData.user_type || profileUserType || userType;
+  console.log("Using effective user type for display:", effectiveUserType);
+
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
         <ProfileHeader />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <ProfileTabs userType={profileUserType || userType} />
+          <ProfileTabs userType={effectiveUserType} />
         </div>
       </div>
     </Layout>

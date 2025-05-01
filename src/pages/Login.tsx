@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -41,6 +40,9 @@ const Login = () => {
           try {
             const pendingUserType = userType === 'craftsman' ? 'craftsman' : 'customer';
             
+            // Save user type to localStorage immediately for quick access
+            localStorage.setItem("userType", pendingUserType);
+            
             // Check if user type exists
             const { data: existingType } = await supabase
               .from('user_types')
@@ -53,6 +55,11 @@ const Login = () => {
               await supabase.from('user_types').insert({
                 user_id: session.user.id,
                 user_type: pendingUserType
+              });
+              
+              // Update user metadata as well
+              await supabase.auth.updateUser({
+                data: { user_type: pendingUserType }
               });
               
               // Insert profile based on user type
@@ -100,7 +107,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
@@ -109,7 +116,32 @@ const Login = () => {
         toast.error(error.message, {
           duration: 3000,
         });
+        setIsLoading(false);
         return;
+      }
+
+      // After successful login, fetch user type to cache it immediately
+      if (authData?.user) {
+        try {
+          const { data: userTypeData } = await supabase
+            .from('user_types')
+            .select('user_type')
+            .eq('user_id', authData.user.id)
+            .maybeSingle();
+            
+          if (userTypeData && (userTypeData.user_type === 'customer' || userTypeData.user_type === 'craftsman')) {
+            // Store in localStorage for immediate access on page load
+            localStorage.setItem("userType", userTypeData.user_type);
+            
+            // Also update the user metadata to ensure consistency
+            await supabase.auth.updateUser({
+              data: { user_type: userTypeData.user_type }
+            });
+          }
+        } catch (fetchError) {
+          console.error("Error fetching user type after login:", fetchError);
+          // Non-blocking error, we'll continue with login
+        }
       }
 
       toast.success("Prihlásenie úspešné!", {
@@ -123,7 +155,6 @@ const Login = () => {
       toast.error("Pri prihlásení nastala chyba", {
         duration: 3000,
       });
-    } finally {
       setIsLoading(false);
     }
   };
