@@ -7,13 +7,17 @@ import { useChatActions } from "@/hooks/useChatActions";
 import { useChatSubscription } from "@/hooks/useChatSubscription";
 import { ChatContact } from "@/types/chat";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BookingRequestForm from "@/components/booking/BookingRequestForm";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Chat: React.FC = () => {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const { contacts, contactsLoading, refetchContacts } = useContacts();
   const { messages, refetchMessages, contactDetails, customerReviews } = useMessages(selectedContact, refetchContacts);
   const { sendMessage, archiveConversation, deleteConversation } = useChatActions(
@@ -24,6 +28,7 @@ const Chat: React.FC = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   
   const refreshData = useCallback(() => {
     console.log("Manual data refresh triggered");
@@ -69,6 +74,7 @@ const Chat: React.FC = () => {
         if (contact) {
           console.log("Setting selected contact from booking redirect (contact ID):", contact);
           setSelectedContact(contact);
+          if (isMobile) setSheetOpen(true);
           navigate('/messages', { replace: true });
           return;
         }
@@ -79,6 +85,7 @@ const Chat: React.FC = () => {
         if (contact) {
           console.log("Setting selected contact from booking redirect (conversation ID):", contact);
           setSelectedContact(contact);
+          if (isMobile) setSheetOpen(true);
           navigate('/messages', { replace: true });
           return;
         }
@@ -90,6 +97,7 @@ const Chat: React.FC = () => {
       if (contact) {
         console.log("Setting selected contact from URL params:", contact);
         setSelectedContact(contact);
+        if (isMobile) setSheetOpen(true);
         navigate('/messages', { replace: true });
       }
     } else if (conversationId && contacts && contacts.length > 0) {
@@ -97,14 +105,22 @@ const Chat: React.FC = () => {
       if (contact) {
         console.log("Setting selected contact from conversation ID:", contact);
         setSelectedContact(contact);
+        if (isMobile) setSheetOpen(true);
         navigate('/messages', { replace: true });
       }
     }
-  }, [contacts, location, navigate]);
+  }, [contacts, location, navigate, isMobile]);
   
   const handleContactSelect = (contact: ChatContact) => {
     console.log("Selected contact:", contact);
     setSelectedContact(contact);
+    if (isMobile) {
+      setSheetOpen(true);
+    }
+  };
+  
+  const handleCloseChat = () => {
+    setSheetOpen(false);
   };
   
   const handleSendMessage = async (content: string, metadata?: any) => {
@@ -142,6 +158,68 @@ const Chat: React.FC = () => {
     return id;
   };
   
+  // Mobile view using Sheet component
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-[75vh]">
+        {/* Contact list is always visible on mobile */}
+        <div className="w-full h-full border rounded-lg shadow-sm bg-white">
+          <ChatList 
+            contacts={contacts} 
+            selectedContactId={selectedContact?.id} 
+            onSelectContact={handleContactSelect}
+            loading={contactsLoading}
+          />
+        </div>
+        
+        {/* Chat window appears as a sliding sheet */}
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetContent side="bottom" className="h-[92vh] p-0 pt-8">
+            <div className="flex flex-col h-full">
+              <div className="flex items-center px-4 py-2 border-b">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleCloseChat}
+                  className="mr-2"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <h2 className="text-lg font-semibold">
+                  {selectedContact?.name || "Chat"}
+                </h2>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <ChatWindow 
+                  contact={selectedContact} 
+                  messages={messages}
+                  onSendMessage={handleSendMessage}
+                  onArchive={archiveConversation}
+                  onDelete={deleteConversation}
+                  contactDetails={contactDetails}
+                  customerReviews={customerReviews}
+                  isMobile={true}
+                />
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+        
+        {showBookingForm && (
+          <BookingRequestForm
+            onSubmit={(content, metadata) => {
+              handleSendMessage(content, metadata);
+              setShowBookingForm(false);
+            }}
+            onCancel={() => setShowBookingForm(false)}
+            craftsmanId={getCraftsmanId()}
+          />
+        )}
+      </div>
+    );
+  }
+  
+  // Desktop view (unchanged)
   return (
     <div className="flex flex-col">
       <div className="flex bg-white rounded-lg shadow-sm overflow-hidden h-[75vh]">

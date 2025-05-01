@@ -65,6 +65,7 @@ interface ChatWindowProps {
   onDelete: () => void;
   contactDetails?: any;
   customerReviews?: any[];
+  isMobile?: boolean;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ 
@@ -74,7 +75,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   onArchive,
   onDelete,
   contactDetails,
-  customerReviews = []
+  customerReviews = [],
+  isMobile = false
 }) => {
   const { user, userType } = useAuth();
   const [messageText, setMessageText] = useState("");
@@ -483,23 +485,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     return contact?.contactId || contact?.id || '';
   };
   
-  return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b flex justify-between items-center">
+  const renderHeader = () => {
+    return (
+      <div className={`p-2 ${isMobile ? 'px-2' : 'p-4'} border-b flex justify-between items-center`}>
         <div className="flex items-center">
-          <Avatar className="h-10 w-10 mr-3">
+          <Avatar className={`${isMobile ? 'h-8 w-8 mr-2' : 'h-10 w-10 mr-3'}`}>
             <AvatarImage src={getAvatarUrl()} alt={getContactName()} />
             <AvatarFallback>{getContactName().substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
-            <h2 className="font-semibold">{getContactName()}</h2>
-            <p className="text-xs text-gray-500">
-              {contact.user_type === 'craftsman' ? 'Remeselník' : 'Zákazník'}
-            </p>
+            <h2 className={`font-semibold ${isMobile ? 'text-base' : ''}`}>{getContactName()}</h2>
+            {!isMobile && (
+              <p className="text-xs text-gray-500">
+                {contact.user_type === 'craftsman' ? 'Remeselník' : 'Zákazník'}
+              </p>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
-          {userType === 'customer' && contact.user_type === 'craftsman' && (
+          {/* Show fewer actions on mobile */}
+          {userType === 'customer' && contact.user_type === 'craftsman' && !isMobile && (
             <Button 
               variant="outline" 
               size="sm" 
@@ -510,12 +515,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               Rezervácia
             </Button>
           )}
-          <Button variant="ghost" size="icon" title="Videohovor">
-            <Video className="h-5 w-5 text-gray-500" />
-          </Button>
-          <Button variant="ghost" size="icon" title="Telefonický hovor">
-            <Phone className="h-5 w-5 text-gray-500" />
-          </Button>
+          {!isMobile && (
+            <>
+              <Button variant="ghost" size="icon" title="Videohovor">
+                <Video className="h-5 w-5 text-gray-500" />
+              </Button>
+              <Button variant="ghost" size="icon" title="Telefonický hovor">
+                <Phone className="h-5 w-5 text-gray-500" />
+              </Button>
+            </>
+          )}
           <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
             <DialogTrigger asChild>
               <Button variant="ghost" size="icon" title="Informácie o užívateľovi">
@@ -652,6 +661,24 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {userType === 'customer' && contact.user_type === 'craftsman' && isMobile && (
+                <DropdownMenuItem onClick={() => setShowBookingForm(true)}>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Rezervácia termínu
+                </DropdownMenuItem>
+              )}
+              {isMobile && (
+                <>
+                  <DropdownMenuItem>
+                    <Phone className="h-4 w-4 mr-2" />
+                    Telefonický hovor
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Video className="h-4 w-4 mr-2" />
+                    Videohovor
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuItem onClick={() => setShowArchiveDialog(true)}>
                 <Archive className="h-4 w-4 mr-2" />
                 Archivovať konverzáciu
@@ -664,8 +691,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </DropdownMenu>
         </div>
       </div>
+    );
+  };
+  
+  return (
+    <div className="flex flex-col h-full">
+      {renderHeader()}
       
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+      <div className={`flex-1 overflow-y-auto p-4 ${isMobile ? 'pb-20' : ''} bg-gray-50`}>
         {showBookingForm ? (
           <BookingRequestForm 
             onSubmit={handleSendBookingRequest} 
@@ -680,15 +713,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               </div>
             ) : (
               messages.map((message) => {
-                console.log("Processing message:", message);
-                
                 if (isBookingRequest(message)) {
-                  console.log("Found booking request message:", message);
                   return renderBookingRequest(message);
                 } 
                 
                 if (isBookingResponse(message)) {
-                  console.log("Found booking response message:", message);
                   return renderBookingResponse(message);
                 }
                 
@@ -714,22 +743,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       </div>
       
       {!showBookingForm && (
-        <div className="p-4 border-t">
+        <div className={`${isMobile ? 'fixed bottom-0 left-0 right-0 p-2 bg-white border-t' : 'p-4 border-t'}`}>
           <div className="flex gap-2">
             <Textarea
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Napíšte správu..."
-              className="resize-none min-h-[60px]"
-              rows={2}
+              className={`resize-none ${isMobile ? 'min-h-[48px] text-base' : 'min-h-[60px]'}`}
+              rows={isMobile ? 1 : 2}
             />
             <Button 
               onClick={handleSendMessage} 
               disabled={!messageText.trim()} 
               className="self-end"
+              size={isMobile ? "sm" : "default"}
             >
-              <Send className="h-5 w-5" />
+              <Send className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
             </Button>
           </div>
         </div>
