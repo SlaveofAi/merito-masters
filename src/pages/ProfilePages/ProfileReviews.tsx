@@ -82,10 +82,10 @@ const ProfileReviewsContent: React.FC = () => {
       <div className="min-h-screen bg-gray-50">
         <ProfileHeader />
 
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-6">
           <ProfileNavigation activeTab="reviews" userType={profileData.user_type} />
           
-          <div className="mt-6 sm:mt-8">
+          <div className="mt-4 sm:mt-8">
             {isCustomerProfile ? (
               <CustomerReviewsTab />
             ) : (

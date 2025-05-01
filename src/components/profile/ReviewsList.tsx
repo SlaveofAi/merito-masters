@@ -113,7 +113,7 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
   if (!reviews || reviews.length === 0) {
     return (
       <Card>
-        <CardContent className="p-8 text-center">
+        <CardContent className="p-6 sm:p-8 text-center">
           <p className="text-gray-500">
             Zatiaľ nie sú žiadne hodnotenia. Buďte prvý, kto ohodnotí tohto remeselníka.
           </p>

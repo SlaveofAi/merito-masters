@@ -71,28 +71,30 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             {onEdit && (
               <Button 
                 variant="ghost" 
-                size="icon" 
-                className="h-6 w-6"
+                size="sm"
+                className="h-7 w-7 p-0"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit();
                 }}
               >
-                <Edit className="h-3 w-3" />
+                <Edit className="h-3.5 w-3.5" />
+                <span className="sr-only">Upraviť</span>
               </Button>
             )}
             
             {onDelete && (
               <Button 
                 variant="ghost" 
-                size="icon" 
-                className="h-6 w-6 text-destructive hover:text-destructive"
+                size="sm"
+                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete();
                 }}
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-3.5 w-3.5" />
+                <span className="sr-only">Odstrániť</span>
               </Button>
             )}
           </div>

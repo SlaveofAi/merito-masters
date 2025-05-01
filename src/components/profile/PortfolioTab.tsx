@@ -262,7 +262,8 @@ const PortfolioTab: React.FC = () => {
   const selectedProject = projects.find(p => p.id === selectedProjectId) || projects[0];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
+      {/* Project list sidebar - hidden on mobile until toggled */}
       <div className="md:col-span-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-semibold">Moje projekty</h3>
@@ -278,7 +279,7 @@ const PortfolioTab: React.FC = () => {
         </div>
         
         {projects.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-1 gap-3">
             {projects.map((project) => (
               <ProjectCard
                 key={project.id}
@@ -307,19 +308,20 @@ const PortfolioTab: React.FC = () => {
         )}
       </div>
       
+      {/* Project detail view - full width on mobile */}
       <div className="md:col-span-8 bg-white rounded-lg overflow-hidden border border-border/50 shadow-sm">
         {selectedProject && selectedProject.images.length > 0 ? (
           <div>
-            <div className="aspect-video w-full relative">
-              <Carousel>
+            <div className="w-full relative">
+              <Carousel className="w-full">
                 <CarouselContent>
                   {selectedProject.images.map((image, index) => (
                     <CarouselItem key={index}>
-                      <div className="w-full aspect-video relative">
+                      <div className="w-full aspect-auto md:aspect-video relative flex items-center justify-center bg-black/5">
                         <img
                           src={image.image_url}
                           alt={`Project image ${index + 1}`}
-                          className="w-full h-full object-contain"
+                          className="max-w-full max-h-[70vh] object-contain"
                         />
                         {isCurrentUser && (
                           <Button
@@ -336,12 +338,12 @@ const PortfolioTab: React.FC = () => {
                     </CarouselItem>
                   ))}
                 </CarouselContent>
-                <CarouselPrevious className="left-2" />
-                <CarouselNext className="right-2" />
+                <CarouselPrevious className="left-2 sm:left-4" />
+                <CarouselNext className="right-2 sm:right-4" />
               </Carousel>
             </div>
             
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-xl font-semibold mb-2">{selectedProject.title}</h3>
@@ -374,9 +376,9 @@ const PortfolioTab: React.FC = () => {
         )}
         
         {userType === 'craftsman' && 'trade_category' in profileData && (
-          <div className="p-6 border-t border-border/50">
+          <div className="p-4 sm:p-6 border-t border-border/50">
             <h3 className="text-xl font-semibold mb-4">Fotogaléria prác</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {portfolioImages.map((image) => (
                 <div 
                   key={image.id} 
