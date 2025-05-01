@@ -23,14 +23,17 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
   // Get customer reviews if relevant
   const customerReviewsQuery = useCustomerReviews(selectedContact, user);
   
-  // Force refetch when switching conversations
+  // Force refetch when switching conversations to ensure read status is properly updated
   useEffect(() => {
     if (selectedContact) {
       console.log(`Selected contact changed to ${selectedContact.name}, refetching data`);
-      refetchContacts();
-      messagesQuery.refetch();
+      // First refetch messages to mark them as read
+      messagesQuery.refetch().then(() => {
+        // Then update the contacts list to reflect new unread counts
+        setTimeout(() => refetchContacts(), 300);
+      });
     }
-  }, [selectedContact, refetchContacts, messagesQuery]);
+  }, [selectedContact, messagesQuery, refetchContacts]);
   
   // Return a combined object with all data needed by Chat.tsx
   return {
