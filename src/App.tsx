@@ -16,6 +16,7 @@ import Messages from "./pages/Messages";
 import ApprovedBookings from "./pages/ApprovedBookings";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
+import Categories from "./pages/Categories";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/home" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/categories" element={<Categories />} />
             
             {/* Search route - redirect to home page */}
             <Route path="/search" element={<Navigate to="/home" replace />} />

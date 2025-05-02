@@ -21,7 +21,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab }) => {
     return (
       <Tabs defaultValue="reviews" className="w-full">
         <TabsList className={`grid w-full ${isMobile ? 'max-w-full' : 'max-w-md mx-auto'} md:grid-cols-1 mb-6 md:mb-8`}>
-          <TabsTrigger value="reviews" className="pointer-events-auto text-sm md:text-base">Hodnotenia</TabsTrigger>
+          <TabsTrigger value="reviews" className="text-sm md:text-base pointer-events-auto">Hodnotenia</TabsTrigger>
         </TabsList>
         
         <TabsContent value="reviews" className="animate-fade-in">
@@ -34,10 +34,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab }) => {
   // Default tabs for craftsman profiles
   return (
     <Tabs defaultValue={initialTab || "portfolio"} className="w-full pointer-events-auto">
-      <TabsList className={`grid w-full ${isMobile ? 'max-w-full grid-cols-3 text-xs gap-1' : 'max-w-md mx-auto md:grid-cols-3'} mb-4 md:mb-8 pointer-events-auto`}>
-        <TabsTrigger value="portfolio" className="pointer-events-auto text-sm md:text-base">Portfólio</TabsTrigger>
-        <TabsTrigger value="reviews" className="pointer-events-auto text-sm md:text-base">Hodnotenia</TabsTrigger>
-        <TabsTrigger value="calendar" className="pointer-events-auto text-sm md:text-base">Kalendár</TabsTrigger>
+      <TabsList className={`grid w-full ${isMobile ? 'max-w-full grid-cols-3 text-xs gap-1' : 'max-w-md mx-auto md:grid-cols-3'} mb-4 md:mb-8`}>
+        <TabsTrigger value="portfolio" className="text-xs md:text-base pointer-events-auto">Portfólio</TabsTrigger>
+        <TabsTrigger value="reviews" className="text-xs md:text-base pointer-events-auto">Hodnotenia</TabsTrigger>
+        <TabsTrigger value="calendar" className="text-xs md:text-base pointer-events-auto">Kalendár</TabsTrigger>
       </TabsList>
       
       <TabsContent value="portfolio" className="animate-fade-in">

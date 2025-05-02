@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -10,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import CraftsmanCard from "@/components/CraftsmanCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Craft categories for filtering
 const craftCategories = [
@@ -31,22 +33,41 @@ const craftCategories = [
 const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   
-  // Check if we have a search term from the Hero component
+  // Check if we have a search term or category from another component
   const initialSearchTerm = location.state?.searchTerm || "";
+  const initialCategoryFilter = location.state?.categoryFilter || "Všetky kategórie";
+  const initialLocationFilter = location.state?.userLocation || "";
   
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
-  const [locationFilter, setLocationFilter] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("Všetky kategórie");
+  const [locationFilter, setLocationFilter] = useState(initialLocationFilter);
+  const [categoryFilter, setCategoryFilter] = useState(initialCategoryFilter);
 
-  // Update search term when location state changes
+  // Update search term and category when location state changes
   useEffect(() => {
-    if (location.state?.searchTerm) {
-      setSearchTerm(location.state.searchTerm);
+    if (location.state) {
+      if (location.state.searchTerm) {
+        setSearchTerm(location.state.searchTerm);
+      }
+      if (location.state.categoryFilter) {
+        setCategoryFilter(location.state.categoryFilter);
+      }
+      if (location.state.userLocation) {
+        setLocationFilter(location.state.userLocation);
+      }
+      
       // Clear the location state to avoid persisting after navigation
       navigate(location.pathname, { replace: true });
     }
   }, [location.state, navigate, location.pathname]);
+
+  // Save user location to localStorage
+  useEffect(() => {
+    if (locationFilter) {
+      localStorage.setItem("userLocation", locationFilter);
+    }
+  }, [locationFilter]);
 
   // Fetch craftsmen data from Supabase
   const { data: craftsmen, isLoading, error } = useQuery({
@@ -81,6 +102,26 @@ const Index = () => {
       craftsman.trade_category === categoryFilter;
     
     return matchesSearch && matchesLocation && matchesCategory;
+  });
+
+  // Sort craftsmen by proximity to user location if available
+  const sortedCraftsmen = [...(filteredCraftsmen || [])].sort((a, b) => {
+    // If location filter is set, prioritize craftsmen from that location
+    if (locationFilter) {
+      const aMatchesExact = a.location.toLowerCase() === locationFilter.toLowerCase();
+      const bMatchesExact = b.location.toLowerCase() === locationFilter.toLowerCase();
+      
+      if (aMatchesExact && !bMatchesExact) return -1;
+      if (!aMatchesExact && bMatchesExact) return 1;
+      
+      const aContains = a.location.toLowerCase().includes(locationFilter.toLowerCase());
+      const bContains = b.location.toLowerCase().includes(locationFilter.toLowerCase());
+      
+      if (aContains && !bContains) return -1;
+      if (!aContains && bContains) return 1;
+    }
+    
+    return 0;
   });
 
   // Placeholder images for craftsmen without profile images
@@ -157,6 +198,17 @@ const Index = () => {
               Reset
             </Button>
           </div>
+          
+          {/* Link to categories page */}
+          <div className="mt-4 text-right">
+            <Button 
+              variant="link" 
+              onClick={() => navigate('/categories')}
+              className="text-primary"
+            >
+              Zobraziť všetky kategórie
+            </Button>
+          </div>
         </div>
         
         {isLoading ? (
@@ -174,7 +226,7 @@ const Index = () => {
               </Button>
             </CardContent>
           </Card>
-        ) : filteredCraftsmen?.length === 0 ? (
+        ) : sortedCraftsmen?.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-10">
               <p className="text-center text-muted-foreground mb-4">
@@ -193,7 +245,7 @@ const Index = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCraftsmen?.map((craftsman) => (
+            {sortedCraftsmen?.map((craftsman) => (
               <CraftsmanCard
                 key={craftsman.id}
                 id={craftsman.id}
@@ -201,6 +253,7 @@ const Index = () => {
                 profession={craftsman.trade_category}
                 location={craftsman.location}
                 imageUrl={craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category)}
+                customSpecialization={craftsman.custom_specialization}
               />
             ))}
           </div>
