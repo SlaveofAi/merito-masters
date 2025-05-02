@@ -136,7 +136,7 @@ const ProfileCalendarContent: React.FC = () => {
           
           <div className="mt-8 flex justify-center">
             <div className="w-full max-w-md">
-              <h2 className="text-2xl font-semibold mb-4 text-center">Kalendár dostupnosti</h2>
+              {/* Removed the "Kontakt" text and heading, only showing the calendar component */}
               <ProfileCalendar />
               
               {/* Login prompt for non-logged in users */}

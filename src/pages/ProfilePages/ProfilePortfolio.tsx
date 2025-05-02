@@ -1,48 +1,102 @@
-
 import React, { useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
-import { ProfileProvider } from "@/contexts/ProfileContext";
-import ProfilePage from "@/components/profile/ProfilePage";
-import { useAuth } from "@/hooks/useAuth";
+import Layout from "@/components/Layout";
+import ProfileHeader from "@/components/profile/ProfileHeader";
+import ProfileNavigation from "@/components/profile/ProfileNavigation";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
+import ProfileNotFound from "@/components/profile/ProfileNotFound";
+import PortfolioTab from "@/components/profile/PortfolioTab";
+import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
-const ProfilePortfolio = () => {
-  const { userType, loading } = useAuth();
+const ProfilePortfolioContent: React.FC = () => {
+  const {
+    loading,
+    profileData,
+    isCurrentUser,
+    profileNotFound,
+    error,
+    createDefaultProfileIfNeeded,
+    userType: profileUserType
+  } = useProfile();
+  const { userType } = useAuth();
   const navigate = useNavigate();
   
-  // First check: Immediate redirect if we already know this is a customer
-  if (userType === "customer") {
-    console.log("Customer detected in ProfilePortfolio, immediate redirect to reviews");
-    return <Navigate to="/profile/reviews" replace />;
-  }
+  // Check if this is a customer profile
+  const isCustomerProfile = profileData?.user_type === "customer";
   
-  // Second check: If still loading, show skeleton and perform redirect once loaded
+  // Redirect customer profiles to reviews page
   useEffect(() => {
-    if (loading) {
-      return; // Wait for loading to complete
+    if (isCustomerProfile && !loading) {
+      console.log("Customer profile detected, redirecting to reviews");
+      const profileIdParam = profileData?.id ? `/${profileData.id}` : "";
+      navigate(`/profile${profileIdParam}/reviews`);
     }
-    
-    if (userType === "customer") {
-      console.log("Customer detected in ProfilePortfolio useEffect, redirecting to reviews");
-      navigate("/profile/reviews", { replace: true });
-    }
-  }, [userType, loading, navigate]);
+  }, [isCustomerProfile, loading, profileData?.id, navigate]);
 
-  // While auth is loading, show loading state
   if (loading) {
     return (
-      <ProfileProvider>
+      <Layout>
         <ProfileSkeleton />
-      </ProfileProvider>
+      </Layout>
     );
   }
 
-  // Only show portfolio if we're sure it's not a customer
+  if (profileNotFound && !isCurrentUser) {
+    return (
+      <Layout>
+        <ProfileNotFound isCurrentUser={isCurrentUser} />
+      </Layout>
+    );
+  }
+
+  if (profileNotFound && isCurrentUser) {
+    return (
+      <Layout>
+        <ProfileNotFound
+          isCurrentUser={isCurrentUser}
+          onCreateProfile={createDefaultProfileIfNeeded}
+          error={error || undefined}
+        />
+      </Layout>
+    );
+  }
+
+  if (!profileData) {
+    return (
+      <Layout>
+        <ProfileNotFound
+          isCurrentUser={isCurrentUser}
+          onCreateProfile={createDefaultProfileIfNeeded}
+          error={error || "Profil nebol nájdený alebo nemáte k nemu prístup."}
+        />
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="min-h-screen bg-gray-50">
+        <ProfileHeader />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <ProfileNavigation activeTab="portfolio" userType={profileData?.user_type} />
+          <div className="mt-8">
+            <PortfolioTab />
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+// Wrapper component that provides the ProfileProvider context
+const ProfilePortfolioPage: React.FC = () => {
   return (
     <ProfileProvider>
-      <ProfilePage initialTab="portfolio" />
+      <ProfilePortfolioContent />
     </ProfileProvider>
   );
 };
 
-export default ProfilePortfolio;
+export default ProfilePortfolioPage;
