@@ -7,6 +7,7 @@ import { AlertTriangle, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase, checkConnection } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ReviewsListProps {
   reviews: any[];
@@ -29,6 +30,7 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
 }) => {
   const [connectionStatus, setConnectionStatus] = useState<boolean | null>(null);
   const [checkingConnection, setCheckingConnection] = useState(false);
+  const isMobile = useIsMobile();
 
   // Check Supabase connection on component mount
   useEffect(() => {
@@ -114,8 +116,8 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
 
   if (!reviews || reviews.length === 0) {
     return (
-      <Card>
-        <CardContent className="p-6 sm:p-8 text-center">
+      <Card className={isMobile ? "shadow-sm" : ""}>
+        <CardContent className={`${isMobile ? 'p-4' : 'p-6 sm:p-8'} text-center`}>
           <p className="text-gray-500">
             Zatiaľ nie sú žiadne hodnotenia. Buďte prvý, kto ohodnotí tohto remeselníka.
           </p>

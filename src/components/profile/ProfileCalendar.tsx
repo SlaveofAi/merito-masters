@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 import { CalendarIcon, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ProfileCalendar: React.FC = () => {
   const { user, userType } = useAuth();
@@ -20,6 +22,7 @@ const ProfileCalendar: React.FC = () => {
   const [month, setMonth] = useState<Date>(new Date());
   const [motivationalMessage, setMotivationalMessage] = useState<string>("");
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+  const isMobile = useIsMobile();
 
   // Enhanced craftsman detection - check both user_type field and trade_category existence
   const isCraftsmanProfile = profileData?.user_type === "craftsman" || 
@@ -193,7 +196,7 @@ const ProfileCalendar: React.FC = () => {
   if (isLoadingDates) {
     return (
       <Card className="shadow-sm">
-        <CardContent className="p-6 text-center">
+        <CardContent className={`${isMobile ? 'p-4' : 'p-6'} text-center`}>
           <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
           <p className="mt-2 text-sm text-gray-500">Načítavam kalendár dostupnosti...</p>
         </CardContent>
@@ -214,13 +217,13 @@ const ProfileCalendar: React.FC = () => {
     console.log("Rendering customer view of craftsman calendar");
     return (
       <Card className="shadow-sm">
-        <CardHeader>
+        <CardHeader className={isMobile ? "px-3 py-2" : ""}>
           <CardTitle className="flex items-center justify-center">
             <CalendarIcon className="mr-2 h-5 w-5" />
             <span>Kalendár dostupnosti</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className={isMobile ? "px-2 py-3" : ""}>
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertTriangle className="h-4 w-4 mr-2" />
@@ -234,7 +237,7 @@ const ProfileCalendar: React.FC = () => {
                 <Button variant="outline" size="sm" onClick={goToPreviousMonth} className="pointer-events-auto">
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <div className="text-sm font-medium capitalize">
+                <div className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium capitalize`}>
                   {month.toLocaleString("sk-SK", { month: "long", year: "numeric" })}
                 </div>
                 <Button variant="outline" size="sm" onClick={goToNextMonth} className="pointer-events-auto">
@@ -249,7 +252,7 @@ const ProfileCalendar: React.FC = () => {
               onSelect={() => {}} // Customers can't select dates
               month={month}
               onMonthChange={setMonth}
-              className="p-3 h-auto pointer-events-auto"
+              className={`p-3 h-auto pointer-events-auto ${isMobile ? 'text-sm' : ''}`}
               modifiers={{
                 available: selectedDates
               }}
@@ -264,7 +267,7 @@ const ProfileCalendar: React.FC = () => {
             
             <div className="mt-3 flex items-center justify-center">
               <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
-              <span className="text-xs text-gray-500">
+              <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500`}>
                 Remeselník je dostupný v označené dni
               </span>
             </div>
@@ -284,15 +287,15 @@ const ProfileCalendar: React.FC = () => {
                   <div className="flex flex-wrap gap-2 justify-center">
                     {selectedDates
                       .sort((a, b) => a.getTime() - b.getTime())
-                      .slice(0, 5)
+                      .slice(0, isMobile ? 3 : 5)
                       .map((date, i) => (
                         <div key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
                           {date.toLocaleDateString("sk-SK")}
                         </div>
                       ))}
-                    {selectedDates.length > 5 && (
+                    {selectedDates.length > (isMobile ? 3 : 5) && (
                       <div className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                        +{selectedDates.length - 5} ďalších
+                        +{selectedDates.length - (isMobile ? 3 : 5)} ďalších
                       </div>
                     )}
                   </div>
@@ -307,13 +310,13 @@ const ProfileCalendar: React.FC = () => {
 
   return (
     <Card className="shadow-sm">
-      <CardHeader>
+      <CardHeader className={isMobile ? "px-3 py-2" : ""}>
         <CardTitle className="flex items-center justify-center">
           <CalendarIcon className="mr-2 h-5 w-5" />
           <span>Kalendár dostupnosti</span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className={isMobile ? "px-2 py-3" : ""}>
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4 mr-2" />
@@ -327,7 +330,7 @@ const ProfileCalendar: React.FC = () => {
               <Button variant="outline" size="sm" onClick={goToPreviousMonth} className="pointer-events-auto">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <div className="text-sm font-medium capitalize">
+              <div className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium capitalize`}>
                 {month.toLocaleString("sk-SK", { month: "long", year: "numeric" })}
               </div>
               <Button variant="outline" size="sm" onClick={goToNextMonth} className="pointer-events-auto">
@@ -346,13 +349,13 @@ const ProfileCalendar: React.FC = () => {
             }}
             month={month}
             onMonthChange={setMonth}
-            className="p-3 h-auto pointer-events-auto"
+            className={`p-3 h-auto pointer-events-auto ${isMobile ? 'text-sm' : ''}`}
             disabled={!canEditCalendar}
           />
           
           <div className="mt-3 flex items-center justify-center">
             <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
-            <span className="text-xs text-gray-500">
+            <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500`}>
               {canEditCalendar 
                 ? "Vaše vybrané dostupné dni" 
                 : "Remeselník je dostupný v označené dni"}
@@ -378,15 +381,15 @@ const ProfileCalendar: React.FC = () => {
                 <div className="flex flex-wrap gap-2 justify-center">
                   {selectedDates
                     .sort((a, b) => a.getTime() - b.getTime())
-                    .slice(0, 5)
+                    .slice(0, isMobile ? 3 : 5)
                     .map((date, i) => (
                       <div key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
                         {date.toLocaleDateString("sk-SK")}
                       </div>
                     ))}
-                  {selectedDates.length > 5 && (
+                  {selectedDates.length > (isMobile ? 3 : 5) && (
                     <div className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                      +{selectedDates.length - 5} ďalších
+                      +{selectedDates.length - (isMobile ? 3 : 5)} ďalších
                     </div>
                   )}
                 </div>

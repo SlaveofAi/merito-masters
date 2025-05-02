@@ -11,12 +11,14 @@ import ReviewList from "./ReviewList";
 import AddReviewButton from "./AddReviewButton";
 import EditReviewSection from "./EditReviewSection";
 import { CraftsmanReviewWithCraftsman } from "./types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const CustomerReviewsTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
   const { user, userType } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingReview, setEditingReview] = useState<CraftsmanReviewWithCraftsman | null>(null);
+  const isMobile = useIsMobile();
   
   // Enhanced query to fetch reviews with craftsman names
   const { data: reviews, isLoading, refetch } = useQuery({
@@ -75,8 +77,10 @@ const CustomerReviewsTab: React.FC = () => {
   const canAddReview = !!user && userType && userType.toLowerCase() === 'customer';
 
   return (
-    <div>
-      <h3 className="text-xl font-semibold mb-4">Hodnotenia remeselníkov</h3>
+    <div className={isMobile ? "px-2" : ""}>
+      <h3 className={`text-xl font-semibold mb-4 ${isMobile ? 'text-center text-lg' : ''}`}>
+        Hodnotenia remeselníkov
+      </h3>
       
       {canAddReview && isCurrentUser && (
         <div className="mb-6">
