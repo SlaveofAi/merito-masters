@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -19,20 +20,20 @@ const ProfilePortfolioContent: React.FC = () => {
     createDefaultProfileIfNeeded,
     userType: profileUserType
   } = useProfile();
-  const { userType } = useAuth();
+  const { userType: viewerUserType } = useAuth();
   const navigate = useNavigate();
   
   // Check if this is a customer profile
   const isCustomerProfile = profileData?.user_type === "customer";
   
-  // Redirect customer profiles to reviews page
+  // Redirect customer profiles to reviews page (only when viewing their own profile)
   useEffect(() => {
-    if (isCustomerProfile && !loading) {
+    if (isCustomerProfile && isCurrentUser && !loading) {
       console.log("Customer profile detected, redirecting to reviews");
       const profileIdParam = profileData?.id ? `/${profileData.id}` : "";
       navigate(`/profile${profileIdParam}/reviews`);
     }
-  }, [isCustomerProfile, loading, profileData?.id, navigate]);
+  }, [isCustomerProfile, isCurrentUser, loading, profileData?.id, navigate]);
 
   if (loading) {
     return (

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Image, UploadCloud, Plus, Edit, Trash2, X, MessageSquare } from "lucide-react";
@@ -9,6 +10,7 @@ import { uploadPortfolioImages } from "@/utils/imageUpload";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 
 const PortfolioTab: React.FC = () => {
   const {
@@ -38,6 +40,10 @@ const PortfolioTab: React.FC = () => {
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [deletingImage, setDeletingImage] = useState<string | null>(null);
   const [processingProject, setProcessingProject] = useState(false);
+  
+  // New state for the image viewer dialog
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (portfolioImages.length > 0 && profileData) {
@@ -241,6 +247,12 @@ const PortfolioTab: React.FC = () => {
       setDeletingImage(null);
     }
   };
+  
+  // New function to handle opening an image in the viewer
+  const handleOpenImage = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    setViewerOpen(true);
+  };
 
   if (userType === 'customer') {
     return null; // Don't render anything while redirecting
@@ -335,7 +347,8 @@ const PortfolioTab: React.FC = () => {
                         <img
                           src={image.image_url}
                           alt={`Project image ${index + 1}`}
-                          className="max-w-full max-h-[70vh] object-contain"
+                          className="max-w-full max-h-[70vh] object-contain cursor-pointer"
+                          onClick={() => handleOpenImage(image.image_url)}
                         />
                         {isCurrentUser && (
                           <Button
@@ -396,7 +409,8 @@ const PortfolioTab: React.FC = () => {
               {portfolioImages.map((image) => (
                 <div 
                   key={image.id} 
-                  className="aspect-square rounded-md overflow-hidden border border-border/50 relative group"
+                  className="aspect-square rounded-md overflow-hidden border border-border/50 relative group cursor-pointer"
+                  onClick={() => handleOpenImage(image.image_url)}
                 >
                   <img 
                     src={image.image_url} 
@@ -409,7 +423,10 @@ const PortfolioTab: React.FC = () => {
                         variant="destructive"
                         size="icon"
                         className="opacity-90 hover:opacity-100"
-                        onClick={() => handleDeleteImage(image.id)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent opening the image viewer
+                          handleDeleteImage(image.id);
+                        }}
                         disabled={deletingImage === image.id}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -441,6 +458,26 @@ const PortfolioTab: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Image viewer dialog */}
+      <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
+        <DialogContent className="max-w-5xl w-full p-0 overflow-hidden bg-black/80">
+          <DialogClose className="absolute top-2 right-2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-50">
+            <X className="h-6 w-6 text-white" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
+          
+          {selectedImage && (
+            <div className="flex items-center justify-center h-screen max-h-[80vh] w-full">
+              <img 
+                src={selectedImage} 
+                alt="Zväčšený obrázok" 
+                className="max-w-full max-h-full object-contain" 
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
