@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import Hero from "@/components/Hero";
 import { Input } from "@/components/ui/input";
@@ -31,9 +30,23 @@ const craftCategories = [
 
 const Index = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
+  const location = useLocation();
+  
+  // Check if we have a search term from the Hero component
+  const initialSearchTerm = location.state?.searchTerm || "";
+  
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [locationFilter, setLocationFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("Všetky kategórie");
+
+  // Update search term when location state changes
+  useEffect(() => {
+    if (location.state?.searchTerm) {
+      setSearchTerm(location.state.searchTerm);
+      // Clear the location state to avoid persisting after navigation
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.state, navigate, location.pathname]);
 
   // Fetch craftsmen data from Supabase
   const { data: craftsmen, isLoading, error } = useQuery({

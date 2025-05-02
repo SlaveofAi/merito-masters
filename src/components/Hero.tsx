@@ -1,10 +1,17 @@
 
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 
 const Hero = () => {
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const handleSearch = () => {
+    navigate('/home', { state: { searchTerm } });
+  };
+  
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-white to-secondary/30">
       <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.01),transparent)] pointer-events-none"></div>
@@ -34,9 +41,12 @@ const Hero = () => {
               type="text"
               placeholder="Hľadajte podľa profesie alebo lokality..."
               className="w-full pl-10 pr-4 py-2.5 rounded-md border border-border bg-white/50 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
-          <Button size="lg" className="w-full sm:w-auto">
+          <Button size="lg" className="w-full sm:w-auto" onClick={handleSearch}>
             Vyhľadať
           </Button>
         </div>
