@@ -41,9 +41,13 @@ const PortfolioTab: React.FC = () => {
   const [deletingImage, setDeletingImage] = useState<string | null>(null);
   const [processingProject, setProcessingProject] = useState(false);
   
-  // New state for the image viewer dialog
+  // Image viewer dialog state
   const [viewerOpen, setViewerOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
+  // Gallery image viewer dialog state
+  const [galleryViewerOpen, setGalleryViewerOpen] = useState(false);
+  const [selectedGalleryImage, setSelectedGalleryImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (portfolioImages.length > 0 && profileData) {
@@ -248,10 +252,16 @@ const PortfolioTab: React.FC = () => {
     }
   };
   
-  // New function to handle opening an image in the viewer
+  // Function to open an image in the project viewer
   const handleOpenImage = (imageUrl: string) => {
     setSelectedImage(imageUrl);
     setViewerOpen(true);
+  };
+  
+  // Function to open an image in the gallery viewer
+  const handleOpenGalleryImage = (imageUrl: string) => {
+    setSelectedGalleryImage(imageUrl);
+    setGalleryViewerOpen(true);
   };
 
   if (userType === 'customer') {
@@ -410,7 +420,7 @@ const PortfolioTab: React.FC = () => {
                 <div 
                   key={image.id} 
                   className="aspect-square rounded-md overflow-hidden border border-border/50 relative group cursor-pointer"
-                  onClick={() => handleOpenImage(image.image_url)}
+                  onClick={() => handleOpenGalleryImage(image.image_url)}
                 >
                   <img 
                     src={image.image_url} 
@@ -459,7 +469,7 @@ const PortfolioTab: React.FC = () => {
         )}
       </div>
       
-      {/* Image viewer dialog */}
+      {/* Project images viewer dialog */}
       <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
         <DialogContent className="max-w-5xl w-full p-0 overflow-hidden bg-black/80">
           <DialogClose className="absolute top-2 right-2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-50">
@@ -471,6 +481,26 @@ const PortfolioTab: React.FC = () => {
             <div className="flex items-center justify-center h-screen max-h-[80vh] w-full">
               <img 
                 src={selectedImage} 
+                alt="Zväčšený obrázok" 
+                className="max-w-full max-h-full object-contain" 
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Gallery images viewer dialog */}
+      <Dialog open={galleryViewerOpen} onOpenChange={setGalleryViewerOpen}>
+        <DialogContent className="max-w-5xl w-full p-0 overflow-hidden bg-black/80">
+          <DialogClose className="absolute top-2 right-2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-50">
+            <X className="h-6 w-6 text-white" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
+          
+          {selectedGalleryImage && (
+            <div className="flex items-center justify-center h-screen max-h-[80vh] w-full">
+              <img 
+                src={selectedGalleryImage} 
                 alt="Zväčšený obrázok" 
                 className="max-w-full max-h-full object-contain" 
               />
