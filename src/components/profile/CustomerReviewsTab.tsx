@@ -15,11 +15,21 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { User, Edit2 } from "lucide-react";
 import { Button } from "../ui/button";
 
+// Define an extended type to include the craftsman data from the query
+type CraftsmanReviewWithCraftsman = CraftsmanReview & { 
+  craftsman: { 
+    id: string; 
+    name: string; 
+    trade_category: string; 
+    profile_image_url: string | null;
+  } 
+};
+
 const CustomerReviewsTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
   const { user, userType } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingReview, setEditingReview] = useState<CraftsmanReview | null>(null);
+  const [editingReview, setEditingReview] = useState<CraftsmanReviewWithCraftsman | null>(null);
   
   // Enhanced query to fetch reviews with craftsman names
   const { data: reviews, isLoading, refetch } = useQuery({
@@ -49,7 +59,7 @@ const CustomerReviewsTab: React.FC = () => {
       }
       
       console.log("Customer reviews fetched:", data?.length || 0);
-      return data as (CraftsmanReview & { craftsman: { id: string, name: string, trade_category: string, profile_image_url: string | null } })[];
+      return data as CraftsmanReviewWithCraftsman[];
     },
     enabled: !!profileData?.id,
   });
@@ -61,7 +71,7 @@ const CustomerReviewsTab: React.FC = () => {
     toast.success("Hodnotenie bolo úspešne upravené");
   };
 
-  const handleEditClick = (review: CraftsmanReview & { craftsman: { id: string, name: string, trade_category: string, profile_image_url: string | null } }) => {
+  const handleEditClick = (review: CraftsmanReviewWithCraftsman) => {
     setEditingReview(review);
     setShowAddForm(false);
   };
