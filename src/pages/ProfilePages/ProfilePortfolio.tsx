@@ -22,8 +22,8 @@ const ProfilePortfolio = () => {
       return; // Wait for loading to complete
     }
     
-    // Fixed comparison - make typescript happy by checking both equality and type
-    if (userType && userType === 'customer') {
+    // Use strict equality comparison - TypeScript now understands this is intentional
+    if (userType === 'customer') {
       console.log("Customer detected in ProfilePortfolio useEffect, redirecting to reviews");
       navigate("/profile/reviews", { replace: true });
     }
