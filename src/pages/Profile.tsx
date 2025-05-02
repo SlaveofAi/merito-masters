@@ -23,7 +23,6 @@ const Profile = () => {
       return; // Wait for loading to complete
     }
     
-    // Use strict equality with no type assertions
     if (!id && userType === 'customer') {
       console.log("Customer profile detected in Profile useEffect, redirecting to reviews");
       navigate("/profile/reviews", { replace: true });

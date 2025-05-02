@@ -22,7 +22,6 @@ const ProfilePortfolio = () => {
       return; // Wait for loading to complete
     }
     
-    // Ensure we're using string comparison
     if (userType === 'customer') {
       console.log("Customer detected in ProfilePortfolio useEffect, redirecting to reviews");
       navigate("/profile/reviews", { replace: true });
