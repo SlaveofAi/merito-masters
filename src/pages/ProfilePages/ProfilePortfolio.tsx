@@ -11,7 +11,7 @@ const ProfilePortfolio = () => {
   const navigate = useNavigate();
   
   // First check: Immediate redirect if we already know this is a customer
-  if (userType === 'customer') {
+  if (userType === "customer") {
     console.log("Customer detected in ProfilePortfolio, immediate redirect to reviews");
     return <Navigate to="/profile/reviews" replace />;
   }
@@ -22,7 +22,7 @@ const ProfilePortfolio = () => {
       return; // Wait for loading to complete
     }
     
-    if (userType === 'customer') {
+    if (userType === "customer") {
       console.log("Customer detected in ProfilePortfolio useEffect, redirecting to reviews");
       navigate("/profile/reviews", { replace: true });
     }

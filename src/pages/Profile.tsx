@@ -12,7 +12,7 @@ const Profile = () => {
   const navigate = useNavigate();
   
   // First check: Immediate redirect if we already know this is a customer
-  if (!id && userType === 'customer') {
+  if (!id && userType === "customer") {
     console.log("Customer profile detected in main Profile route, immediate redirect to reviews");
     return <Navigate to="/profile/reviews" replace />;
   }
@@ -23,7 +23,7 @@ const Profile = () => {
       return; // Wait for loading to complete
     }
     
-    if (!id && userType === 'customer') {
+    if (!id && userType === "customer") {
       console.log("Customer profile detected in Profile useEffect, redirecting to reviews");
       navigate("/profile/reviews", { replace: true });
     }
