@@ -47,7 +47,7 @@ export function Navigation() {
             </NavigationMenuItem>
             
             <NavigationMenuItem>
-              <Link to="/jobs">
+              <Link to="/bookings">
                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                   Zákazky
                 </NavigationMenuLink>

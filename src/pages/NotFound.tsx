@@ -1,5 +1,5 @@
 
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Home, ArrowLeft } from "lucide-react";
@@ -14,6 +14,11 @@ const NotFound = () => {
       location.pathname
     );
   }, [location.pathname]);
+
+  // Redirect from /jobs to /bookings automatically
+  if (location.pathname === "/jobs") {
+    return <Navigate to="/bookings" replace />;
+  }
 
   // Check if this is a profile calendar route that needs to be fixed
   const isProfileCalendarRoute = location.pathname.includes('/profile/') && location.pathname.includes('/contact');
