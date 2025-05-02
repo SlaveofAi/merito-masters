@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StarIcon, Trash2 } from "lucide-react";
-import { AlertCircle, CheckCircle2, CornerDownLeft, Edit, User } from "lucide-react";
+import { AlertCircle, CheckCircle2, CornerDownLeft, Edit, Edit2, User } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
@@ -22,6 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import ReviewForm from "./ReviewForm";
 
 type Review = {
   id: string;
@@ -45,6 +47,7 @@ interface ReviewCardProps {
   review: Review;
   reply?: ReviewReply | null;
   isCraftsman?: boolean;
+  canEdit?: boolean;
   onReplyUpdated?: () => void;
 }
 
@@ -52,6 +55,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   review,
   reply,
   isCraftsman = false,
+  canEdit = false,
   onReplyUpdated
 }) => {
   const { user, userType } = useAuth();
@@ -66,6 +70,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   const [localReply, setLocalReply] = useState<ReviewReply | null>(reply || null);
   const [craftsmanName, setCraftsmanName] = useState<string>('');
   const [craftsmanImageUrl, setCraftsmanImageUrl] = useState<string | null>(null);
+  const [isEditingReview, setIsEditingReview] = useState(false);
   
   const userId = user?.id;
   const isReviewOwner = userId === review.customer_id;
@@ -319,6 +324,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     }
   };
 
+  const handleEditReviewSuccess = () => {
+    setIsEditingReview(false);
+    if (onReplyUpdated) onReplyUpdated();
+  };
+
   const CustomerProfileLink = () => (
     <Link 
       to={`/profile/${review.customer_id}/reviews`}
@@ -336,6 +346,29 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       <h4 className="text-sm font-medium">{craftsmanName || 'Remeselník'}</h4>
     </Link>
   );
+
+  // If editing review, show ReviewForm
+  if (isEditingReview && isReviewOwner) {
+    return (
+      <Card className="mb-4">
+        <CardContent className="p-6">
+          <h4 className="text-lg font-medium mb-4">Upraviť hodnotenie</h4>
+          <ReviewForm
+            userId={userId || ""}
+            profileId={review.craftsman_id}
+            userName={review.customer_name}
+            onSuccess={handleEditReviewSuccess}
+            existingReview={{
+              id: review.id,
+              rating: review.rating,
+              comment: review.comment
+            }}
+            onCancel={() => setIsEditingReview(false)}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="mb-4">
@@ -374,36 +407,50 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                   ))}
                 </div>
 
-                {isReviewOwner && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive/90"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="max-w-[95%] w-[450px] rounded-lg">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Vymazať hodnotenie</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Naozaj chcete vymazať toto hodnotenie? Túto akciu nie je možné vrátiť späť.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-                        <AlertDialogCancel className="mt-2 sm:mt-0">Zrušiť</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={handleDeleteReview}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                {/* Edit/Delete buttons for review owner */}
+                <div className="flex gap-1">
+                  {canEdit && isReviewOwner && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8 text-gray-500 hover:text-primary"
+                      onClick={() => setIsEditingReview(true)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  {isReviewOwner && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive/90"
                         >
-                          Vymazať
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="max-w-[95%] w-[450px] rounded-lg">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Vymazať hodnotenie</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Naozaj chcete vymazať toto hodnotenie? Túto akciu nie je možné vrátiť späť.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                          <AlertDialogCancel className="mt-2 sm:mt-0">Zrušiť</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={handleDeleteReview}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Vymazať
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
               </div>
             </div>
             

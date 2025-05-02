@@ -30,6 +30,12 @@ const ReviewsTab: React.FC = () => {
   
   const canReplyToReview = user && userType && userType.toLowerCase() === 'craftsman' && isCurrentUser;
 
+  // Check if the current user is a customer viewing a craftsman's profile
+  const isCustomerViewingCraftsman = user && 
+    userType && userType.toLowerCase() === 'customer' && 
+    isCraftsmanProfile && 
+    !isCurrentUser;
+
   console.log("Reviews tab rendering with critical variables:", { 
     reviews: reviews?.length, 
     isCurrentUser, 
@@ -91,6 +97,7 @@ const ReviewsTab: React.FC = () => {
           reviews={reviews || []}
           isLoading={isLoadingReviews}
           canReplyToReview={canReplyToReview}
+          canEditReview={userType === 'customer'} // Enable edit for all customers
           userId={user?.id}
           onRefresh={handleRefresh}
           error={error}

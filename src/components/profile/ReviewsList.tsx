@@ -12,6 +12,7 @@ interface ReviewsListProps {
   reviews: any[];
   isLoading: boolean;
   canReplyToReview: boolean;
+  canEditReview?: boolean;
   userId?: string;
   onRefresh: () => void;
   error?: any;
@@ -21,6 +22,7 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
   reviews,
   isLoading,
   canReplyToReview,
+  canEditReview = false,
   userId,
   onRefresh,
   error
@@ -138,6 +140,7 @@ const ReviewsList: React.FC<ReviewsListProps> = ({
           review={review}
           reply={review.reply}
           isCraftsman={canReplyToReview}
+          canEdit={canEditReview && userId === review.customer_id}
           onReplyUpdated={onRefresh}
         />
       ))}
