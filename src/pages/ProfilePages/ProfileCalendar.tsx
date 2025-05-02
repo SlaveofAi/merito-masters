@@ -136,7 +136,6 @@ const ProfileCalendarContent: React.FC = () => {
           
           <div className="mt-8 flex justify-center">
             <div className="w-full max-w-md">
-              {/* Removed the "Kontakt" text and heading, only showing the calendar component */}
               <ProfileCalendar />
               
               {/* Login prompt for non-logged in users */}
@@ -148,8 +147,8 @@ const ProfileCalendarContent: React.FC = () => {
                     musíte byť prihlásený ako zákazník.
                   </p>
                   <div className="flex gap-4 justify-center">
-                    <Button onClick={() => navigate("/login")}>Prihlásiť sa</Button>
-                    <Button variant="outline" onClick={() => navigate("/register")}>Registrovať sa</Button>
+                    <Button onClick={() => navigate("/login")} className="pointer-events-auto">Prihlásiť sa</Button>
+                    <Button variant="outline" onClick={() => navigate("/register")} className="pointer-events-auto">Registrovať sa</Button>
                   </div>
                 </div>
               )}
