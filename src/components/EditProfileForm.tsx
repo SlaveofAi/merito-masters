@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import SpecializationInput from "@/components/profile/SpecializationInput";
 import { useProfile } from "@/contexts/ProfileContext";
+import DeleteAccount from "@/components/profile/DeleteAccount";
 
 const craftCategories = [
   'Stolár',
@@ -284,6 +285,9 @@ const EditProfileForm = ({ profile, userType, onUpdate }: EditProfileFormProps) 
             </Button>
           </form>
         </Form>
+
+        {/* Add the delete account section */}
+        <DeleteAccount />
       </CardContent>
     </Card>
   );
