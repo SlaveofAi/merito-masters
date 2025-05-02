@@ -43,18 +43,26 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     });
   }, [loading, authUserType, profileUserType, profileData, isCurrentUser, profileNotFound, user, error, initialTab]);
 
-  // Redirect customer profiles to reviews tab when viewing portfolio tab
+  // Use a more reliable determination of user type, with explicit precedence
+  const getEffectiveUserType = () => {
+    return (profileData?.user_type || profileUserType || authUserType || 
+          ('trade_category' in (profileData || {}) ? 'craftsman' : 'customer'));
+  };
+
+  // Super early check - redirect immediately if this is likely a customer viewing portfolio
   useEffect(() => {
-    const effectiveUserType = profileData?.user_type || profileUserType || authUserType;
+    // Only handle own profile routing here
+    if (!isCurrentUser) return;
     
-    // Handle customer redirect from portfolio to reviews
-    if (effectiveUserType === 'customer' && 
-        initialTab === 'portfolio' && 
-        isCurrentUser) {
-      console.log("Customer viewing portfolio tab, redirecting to reviews in ProfilePage");
+    const effectiveUserType = getEffectiveUserType();
+    
+    // Immediate redirect for customers viewing portfolio tab
+    if ((effectiveUserType === 'customer' || authUserType === 'customer') && 
+        initialTab === 'portfolio') {
+      console.log("Customer viewing portfolio tab, immediate redirect in ProfilePage");
       navigate("/profile/reviews", { replace: true });
     }
-  }, [profileData, profileUserType, authUserType, initialTab, isCurrentUser, navigate]);
+  }, [initialTab, isCurrentUser, authUserType, navigate]);
 
   useEffect(() => {
     if (isCurrentUser && profileNotFound && createDefaultProfileIfNeeded) {
@@ -62,7 +70,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
       setTimeout(() => {
         createDefaultProfileIfNeeded?.().catch(err => {
           console.error("Error creating profile:", err);
-          toast.error("Nastala chyba pri vytváraní profilu", {
+          toast.error("Nastala chyba pri vytváran�� profilu", {
             description: err.message || "Neočakávaná chyba"
           });
         });
@@ -219,23 +227,14 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     );
   }
 
-  // Use a more reliable determination of user type, with explicit precedence
-  // 1. Check profileData.user_type first (from the profile data)
-  // 2. Then check profileUserType from context
-  // 3. Then check authUserType from auth context
-  // 4. Fall back to checking if profile has trade_category (for backward compatibility)
-  const effectiveUserType = profileData.user_type || 
-                           profileUserType || 
-                           authUserType || 
-                           ('trade_category' in profileData ? 'craftsman' : 'customer');
-                           
+  // Extra safety check - if we still somehow got to this point as a customer in portfolio tab, redirect
+  const effectiveUserType = getEffectiveUserType();
   console.log("Using effective user type for display:", effectiveUserType);
   
-  // If we're a customer profile, immediately redirect to reviews
+  // Final safeguard - if we're a customer profile viewing portfolio tab, redirect immediately
   if (effectiveUserType === 'customer' && initialTab === 'portfolio') {
-    console.log("Customer profile detected in portfolio view, redirecting to reviews");
+    console.log("Customer profile detected in portfolio view, final redirect safeguard");
     navigate("/profile/reviews", { replace: true });
-    // Return loading state while redirect happens
     return (
       <Layout>
         <ProfileSkeleton />
