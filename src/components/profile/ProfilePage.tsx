@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -6,7 +7,7 @@ import { toast } from "sonner";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import PortfolioTab from "@/components/profile/PortfolioTab";
 import ReviewsTab from "@/components/profile/ReviewsTab";
-import ContactTab from "@/components/profile/ContactTab";
+import ProfileCalendar from "@/components/profile/ProfileCalendar";
 import CustomerReviewsTab from "@/components/profile/CustomerReviewsTab";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
@@ -264,7 +265,7 @@ const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null, initia
     return (
       <Tabs defaultValue="reviews" className="w-full">
         <TabsList className="grid w-full max-w-md mx-auto md:grid-cols-1 mb-8">
-          <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>
+          <TabsTrigger value="reviews" className="pointer-events-auto">Hodnotenia</TabsTrigger>
         </TabsList>
         
         <TabsContent value="reviews" className="animate-fade-in">
@@ -276,11 +277,11 @@ const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null, initia
   
   // Default tabs for craftsman profiles
   return (
-    <Tabs defaultValue={initialTab || "portfolio"} className="w-full">
-      <TabsList className="grid w-full max-w-md mx-auto md:grid-cols-3 mb-8">
-        <TabsTrigger value="portfolio">Portfólio</TabsTrigger>
-        <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>
-        <TabsTrigger value="calendar">Kalendár</TabsTrigger>
+    <Tabs defaultValue={initialTab || "portfolio"} className="w-full pointer-events-auto">
+      <TabsList className="grid w-full max-w-md mx-auto md:grid-cols-3 mb-8 pointer-events-auto">
+        <TabsTrigger value="portfolio" className="pointer-events-auto">Portfólio</TabsTrigger>
+        <TabsTrigger value="reviews" className="pointer-events-auto">Hodnotenia</TabsTrigger>
+        <TabsTrigger value="calendar" className="pointer-events-auto">Kalendár</TabsTrigger>
       </TabsList>
       
       <TabsContent value="portfolio" className="animate-fade-in">
@@ -291,8 +292,8 @@ const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null, initia
         <ReviewsTab />
       </TabsContent>
       
-      <TabsContent value="calendar" className="animate-fade-in">
-        <ContactTab />
+      <TabsContent value="calendar" className="animate-fade-in pointer-events-auto">
+        <ProfileCalendar />
       </TabsContent>
     </Tabs>
   );

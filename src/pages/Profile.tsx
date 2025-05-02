@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { ProfileProvider } from "@/contexts/ProfileContext";
@@ -33,10 +32,14 @@ const Profile = () => {
   if (loading && !id) {
     return <ProfileSkeleton />;
   }
+
+  // For the main Profile route, we want to show the calendar if explicitly requested
+  // Otherwise, the default tab is set to "portfolio"
+  const initialTab = window.location.pathname.endsWith('/calendar') ? "calendar" : "portfolio";
   
   return (
     <ProfileProvider>
-      <ProfilePage initialTab="portfolio" />
+      <ProfilePage initialTab={initialTab} />
     </ProfileProvider>
   );
 };

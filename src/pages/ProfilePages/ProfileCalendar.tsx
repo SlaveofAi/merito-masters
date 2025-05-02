@@ -128,14 +128,14 @@ const ProfileCalendarContent: React.FC = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pointer-events-auto">
         <ProfileHeader />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <ProfileNavigation activeTab="calendar" userType={profileData?.user_type} />
           
-          <div className="mt-8 flex justify-center">
-            <div className="w-full max-w-md">
+          <div className="mt-8 flex justify-center pointer-events-auto">
+            <div className="w-full max-w-md pointer-events-auto">
               <ProfileCalendar />
               
               {/* Login prompt for non-logged in users */}
