@@ -22,7 +22,8 @@ const ProfilePortfolio = () => {
       return; // Wait for loading to complete
     }
     
-    if (userType === 'customer') {
+    // Fixed here: Compare as strings and ensure TypeScript understands equality check is intentional
+    if (userType && userType.toString() === 'customer') {
       console.log("Customer detected in ProfilePortfolio useEffect, redirecting to reviews");
       navigate("/profile/reviews", { replace: true });
     }
