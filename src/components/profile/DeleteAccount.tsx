@@ -21,28 +21,15 @@ const DeleteAccount: React.FC = () => {
 
     setIsDeleting(true);
     try {
-      // 1. Delete user profiles data first
-      const { error: deleteProfileError } = await supabase
-        .from("user_types")
-        .delete()
-        .eq("user_id", user.id);
-
-      if (deleteProfileError) {
-        throw new Error(`Chyba pri mazaní typu používateľa: ${deleteProfileError.message}`);
-      }
-
-      // 2. Delete auth user account
-      const { error } = await supabase.auth.admin.deleteUser(user.id);
+      // Call the delete_user function we created in the database
+      // This will handle all the data deletion
+      const { error } = await supabase.rpc('delete_user');
       
       if (error) {
-        // If admin delete fails, try regular delete (requires recent login)
-        const { error: deleteUserError } = await supabase.rpc('delete_user');
-        if (deleteUserError) {
-          throw new Error(`Chyba pri mazaní účtu: ${deleteUserError.message}`);
-        }
+        throw new Error(`Chyba pri mazaní účtu: ${error.message}`);
       }
 
-      // 3. Sign out the user
+      // Sign out the user after successful deletion
       await signOut();
       
       toast.success("Váš účet bol úspešne odstránený");

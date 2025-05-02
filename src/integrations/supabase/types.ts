@@ -395,6 +395,10 @@ export type Database = {
         Args: { p_review_id: string; p_craftsman_id: string; p_reply: string }
         Returns: undefined
       }
+      delete_user: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_review_replies_by_review_ids: {
         Args: { review_ids: string[] }
         Returns: {
