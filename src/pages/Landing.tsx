@@ -28,13 +28,6 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="text-2xl font-bold text-black">Majstri.sk</div>
           <div className="flex items-center gap-4">
-            <Button 
-              variant="outline"
-              onClick={() => navigate('/home')}
-              className="text-sm"
-            >
-              Nájsť remeselníka
-            </Button>
             <Link to="/login" className="text-sm font-medium hover:underline">
               Prihlásenie
             </Link>
@@ -48,14 +41,6 @@ const Landing = () => {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
             Platforma spájajúca profesionálnych remeselníkov s ľuďmi, ktorí hľadajú ich služby
           </p>
-          
-          <Button 
-            size="lg" 
-            className="mx-auto"
-            onClick={() => navigate('/home')}
-          >
-            Nájsť remeselníka
-          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl w-full">
