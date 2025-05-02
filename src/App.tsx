@@ -32,9 +32,6 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             
-            {/* Search route - redirect to home page with search functionality */}
-            <Route path="/search" element={<Navigate to="/home" replace />} />
-            
             {/* Profile routes */}
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:id" element={<Profile />} />
