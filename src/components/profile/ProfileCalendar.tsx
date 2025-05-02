@@ -19,20 +19,20 @@ const ProfileCalendar: React.FC = () => {
   const [isLoadingDates, setIsLoadingDates] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [month, setMonth] = useState<Date>(new Date());
-  const [motivationalMessage, setMotivationalMessage] = useState<string>('');
+  const [motivationalMessage, setMotivationalMessage] = useState<string>("");
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
 
   // Enhanced craftsman detection - check both user_type field and trade_category existence
-  const isCraftsmanProfile = profileData?.user_type === 'craftsman' || 
-                             (profileData && 'trade_category' in profileData);
-  const canEditCalendar = isCurrentUser && (isCraftsmanProfile || userType === 'craftsman');
+  const isCraftsmanProfile = profileData?.user_type === "craftsman" || 
+                             (profileData && "trade_category" in profileData);
+  const canEditCalendar = isCurrentUser && (isCraftsmanProfile || userType === "craftsman");
   
   useEffect(() => {
     console.log("ProfileCalendar component rendered", {
       isCraftsmanProfile,
       hasUserType: !!profileData?.user_type,
       profileUserType: profileData?.user_type,
-      hasTrade: profileData && 'trade_category' in profileData,
+      hasTrade: profileData && "trade_category" in profileData,
       isCurrentUser,
       userType,
       profileType: profileData?.user_type,
@@ -232,13 +232,13 @@ const ProfileCalendar: React.FC = () => {
           <div className="flex flex-col">
             <div className="p-3 border-b">
               <div className="flex items-center justify-between">
-                <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+                <Button variant="outline" size="sm" onClick={goToPreviousMonth} className="pointer-events-auto">
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <div className="text-sm font-medium capitalize">
-                  {month.toLocaleString('sk-SK', { month: 'long', year: 'numeric' })}
+                  {month.toLocaleString("sk-SK", { month: "long", year: "numeric" })}
                 </div>
-                <Button variant="outline" size="sm" onClick={goToNextMonth}>
+                <Button variant="outline" size="sm" onClick={goToNextMonth} className="pointer-events-auto">
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -255,7 +255,7 @@ const ProfileCalendar: React.FC = () => {
                 available: selectedDates
               }}
               modifiersStyles={{
-                available: { backgroundColor: '#e6f7e6', color: '#111827', fontWeight: 'bold' }
+                available: { backgroundColor: "#e6f7e6", color: "#111827", fontWeight: "bold" }
               }}
               disabled={(date) => {
                 // A date is disabled if it's not in the selected dates (craftsman's available dates)
@@ -288,7 +288,7 @@ const ProfileCalendar: React.FC = () => {
                       .slice(0, 5)
                       .map((date, i) => (
                         <div key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                          {date.toLocaleDateString('sk-SK')}
+                          {date.toLocaleDateString("sk-SK")}
                         </div>
                       ))}
                     {selectedDates.length > 5 && (
@@ -325,13 +325,13 @@ const ProfileCalendar: React.FC = () => {
         <div className="flex flex-col items-center">
           <div className="p-3 border-b w-full">
             <div className="flex items-center justify-between">
-              <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+              <Button variant="outline" size="sm" onClick={goToPreviousMonth} className="pointer-events-auto">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <div className="text-sm font-medium capitalize">
-                {month.toLocaleString('sk-SK', { month: 'long', year: 'numeric' })}
+                {month.toLocaleString("sk-SK", { month: "long", year: "numeric" })}
               </div>
-              <Button variant="outline" size="sm" onClick={goToNextMonth}>
+              <Button variant="outline" size="sm" onClick={goToNextMonth} className="pointer-events-auto">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -382,7 +382,7 @@ const ProfileCalendar: React.FC = () => {
                     .slice(0, 5)
                     .map((date, i) => (
                       <div key={i} className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                        {date.toLocaleDateString('sk-SK')}
+                        {date.toLocaleDateString("sk-SK")}
                       </div>
                     ))}
                   {selectedDates.length > 5 && (
@@ -402,7 +402,7 @@ const ProfileCalendar: React.FC = () => {
             
             <Button
               onClick={saveAvailableDates}
-              className="w-full"
+              className="w-full pointer-events-auto"
               disabled={saving}
             >
               {saving ? (

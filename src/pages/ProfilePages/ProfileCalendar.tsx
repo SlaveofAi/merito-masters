@@ -26,11 +26,11 @@ const ProfileCalendarContent: React.FC = () => {
   const navigate = useNavigate();
 
   // Enhanced craftsman detection - check both user_type field and trade_category existence
-  const isCraftsmanProfile = profileData?.user_type === 'craftsman' || 
-                             (profileData && 'trade_category' in profileData);
+  const isCraftsmanProfile = profileData?.user_type === "craftsman" || 
+                             (profileData && "trade_category" in profileData);
                             
   // Check if this is a customer profile
-  const isCustomerProfile = profileData?.user_type === 'customer';
+  const isCustomerProfile = profileData?.user_type === "customer";
   
   // Enhanced debug log to help troubleshoot
   useEffect(() => {
@@ -41,7 +41,7 @@ const ProfileCalendarContent: React.FC = () => {
       profileType: profileData?.user_type,
       isCraftsmanProfile,
       isCustomerProfile,
-      hasTrade: profileData && 'trade_category' in profileData,
+      hasTrade: profileData && "trade_category" in profileData,
       userType,
       userId: user?.id,
       profileId: profileData?.id
@@ -50,7 +50,7 @@ const ProfileCalendarContent: React.FC = () => {
   
   // If user is logged in as craftsman but doesn't have a profile, create one
   useEffect(() => {
-    if (isCurrentUser && profileNotFound && userType === 'craftsman') {
+    if (isCurrentUser && profileNotFound && userType === "craftsman") {
       console.log("Craftsman profile not found, will try to create default profile");
       setTimeout(() => {
         createDefaultProfileIfNeeded?.()
@@ -67,7 +67,7 @@ const ProfileCalendarContent: React.FC = () => {
   useEffect(() => {
     if (isCustomerProfile && !loading && !authLoading) {
       console.log("Customer profile detected, redirecting to reviews");
-      const profileIdParam = profileData?.id !== user?.id ? `/${profileData?.id}` : '';
+      const profileIdParam = profileData?.id !== user?.id ? `/${profileData?.id}` : "";
       navigate(`/profile${profileIdParam}/reviews`);
     }
   }, [isCustomerProfile, loading, authLoading, profileData?.id, user?.id, navigate]);
@@ -135,7 +135,6 @@ const ProfileCalendarContent: React.FC = () => {
           <ProfileNavigation activeTab="calendar" userType={profileData?.user_type} />
           
           <div className="mt-8 flex justify-center">
-            {/* Calendar section - centered for all users */}
             <div className="w-full max-w-md">
               <h2 className="text-2xl font-semibold mb-4 text-center">Kalendár dostupnosti</h2>
               <ProfileCalendar />
@@ -149,8 +148,8 @@ const ProfileCalendarContent: React.FC = () => {
                     musíte byť prihlásený ako zákazník.
                   </p>
                   <div className="flex gap-4 justify-center">
-                    <Button onClick={() => navigate('/login')}>Prihlásiť sa</Button>
-                    <Button variant="outline" onClick={() => navigate('/register')}>Registrovať sa</Button>
+                    <Button onClick={() => navigate("/login")}>Prihlásiť sa</Button>
+                    <Button variant="outline" onClick={() => navigate("/register")}>Registrovať sa</Button>
                   </div>
                 </div>
               )}
