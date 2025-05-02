@@ -12,12 +12,14 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { User } from "lucide-react";
+import { User, Edit2 } from "lucide-react";
+import { Button } from "../ui/button";
 
 const CustomerReviewsTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
   const { user, userType } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingReview, setEditingReview] = useState<CraftsmanReview | null>(null);
   
   // Enhanced query to fetch reviews with craftsman names
   const { data: reviews, isLoading, refetch } = useQuery({
@@ -55,7 +57,17 @@ const CustomerReviewsTab: React.FC = () => {
   const handleReviewSuccess = () => {
     refetch();
     setShowAddForm(false);
-    toast.success("Hodnotenie bolo úspešne pridané");
+    setEditingReview(null);
+    toast.success("Hodnotenie bolo úspešne upravené");
+  };
+
+  const handleEditClick = (review: CraftsmanReview & { craftsman: { id: string, name: string, trade_category: string, profile_image_url: string | null } }) => {
+    setEditingReview(review);
+    setShowAddForm(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingReview(null);
   };
 
   if (isLoading) {
@@ -76,14 +88,14 @@ const CustomerReviewsTab: React.FC = () => {
       
       {canAddReview && isCurrentUser && (
         <div className="mb-6">
-          {!showAddForm ? (
+          {!showAddForm && !editingReview ? (
             <button 
               onClick={() => setShowAddForm(true)} 
               className="text-sm font-medium bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors"
             >
               Pridať nové hodnotenie
             </button>
-          ) : (
+          ) : showAddForm && !editingReview ? (
             <ReviewForm 
               userId={user.id} 
               profileId="empty"
@@ -92,7 +104,26 @@ const CustomerReviewsTab: React.FC = () => {
               isSelectCraftsman={true}
               onCancel={() => setShowAddForm(false)}
             />
-          )}
+          ) : null}
+        </div>
+      )}
+
+      {/* Editing form */}
+      {editingReview && (
+        <div className="mb-6">
+          <h4 className="text-md font-semibold mb-2">Upraviť hodnotenie pre: {editingReview.craftsman?.name}</h4>
+          <ReviewForm
+            userId={user?.id || ""}
+            profileId={editingReview.craftsman_id}
+            userName={user?.user_metadata?.name || user?.user_metadata?.full_name || 'Anonymný zákazník'}
+            onSuccess={handleReviewSuccess}
+            existingReview={{
+              id: editingReview.id,
+              rating: editingReview.rating,
+              comment: editingReview.comment
+            }}
+            onCancel={handleCancelEdit}
+          />
         </div>
       )}
 
@@ -164,8 +195,22 @@ const CustomerReviewsTab: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                {/* Added break-words to wrap text properly on mobile */}
                 <p className="text-gray-700 mt-4 break-words whitespace-normal">{review.comment || "Bez komentára"}</p>
+                
+                {/* Edit button - only show for the current user's reviews */}
+                {isCurrentUser && !editingReview && (
+                  <div className="mt-4 flex justify-end">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleEditClick(review)}
+                      className="flex items-center text-sm text-gray-500 hover:text-primary"
+                    >
+                      <Edit2 className="w-4 h-4 mr-1" />
+                      Upraviť
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
