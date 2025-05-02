@@ -56,6 +56,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     
     const effectiveUserType = getEffectiveUserType();
     
+    // Ensure we're using strict equality for type safety
     // Immediate redirect for customers viewing portfolio tab
     if ((effectiveUserType === 'customer' || authUserType === 'customer') && 
         initialTab === 'portfolio') {

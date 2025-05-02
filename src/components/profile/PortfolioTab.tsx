@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Image, UploadCloud, Plus, Edit, Trash2, X, MessageSquare } from "lucide-react";
@@ -9,6 +8,7 @@ import ProjectForm from "./ProjectForm";
 import { uploadPortfolioImages } from "@/utils/imageUpload";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const PortfolioTab: React.FC = () => {
   const {
@@ -20,6 +20,16 @@ const PortfolioTab: React.FC = () => {
     uploading,
     fetchPortfolioImages
   } = useProfile();
+  
+  const navigate = useNavigate();
+
+  // Early redirection for customers
+  useEffect(() => {
+    if (userType === 'customer') {
+      console.log("Customer detected in PortfolioTab component, redirecting to reviews");
+      navigate("/profile/reviews", { replace: true });
+    }
+  }, [userType, navigate]);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -231,6 +241,10 @@ const PortfolioTab: React.FC = () => {
       setDeletingImage(null);
     }
   };
+
+  if (userType === 'customer') {
+    return null; // Don't render anything while redirecting
+  }
 
   if (userType !== 'craftsman') {
     return (

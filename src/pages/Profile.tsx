@@ -23,8 +23,8 @@ const Profile = () => {
       return; // Wait for loading to complete
     }
     
-    // Using same pattern as in ProfilePortfolio for consistency
-    if (!id && userType && userType.toString() === 'customer') {
+    // Fixed comparison for consistency with ProfilePortfolio
+    if (!id && userType && userType === 'customer') {
       console.log("Customer profile detected in Profile useEffect, redirecting to reviews");
       navigate("/profile/reviews", { replace: true });
     }
