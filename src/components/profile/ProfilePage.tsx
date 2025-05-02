@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -11,7 +12,6 @@ import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
@@ -42,6 +42,19 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
       initialTab
     });
   }, [loading, authUserType, profileUserType, profileData, isCurrentUser, profileNotFound, user, error, initialTab]);
+
+  // Redirect customer profiles to reviews tab when viewing portfolio tab
+  useEffect(() => {
+    const effectiveUserType = profileData?.user_type || profileUserType || authUserType;
+    
+    // Handle customer redirect from portfolio to reviews
+    if (effectiveUserType === 'customer' && 
+        initialTab === 'portfolio' && 
+        isCurrentUser) {
+      console.log("Customer viewing portfolio tab, redirecting to reviews in ProfilePage");
+      navigate("/profile/reviews", { replace: true });
+    }
+  }, [profileData, profileUserType, authUserType, initialTab, isCurrentUser, navigate]);
 
   useEffect(() => {
     if (isCurrentUser && profileNotFound && createDefaultProfileIfNeeded) {
@@ -222,6 +235,12 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   if (effectiveUserType === 'customer' && initialTab === 'portfolio') {
     console.log("Customer profile detected in portfolio view, redirecting to reviews");
     navigate("/profile/reviews", { replace: true });
+    // Return loading state while redirect happens
+    return (
+      <Layout>
+        <ProfileSkeleton />
+      </Layout>
+    );
   }
 
   return (
