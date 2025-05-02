@@ -38,7 +38,8 @@ const ProfilePage: React.FC = () => {
       isCurrentUser,
       profileNotFound,
       userLoggedIn: !!user,
-      error: error || "none"
+      error: error || "none",
+      profileDataUserType: profileData?.user_type || "not available"
     });
   }, [loading, userType, profileUserType, profileData, isCurrentUser, profileNotFound, user, error]);
 
@@ -205,7 +206,10 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  // Use the most reliable source for user type
+  // Use the most reliable source for user type, with clear precedence
+  // 1. Check profileData.user_type first (most reliable)
+  // 2. Then check profileUserType from context
+  // 3. Finally fall back to userType from auth context
   const effectiveUserType = profileData.user_type || profileUserType || userType;
   console.log("Using effective user type for display:", effectiveUserType);
 
@@ -225,6 +229,7 @@ const ProfilePage: React.FC = () => {
 const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null }> = ({ userType }) => {
   console.log("Rendering ProfileTabs with userType:", userType);
   
+  // Force customer tabs for customer user type
   if (userType === 'customer') {
     return (
       <Tabs defaultValue="reviews" className="w-full">

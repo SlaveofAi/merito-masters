@@ -1,19 +1,25 @@
 
-import React from "react";
-import { useParams, Navigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { ProfileProvider } from "@/contexts/ProfileContext";
+import ProfilePage from "@/components/profile/ProfilePage";
+import { useAuth } from "@/hooks/useAuth";
 
 const Profile = () => {
   const { id } = useParams();
+  const { userType } = useAuth();
   
-  // Default to portfolio page when just accessing /profile
+  useEffect(() => {
+    // Add debugging for profile loading
+    console.log("Profile page loaded with:", {
+      id,
+      userType
+    });
+  }, [id, userType]);
+  
   return (
     <ProfileProvider>
-      {id ? (
-        <Navigate to={`/profile/${id}/portfolio`} replace />
-      ) : (
-        <Navigate to="/profile/portfolio" replace />
-      )}
+      <ProfilePage />
     </ProfileProvider>
   );
 };

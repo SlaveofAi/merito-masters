@@ -45,6 +45,9 @@ export const useProfileCore = (id?: string) => {
         fetchedUserType = authUserType;
         setUserType(authUserType);
         
+        // Always update localStorage with the latest user type
+        localStorage.setItem("userType", authUserType);
+        
         // Proceed directly to fetching profile data with the known user type
         const table = authUserType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
         console.log(`Fetching ${table} profile for user:`, userId);
@@ -109,6 +112,10 @@ export const useProfileCore = (id?: string) => {
       fetchedUserType = userTypeData.user_type;
       if (fetchedUserType === 'customer' || fetchedUserType === 'craftsman') {
         setUserType(fetchedUserType);
+        // Cache the user type for faster access
+        if (isOwner) {
+          localStorage.setItem("userType", fetchedUserType);
+        }
       } else {
         console.log("Invalid user type:", fetchedUserType);
         setUserType(null);
