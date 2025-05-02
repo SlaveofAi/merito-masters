@@ -20,7 +20,7 @@ const ProfilePortfolio = () => {
 
   return (
     <ProfileProvider>
-      <ProfilePage />
+      <ProfilePage initialTab="portfolio" />
     </ProfileProvider>
   );
 };

@@ -103,25 +103,41 @@ export const useProfileCore = (id?: string) => {
       
       if (!userTypeData) {
         console.log("No user type found for:", userId);
-        setUserType(null);
-        setProfileNotFound(true);
-        setLoading(false);
-        return;
-      }
-
-      fetchedUserType = userTypeData.user_type;
-      if (fetchedUserType === 'customer' || fetchedUserType === 'craftsman') {
-        setUserType(fetchedUserType);
-        // Cache the user type for faster access
+        
+        // Last effort - check cached user type in localStorage
         if (isOwner) {
-          localStorage.setItem("userType", fetchedUserType);
+          const cachedUserType = localStorage.getItem("userType");
+          if (cachedUserType === 'customer' || cachedUserType === 'craftsman') {
+            console.log("Using cached user type from localStorage:", cachedUserType);
+            setUserType(cachedUserType as 'customer' | 'craftsman');
+            fetchedUserType = cachedUserType;
+          } else {
+            setUserType(null);
+            setProfileNotFound(true);
+            setLoading(false);
+            return;
+          }
+        } else {
+          setUserType(null);
+          setProfileNotFound(true);
+          setLoading(false);
+          return;
         }
       } else {
-        console.log("Invalid user type:", fetchedUserType);
-        setUserType(null);
-        setProfileNotFound(true);
-        setLoading(false);
-        return;
+        fetchedUserType = userTypeData.user_type;
+        if (fetchedUserType === 'customer' || fetchedUserType === 'craftsman') {
+          setUserType(fetchedUserType);
+          // Cache the user type for faster access
+          if (isOwner) {
+            localStorage.setItem("userType", fetchedUserType);
+          }
+        } else {
+          console.log("Invalid user type:", fetchedUserType);
+          setUserType(null);
+          setProfileNotFound(true);
+          setLoading(false);
+          return;
+        }
       }
 
       // Now fetch the profile data based on user type

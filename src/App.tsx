@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -36,7 +36,7 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:id" element={<Profile />} />
             
-            {/* New profile sub-pages */}
+            {/* Profile sub-pages */}
             <Route path="/profile/portfolio" element={<ProfilePortfolio />} />
             <Route path="/profile/reviews" element={<ProfileReviews />} />
             <Route path="/profile/calendar" element={<ProfileCalendar />} />
@@ -47,6 +47,9 @@ const App = () => (
             <Route path="/messages" element={<Messages />} />
             {/* Bookings route */}
             <Route path="/bookings" element={<ApprovedBookings />} />
+            
+            {/* Legacy route redirection */}
+            <Route path="/jobs" element={<Navigate to="/bookings" replace />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

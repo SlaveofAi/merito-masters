@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,8 +14,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
-const ProfilePage: React.FC = () => {
-  const { user, userType, updateUserType } = useAuth();
+const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
+  const { user, userType: authUserType, updateUserType } = useAuth();
   const navigate = useNavigate();
   const {
     loading,
@@ -32,16 +31,17 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     console.log("ProfilePage rendering with:", {
       loading,
-      authUserType: userType,
+      authUserType,
       profileUserType,
       profileDataExists: !!profileData,
       isCurrentUser,
       profileNotFound,
       userLoggedIn: !!user,
       error: error || "none",
-      profileDataUserType: profileData?.user_type || "not available"
+      profileDataUserType: profileData?.user_type || "not available",
+      initialTab
     });
-  }, [loading, userType, profileUserType, profileData, isCurrentUser, profileNotFound, user, error]);
+  }, [loading, authUserType, profileUserType, profileData, isCurrentUser, profileNotFound, user, error, initialTab]);
 
   useEffect(() => {
     if (isCurrentUser && profileNotFound && createDefaultProfileIfNeeded) {
@@ -58,7 +58,7 @@ const ProfilePage: React.FC = () => {
   }, [isCurrentUser, profileNotFound, createDefaultProfileIfNeeded]);
 
   // For current user but no user type detected
-  if (user && !userType && isCurrentUser) {
+  if (user && !authUserType && isCurrentUser) {
     return (
       <Layout>
         <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -206,12 +206,23 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  // Use the most reliable source for user type, with clear precedence
-  // 1. Check profileData.user_type first (most reliable)
+  // Use a more reliable determination of user type, with explicit precedence
+  // 1. Check profileData.user_type first (from the profile data)
   // 2. Then check profileUserType from context
-  // 3. Finally fall back to userType from auth context
-  const effectiveUserType = profileData.user_type || profileUserType || userType;
+  // 3. Then check authUserType from auth context
+  // 4. Fall back to checking if profile has trade_category (for backward compatibility)
+  const effectiveUserType = profileData.user_type || 
+                           profileUserType || 
+                           authUserType || 
+                           ('trade_category' in profileData ? 'craftsman' : 'customer');
+                           
   console.log("Using effective user type for display:", effectiveUserType);
+  
+  // If we're a customer profile, immediately redirect to reviews
+  if (effectiveUserType === 'customer' && initialTab === 'portfolio') {
+    console.log("Customer profile detected in portfolio view, redirecting to reviews");
+    navigate("/profile/reviews", { replace: true });
+  }
 
   return (
     <Layout>
@@ -219,15 +230,15 @@ const ProfilePage: React.FC = () => {
         <ProfileHeader />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <ProfileTabs userType={effectiveUserType} />
+          <ProfileTabs userType={effectiveUserType} initialTab={initialTab} />
         </div>
       </div>
     </Layout>
   );
 };
 
-const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null }> = ({ userType }) => {
-  console.log("Rendering ProfileTabs with userType:", userType);
+const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null, initialTab?: string }> = ({ userType, initialTab }) => {
+  console.log("Rendering ProfileTabs with userType:", userType, "initialTab:", initialTab);
   
   // Force customer tabs for customer user type
   if (userType === 'customer') {
@@ -246,7 +257,7 @@ const ProfileTabs: React.FC<{ userType?: 'customer' | 'craftsman' | null }> = ({
   
   // Default tabs for craftsman profiles
   return (
-    <Tabs defaultValue="portfolio" className="w-full">
+    <Tabs defaultValue={initialTab || "portfolio"} className="w-full">
       <TabsList className="grid w-full max-w-md mx-auto md:grid-cols-3 mb-8">
         <TabsTrigger value="portfolio">Portfólio</TabsTrigger>
         <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>
