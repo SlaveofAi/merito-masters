@@ -3,11 +3,14 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Explicitly define the user type literals to help TypeScript understand they can be compared
+type UserType = 'customer' | 'craftsman' | null;
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  userType: 'customer' | 'craftsman' | null;
+  userType: UserType;
   signOut: () => Promise<void>;
   updateUserType: (type: 'customer' | 'craftsman') => Promise<void>;
 }
@@ -17,7 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [userType, setUserType] = useState<'customer' | 'craftsman' | null>(null);
+  const [userType, setUserType] = useState<UserType>(null);
   const [loading, setLoading] = useState(true);
   const [userTypeFetched, setUserTypeFetched] = useState(false);
 
