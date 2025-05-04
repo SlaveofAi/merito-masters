@@ -16,7 +16,7 @@ const HowItWorks: React.FC = () => {
               {t("how_it_works_title")}
             </h1>
             <p className="mt-4 text-lg text-gray-600">
-              {t("how_it_works_subtitle")}
+              {t("platform_connecting")}
             </p>
           </div>
 

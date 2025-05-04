@@ -37,8 +37,8 @@ const Terms = () => {
               {t("platform_user_types")}:
             </p>
             <ul className="list-disc pl-6 mt-2 space-y-1 text-muted-foreground">
-              <li><strong>{t("craftsman")}</strong>: {t("craftsman_desc")},</li>
-              <li><strong>{t("customer")}</strong>: {t("customer_desc")}.</li>
+              <li><strong>{t("craftsman")}</strong>: {t("craftsman_desc")}</li>
+              <li><strong>{t("customer")}</strong>: {t("customer_desc")}</li>
             </ul>
           </section>
           
