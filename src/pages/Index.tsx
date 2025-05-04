@@ -13,15 +13,17 @@ import CraftsmanCard from "@/components/CraftsmanCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getAllCategories } from "@/constants/categories";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { t } = useLanguage();
   
   // Check if we have a search term or category from another component
   const initialSearchTerm = location.state?.searchTerm || "";
-  const initialCategoryFilter = location.state?.categoryFilter || "Všetky kategórie";
+  const initialCategoryFilter = location.state?.categoryFilter || t("all_categories");
   const initialLocationFilter = location.state?.userLocation || "";
   
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
@@ -83,7 +85,7 @@ const Index = () => {
       craftsman.location.toLowerCase().includes(locationFilter.toLowerCase());
     
     const matchesCategory = 
-      categoryFilter === "Všetky kategórie" || 
+      categoryFilter === t("all_categories") || 
       craftsman.trade_category === categoryFilter ||
       craftsman.custom_specialization === categoryFilter;
     
@@ -138,14 +140,14 @@ const Index = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
         <div className="mb-12">
-          <h2 className="text-3xl font-bold mb-6">Nájdite najlepších remeselníkov</h2>
+          <h2 className="text-3xl font-bold mb-6">{t("find_best_craftsmen")}</h2>
           
           {/* Search and filter section */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             <div className="md:col-span-5 relative">
               <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
               <Input
-                placeholder="Hľadajte podľa mena alebo remesla..."
+                placeholder={t("search_name_craft")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -155,7 +157,7 @@ const Index = () => {
             <div className="md:col-span-3 relative">
               <MapPin className="absolute left-3 top-3 h-5 w-5 text-muted-foreground z-10" />
               <Input
-                placeholder="Zadajte lokalitu..."
+                placeholder={t("enter_location")}
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
                 className="pl-10"
@@ -169,7 +171,7 @@ const Index = () => {
               >
                 <SelectTrigger>
                   <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter podľa kategórie" />
+                  <SelectValue placeholder={t("filter_category")} />
                 </SelectTrigger>
                 <SelectContent>
                   {getAllCategories().map((category) => (
@@ -186,11 +188,11 @@ const Index = () => {
               onClick={() => {
                 setSearchTerm("");
                 setLocationFilter("");
-                setCategoryFilter("Všetky kategórie");
+                setCategoryFilter(t("all_categories"));
               }}
               variant="outline"
             >
-              Reset
+              {t("reset")}
             </Button>
           </div>
           
@@ -201,7 +203,7 @@ const Index = () => {
               onClick={() => navigate('/categories')}
               className="text-primary"
             >
-              Zobraziť všetky kategórie
+              {t("view_all_categories")}
             </Button>
           </div>
         </div>
@@ -214,10 +216,10 @@ const Index = () => {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-10">
               <p className="text-center text-muted-foreground mb-4">
-                Nastala chyba pri načítaní remeselníkov. Skúste to prosím neskôr.
+                {t("error_loading")}
               </p>
               <Button onClick={() => window.location.reload()}>
-                Skúsiť znova
+                {t("try_again")}
               </Button>
             </CardContent>
           </Card>
@@ -225,16 +227,16 @@ const Index = () => {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-10">
               <p className="text-center text-muted-foreground mb-4">
-                Nenašli sa žiadni remeselníci podľa vašich kritérií. Skúste upraviť vyhľadávanie.
+                {t("no_craftsmen_found")}
               </p>
               <Button 
                 onClick={() => {
                   setSearchTerm("");
                   setLocationFilter("");
-                  setCategoryFilter("Všetky kategórie");
+                  setCategoryFilter(t("all_categories"));
                 }}
               >
-                Zobraziť všetkých remeselníkov
+                {t("show_all_craftsmen")}
               </Button>
             </CardContent>
           </Card>
@@ -243,7 +245,7 @@ const Index = () => {
             {/* Legend for topped craftsmen */}
             <div className="flex items-center gap-2 mb-4 text-sm">
               <TrendingUp className="h-4 w-4 text-yellow-500" />
-              <span className="text-muted-foreground">Zvýraznené profily sú zobrazené na vrchu</span>
+              <span className="text-muted-foreground">{t("featured_profiles")}</span>
             </div>
           
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Menu, X, User, Hammer, Home, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import LanguageSwitcher from "./LanguageSwitcher";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const CustomNavigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,6 +15,7 @@ const CustomNavigation = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userType, setUserType] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (user) {
@@ -75,20 +77,20 @@ const CustomNavigation = () => {
                     className="border-transparent text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                   >
                     <Home className="mr-1.5 h-4 w-4" />
-                    Domov
+                    {t("home")}
                   </Link>
                   <Link
                     to="/categories"
                     className="border-transparent text-gray-500 hover:text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-gray-300 text-sm font-medium"
                   >
-                    Kategórie
+                    {t("categories")}
                   </Link>
                   {userType === 'customer' && (
                     <Link
                       to="/home"
                       className="border-transparent text-gray-500 hover:text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-gray-300 text-sm font-medium"
                     >
-                      Nájsť remeselníka
+                      {t("find_craftsman")}
                     </Link>
                   )}
                   <Link
@@ -96,7 +98,7 @@ const CustomNavigation = () => {
                     className="border-transparent text-gray-500 hover:text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-gray-300 text-sm font-medium"
                   >
                     <Hammer className="mr-1.5 h-4 w-4" />
-                    Zákazky
+                    {t("jobs")}
                   </Link>
                 </>
               ) : (
@@ -105,13 +107,13 @@ const CustomNavigation = () => {
                     to="/how-it-works"
                     className="border-transparent text-gray-500 hover:text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-gray-300 text-sm font-medium"
                   >
-                    Ako to funguje
+                    {t("how_it_works")}
                   </Link>
                   <Link
                     to="/benefits"
                     className="border-transparent text-gray-500 hover:text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-gray-300 text-sm font-medium"
                   >
-                    Výhody
+                    {t("benefits")}
                   </Link>
                 </>
               )}
@@ -126,26 +128,26 @@ const CustomNavigation = () => {
                 <Link to="/messages">
                   <Button variant="ghost" className="flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
-                    <span>Správy</span>
+                    <span>{t("messages")}</span>
                   </Button>
                 </Link>
                 <Link to="/profile">
                   <Button variant="ghost" className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    <span>Môj profil</span>
+                    <span>{t("my_profile")}</span>
                   </Button>
                 </Link>
                 <Button variant="outline" onClick={handleSignOut}>
-                  Odhlásiť sa
+                  {t("sign_out")}
                 </Button>
               </>
             ) : (
               <>
                 <Link to="/login">
-                  <Button variant="ghost">Prihlásiť sa</Button>
+                  <Button variant="ghost">{t("login")}</Button>
                 </Link>
                 <Link to="/register">
-                  <Button>Registrovať sa</Button>
+                  <Button>{t("register")}</Button>
                 </Link>
               </>
             )}
@@ -177,14 +179,14 @@ const CustomNavigation = () => {
                   className="bg-gray-50 border-primary text-primary block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
                   onClick={toggleMenu}
                 >
-                  Domov
+                  {t("home")}
                 </Link>
                 <Link
                   to="/categories"
                   className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
                   onClick={toggleMenu}
                 >
-                  Kategórie
+                  {t("categories")}
                 </Link>
                 {userType === 'customer' && (
                   <Link
@@ -192,7 +194,7 @@ const CustomNavigation = () => {
                     className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
                     onClick={toggleMenu}
                   >
-                    Nájsť remeselníka
+                    {t("find_craftsman")}
                   </Link>
                 )}
                 <Link
@@ -200,7 +202,7 @@ const CustomNavigation = () => {
                   className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
                   onClick={toggleMenu}
                 >
-                  Zákazky
+                  {t("jobs")}
                 </Link>
               </>
             ) : (
@@ -210,14 +212,14 @@ const CustomNavigation = () => {
                   className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
                   onClick={toggleMenu}
                 >
-                  Ako to funguje
+                  {t("how_it_works")}
                 </Link>
                 <Link
                   to="/benefits"
                   className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
                   onClick={toggleMenu}
                 >
-                  Výhody
+                  {t("benefits")}
                 </Link>
               </>
             )}
@@ -230,21 +232,21 @@ const CustomNavigation = () => {
                   className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                   onClick={toggleMenu}
                 >
-                  Správy
+                  {t("messages")}
                 </Link>
                 <Link
                   to="/profile"
                   className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                   onClick={toggleMenu}
                 >
-                  Môj profil
+                  {t("my_profile")}
                 </Link>
                 <Link
                   to="/bookings"
                   className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                   onClick={toggleMenu}
                 >
-                  Zákazky
+                  {t("jobs")}
                 </Link>
                 <button
                   className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100"
@@ -253,7 +255,7 @@ const CustomNavigation = () => {
                     toggleMenu();
                   }}
                 >
-                  Odhlásiť sa
+                  {t("sign_out")}
                 </button>
               </div>
             ) : (
@@ -263,14 +265,14 @@ const CustomNavigation = () => {
                   className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                   onClick={toggleMenu}
                 >
-                  Prihlásiť sa
+                  {t("login")}
                 </Link>
                 <Link
                   to="/register"
                   className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                   onClick={toggleMenu}
                 >
-                  Registrovať sa
+                  {t("register")}
                 </Link>
               </div>
             )}

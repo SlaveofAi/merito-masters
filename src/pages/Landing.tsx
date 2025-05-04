@@ -43,7 +43,6 @@ const Landing = () => {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
             {t('platform_description')}
           </p>
-          {/* Removed the blue announcement box that was here */}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl w-full">

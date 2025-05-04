@@ -2,12 +2,15 @@
 import React from "react";
 import Layout from "@/components/Layout";
 import { Separator } from "@/components/ui/separator";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const About = () => {
+  const { t } = useLanguage();
+  
   return (
     <Layout>
       <div className="container max-w-4xl mx-auto py-12 px-4 sm:px-6">
-        <h1 className="text-3xl font-bold mb-8 text-center">O nás</h1>
+        <h1 className="text-3xl font-bold mb-8 text-center">{t('about_us')}</h1>
         
         <div className="prose max-w-none">
           <p className="mb-6 text-muted-foreground">
