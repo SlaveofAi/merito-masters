@@ -24,6 +24,7 @@ import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
 import Reviews from "./pages/Reviews";
 import Contact from "./pages/Contact";
+import Benefits from "./pages/Benefits";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/benefits" element={<Benefits />} />
             
             {/* Search route - redirect to home page */}
             <Route path="/search" element={<Navigate to="/home" replace />} />
