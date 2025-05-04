@@ -22,7 +22,8 @@ const ProfileReviewsContent: React.FC = () => {
     createDefaultProfileIfNeeded,
     profileImageUrl,
     fetchProfileData,
-    setIsEditing
+    setIsEditing,
+    isEditing
   } = useProfile();
 
   // Enhanced debug log to help troubleshoot the profile data and user type
@@ -35,9 +36,15 @@ const ProfileReviewsContent: React.FC = () => {
       isCurrentUser,
       canLeaveReview: userType === 'customer' && profileData?.user_type === 'craftsman' && !isCurrentUser,
       isCraftsmanProfile: profileData?.user_type === 'craftsman',
-      isCustomerProfile: profileData?.user_type === 'customer'
+      isCustomerProfile: profileData?.user_type === 'customer',
+      isEditing
     });
-  }, [loading, profileData, userType, isCurrentUser]);
+  }, [loading, profileData, userType, isCurrentUser, isEditing]);
+
+  const handleEditClick = () => {
+    console.log("Edit profile button clicked, setting isEditing to true");
+    setIsEditing(true);
+  };
 
   if (loading) {
     return (
@@ -82,6 +89,35 @@ const ProfileReviewsContent: React.FC = () => {
   const isCustomerProfile = profileData.user_type && 
                            profileData.user_type.toLowerCase() === 'customer';
 
+  // Don't display tabs when editing
+  if (isEditing && profileData) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gray-50">
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <ProfileHeader 
+              profileData={profileData}
+              isCurrentUser={isCurrentUser}
+              userType={userType}
+              profileImageUrl={profileImageUrl}
+              fetchProfileData={fetchProfileData}
+            />
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <ProfileNavigation activeTab="reviews" userType={profileData?.user_type} />
+              <div className="py-4 mt-6">
+                <EditProfileForm 
+                  profile={profileData} 
+                  userType={profileData.user_type} 
+                  onUpdate={handleProfileUpdate} 
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
@@ -99,7 +135,7 @@ const ProfileReviewsContent: React.FC = () => {
               {isCurrentUser && (
                 <div className="flex justify-end mb-6">
                   <Button 
-                    onClick={() => setIsEditing(true)}
+                    onClick={handleEditClick}
                     variant="outline" 
                     className="flex items-center gap-2"
                   >
@@ -128,7 +164,10 @@ const ProfileReviewsContent: React.FC = () => {
   );
 };
 
-// Wrapper component that provides the ProfileProvider context
+// Need to import these components for the edit mode
+import EditProfileForm from "@/components/EditProfileForm";
+
+// Add handler for profile updates
 const ProfileReviews: React.FC = () => {
   return (
     <ProfileProvider>

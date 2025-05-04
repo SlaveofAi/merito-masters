@@ -17,8 +17,18 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portf
   const { isCurrentUser, isEditing, profileData, userType: profileUserType, handleProfileUpdate } = useProfile();
   const [activeTab, setActiveTab] = useState(initialTab);
   
+  // Add debug logging to understand the component state
+  console.log("ProfileTabs rendering:", {
+    isEditing,
+    userType,
+    profileUserType,
+    hasProfileData: !!profileData,
+    activeTab
+  });
+  
   // Don't display tabs when editing
   if (isEditing && profileData) {
+    console.log("Rendering EditProfileForm in ProfileTabs");
     return (
       <div className="py-4">
         <EditProfileForm 

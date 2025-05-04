@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -95,6 +96,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   } = useProfileData(profileId);
 
   const handleProfileUpdate = (updatedProfile: any) => {
+    console.log("Profile update handler called with:", updatedProfile);
     setProfileData({...profileData, ...updatedProfile});
     setIsEditing(false);
     toast.success("Profil bol aktualizovaný");
@@ -175,7 +177,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const value = {
     loading,
     profileData,
-    userType: fetchedUserType,  // Fix: Use fetchedUserType instead of userType
+    userType: fetchedUserType,  // Using fetchedUserType here, not userType
     isCurrentUser,
     profileNotFound,
     error,
