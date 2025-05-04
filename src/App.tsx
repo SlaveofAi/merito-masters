@@ -1,68 +1,54 @@
+import React, { useState, useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
+import Landing from "@/pages/Landing";
+import Index from "@/pages/Index";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import Profile from "@/pages/Profile";
+import ProfilePage from "@/pages/ProfilePage";
+import Messages from "@/pages/Messages";
+import ApprovedBookings from "@/pages/ApprovedBookings";
+import Categories from "@/pages/Categories";
+import NotFound from "@/pages/NotFound";
+import { Toaster } from "@/components/ui/toaster"
+import TermsAndConditions from "@/pages/TermsAndConditions";
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Profile from "./pages/Profile";
-import ProfilePortfolio from "./pages/ProfilePages/ProfilePortfolio";
-import ProfileReviews from "./pages/ProfilePages/ProfileReviews";
-import ProfileCalendar from "./pages/ProfilePages/ProfileCalendar";
-import Messages from "./pages/Messages";
-import ApprovedBookings from "./pages/ApprovedBookings";
-import NotFound from "./pages/NotFound";
-import Index from "./pages/Index";
-import Categories from "./pages/Categories";
+function App() {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-const queryClient = new QueryClient();
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/home" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/categories" element={<Categories />} />
-            
-            {/* Search route - redirect to home page */}
-            <Route path="/search" element={<Navigate to="/home" replace />} />
-            
-            {/* Profile routes */}
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/profile/:id" element={<Profile />} />
-            
-            {/* Profile sub-pages - carefully ordered for proper routing */}
-            <Route path="/profile/portfolio" element={<ProfilePortfolio />} />
-            <Route path="/profile/reviews" element={<ProfileReviews />} />
-            <Route path="/profile/calendar" element={<ProfileCalendar />} />
-            <Route path="/profile/:id/portfolio" element={<ProfilePortfolio />} />
-            <Route path="/profile/:id/reviews" element={<ProfileReviews />} />
-            <Route path="/profile/:id/calendar" element={<ProfileCalendar />} />
-            
-            <Route path="/messages" element={<Messages />} />
-            {/* Bookings route */}
-            <Route path="/bookings" element={<ApprovedBookings />} />
-            
-            {/* Legacy route redirection */}
-            <Route path="/jobs" element={<Navigate to="/bookings" replace />} />
-            
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  return (
+    <div className="App">
+      <Toaster />
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/home" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/terms" element={<TermsAndConditions />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:section" element={<Profile />} />
+        <Route path="/profile/:userId/:section" element={<ProfilePage />} />
+        <Route path="/messages" element={<Messages />} />
+        <Route path="/messages/:conversationId" element={<Messages />} />
+        <Route path="/bookings" element={<ApprovedBookings />} />
+        <Route path="/categories" element={<Categories />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
+  );
+}
 
 export default App;
