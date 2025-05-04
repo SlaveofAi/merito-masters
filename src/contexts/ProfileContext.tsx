@@ -210,7 +210,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchPortfolioImages,
     removeProject,
     createProject,
-    fetchProfileData,  // Added missing property to the context value
+    fetchProfileData,  // Make sure this is included in the context value
   };
 
   return (
