@@ -19,6 +19,8 @@ export type CraftsmanProfile = {
   years_experience: number | null;
   custom_specialization?: string | null;
   user_type?: 'craftsman';
+  is_topped?: boolean;
+  topped_until?: string | null;
 };
 
 export type CustomerProfile = {

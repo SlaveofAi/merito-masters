@@ -6,7 +6,7 @@ import { useProfileData } from "@/hooks/useProfileData";
 import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock } from "lucide-react";
 import { toast } from "sonner";
 import ToppedCraftsmanFeature from './ToppedCraftsmanFeature';
-import { ProfileData } from "@/types/profile";
+import { ProfileData, CraftsmanProfile } from "@/types/profile";
 
 export interface ProfileHeaderProps {
   profileData: ProfileData;
@@ -27,6 +27,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
+  
+  // Type guard function to check if a profile is a craftsman profile
+  const isCraftsmanProfile = (profile: ProfileData): profile is CraftsmanProfile => {
+    return profile.user_type === 'craftsman';
+  };
   
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -116,7 +121,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         <div className="flex-1">
           <h1 className="text-2xl font-bold mb-1">{profileData.name}</h1>
           
-          {userType === 'craftsman' && (
+          {userType === 'craftsman' && isCraftsmanProfile(profileData) && (
             <div className="text-lg text-muted-foreground mb-4">
               {profileData.custom_specialization || profileData.trade_category}
             </div>
@@ -142,7 +147,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               </div>
             )}
             
-            {userType === 'craftsman' && profileData.years_experience && (
+            {userType === 'craftsman' && isCraftsmanProfile(profileData) && profileData.years_experience && (
               <div className="flex items-center">
                 <Clock className="mr-2 h-4 w-4" />
                 <span>{profileData.years_experience} rokov skúseností</span>
