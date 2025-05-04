@@ -10,6 +10,7 @@ import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import EditProfileForm from "@/components/EditProfileForm";
 
 const ProfileReviewsContent: React.FC = () => {
   const {
@@ -23,7 +24,8 @@ const ProfileReviewsContent: React.FC = () => {
     profileImageUrl,
     fetchProfileData,
     setIsEditing,
-    isEditing
+    isEditing,
+    handleProfileUpdate // Make sure we extract this from the context
   } = useProfile();
 
   // Enhanced debug log to help troubleshoot the profile data and user type
@@ -163,9 +165,6 @@ const ProfileReviewsContent: React.FC = () => {
     </Layout>
   );
 };
-
-// Need to import these components for the edit mode
-import EditProfileForm from "@/components/EditProfileForm";
 
 // Add handler for profile updates
 const ProfileReviews: React.FC = () => {
