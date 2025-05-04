@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfileCore } from "@/hooks/useProfileCore";
@@ -18,6 +17,7 @@ export const useProfileData = (id?: string) => {
   const [saving, setSaving] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
 
+  // Use the useProfileCore hook to manage profile data
   const {
     loading,
     profileData,
@@ -254,9 +254,9 @@ export const useProfileData = (id?: string) => {
     uploading,
     saving,
     error,
-    // Add the missing properties that are causing TypeScript errors
     projects,
     removeProject,
-    createProject
+    createProject,
+    fetchProfileData
   };
 };
