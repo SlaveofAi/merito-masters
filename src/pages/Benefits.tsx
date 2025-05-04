@@ -83,7 +83,7 @@ const Benefits: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
             <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              ✅ Výhody registrácie
+              Výhody registrácie
             </h1>
           </div>
 
@@ -92,7 +92,7 @@ const Benefits: React.FC = () => {
             <CardHeader className="bg-primary/5 border-b">
               <CardTitle className="flex items-center">
                 <Hammer className="h-6 w-6 text-primary mr-3" />
-                <span>🔨 Pre remeselníkov</span>
+                <span>Pre remeselníkov</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
@@ -130,7 +130,7 @@ const Benefits: React.FC = () => {
             <CardHeader className="bg-primary/5 border-b">
               <CardTitle className="flex items-center">
                 <Users className="h-6 w-6 text-primary mr-3" />
-                <span>🧑‍🔧 Pre zákazníkov</span>
+                <span>Pre zákazníkov</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
