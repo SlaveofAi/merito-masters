@@ -1,56 +1,95 @@
 
-import React from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import PortfolioTab from "./PortfolioTab";
-import ReviewsTab from "./ReviewsTab";
-import ProfileCalendar from "./ProfileCalendar";
-import CustomerReviewsTab from "./CustomerReviewsTab";
-import { useIsMobile } from "@/hooks/use-mobile";
+import React, { useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import PortfolioTab from "@/components/profile/PortfolioTab";
+import ReviewsTab from "@/components/profile/ReviewsTab";
+import ContactTab from "@/components/profile/ContactTab";
+import ProfileCalendar from "@/components/profile/ProfileCalendar";
+import EditProfileForm from "@/components/EditProfileForm";
+import { useProfile } from "@/contexts/ProfileContext";
 
 interface ProfileTabsProps {
-  userType?: 'customer' | 'craftsman' | null;
+  userType: string | null;
   initialTab?: string;
 }
 
-const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab }) => {
-  console.log("Rendering ProfileTabs with userType:", userType, "initialTab:", initialTab);
-  const isMobile = useIsMobile();
+const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portfolio" }) => {
+  const { isCurrentUser, isEditing, profileData, userType: profileUserType, handleProfileUpdate } = useProfile();
+  const [activeTab, setActiveTab] = useState(initialTab);
   
-  // Force customer tabs for customer user type
-  if (userType === 'customer') {
+  // Don't display tabs when editing
+  if (isEditing && profileData) {
     return (
-      <Tabs defaultValue="reviews" className="w-full">
-        <TabsList className={`grid w-full ${isMobile ? 'max-w-full' : 'max-w-md mx-auto'} md:grid-cols-1 mb-6 md:mb-8`}>
-          <TabsTrigger value="reviews" className="text-sm md:text-base pointer-events-auto">Hodnotenia</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="reviews" className="animate-fade-in">
-          <CustomerReviewsTab />
-        </TabsContent>
-      </Tabs>
+      <div className="container px-4 mx-auto py-8">
+        <EditProfileForm 
+          profile={profileData} 
+          userType={profileUserType} 
+          onUpdate={handleProfileUpdate} 
+        />
+      </div>
     );
   }
-  
-  // Default tabs for craftsman profiles
+
+  // Display the appropriate tabs based on the user type
+  const isCraftsman = userType === 'craftsman';
+
   return (
-    <Tabs defaultValue={initialTab || "portfolio"} className="w-full pointer-events-auto">
-      <TabsList className={`grid w-full ${isMobile ? 'max-w-full grid-cols-3 text-xs gap-1' : 'max-w-md mx-auto md:grid-cols-3'} mb-4 md:mb-8`}>
-        <TabsTrigger value="portfolio" className="text-xs md:text-base pointer-events-auto">Portfólio</TabsTrigger>
-        <TabsTrigger value="reviews" className="text-xs md:text-base pointer-events-auto">Hodnotenia</TabsTrigger>
-        <TabsTrigger value="calendar" className="text-xs md:text-base pointer-events-auto">Kalendár</TabsTrigger>
+    <Tabs 
+      defaultValue={activeTab} 
+      className="w-full" 
+      onValueChange={setActiveTab}
+    >
+      <TabsList className="grid w-full max-w-2xl mx-auto mb-8" 
+        style={{ 
+          gridTemplateColumns: isCraftsman 
+            ? (isCurrentUser ? "repeat(3, 1fr)" : "repeat(3, 1fr)") 
+            : "repeat(1, 1fr)" 
+        }}
+      >
+        {isCraftsman && (
+          <>
+            <TabsTrigger value="portfolio">Portfólio</TabsTrigger>
+            <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>
+            {!isCurrentUser && <TabsTrigger value="contact">Kontakt</TabsTrigger>}
+            {isCurrentUser && <TabsTrigger value="calendar">Kalendár</TabsTrigger>}
+          </>
+        )}
+        
+        {!isCraftsman && (
+          <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>
+        )}
       </TabsList>
+
+      {/* Tab content */}
+      {isCraftsman && (
+        <>
+          <TabsContent value="portfolio">
+            <PortfolioTab />
+          </TabsContent>
+          
+          <TabsContent value="reviews">
+            <ReviewsTab />
+          </TabsContent>
+
+          {!isCurrentUser && (
+            <TabsContent value="contact">
+              <ContactTab />
+            </TabsContent>
+          )}
+
+          {isCurrentUser && (
+            <TabsContent value="calendar">
+              <ProfileCalendar />
+            </TabsContent>
+          )}
+        </>
+      )}
       
-      <TabsContent value="portfolio" className="animate-fade-in">
-        <PortfolioTab />
-      </TabsContent>
-      
-      <TabsContent value="reviews" className="animate-fade-in">
-        <ReviewsTab />
-      </TabsContent>
-      
-      <TabsContent value="calendar" className="animate-fade-in pointer-events-auto">
-        <ProfileCalendar />
-      </TabsContent>
+      {!isCraftsman && (
+        <TabsContent value="reviews">
+          <ReviewsTab />
+        </TabsContent>
+      )}
     </Tabs>
   );
 };

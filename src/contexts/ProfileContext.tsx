@@ -69,7 +69,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const {
     loading,
     profileData,
-    userType,
+    userType: fetchedUserType,
     isCurrentUser,
     profileNotFound,
     portfolioImages,
@@ -176,7 +176,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const value = {
     loading,
     profileData,
-    userType,
+    userType: fetchedUserType || userType,
     isCurrentUser,
     profileNotFound,
     error,

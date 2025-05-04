@@ -11,6 +11,8 @@ import ErrorMessage from "@/components/profile/ErrorMessage";
 import ProfileTabs from "@/components/profile/ProfileTabs";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
 
 const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const { user, userType: authUserType, updateUserType } = useAuth();
@@ -24,7 +26,8 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     createDefaultProfileIfNeeded,
     userType: profileUserType,
     profileImageUrl,
-    fetchProfileData
+    fetchProfileData,
+    setIsEditing
   } = useProfile();
 
   // Debug log to help with troubleshooting
@@ -171,13 +174,28 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     <Layout>
       <div className="min-h-screen bg-gray-50">
         {profileData && (
-          <ProfileHeader 
-            profileData={profileData} 
-            isCurrentUser={isCurrentUser} 
-            userType={profileUserType}
-            profileImageUrl={profileImageUrl}
-            fetchProfileData={fetchProfileData}
-          />
+          <>
+            <ProfileHeader 
+              profileData={profileData} 
+              isCurrentUser={isCurrentUser} 
+              userType={profileUserType}
+              profileImageUrl={profileImageUrl}
+              fetchProfileData={fetchProfileData}
+            />
+            
+            {isCurrentUser && (
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-end">
+                <Button 
+                  onClick={() => setIsEditing(true)}
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                >
+                  <Pencil className="w-4 h-4" /> 
+                  Upraviť profil
+                </Button>
+              </div>
+            )}
+          </>
         )}
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
