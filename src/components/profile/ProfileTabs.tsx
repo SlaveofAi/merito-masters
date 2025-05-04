@@ -11,30 +11,41 @@ import { useLocation, useNavigate } from "react-router-dom";
 interface ProfileTabsProps {
   userType?: 'customer' | 'craftsman' | null;
   initialTab?: string;
+  isViewingOtherProfile?: boolean;
 }
 
-const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab }) => {
-  console.log("Rendering ProfileTabs with userType:", userType, "initialTab:", initialTab);
+const ProfileTabs: React.FC<ProfileTabsProps> = ({ 
+  userType, 
+  initialTab,
+  isViewingOtherProfile = false
+}) => {
+  console.log("Rendering ProfileTabs with:", {
+    userType, 
+    initialTab,
+    isViewingOtherProfile
+  });
+  
   const isMobile = useIsMobile();
   const location = useLocation();
   const navigate = useNavigate();
   
   // Sync tab state with URL
   const syncUrlWithTab = (tab: string) => {
-    if (location.pathname !== `/profile/${tab}`) {
+    // If viewing another profile, preserve the ID in the URL
+    if (location.pathname.includes('/profile/') && location.pathname !== `/profile/${tab}`) {
       navigate(`/profile/${tab}`, { replace: true });
     }
   };
   
-  // Ensure customer users always see reviews tab
+  // Ensure customer users always see reviews tab ONLY for their own profile
   useEffect(() => {
-    if (userType === 'customer' && initialTab !== 'reviews') {
+    if (userType === 'customer' && !isViewingOtherProfile && initialTab !== 'reviews') {
       syncUrlWithTab('reviews');
     }
-  }, [userType, initialTab]);
+  }, [userType, initialTab, isViewingOtherProfile]);
   
-  // Force customer tabs for customer user type
-  if (userType === 'customer') {
+  // Show customer tabs only when viewing own profile as a customer
+  if (userType === 'customer' && !isViewingOtherProfile) {
     return (
       <Tabs defaultValue="reviews" className="w-full" onValueChange={syncUrlWithTab}>
         <TabsList className={`grid w-full ${isMobile ? 'max-w-full' : 'max-w-md mx-auto'} md:grid-cols-1 mb-6 md:mb-8`}>
@@ -48,7 +59,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab }) => {
     );
   }
   
-  // Default tabs for craftsman profiles
+  // When viewing a customer profile that is not your own, or a craftsman profile
   return (
     <Tabs 
       defaultValue={initialTab || "portfolio"} 
@@ -58,7 +69,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab }) => {
       <TabsList className={`grid w-full ${isMobile ? 'max-w-full grid-cols-3 text-xs gap-1' : 'max-w-md mx-auto md:grid-cols-3'} mb-4 md:mb-8`}>
         <TabsTrigger value="portfolio" className="text-xs md:text-base pointer-events-auto">Portfólio</TabsTrigger>
         <TabsTrigger value="reviews" className="text-xs md:text-base pointer-events-auto">Hodnotenia</TabsTrigger>
-        <TabsTrigger value="calendar" className="text-xs md:text-base pointer-events-auto">Kalendár</TabsTrigger>
+        {/* Only show calendar for own profile */}
+        {!isViewingOtherProfile && (
+          <TabsTrigger value="calendar" className="text-xs md:text-base pointer-events-auto">Kalendár</TabsTrigger>
+        )}
       </TabsList>
       
       <TabsContent value="portfolio" className="animate-fade-in">
@@ -69,9 +83,11 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab }) => {
         <ReviewsTab />
       </TabsContent>
       
-      <TabsContent value="calendar" className="animate-fade-in pointer-events-auto">
-        <ProfileCalendar />
-      </TabsContent>
+      {!isViewingOtherProfile && (
+        <TabsContent value="calendar" className="animate-fade-in pointer-events-auto">
+          <ProfileCalendar />
+        </TabsContent>
+      )}
     </Tabs>
   );
 };

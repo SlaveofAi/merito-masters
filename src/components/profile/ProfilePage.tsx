@@ -12,7 +12,12 @@ import ProfileTabs from "@/components/profile/ProfileTabs";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
 
-const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
+interface ProfilePageProps {
+  initialTab?: string;
+  isViewingOtherProfile?: boolean;
+}
+
+const ProfilePage: React.FC<ProfilePageProps> = ({ initialTab, isViewingOtherProfile = false }) => {
   const { user, userType: authUserType, updateUserType } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,45 +44,31 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
       error: error || "none",
       profileDataUserType: profileData?.user_type || "not available",
       initialTab,
+      isViewingOtherProfile,
       currentPath: location.pathname
     });
-  }, [loading, authUserType, profileUserType, profileData, isCurrentUser, profileNotFound, user, error, initialTab, location]);
+  }, [loading, authUserType, profileUserType, profileData, isCurrentUser, profileNotFound, user, error, initialTab, location, isViewingOtherProfile]);
 
   // Use a more reliable determination of user type, with explicit precedence
   const getEffectiveUserType = () => {
-    // Priority chain: profile data > profile context > auth context > data analysis
-    return (profileData?.user_type || profileUserType || authUserType || 
-          ('trade_category' in (profileData || {}) ? 'craftsman' : 'customer'));
-  };
-
-  // Handle customer views - ensure they're looking at reviews tab
-  useEffect(() => {
-    const effectiveUserType = getEffectiveUserType();
+    // First use the profile data's user_type if available
+    if (profileData?.user_type) {
+      return profileData.user_type;
+    }
     
-    // If we are a customer and not already on reviews tab
-    if (isCurrentUser && 
-        (effectiveUserType === 'customer' || authUserType === 'customer') && 
-        location.pathname !== "/profile/reviews" && 
-        !location.pathname.endsWith('/calendar')) {
-      console.log("Customer profile detected in useEffect, redirecting to reviews");
-      navigate("/profile/reviews", { replace: true });
+    // Next use the userType from context
+    if (profileUserType) {
+      return profileUserType;
     }
-  }, [isCurrentUser, authUserType, navigate, location.pathname]);
-
-  // Create default profile if needed
-  useEffect(() => {
-    if (isCurrentUser && profileNotFound && createDefaultProfileIfNeeded) {
-      console.log("Profile not found for current user, attempting to create default profile");
-      setTimeout(() => {
-        createDefaultProfileIfNeeded?.().catch(err => {
-          console.error("Error creating profile:", err);
-          toast.error("Nastala chyba pri vytváraní profilu", {
-            description: err.message || "Neočakávaná chyba"
-          });
-        });
-      }, 500);
+    
+    // If we're viewing our own profile, use auth context
+    if (!isViewingOtherProfile && authUserType) {
+      return authUserType;
     }
-  }, [isCurrentUser, profileNotFound, createDefaultProfileIfNeeded]);
+    
+    // Last resort - determine from profile data structure
+    return ('trade_category' in (profileData || {}) ? 'craftsman' : 'customer');
+  };
 
   // For current user but no user type detected
   if (user && !authUserType && isCurrentUser) {
@@ -156,9 +147,9 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const effectiveUserType = getEffectiveUserType();
   console.log("Using effective user type for display:", effectiveUserType);
   
-  // Final safeguard - if we're a customer profile viewing portfolio tab, redirect immediately
-  if (effectiveUserType === 'customer' && initialTab === 'portfolio') {
-    console.log("Customer profile detected in portfolio view, final redirect safeguard");
+  // Only redirect customer viewing their own profile if they're trying to view portfolio tab
+  if (effectiveUserType === 'customer' && !isViewingOtherProfile && initialTab === 'portfolio') {
+    console.log("Customer profile detected in portfolio view, redirecting to reviews");
     navigate("/profile/reviews", { replace: true });
     return (
       <Layout>
@@ -173,7 +164,11 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
         <ProfileHeader />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <ProfileTabs userType={effectiveUserType} initialTab={initialTab} />
+          <ProfileTabs 
+            userType={effectiveUserType} 
+            initialTab={initialTab} 
+            isViewingOtherProfile={isViewingOtherProfile}
+          />
         </div>
       </div>
     </Layout>

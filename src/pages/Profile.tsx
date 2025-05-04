@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useParams, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { ProfileProvider } from "@/contexts/ProfileContext";
@@ -18,16 +19,19 @@ const Profile = () => {
     currentPath: location.pathname
   });
   
-  // First check: Immediate redirect if this is a customer trying to view a non-reviews section
+  // If an ID is explicitly provided, we're viewing someone else's profile
+  const isViewingOtherProfile = !!id && id !== ":id" && id !== user?.id;
+  
+  // First check: Only redirect customers viewing their own profile with no section or non-reviews section
   useEffect(() => {
     if (!loading && user) {
-      // If no ID is provided (viewing own profile) and user is a customer
-      if (!id && userType === "customer" && (!section || section !== "reviews")) {
-        console.log("Customer profile detected, redirecting to reviews tab");
+      // Only redirect if viewing own profile (no ID) AND user is a customer AND section is not reviews
+      if (!isViewingOtherProfile && userType === "customer" && (!section || section !== "reviews")) {
+        console.log("Customer viewing own profile, redirecting to reviews tab");
         navigate("/profile/reviews", { replace: true });
       }
     }
-  }, [id, userType, loading, user, section, navigate]);
+  }, [id, userType, loading, user, section, navigate, isViewingOtherProfile]);
   
   // While auth is loading, show loading state
   if (loading) {
@@ -44,13 +48,13 @@ const Profile = () => {
   // Otherwise, the default tab is set to "portfolio" for craftsmen and "reviews" for customers
   const getInitialTab = () => {
     if (section === "calendar") return "calendar";
-    if (userType === "customer") return "reviews";
+    if (userType === "customer" && !isViewingOtherProfile) return "reviews";
     return "portfolio";
   };
   
   return (
     <ProfileProvider>
-      <ProfilePage initialTab={getInitialTab()} />
+      <ProfilePage initialTab={getInitialTab()} isViewingOtherProfile={isViewingOtherProfile} />
     </ProfileProvider>
   );
 };
