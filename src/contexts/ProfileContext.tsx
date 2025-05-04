@@ -91,7 +91,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     projects,
     removeProject,
     createProject,
-    fetchProfileData
+    fetchProfileData  // Make sure this is included in the destructuring
   } = useProfileData(profileId);
 
   const handleProfileUpdate = (updatedProfile: any) => {
