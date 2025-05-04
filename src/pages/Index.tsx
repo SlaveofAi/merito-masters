@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -11,23 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import CraftsmanCard from "@/components/CraftsmanCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-// Craft categories for filtering
-const craftCategories = [
-  'Všetky kategórie',
-  'Stolár',
-  'Elektrikár',
-  'Murár',
-  'Inštalatér',
-  'Maliar',
-  'Podlahár',
-  'Klampiar',
-  'Zámočník',
-  'Tesár',
-  'Záhradník',
-  'Kúrenár',
-  'Sklenár'
-];
+import { getAllCategories } from "@/constants/categories";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -178,7 +163,7 @@ const Index = () => {
                   <SelectValue placeholder="Filter podľa kategórie" />
                 </SelectTrigger>
                 <SelectContent>
-                  {craftCategories.map((category) => (
+                  {getAllCategories().map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>

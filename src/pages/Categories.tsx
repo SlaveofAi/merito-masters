@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, MapPin, Users } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Badge } from "@/components/ui/badge";
+import { categoryIcons } from "@/constants/categories";
 
 interface CategoryCount {
   category: string;
@@ -83,6 +85,11 @@ const Categories = () => {
     });
   };
 
+  // Function to get the appropriate icon for a category
+  const getCategoryIcon = (category: string) => {
+    return categoryIcons[category] || null;
+  };
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
@@ -105,9 +112,9 @@ const Categories = () => {
                     <h3 className="font-semibold text-lg mb-1">
                       {category.category}
                       {category.isCustom && (
-                        <span className="ml-2 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5">
+                        <Badge variant="secondary" className="ml-2 text-xs px-2 py-0.5">
                           Vlastná
-                        </span>
+                        </Badge>
                       )}
                     </h3>
                     <div className="flex items-center text-muted-foreground">

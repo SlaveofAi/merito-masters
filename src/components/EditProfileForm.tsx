@@ -15,21 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import SpecializationInput from "@/components/profile/SpecializationInput";
 import { useProfile } from "@/contexts/ProfileContext";
 import DeleteAccount from "@/components/profile/DeleteAccount";
-
-const craftCategories = [
-  'Stolár',
-  'Elektrikár',
-  'Murár',
-  'Inštalatér',
-  'Maliar',
-  'Podlahár',
-  'Klampiar',
-  'Zámočník',
-  'Tesár',
-  'Záhradník',
-  'Kúrenár',
-  'Sklenár'
-];
+import { craftCategories } from "@/constants/categories";
 
 const baseSchema = z.object({
   name: z.string().min(2, { message: "Meno musí mať aspoň 2 znaky" }),
@@ -213,7 +199,7 @@ const EditProfileForm = ({ profile, userType, onUpdate }: EditProfileFormProps) 
                           <SelectTrigger>
                             <SelectValue placeholder="Vyberte kategóriu" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="max-h-[300px]">
                             {craftCategories.map((category) => (
                               <SelectItem key={category} value={category}>
                                 {category}
