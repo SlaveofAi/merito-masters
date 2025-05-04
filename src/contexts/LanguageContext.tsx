@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 // Define supported languages
@@ -171,20 +170,28 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     
     // How it works page
     "how_it_works_title": "Ako to funguje",
-    "for_craftsmen_title": "Pre remeselníkov",
-    "step_1_craftsman": "1. Vytvorte si profil",
-    "step_1_craftsman_desc": "Vytvorte si bezplatný profil a ukážte svoje zručnosti a portfólio.",
-    "step_2_craftsman": "2. Nastavte svoju dostupnosť",
-    "step_2_craftsman_desc": "Nastavte svoj kalendár, aby zákazníci vedeli, kedy ste k dispozícii.",
-    "step_3_craftsman": "3. Získajte zákazky",
-    "step_3_craftsman_desc": "Prijímajte žiadosti a komunikujte so zákazníkmi.",
-    "for_customers_title": "Pre zákazníkov",
-    "step_1_customer": "1. Vyhľadajte remeselníka",
-    "step_1_customer_desc": "Prehliadajte si profily remeselníkov a hodnotenia od iných zákazníkov.",
-    "step_2_customer": "2. Kontaktujte remeselníka",
-    "step_2_customer_desc": "Pošlite správu alebo si zarezervujte termín priamo cez platformu.",
-    "step_3_customer": "3. Získajte kvalitnú službu",
-    "step_3_customer_desc": "Po dokončení práce môžete zanechať hodnotenie a pomôcť tak ostatným zákazníkom.",
+    "choose_category": "Vyberte kategóriu",
+    "choose_category_desc": "Prechádzajte kategóriami a vyhľadajte typ remeselníka, ktorého potrebujete.",
+    "view_profiles": "Prehliadajte profily",
+    "view_profiles_desc": "Prehliadajte si detailné profily, hodnotenia a portfóliá remeselníkov.",
+    "contact_craftsman": "Kontaktujte remeselníka",
+    "contact_craftsman_desc": "Kontaktujte vybraného remeselníka priamo cez našu platformu.",
+    "book_appointment": "Rezervujte si termín",
+    "book_appointment_desc": "Vyberte si termín, ktorý vám vyhovuje, z dostupného kalendára remeselníka.",
+    "rate_after_completion": "Ohodnoťte službu",
+    "rate_after_completion_desc": "Po dokončení práce zanechajte hodnotenie a pomôžte ostatným zákazníkom.",
+    
+    "register_create_profile": "Vytvorte si profil",
+    "register_create_profile_desc": "Zaregistrujte sa a vytvorte si profesionálny profil, ktorý ukáže vaše zručnosti.",
+    "set_availability": "Nastavte dostupnosť",
+    "set_availability_desc": "Nastavte svoj kalendár, aby zákazníci videli, kedy ste k dispozícii.",
+    "communicate_with_customers": "Komunikujte so zákazníkmi",
+    "communicate_with_customers_desc": "Odpovedajte na správy a požiadavky zákazníkov prostredníctvom platformy.",
+    "gather_reviews": "Zbierajte hodnotenia",
+    "gather_reviews_desc": "Získajte pozitívne hodnotenia a budujte svou online reputaciu.",
+    "highlight_profile": "Zvýraznite svoj profil",
+    "highlight_profile_desc": "Využite možnosti prémiových funkcií na zvýraznenie vášho profilu vo vyhľadávaní.",
+    "more_questions": "Máte ďalšie otázky o tom, ako naša platforma funguje?",
     
     // Categories
     "carpentry": "Stolár",
@@ -921,4 +928,3 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 export const useLanguage = () => useContext(LanguageContext);
 
 export default LanguageContext;
-
