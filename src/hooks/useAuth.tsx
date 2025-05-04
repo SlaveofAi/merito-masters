@@ -1,3 +1,4 @@
+
 import { useEffect, useState, createContext, useContext, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,9 +24,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userType, setUserType] = useState<UserType>(null);
   const [loading, setLoading] = useState(true);
   const [userTypeFetched, setUserTypeFetched] = useState(false);
+  
+  // Throttle state to prevent rate limit issues
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+  const throttleTime = 2000; // 2 seconds between API calls
 
   const fetchUserType = async (userId: string) => {
     try {
+      // Rate limiting to prevent API errors
+      const now = Date.now();
+      if (now - lastFetchTime < throttleTime) {
+        console.log("Throttling user type fetch to avoid rate limits");
+        return;
+      }
+      setLastFetchTime(now);
+      
       console.log("Fetching user type for:", userId);
       
       // First try to get user type from localStorage - fastest method for immediate UI
@@ -33,7 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (storedType === 'customer' || storedType === 'craftsman') {
         console.log("Using cached user type from localStorage:", storedType);
         setUserType(storedType);
-        // Don't return yet, still verify from server
+        // In case this is stale, continue to verify from server
       }
       
       // Next try to get user type from user metadata (if available)
@@ -59,6 +72,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Error fetching user type:", error);
+        // Use stored value if available rather than failing
+        if (storedType === 'customer' || storedType === 'craftsman') {
+          setUserTypeFetched(true);
+          return storedType;
+        }
         return null;
       }
 
@@ -70,13 +88,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Save to localStorage for backup and faster access
         localStorage.setItem("userType", type);
         
-        // Also update user metadata to have consistent sources
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: { user_type: type }
-        });
-        
-        if (updateError) {
-          console.error("Error updating user metadata with user_type:", updateError);
+        // Avoid updating metadata too frequently to prevent rate limiting
+        // Only update if it's different or missing
+        if (session?.user?.user_metadata?.user_type !== type) {
+          try {
+            const { error: updateError } = await supabase.auth.updateUser({
+              data: { user_type: type }
+            });
+            
+            if (updateError) {
+              console.error("Error updating user metadata with user_type:", updateError);
+            }
+          } catch (err) {
+            console.log("Skipping metadata update due to potential rate limits");
+          }
         }
         
         setUserTypeFetched(true);
@@ -117,12 +142,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.error("Error retrieving user metadata:", metaError);
         }
         
+        // If we got here and still have a stored value, use it as fallback
+        if (storedType === 'customer' || storedType === 'craftsman') {
+          console.log("Using localStorage fallback for user type");
+          setUserType(storedType);
+          setUserTypeFetched(true);
+          return storedType;
+        }
+        
         setUserType(null);
         setUserTypeFetched(true);
         return null;
       }
     } catch (error) {
       console.error("Error in fetchUserType:", error);
+      
+      // Fallback to localStorage in case of any errors
+      const storedType = localStorage.getItem("userType");
+      if (storedType === 'customer' || storedType === 'craftsman') {
+        setUserType(storedType);
+        setUserTypeFetched(true);
+        return storedType;
+      }
+      
       setUserType(null);
       setUserTypeFetched(true);
       return null;
@@ -153,13 +195,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Update in localStorage
       localStorage.setItem("userType", type);
       
-      // Update in user metadata
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: { user_type: type }
-      });
+      // Throttle metadata updates to avoid rate limits
+      const now = Date.now();
+      if (now - lastFetchTime > throttleTime) {
+        setLastFetchTime(now);
+        try {
+          // Update in user metadata
+          const { error: updateError } = await supabase.auth.updateUser({
+            data: { user_type: type }
+          });
 
-      if (updateError) {
-        console.error("Error updating user metadata:", updateError);
+          if (updateError) {
+            console.error("Error updating user metadata:", updateError);
+          }
+        } catch (err) {
+          console.log("Skipped metadata update due to rate limiting concerns");
+        }
       }
 
       // Update state
@@ -196,16 +247,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserType(null);
           localStorage.removeItem("userType");
           setUserTypeFetched(false);
+          setLoading(false);
         }
         
         if (newSession?.user) {
           // Use setTimeout to avoid potential Supabase deadlocks
           setTimeout(() => {
             if (mounted) {
-              fetchUserType(newSession.user.id);
+              fetchUserType(newSession.user.id).finally(() => {
+                if (mounted) setLoading(false);
+              });
             }
           }, 100);
-        } else {
+        } else if (event !== 'SIGNED_OUT') {
           setLoading(false);
         }
       }
@@ -242,6 +296,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUserType(null);
       localStorage.removeItem("userType");
       setUserTypeFetched(false);
+      toast.success("Boli ste úspešne odhlásený");
     } catch (error) {
       console.error("Error signing out:", error);
       toast.error("Nastala chyba pri odhlásení");

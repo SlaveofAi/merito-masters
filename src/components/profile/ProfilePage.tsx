@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const { user, userType: authUserType, updateUserType } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     loading,
     profileData,
@@ -37,32 +38,33 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
       userLoggedIn: !!user,
       error: error || "none",
       profileDataUserType: profileData?.user_type || "not available",
-      initialTab
+      initialTab,
+      currentPath: location.pathname
     });
-  }, [loading, authUserType, profileUserType, profileData, isCurrentUser, profileNotFound, user, error, initialTab]);
+  }, [loading, authUserType, profileUserType, profileData, isCurrentUser, profileNotFound, user, error, initialTab, location]);
 
   // Use a more reliable determination of user type, with explicit precedence
   const getEffectiveUserType = () => {
+    // Priority chain: profile data > profile context > auth context > data analysis
     return (profileData?.user_type || profileUserType || authUserType || 
           ('trade_category' in (profileData || {}) ? 'craftsman' : 'customer'));
   };
 
-  // Super early check - redirect immediately if this is likely a customer viewing portfolio
+  // Handle customer views - ensure they're looking at reviews tab
   useEffect(() => {
-    // Only handle own profile routing here
-    if (!isCurrentUser) return;
-    
     const effectiveUserType = getEffectiveUserType();
     
-    // Ensure we're using strict equality for type safety
-    // Immediate redirect for customers viewing portfolio tab
-    if ((effectiveUserType === 'customer' || authUserType === 'customer') && 
-        initialTab === 'portfolio') {
-      console.log("Customer viewing portfolio tab, immediate redirect in ProfilePage");
+    // If we are a customer and not already on reviews tab
+    if (isCurrentUser && 
+        (effectiveUserType === 'customer' || authUserType === 'customer') && 
+        location.pathname !== "/profile/reviews" && 
+        !location.pathname.endsWith('/calendar')) {
+      console.log("Customer profile detected in useEffect, redirecting to reviews");
       navigate("/profile/reviews", { replace: true });
     }
-  }, [initialTab, isCurrentUser, authUserType, navigate]);
+  }, [isCurrentUser, authUserType, navigate, location.pathname]);
 
+  // Create default profile if needed
   useEffect(() => {
     if (isCurrentUser && profileNotFound && createDefaultProfileIfNeeded) {
       console.log("Profile not found for current user, attempting to create default profile");
@@ -144,13 +146,13 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
         <ProfileNotFound 
           isCurrentUser={isCurrentUser} 
           onCreateProfile={createDefaultProfileIfNeeded}
-          error={error || "Profil nebol nájdený alebo nemáte k nemu prístup. Možno je potrebné skontrolovať nastavenia Row Level Security v databáze."}
+          error={error || "Profil nebol nájdený alebo nemáte k nemu prístup."}
         />
       </Layout>
     );
   }
 
-  // Extra safety check - if we still somehow got to this point as a customer in portfolio tab, redirect
+  // Get the effective user type for display
   const effectiveUserType = getEffectiveUserType();
   console.log("Using effective user type for display:", effectiveUserType);
   
