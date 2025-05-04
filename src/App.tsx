@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import Landing from "@/pages/Landing";
@@ -5,7 +6,6 @@ import Index from "@/pages/Index";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Profile from "@/pages/Profile";
-import ProfilePage from "@/pages/ProfilePage";
 import Messages from "@/pages/Messages";
 import ApprovedBookings from "@/pages/ApprovedBookings";
 import Categories from "@/pages/Categories";
@@ -40,7 +40,7 @@ function App() {
         <Route path="/terms" element={<TermsAndConditions />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:section" element={<Profile />} />
-        <Route path="/profile/:userId/:section" element={<ProfilePage />} />
+        <Route path="/profile/:userId/:section" element={<Profile />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/messages/:conversationId" element={<Messages />} />
         <Route path="/bookings" element={<ApprovedBookings />} />
