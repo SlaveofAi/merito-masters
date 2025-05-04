@@ -17,6 +17,7 @@ import ApprovedBookings from "./pages/ApprovedBookings";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Categories from "./pages/Categories";
+import Terms from "./pages/Terms";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/categories" element={<Categories />} />
+            <Route path="/terms" element={<Terms />} />
             
             {/* Search route - redirect to home page */}
             <Route path="/search" element={<Navigate to="/home" replace />} />
