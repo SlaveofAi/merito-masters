@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Menu, X, User, Hammer, Home, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const CustomNavigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -116,6 +118,7 @@ const CustomNavigation = () => {
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4">
+            <LanguageSwitcher />
             {loading ? (
               <div className="h-9 w-20 bg-gray-100 animate-pulse rounded-md"></div>
             ) : user ? (
@@ -148,9 +151,10 @@ const CustomNavigation = () => {
             )}
           </div>
           <div className="-mr-2 flex items-center sm:hidden">
+            <LanguageSwitcher />
             <button
               onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
+              className="ml-1 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
             >
               <span className="sr-only">Otvoriť hlavnú ponuku</span>
               {isMenuOpen ? (
