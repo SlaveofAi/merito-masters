@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -45,7 +44,7 @@ interface ProfileContextType {
   fetchPortfolioImages?: (userId: string) => Promise<void>;
   removeProject: (projectId: string) => Promise<void>;
   createProject: (title: string, description: string, images: File[]) => Promise<void>;
-  fetchProfileData: () => void;  // Added missing function declaration
+  fetchProfileData: () => void;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
