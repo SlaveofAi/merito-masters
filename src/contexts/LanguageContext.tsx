@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 // Define supported languages
@@ -369,507 +368,94 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "cookies_usage": "Používanie cookies",
     "cookies_usage_desc": "Naša webová stránka používa cookies na zlepšenie používateľského zážitku, analýzu návštevnosti a poskytovanie personalizovaných funkcií. Používaním našich služieb súhlasíte s používaním cookies v súlade s našimi zásadami.",
     "data_transfer": "Prenos údajov do zahraničia",
-    "data_transfer_desc": "Vaše osobné údaje môžu byť prenášané a uchovávané na serveroch mimo vašej krajiny, ale vždy v súlade s príslušnými zákonmi o ochrane osobných údajov."
+    "data_transfer_desc": "Vaše osobné údaje môžu byť prenášané a uchovávané na serveroch mimo vašej krajiny, ale vždy v súlade s príslušnými zákonmi o ochrane osobných údajov.",
+
+    // Contact page translations
+    "contact_question": "Máte otázky alebo spätnú väzbu?",
+    "contact_feedback": "Váš názor je pre nás dôležitý. Ak máte akékoľvek otázky, návrhy alebo potrebujete pomoc, neváhajte nás kontaktovať.",
+    "email_us": "Napíšte nám e-mail",
+    "reply_soon": "Odpovieme vám čo najskôr, zvyčajne do 24 hodín.",
+    "quick_contact_form": "Rýchly kontaktný formulár",
+    "your_name": "Vaše meno",
+    "name_placeholder": "Zadajte vaše meno",
+    "your_email": "Váš e-mail",
+    "subject": "Predmet",
+    "subject_placeholder": "O čom chcete komunikovať",
+    "message": "Správa",
+    "message_placeholder": "Napíšte vašu správu tu...",
+    
+    // Reviews page translations
+    "reviews_title": "Hodnotenia a recenzie",
+    "why_reviews_important": "Prečo sú hodnotenia dôležité",
+    "reviews_importance_1": "Hodnotenia pomáhajú budovať dôveru medzi remeselníkmi a zákazníkmi",
+    "reviews_importance_2": "Hodnotenia prinášajú transparentnosť do služieb remeselníkov",
+    "reviews_importance_3": "Hodnotenia motivujú k vyššej kvalite služieb",
+    "fair_review_rules": "Pravidlá pre spravodlivé hodnotenia",
+    "truthful_reviews": "Pravdivé hodnotenia",
+    "truthful_reviews_desc": "Všetky hodnotenia musia byť založené na skutočných skúsenostiach so službou",
+    "fake_reviews_prohibited": "Falošné hodnotenia sú zakázané",
+    "fake_reviews_prohibited_desc": "Falošné alebo zavádzajúce hodnotenia budú odstránené",
+    "craftsman_response": "Odpoveď remeselníka",
+    "craftsman_response_desc": "Remeselníci majú právo odpovedať na hodnotenia",
+    "review_moderation": "Moderovanie hodnotení",
+    "review_moderation_desc": "Hodnotenia sú kontrolované, aby spĺňali naše pravidlá komunity",
+    
+    // Pricing page translations
+    "pricing_subtitle": "Transparentná cenová politika pre všetkých používateľov",
+    "platform_pricing_policy": "Cenová politika platformy",
+    "platform_pricing_desc_1": "Majstri.com je v súčasnosti ",
+    "platform_pricing_desc_2": "bezplatná platforma",
+    "platform_pricing_desc_3": "pre všetkých remeselníkov aj zákazníkov. V budúcnosti plánujeme zaviesť",
+    "platform_pricing_desc_4": "prémiové funkcie",
+    "platform_pricing_desc_5": "pre remeselníkov, ktorí chcú zvýšiť svoju viditeľnosť a získať viac príležitostí.",
+    "set_effective_pricing": "Ako stanoviť efektívne ceny služieb",
+    "recommendations": "Odporúčania pre remeselníkov pri stanovení cien ich služieb:",
+    "consider_costs": "Zvážte svoje náklady",
+    "consider_costs_desc": "Do ceny zahrňte materiály, dopravu, čas a réžiu. Nezabudnite aj na dane a odvody.",
+    "analyze_competition": "Analyzujte konkurenciu",
+    "analyze_competition_desc": "Zistite si, aké ceny požadujú iní remeselníci za podobné služby vo vašej oblasti.",
+    "be_transparent": "Buďte transparentní",
+    "be_transparent_desc": "Jasne komunikujte, čo je zahrnuté v cene a aké sú potenciálne dodatočné náklady.",
+    "specify_what_included": "Špecifikujte, čo je zahrnuté v cene",
+    "specify_what_included_desc": "Podrobne uveďte, čo všetko zákazník za svoju platbu dostane.",
+    "regular_discounts": "Zvážte pravidelné zľavy",
+    "regular_discounts_desc": "Ponúkanie zliav pre verných zákazníkov alebo pri väčších zákazkách môže zvýšiť váš objem práce.",
+    "more_pricing_questions": "Máte ďalšie otázky o cenách služieb?",
+    
+    // How it works page - additional translations
+    "choose_category": "Vyberte kategóriu",
+    "choose_category_desc": "Prechádzajte kategóriami a vyhľadajte typ remeselníka, ktorého potrebujete.",
+    "view_profiles": "Prehliadajte profily",
+    "view_profiles_desc": "Prehliadajte si detailné profily, hodnotenia a portfóliá remeselníkov.",
+    "contact_craftsman": "Kontaktujte remeselníka",
+    "contact_craftsman_desc": "Kontaktujte vybraného remeselníka priamo cez našu platformu.",
+    "book_appointment": "Rezervujte si termín",
+    "book_appointment_desc": "Vyberte si termín, ktorý vám vyhovuje, z dostupného kalendára remeselníka.",
+    "rate_after_completion": "Ohodnoťte službu",
+    "rate_after_completion_desc": "Po dokončení práce zanechajte hodnotenie a pomôžte ostatným zákazníkom.",
+    
+    // Benefits page additions
+    "professional_profile": "Profesionálny profil",
+    "professional_profile_desc": "Vytvorte si profesionálny online profil, ktorý odprezentuje vaše zručnosti a portfólio práce",
+    "new_customers": "Noví zákazníci",
+    "new_customers_desc": "Získajte prístup k zákazníkom, ktorí aktívne hľadajú služby vo vašej oblasti",
+    "availability_calendar": "Kalendár dostupnosti",
+    "availability_calendar_desc": "Nastavte si vlastnú dostupnosť a prijímajte rezervácie termínov automaticky",
+    "customer_chat": "Chat so zákazníkmi",
+    "customer_chat_desc": "Komunikujte so zákazníkmi priamo cez platformu bez potreby zdieľania osobných kontaktov",
+    "profile_topping": "Zvýraznenie profilu",
+    "profile_topping_desc": "Za poplatok zvýraznite svoj profil, aby sa zobrazoval na popredných miestach vo vyhľadávaní",
+    "collecting_reviews": "Zbieranie recenzií",
+    "collecting_reviews_desc": "Budujte si povesť prostredníctvom hodnotení a recenzií od spokojných zákazníkov",
+    "easy_search": "Jednoduché vyhľadávanie",
+    "easy_search_desc": "Rýchlo nájdite kvalifikovaných remeselníkov podľa lokality, odbornosti a hodnotenia",
+    "transparent_profiles": "Transparentné profily",
+    "transparent_profiles_desc": "Prezerajte si portfólio prác, hodnotenia a skúsenosti remeselníkov pred objednaním",
+    "online_booking": "Online rezervácie",
+    "online_booking_desc": "Rezervujte si termíny priamo cez kalendár remeselníka bez telefonovania",
+    "direct_chat": "Priama komunikácia",
+    "direct_chat_desc": "Komunikujte s remeselníkom priamo cez platformu pre dohodnutie detailov",
+    "booking_history": "História rezervácií",
+    "booking_history_desc": "Sledujte históriu vašich objednávok a uchovávajte kontakty na osvedčených remeselníkov",
+    "and": "a"
   },
-  cs: {
-    // Czech translations
-    "welcome": "Vítejte na Majstri.com",
-    "platform_description": "Platforma spojující profesionální řemeslníky s lidmi, kteří hledají jejich služby",
-    "craftsman": "Jsem řemeslník",
-    "customer": "Jsem zákazník",
-    "craftsman_desc": "Prezentujte své dovednosti a najděte nové klienty ve vašem okolí",
-    "customer_desc": "Najděte spolehlivé řemeslníky pro vaše projekty a vylepšení domácnosti",
-    "login": "Přihlášení",
-    "register": "Registrovat se",
-    "start": "Začít",
-    "copyright": "Spojujeme řemeslníky a zákazníky",
-    
-    // Navbar translations
-    "home": "Domů",
-    "categories": "Kategorie",
-    "find_craftsman": "Najít řemeslníka",
-    "jobs": "Zakázky",
-    "how_it_works": "Jak to funguje",
-    "benefits": "Výhody",
-    "messages": "Zprávy",
-    "my_profile": "Můj profil",
-    "sign_out": "Odhlásit se",
-    "sign_in": "Přihlásit se",
-    
-    // Index page translations
-    "professional_craftsmen": "Profesionální řemeslníci na jednom místě",
-    "find_best": "Najděte nejlepší",
-    "craftsmen": "řemeslníky",
-    "platform_connecting": "Platforma, která spojuje profesionální řemeslníky a lidi, kteří potřebují kvalitní služby řemeslníků přímo v Česku.",
-    "search_profession": "Hledejte podle profese nebo lokality...",
-    "search": "Vyhledat",
-    "craftsmen_count": "500+ Řemeslníků",
-    "cities_count": "100+ Měst",
-    "categories_count": "20+ Kategorií",
-    "find_best_craftsmen": "Najděte nejlepší řemeslníky",
-    "search_name_craft": "Hledejte podle jména nebo řemesla...",
-    "enter_location": "Zadejte lokalitu...",
-    "filter_category": "Filtrovat podle kategorie",
-    "all_categories": "Všechny kategorie",
-    "reset": "Reset",
-    "view_all_categories": "Zobrazit všechny kategorie",
-    "featured_profiles": "Zvýrazněné profily jsou zobrazeny nahoře",
-    "error_loading": "Nastala chyba při načítání řemeslníků. Zkuste to prosím později.",
-    "try_again": "Zkusit znovu",
-    "no_craftsmen_found": "Nenašli se žádní řemeslníci podle vašich kritérií. Zkuste upravit vyhledávání.",
-    "show_all_craftsmen": "Zobrazit všechny řemeslníky",
-    
-    // About page
-    "about_us": "O nás",
-    
-    // Footer translations
-    "for_craftsmen": "Pro řemeslníky",
-    "registration": "Registrace",
-    "pricing": "Ceník služeb",
-    "registration_benefits": "Výhody registrace",
-    "for_customers": "Pro zákazníky",
-    "find_craftsmen": "Vyhledat řemeslníky",
-    "service_categories": "Kategorie služeb",
-    "how_it_works_footer": "Jak to funguje",
-    "reviews_ratings": "Hodnocení a recenze",
-    "company": "Společnost",
-    "about_us_footer": "O nás",
-    "contact": "Kontakt",
-    "privacy": "Ochrana soukromí",
-    "terms": "Podmínky používání",
-    "all_rights_reserved": "Všechna práva vyhrazena",
-    
-    // Profile translations
-    "edit_profile": "Upravit profil",
-    "portfolio": "Portfolio",
-    "reviews": "Hodnocení",
-    "calendar": "Kalendář",
-    "contact_us": "Kontaktujte nás",
-    "loading": "Načítám...",
-    "set_availability": "Nastavte svou dostupnost v sekci \"Kalendář dostupnosti\" výše na této stránce.",
-    "contact_message": "Zde můžete vidět dostupnost řemeslníka a kontaktovat ho prostřednictvím zprávy.",
-    "send_message": "Poslat zprávu",
-    "book_appointment": "Rezervace termínu",
-    "send_message_tab": "Poslat zprávu",
-    "select_date": "1. Vyberte datum",
-    "select_time": "2. Vyberte čas",
-    "request_details": "3. Detaily požadavku",
-    "job_description": "Popis práce*",
-    "job_description_placeholder": "Popište, jakou práci potřebujete vykonat...",
-    "address": "Adresa*",
-    "address_placeholder": "Zadejte adresu, kde se má práce vykonat",
-    "estimated_price": "Předpokládaná cena",
-    "estimated_price_placeholder": "Zadejte předpokládanou cenu",
-    "add_photo": "Přidat fotografii (volitelné)",
-    "upload_image": "Nahrát obrázek",
-    "submit_request": "Odeslat požadavek",
-    "sending": "Odesílám...",
-    "hourly_rate": "Hodinová sazba",
-    "loading_dates": "Načítám dostupné termíny...",
-    "craftsman_available": "Řemeslník je dostupný v označené dny",
-    "no_time_slots": "Žádné dostupné termíny",
-    "contact_craftsman_message": "Poslat zprávu řemeslníkovi",
-    "contact_message_desc": "Klikněte na tlačítko níže pro kontaktování řemeslníka přímo přes zprávy.",
-    "go_to_messages": "Přejít na zprávy",
-    
-    // Messages
-    "messages_title": "Zprávy",
-    "login_required": "Pro přístup ke zprávám se musíte přihlásit",
-    
-    // Error messages
-    "profile_access_error": "Chyba přístupu k profilu",
-    "profile_access_message": "Nemáte oprávnění k zobrazení tohoto profilu. Toto může být způsobeno nastavením Row Level Security (RLS) v databázi.",
-    "rls_block_message": "Přestože jste přihlášen jako vlastník profilu, RLS pravidla mohou blokovat přístup. Zkuste se odhlásit a znovu přihlásit.",
-    "create_profile_again": "Vytvořit profil znovu",
-    "database_error": "Nastala chyba připojení k databázi",
-    "database_error_message": "Nepodařilo se spojit s databází. Zkuste stránku obnovit nebo to zkuste znovu později.",
-    "unexpected_error": "Nastala neočekávaná chyba",
-    "try_again_later": "Zkuste stránku obnovit nebo to zkuste znovu později.",
-    "refresh_page": "Obnovit stránku",
-    
-    // Benefits page
-    "benefits_title": "Výhody pro řemeslníky",
-    "benefit_1_title": "Nové obchodní příležitosti",
-    "benefit_1_desc": "Získejte přístup k novým zákazníkům, kteří aktivně hledají služby jako jsou ty vaše.",
-    "benefit_2_title": "Online přítomnost",
-    "benefit_2_desc": "Vytvořte si profesionální profil, který zvýší vaši viditelnost a důvěryhodnost.",
-    "benefit_3_title": "Flexibilní kalendář",
-    "benefit_3_desc": "Spravujte svou dostupnost a přijímejte rezervace, které vyhovují vašemu harmonogramu.",
-    "benefit_4_title": "Hodnocení a recenze",
-    "benefit_4_desc": "Budujte svou reputaci prostřednictvím zpětné vazby od spokojených zákazníků.",
-    "register_now": "Zaregistrujte se nyní",
-    "learn_more": "Dozvědět se více",
-    
-    // Pricing page
-    "pricing_title": "Ceník služeb",
-    "basic_plan": "Základní plán",
-    "basic_price": "0 € / měsíc",
-    "basic_description": "Ideální pro začínající řemeslníky nebo ty, kteří chtějí vyzkoušet platformu.",
-    "premium_plan": "Premium plán",
-    "premium_price": "19,99 € / měsíc",
-    "premium_description": "Pro profesionální řemeslníky, kteří chtějí maximalizovat svůj potenciál.",
-    "profile_feature": "Profesionální profil",
-    "portfolio_feature": "Fotografie portfolia",
-    "reviews_feature": "Hodnocení a recenze",
-    "basic_requests": "Omezené žádosti",
-    "premium_requests": "Neomezené žádosti",
-    "priority_listing": "Prioritní zobrazení ve vyhledávání",
-    "analytics_feature": "Analytika a reporty",
-    "premium_support": "Prioritní podpora",
-    "featured_profile": "Zvýrazněný profil",
-    "choose_plan": "Vybrat plán",
-    "current_plan": "Váš aktuální plán",
-    
-    // How it works page
-    "how_it_works_title": "Jak to funguje",
-    "for_craftsmen_title": "Pro řemeslníky",
-    "step_1_craftsman": "1. Vytvořte si profil",
-    "step_1_craftsman_desc": "Vytvořte si bezplatný profil a ukažte své dovednosti a portfolio.",
-    "step_2_craftsman": "2. Nastavte svou dostupnost",
-    "step_2_craftsman_desc": "Nastavte svůj kalendář, aby zákazníci věděli, kdy jste k dispozici.",
-    "step_3_craftsman": "3. Získejte zakázky",
-    "step_3_craftsman_desc": "Přijímejte žádosti a komunikujte se zákazníky.",
-    "for_customers_title": "Pro zákazníky",
-    "step_1_customer": "1. Vyhledejte řemeslníka",
-    "step_1_customer_desc": "Prohlížejte si profily řemeslníků a hodnocení od jiných zákazníků.",
-    "step_2_customer": "2. Kontaktujte řemeslníka",
-    "step_2_customer_desc": "Pošlete zprávu nebo si zarezervujte termín přímo přes platformu.",
-    "step_3_customer": "3. Získejte kvalitní službu",
-    "step_3_customer_desc": "Užijte si profesionální služby a poté zanechte hodnocení.",
-    
-    // Privacy page translations
-    "privacy_policy": "Zásady ochrany osobních údajů",
-    "last_updated": "Poslední aktualizace",
-    "may": "květen",
-    "privacy_intro": "V těchto zásadách ochrany osobních údajů vám vysvětlujeme, jak shromažďujeme, používáme a chráníme vaše osobní údaje při používání naší platformy.",
-    "who_processes_data": "Kdo zpracovává vaše údaje",
-    "data_controller_desc": "Správcem osobních údajů je provozovatel služby Majstri.com. Pro otázky ohledně ochrany osobních údajů nás kontaktujte na",
-    "what_data_processed": "Jaké údaje zpracováváme",
-    "registration_data_desc": "Při registraci a používání naší platformy sbíráme následující údaje",
-    "full_name": "Celé jméno",
-    "email_address": "E-mailová adresa",
-    "phone_number": "Telefonní číslo",
-    "city_of_residence": "Město bydliště",
-    "data_purpose_desc": "Tyto údaje jsou nezbytné pro poskytování našich služeb, umožnění komunikace mezi uživateli a zajištění bezpečnosti na platformě.",
-    "data_purpose": "Účel zpracování údajů",
-    "data_processing_purposes": "Vaše osobní údaje zpracováváme k následujícím účelům",
-    "registration_account": "Registrace a správa účtu",
-    "profile_creation": "Vytvoření a prezentace profilu",
-    "contact_facilitation": "Usnadnění kontaktu mezi řemeslníky a zákazníky",
-    "system_messages": "Zasílání systémových zpráv",
-    "platform_updates": "Informování o novinkách a aktualizacích platformy",
-    "data_access": "Přístup k vašim údajům",
-    "data_access_desc": "K vašim údajům mají přístup pouze oprávnění zaměstnanci a spolupracovníci, kteří potřebují tyto údaje k plnění svých pracovních povinností. Třetím stranám poskytujeme údaje pouze v rozsahu nezbytném pro poskytování našich služeb nebo pokud to vyžaduje zákon.",
-    "data_retention": "Doba uchovávání údajů",
-    "data_retention_desc": "Vaše osobní údaje uchováváme po dobu aktivního užívání vašeho účtu a ještě po dobu 2 let po poslední aktivitě. Po uplynutí této doby jsou údaje anonymizovány nebo smazány.",
-    "cookies_usage": "Používání cookies",
-    "cookies_usage_desc": "Naše webová stránka používá cookies pro zlepšení uživatelského zážitku, analýzu návštěvnosti a poskytování personalizovaných funkcí. Používáním našich služeb souhlasíte s používáním cookies v souladu s našimi zásadami.",
-    "data_transfer": "Přenos údajů do zahraničí",
-    "data_transfer_desc": "Vaše osobní údaje mohou být přenášeny a uchovávány na serverech mimo vaši zemi, ale vždy v souladu s příslušnými zákony o ochraně osobních údajů.",
-    
-    // Terms of service page
-    "terms_of_service": "Podmínky používání",
-    "basic_information": "Základní informace",
-    "terms_intro": "Tyto podmínky používání upravují vaše používání služeb poskytovaných na Majstri.com. Pokud máte jakékoliv otázky, kontaktujte nás na",
-    "registration_age": "Věkové omezení",
-    "registration_age_desc": "Pro registraci a používání naší platformy musíte mít nejméně 18 let nebo dosáhnout věku plnoletosti ve vaší zemi.",
-    "user_types": "Typy uživatelů",
-    "platform_user_types": "Naše platforma rozlišuje dva hlavní typy uživatelů",
-    "user_content": "Uživatelský obsah",
-    "user_content_desc": "Uživatelé jsou zodpovědní za veškerý obsah, který nahrají nebo sdílejí na platformě, včetně fotografií, recenzí a profilových informací.",
-    "ratings_reviews": "Hodnocení a recenze",
-    "ratings_reviews_desc": "Zákazníci mohou zanechávat hodnocení a recenze na základě jejich zkušeností. Všechny recenze musí být upřímné a založené na skutečných zkušenostech.",
-    "bookings_communication": "Rezervace a komunikace",
-    "bookings_communication_desc": "Všechny rezervace a komunikace by měly probíhat prostřednictvím naší platformy, abychom mohli zajistit kvalitu služeb a řešit případné problémy.",
-    "responsibility": "Zodpovědnost",
-    "responsibility_desc": "Platforma slouží pouze jako zprostředkovatel mezi řemeslníky a zákazníky. Neneseme odpovědnost za kvalitu provedených prací ani za případné škody.",
-    "payments": "Platby",
-    "payments_desc": "Platby za služby jsou dohodnuty přímo mezi řemeslníkem a zákazníkem. Platforma může účtovat poplatky za určité prémiové funkce nebo služby.",
-    "account_restrictions": "Omezení účtu",
-    "account_restrictions_desc": "Vyhrazujeme si právo omezit, pozastavit nebo ukončit účty, které porušují tyto podmínky nebo jsou zapojeny do podvodných aktivit.",
-    "promotion_outside": "Propagace mimo platformu",
-    "promotion_outside_desc": "Řemeslníci nesmí přesměrovat zákazníky mimo platformu s cílem obejít poplatky nebo pravidla platformy.",
-    "data_protection": "Ochrana údajů",
-    "data_protection_desc": "Zpracováváme osobní údaje v souladu s našimi zásadami ochrany osobních údajů a příslušnými právními předpisy.",
-    "analytics_cookies": "Analytika a cookies",
-    "analytics_cookies_desc": "Používáme cookies a analytické nástroje pro zlepšení našich služeb a zlepšení uživatelského zážitku.",
-    "final_provisions": "Závěrečná ustanovení",
-    "final_provisions_desc": "Vyhrazujeme si právo kdykoliv změnit tyto podmínky používání. Aktuální verzi podmínek najdete vždy na našem webu."
-  },
-  en: {
-    // English translations
-    "welcome": "Welcome to Majstri.com",
-    "platform_description": "A platform connecting professional craftsmen with people looking for their services",
-    "craftsman": "I am a craftsman",
-    "customer": "I am a customer",
-    "craftsman_desc": "Showcase your skills and find new clients in your area",
-    "customer_desc": "Find reliable craftsmen for your projects and home improvements",
-    "login": "Login",
-    "register": "Register",
-    "start": "Get Started",
-    "copyright": "Connecting craftsmen and customers",
-    
-    // Navbar translations
-    "home": "Home",
-    "categories": "Categories",
-    "find_craftsman": "Find Craftsman",
-    "jobs": "Jobs",
-    "how_it_works": "How It Works",
-    "benefits": "Benefits",
-    "messages": "Messages",
-    "my_profile": "My Profile",
-    "sign_out": "Sign Out",
-    "sign_in": "Sign In",
-    
-    // Index page translations
-    "professional_craftsmen": "Professional craftsmen in one place",
-    "find_best": "Find the best",
-    "craftsmen": "craftsmen",
-    "platform_connecting": "A platform that connects professional craftsmen and people who need quality craftsman services.",
-    "search_profession": "Search by profession or location...",
-    "search": "Search",
-    "craftsmen_count": "500+ Craftsmen",
-    "cities_count": "100+ Cities",
-    "categories_count": "20+ Categories",
-    "find_best_craftsmen": "Find the best craftsmen",
-    "search_name_craft": "Search by name or craft...",
-    "enter_location": "Enter location...",
-    "filter_category": "Filter by category",
-    "all_categories": "All categories",
-    "reset": "Reset",
-    "view_all_categories": "View all categories",
-    "featured_profiles": "Featured profiles are displayed at the top",
-    "error_loading": "An error occurred while loading craftsmen. Please try again later.",
-    "try_again": "Try again",
-    "no_craftsmen_found": "No craftsmen were found matching your criteria. Try adjusting your search.",
-    "show_all_craftsmen": "Show all craftsmen",
-    
-    // About page
-    "about_us": "About Us",
-    
-    // Footer translations
-    "for_craftsmen": "For Craftsmen",
-    "registration": "Registration",
-    "pricing": "Service Pricing",
-    "registration_benefits": "Registration Benefits",
-    "for_customers": "For Customers",
-    "find_craftsmen": "Find Craftsmen",
-    "service_categories": "Service Categories",
-    "how_it_works_footer": "How It Works",
-    "reviews_ratings": "Reviews and Ratings",
-    "company": "Company",
-    "about_us_footer": "About Us",
-    "contact": "Contact",
-    "privacy": "Privacy Policy",
-    "terms": "Terms of Service",
-    "all_rights_reserved": "All rights reserved",
-    
-    // Profile translations
-    "edit_profile": "Edit Profile",
-    "portfolio": "Portfolio",
-    "reviews": "Reviews",
-    "calendar": "Calendar",
-    "contact_us": "Contact Us",
-    "loading": "Loading...",
-    "set_availability_profile": "Set your availability in the \"Calendar Availability\" section above on this page.",
-    "contact_message": "Here you can see the availability of the craftsman and contact them through a message.",
-    "send_message": "Send Message",
-    "book_appointment": "Book Appointment",
-    "send_message_tab": "Send Message",
-    "select_date": "1. Select Date",
-    "select_time": "2. Select Time",
-    "request_details": "3. Request Details",
-    "job_description": "Job Description*",
-    "job_description_placeholder": "Describe what work you need done...",
-    "address": "Address*",
-    "address_placeholder": "Enter the address where the work will be performed",
-    "estimated_price": "Estimated Price",
-    "estimated_price_placeholder": "Enter estimated price",
-    "add_photo": "Add Photo (optional)",
-    "upload_image": "Upload Image",
-    "submit_request": "Submit Request",
-    "sending": "Sending...",
-    "hourly_rate": "Hourly Rate",
-    "loading_dates": "Loading available dates...",
-    "craftsman_available": "Craftsman is available on the days marked",
-    "no_time_slots": "No available time slots",
-    "contact_craftsman_message": "Send message to craftsman",
-    "contact_message_desc": "Click the button below to contact the craftsman directly via messages.",
-    "go_to_messages": "Go to Messages",
-    
-    // Messages
-    "messages_title": "Messages",
-    "login_required": "You must be logged in to access messages",
-    
-    // Error messages
-    "profile_access_error": "Profile Access Error",
-    "profile_access_message": "You don't have permission to view this profile. This may be due to Row Level Security (RLS) settings in the database.",
-    "rls_block_message": "Even though you're logged in as the profile owner, RLS rules may be blocking access. Try logging out and logging back in.",
-    "create_profile_again": "Create Profile Again",
-    "database_error": "Database Connection Error",
-    "database_error_message": "Failed to connect to the database. Try refreshing the page or try again later.",
-    "unexpected_error": "An unexpected error occurred",
-    "try_again_later": "Try refreshing the page or try again later.",
-    "refresh_page": "Refresh Page",
-    
-    // Benefits page
-    "benefits_title": "Benefits for craftsmen",
-    "benefit_1_title": "New Business Opportunities",
-    "benefit_1_desc": "Gain access to new customers actively seeking services like yours.",
-    "benefit_2_title": "Online Presence",
-    "benefit_2_desc": "Create a professional profile that increases your visibility and credibility.",
-    "benefit_3_title": "Flexible Calendar",
-    "benefit_3_desc": "Manage your availability and accept bookings that fit your schedule.",
-    "benefit_4_title": "Ratings and Reviews",
-    "benefit_4_desc": "Build your reputation through feedback from satisfied customers.",
-    "register_now": "Register Now",
-    "learn_more": "Learn More",
-    
-    // Pricing page
-    "pricing_title": "Service Pricing",
-    "basic_plan": "Basic Plan",
-    "basic_price": "€0 / month",
-    "basic_description": "Ideal for beginning craftsmen or those who want to try the platform.",
-    "premium_plan": "Premium Plan",
-    "premium_price": "€19.99 / month",
-    "premium_description": "For professional craftsmen who want to maximize their potential.",
-    "profile_feature": "Professional Profile",
-    "portfolio_feature": "Portfolio Photos",
-    "reviews_feature": "Reviews and Ratings",
-    "basic_requests": "Limited Requests",
-    "premium_requests": "Unlimited Requests",
-    "priority_listing": "Priority Listing in Searches",
-    "analytics_feature": "Analytics and Reports",
-    "premium_support": "Priority Support",
-    "featured_profile": "Featured Profile",
-    "choose_plan": "Choose Plan",
-    "current_plan": "Your Current Plan",
-    
-    // How it works page
-    "how_it_works_title": "How It Works",
-    "for_craftsmen_title": "For Craftsmen",
-    "step_1_craftsman": "1. Create a Profile",
-    "step_1_craftsman_desc": "Create a free profile and showcase your skills and portfolio.",
-    "step_2_craftsman": "2. Set Your Availability",
-    "step_2_craftsman_desc": "Set your calendar so customers know when you're available.",
-    "step_3_craftsman": "3. Get Jobs",
-    "step_3_craftsman_desc": "Receive requests and communicate with customers.",
-    "for_customers_title": "For Customers",
-    "step_1_customer": "1. Find a Craftsman",
-    "step_1_customer_desc": "Browse profiles and ratings from other customers.",
-    "step_2_customer": "2. Contact the Craftsman",
-    "step_2_customer_desc": "Send a message or book an appointment directly through the platform.",
-    "step_3_customer": "3. Get Quality Service",
-    "step_3_customer_desc": "Enjoy professional service and leave a rating afterward.",
-    
-    // Privacy page translations
-    "privacy_policy": "Privacy Policy",
-    "last_updated": "Last updated",
-    "may": "May",
-    "privacy_intro": "In this privacy policy, we explain how we collect, use, and protect your personal data when you use our platform.",
-    "who_processes_data": "Who processes your data",
-    "data_controller_desc": "The data controller is the operator of the Majstri.com service. For questions regarding data protection, contact us at",
-    "what_data_processed": "What data we process",
-    "registration_data_desc": "When registering and using our platform, we collect the following data",
-    "full_name": "Full name",
-    "email_address": "Email address",
-    "phone_number": "Phone number",
-    "city_of_residence": "City of residence",
-    "data_purpose_desc": "This data is necessary to provide our services, enable communication between users, and ensure safety on the platform.",
-    "data_purpose": "Purpose of data processing",
-    "data_processing_purposes": "We process your personal data for the following purposes",
-    "registration_account": "Registration and account management",
-    "profile_creation": "Profile creation and presentation",
-    "contact_facilitation": "Facilitating contact between craftsmen and customers",
-    "system_messages": "Sending system messages",
-    "platform_updates": "Informing about platform news and updates",
-    "data_access": "Access to your data",
-    "data_access_desc": "Your data is accessible only to authorized employees and collaborators who need this data to fulfill their work duties. We provide data to third parties only to the extent necessary to provide our services or if required by law.",
-    "data_retention": "Data retention period",
-    "data_retention_desc": "We keep your personal data for the duration of active use of your account and for 2 years after the last activity. After this period, the data is anonymized or deleted.",
-    "cookies_usage": "Use of cookies",
-    "cookies_usage_desc": "Our website uses cookies to improve user experience, analyze traffic, and provide personalized features. By using our services, you agree to the use of cookies in accordance with our policies.",
-    "data_transfer": "Data transfer abroad",
-    "data_transfer_desc": "Your personal data may be transferred and stored on servers outside your country, but always in compliance with applicable data protection laws.",
-    
-    // Terms of service page
-    "terms_of_service": "Terms of Service",
-    "basic_information": "Basic Information",
-    "terms_intro": "These terms of service govern your use of services provided on Majstri.com. If you have any questions, contact us at",
-    "registration_age": "Age Restriction",
-    "registration_age_desc": "To register and use our platform, you must be at least 18 years old or have reached the age of majority in your country.",
-    "user_types": "User Types",
-    "platform_user_types": "Our platform distinguishes between two main types of users",
-    "user_content": "User Content",
-    "user_content_desc": "Users are responsible for all content they upload or share on the platform, including photos, reviews, and profile information.",
-    "ratings_reviews": "Ratings and Reviews",
-    "ratings_reviews_desc": "Customers may leave ratings and reviews based on their experiences. All reviews must be honest and based on actual experiences.",
-    "bookings_communication": "Bookings and Communication",
-    "bookings_communication_desc": "All bookings and communication should take place through our platform so that we can ensure service quality and resolve any issues.",
-    "responsibility": "Responsibility",
-    "responsibility_desc": "The platform serves only as an intermediary between craftsmen and customers. We are not responsible for the quality of work performed or any damages.",
-    "payments": "Payments",
-    "payments_desc": "Payments for services are agreed directly between the craftsman and customer. The platform may charge fees for certain premium features or services.",
-    "account_restrictions": "Account Restrictions",
-    "account_restrictions_desc": "We reserve the right to restrict, suspend, or terminate accounts that violate these terms or are involved in fraudulent activities.",
-    "promotion_outside": "Promotion Outside the Platform",
-    "promotion_outside_desc": "Craftsmen must not redirect customers outside the platform in order to bypass fees or platform rules.",
-    "data_protection": "Data Protection",
-    "data_protection_desc": "We process personal data in accordance with our privacy policy and applicable legal regulations.",
-    "analytics_cookies": "Analytics and Cookies",
-    "analytics_cookies_desc": "We use cookies and analytical tools to improve our services and enhance user experience.",
-    "final_provisions": "Final Provisions",
-    "final_provisions_desc": "We reserve the right to change these terms of service at any time. The current version of the terms can always be found on our website."
-  }
-};
-
-// LanguageProvider component
-export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Use browser's preferred language or default to Slovak
-  const getBrowserLanguage = (): SupportedLanguage => {
-    const lang = navigator.language.split("-")[0];
-    if (lang === "sk" || lang === "cs" || lang === "en") {
-      return lang as SupportedLanguage;
-    }
-    return "sk"; // Default to Slovak
-  };
-
-  // Get language from localStorage or use browser preference
-  const getInitialLanguage = (): SupportedLanguage => {
-    const savedLanguage = localStorage.getItem("language") as SupportedLanguage;
-    return savedLanguage || getBrowserLanguage();
-  };
-
-  const [language, setLanguageState] = useState<SupportedLanguage>(getInitialLanguage);
-
-  // Update language and save to localStorage
-  const setLanguage = (newLanguage: SupportedLanguage) => {
-    setLanguageState(newLanguage);
-    localStorage.setItem("language", newLanguage);
-  };
-
-  // Translation function
-  const t = (key: string): string => {
-    return translations[language][key] || translations["en"][key] || key;
-  };
-
-  useEffect(() => {
-    // Set html lang attribute for accessibility
-    document.documentElement.lang = language;
-  }, [language]);
-
-  return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
-      {children}
-    </LanguageContext.Provider>
-  );
-};
-
-// Custom hook to use language context
-export const useLanguage = () => {
-  const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error("useLanguage must be used within a LanguageProvider");
-  }
-  return context;
-};
