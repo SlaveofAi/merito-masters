@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Categories from "./pages/Categories";
 import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
             
             {/* Search route - redirect to home page */}
             <Route path="/search" element={<Navigate to="/home" replace />} />
