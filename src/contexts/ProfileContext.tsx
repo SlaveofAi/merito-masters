@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -176,7 +175,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const value = {
     loading,
     profileData,
-    userType: fetchedUserType || userType,
+    userType: fetchedUserType,  // Fix: Use fetchedUserType instead of userType
     isCurrentUser,
     profileNotFound,
     error,
