@@ -9,34 +9,35 @@ import {
   CardTitle
 } from "@/components/ui/card";
 import { StarIcon, MessageSquareText, AlertTriangle, CheckCircle } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Reviews: React.FC = () => {
+  const { t } = useLanguage();
+  
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50 pt-8 pb-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
             <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              ⭐ Hodnotenia a recenzie
+              ⭐ {t("reviews_ratings")}
             </h1>
           </div>
 
           <Card className="mb-10 bg-white shadow-sm">
             <CardHeader>
-              <CardTitle className="text-2xl">Prečo sú recenzie dôležité?</CardTitle>
+              <CardTitle className="text-2xl">{t("why_reviews_important")}</CardTitle>
             </CardHeader>
             <CardContent className="text-gray-700">
               <p className="mb-4">
-                Recenzie a hodnotenia sú <strong>kľúčovým prvkom dôvery</strong> medzi zákazníkmi a remeselníkmi. 
-                Pomáhajú novým zákazníkom rozhodnúť sa, komu zveria svoju zákazku, a remeselníkom dávajú 
-                spätnú väzbu, ktorú môžu využiť na zlepšenie služieb.
+                {t("reviews_importance_1")} <strong>{t("reviews_importance_2")}</strong> {t("reviews_importance_3")}
               </p>
             </CardContent>
           </Card>
 
           <div className="bg-white rounded-lg shadow-sm p-8 mb-10 border border-gray-100">
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-              Pravidlá férového hodnotenia:
+              {t("fair_review_rules")}
             </h2>
 
             <div className="space-y-8">
@@ -45,9 +46,9 @@ const Reviews: React.FC = () => {
                   <CheckCircle className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-lg text-gray-900">Recenzie musia byť pravdivé a vecné</h3>
+                  <h3 className="font-medium text-lg text-gray-900">{t("truthful_reviews")}</h3>
                   <p className="mt-1 text-gray-600">
-                    Hodnoť len na základe vlastnej skúsenosti. Vyhýbaj sa urážkam, osobným útokom či nepravdivým tvrdeniam.
+                    {t("truthful_reviews_desc")}
                   </p>
                 </div>
               </div>
@@ -57,9 +58,9 @@ const Reviews: React.FC = () => {
                   <AlertTriangle className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-lg text-gray-900">Nie je dovolené písať falošné recenzie</h3>
+                  <h3 className="font-medium text-lg text-gray-900">{t("fake_reviews_prohibited")}</h3>
                   <p className="mt-1 text-gray-600">
-                    Falošné pozitívne recenzie od známych alebo negatívne hodnotenia od konkurencie sú zakázané a budú odstránené.
+                    {t("fake_reviews_prohibited_desc")}
                   </p>
                 </div>
               </div>
@@ -69,9 +70,9 @@ const Reviews: React.FC = () => {
                   <MessageSquareText className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-lg text-gray-900">Možnosť odpovede pre remeselníka</h3>
+                  <h3 className="font-medium text-lg text-gray-900">{t("craftsman_response")}</h3>
                   <p className="mt-1 text-gray-600">
-                    Každý majster má možnosť reagovať na hodnotenie – vysvetliť situáciu alebo sa ospravedlniť v prípade nedorozumenia.
+                    {t("craftsman_response_desc")}
                   </p>
                 </div>
               </div>
@@ -81,9 +82,9 @@ const Reviews: React.FC = () => {
                   <StarIcon className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-lg text-gray-900">Moderovanie recenzií</h3>
+                  <h3 className="font-medium text-lg text-gray-900">{t("review_moderation")}</h3>
                   <p className="mt-1 text-gray-600">
-                    Recenzie nepreverujeme automaticky, ale v prípade nahlásenia nevhodného obsahu môžeme recenziu prehodnotiť alebo odstrániť.
+                    {t("review_moderation_desc")}
                   </p>
                 </div>
               </div>
@@ -92,17 +93,17 @@ const Reviews: React.FC = () => {
 
           <Card className="mb-10 bg-white shadow-sm">
             <CardHeader>
-              <CardTitle className="text-2xl">Ako funguje hodnotenie?</CardTitle>
+              <CardTitle className="text-2xl">{t("how_rating_works")}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="list-disc pl-5 space-y-2 text-gray-700">
-                <li>Hodnotiť môže len zákazník, ktorý má <strong>overenú rezerváciu</strong> alebo <strong>preukázateľnú komunikáciu s majstrom</strong>.</li>
-                <li>Hodnotenie obsahuje <strong>počet hviezdičiek (1–5)</strong> a voliteľný <strong>textový komentár</strong>.</li>
+                <li>{t("rating_rule_1_1")} <strong>{t("rating_rule_1_2")}</strong> {t("rating_rule_1_3")} <strong>{t("rating_rule_1_4")}</strong>.</li>
+                <li>{t("rating_rule_2_1")} <strong>{t("rating_rule_2_2")}</strong> {t("rating_rule_2_3")} <strong>{t("rating_rule_2_4")}</strong>.</li>
               </ul>
               
               <div className="mt-8 p-4 bg-blue-50 border border-blue-100 rounded-lg">
                 <p className="text-blue-700 italic">
-                  <span className="font-semibold">💡</span> Váš názor pomáha vytvárať lepšiu komunitu. Vážime si každé hodnotenie, ktoré pomáha ostatným zákazníkom aj remeselníkom rásť.
+                  <span className="font-semibold">💡</span> {t("feedback_importance")}
                 </p>
               </div>
             </CardContent>

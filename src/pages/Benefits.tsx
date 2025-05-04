@@ -14,65 +14,68 @@ import {
   MessageSquare,
   Star
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Benefits: React.FC = () => {
+  const { t, language } = useLanguage();
+  
   const craftsBenefits = [
     { 
-      title: "Vlastný profesionálny profil", 
-      description: "Prezentujte svoju prácu pomocou fotografií, popisov a hodnotení.",
+      title: t("professional_profile"), 
+      description: t("professional_profile_desc"),
       icon: <Users className="h-6 w-6 text-primary" />
     },
     { 
-      title: "Získavanie nových zákazníkov", 
-      description: "Buďte viditeľní pre ľudí vo vašom okolí, ktorí hľadajú spoľahlivého majstra.",
+      title: t("new_customers"), 
+      description: t("new_customers_desc"),
       icon: <Users className="h-6 w-6 text-primary" />
     },
     { 
-      title: "Kalendár dostupnosti", 
-      description: "Nastavte si, kedy ste k dispozícii, a zákazníci vás môžu jednoducho kontaktovať.",
+      title: t("availability_calendar"), 
+      description: t("availability_calendar_desc"),
       icon: <Calendar className="h-6 w-6 text-primary" />
     },
     { 
-      title: "Chat so zákazníkmi", 
-      description: "Priama a rýchla komunikácia s klientmi cez platformu.",
+      title: t("customer_chat"), 
+      description: t("customer_chat_desc"),
       icon: <MessageSquare className="h-6 w-6 text-primary" />
     },
     { 
-      title: "Možnosť topovania profilu", 
-      description: "Zvýšte svoju viditeľnosť medzi ostatnými.",
+      title: t("profile_topping"), 
+      description: t("profile_topping_desc"),
       icon: <Star className="h-6 w-6 text-primary" />
     },
     { 
-      title: "Zbieranie recenzií", 
-      description: "Budujte si dôveryhodnosť pomocou spätnej väzby od zákazníkov.",
+      title: t("collecting_reviews"), 
+      description: t("collecting_reviews_desc"),
       icon: <Star className="h-6 w-6 text-primary" />
     }
   ];
 
   const customerBenefits = [
     { 
-      title: "Jednoduché vyhľadávanie odborníkov", 
-      description: "Nájdite majstra podľa remesla a lokality.",
+      title: t("easy_search"), 
+      description: t("easy_search_desc"),
       icon: <Hammer className="h-6 w-6 text-primary" />
     },
     { 
-      title: "Transparentné profily s recenziami", 
-      description: "Overte si kvalitu ešte pred kontaktovaním.",
+      title: t("transparent_profiles"), 
+      description: t("transparent_profiles_desc"),
       icon: <Star className="h-6 w-6 text-primary" />
     },
     { 
-      title: "Rezervácia termínu online", 
-      description: "Vyberte si čas a dátum, ktorý vám vyhovuje.",
+      title: t("online_booking"), 
+      description: t("online_booking_desc"),
       icon: <Calendar className="h-6 w-6 text-primary" />
     },
     { 
-      title: "Priamy kontakt cez chat", 
-      description: "Žiadne sprostredkovateľské poplatky, komunikujete priamo.",
+      title: t("direct_chat"), 
+      description: t("direct_chat_desc"),
       icon: <MessageSquare className="h-6 w-6 text-primary" />
     },
     { 
-      title: "História objednávok a hodnotení", 
-      description: "Majte prehľad o svojich dopytoch.",
+      title: t("booking_history"), 
+      description: t("booking_history_desc"),
       icon: <Users className="h-6 w-6 text-primary" />
     }
   ];
@@ -83,7 +86,7 @@ const Benefits: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
             <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Výhody registrácie
+              {t("registration_benefits")}
             </h1>
           </div>
 
@@ -92,7 +95,7 @@ const Benefits: React.FC = () => {
             <CardHeader className="bg-primary/5 border-b">
               <CardTitle className="flex items-center">
                 <Hammer className="h-6 w-6 text-primary mr-3" />
-                <span>Pre remeselníkov</span>
+                <span>{t("for_craftsmen")}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
@@ -121,7 +124,7 @@ const Benefits: React.FC = () => {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-gray-50 px-4 text-gray-500 text-sm">AND</span>
+              <span className="bg-gray-50 px-4 text-gray-500 text-sm">{t("and")}</span>
             </div>
           </div>
 
@@ -130,7 +133,7 @@ const Benefits: React.FC = () => {
             <CardHeader className="bg-primary/5 border-b">
               <CardTitle className="flex items-center">
                 <Users className="h-6 w-6 text-primary mr-3" />
-                <span>Pre zákazníkov</span>
+                <span>{t("for_customers")}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
