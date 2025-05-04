@@ -3,6 +3,7 @@ import React from "react";
 import { Link, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/ProfileContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type TabType = 'portfolio' | 'reviews' | 'calendar';
 
@@ -14,6 +15,7 @@ interface ProfileNavigationProps {
 const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userType }) => {
   const { id } = useParams<{ id?: string }>();
   const { isCurrentUser } = useProfile();
+  const { t } = useLanguage();
   const profileId = id || (isCurrentUser ? '' : '');
   
   // Generate URL for each tab
@@ -51,7 +53,7 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
               variant={activeTab === 'portfolio' ? 'default' : 'ghost'} 
               className="rounded-none rounded-t-lg h-12"
             >
-              Portfólio
+              {t('portfolio')}
             </Button>
           </Link>
         )}
@@ -61,7 +63,7 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
             variant={activeTab === 'reviews' ? 'default' : 'ghost'}
             className="rounded-none rounded-t-lg h-12"
           >
-            Hodnotenia
+            {t('reviews')}
           </Button>
         </Link>
         
@@ -71,7 +73,7 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
               variant={activeTab === 'calendar' ? 'default' : 'ghost'}
               className="rounded-none rounded-t-lg h-12"
             >
-              Kalendár
+              {t('calendar')}
             </Button>
           </Link>
         )}
@@ -81,3 +83,4 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
 };
 
 export default ProfileNavigation;
+

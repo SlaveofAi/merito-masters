@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -14,11 +15,13 @@ import { format } from "date-fns";
 import { sk } from "date-fns/locale";
 import { Image, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const ContactTab = () => {
   const { profileData, loading, isCurrentUser } = useProfile();
   const { user, userType } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   
   // Booking form state
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -433,21 +436,21 @@ const ContactTab = () => {
   };
 
   if (loading || !profileData) {
-    return <div className="py-8 text-center">Načítavam...</div>;
+    return <div className="py-8 text-center">{t('loading')}</div>;
   }
 
   // Don't show booking functionality if the current user is a craftsman or viewing their own profile
   if (userType === 'craftsman' || isCurrentUser) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto text-center">
-        <h3 className="text-xl font-semibold mb-4">Kontakt</h3>
+        <h3 className="text-xl font-semibold mb-4">{t('contact_us')}</h3>
         {isCurrentUser && profileData.user_type === 'craftsman' ? (
           <p className="mb-6 text-gray-600">
-            Nastavte svoju dostupnosť v sekcii "Kalendár dostupnosti" vyššie na tejto stránke.
+            {t('set_availability')}
           </p>
         ) : (
           <p className="mb-6 text-gray-600">
-            Tu môžete vidieť dostupnosť remeselníka a kontaktovať ho prostredníctvom správy.
+            {t('contact_message')}
           </p>
         )}
       </div>
@@ -463,12 +466,12 @@ const ContactTab = () => {
   if (!isCustomerViewingCraftsman) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto text-center">
-        <h3 className="text-xl font-semibold mb-4">Kontaktujte nás</h3>
+        <h3 className="text-xl font-semibold mb-4">{t('contact_us')}</h3>
         <p className="mb-6 text-gray-600">
-          Pre viac informácií nás prosím kontaktujte prostredníctvom správy.
+          {t('contact_message')}
         </p>
         <Button onClick={handleSendMessage}>
-          Poslať správu
+          {t('send_message')}
         </Button>
       </div>
     );
@@ -478,21 +481,21 @@ const ContactTab = () => {
     <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6 grid w-full grid-cols-2">
-          <TabsTrigger value="booking">Rezervácia termínu</TabsTrigger>
-          <TabsTrigger value="message">Poslať správu</TabsTrigger>
+          <TabsTrigger value="booking">{t('book_appointment')}</TabsTrigger>
+          <TabsTrigger value="message">{t('send_message_tab')}</TabsTrigger>
         </TabsList>
         
         <TabsContent value="booking">
-          <h3 className="text-xl font-semibold mb-6">Rezervácia termínu s {profileData.name}</h3>
+          <h3 className="text-xl font-semibold mb-6">{t('book_appointment')} {profileData.name}</h3>
           
           <form onSubmit={handleSubmitBookingRequest}>
             <div className="space-y-6">
               <div>
-                <h4 className="font-medium mb-2">1. Vyberte dátum</h4>
+                <h4 className="font-medium mb-2">{t('select_date')}</h4>
                 {isLoadingDates ? (
                   <div className="bg-gray-50 p-4 rounded-md border flex justify-center items-center">
                     <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-                    <p className="ml-2 text-sm text-gray-500">Načítavam dostupné termíny...</p>
+                    <p className="ml-2 text-sm text-gray-500">{t('loading_dates')}</p>
                   </div>
                 ) : (
                   <div className="bg-gray-50 p-4 rounded-md border">
@@ -517,7 +520,7 @@ const ContactTab = () => {
                     <div className="mt-3 flex items-center">
                       <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
                       <span className="text-xs text-gray-500">
-                        Remeselník je dostupný v označené dni
+                        {t('craftsman_available')}
                       </span>
                     </div>
                   </div>
@@ -525,7 +528,7 @@ const ContactTab = () => {
               </div>
               
               <div>
-                <h4 className="font-medium mb-2">2. Vyberte čas</h4>
+                <h4 className="font-medium mb-2">{t('select_time')}</h4>
                 <div className="grid grid-cols-4 gap-2">
                   {availableTimeSlots.length > 0 ? (
                     availableTimeSlots.map((slot) => (
@@ -540,21 +543,21 @@ const ContactTab = () => {
                       </Button>
                     ))
                   ) : (
-                    <p className="text-gray-500 col-span-4">Žiadne dostupné termíny</p>
+                    <p className="text-gray-500 col-span-4">{t('no_time_slots')}</p>
                   )}
                 </div>
               </div>
               
               <div>
-                <h4 className="font-medium mb-2">3. Detaily požiadavky</h4>
+                <h4 className="font-medium mb-2">{t('request_details')}</h4>
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                      Popis práce*
+                      {t('job_description')}
                     </label>
                     <Textarea
                       id="description"
-                      placeholder="Opíšte, akú prácu potrebujete vykonať..."
+                      placeholder={t('job_description_placeholder')}
                       value={bookingDescription}
                       onChange={(e) => setBookingDescription(e.target.value)}
                       className="min-h-[100px]"
@@ -564,11 +567,11 @@ const ContactTab = () => {
                   
                   <div>
                     <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                      Adresa*
+                      {t('address')}
                     </label>
                     <Input
                       id="address"
-                      placeholder="Zadajte adresu, kde sa má práca vykonať"
+                      placeholder={t('address_placeholder')}
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       required
@@ -577,12 +580,12 @@ const ContactTab = () => {
                   
                   <div>
                     <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-                      Predpokladaná cena
+                      {t('estimated_price')}
                     </label>
                     <Input
                       id="price"
                       type="number"
-                      placeholder="Zadajte predpokladanú cenu"
+                      placeholder={t('estimated_price_placeholder')}
                       value={bookingPrice}
                       onChange={(e) => setBookingPrice(e.target.value)}
                     />
@@ -590,7 +593,7 @@ const ContactTab = () => {
                   
                   <div>
                     <Label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
-                      Pridať fotografiu (voliteľné)
+                      {t('add_photo')}
                     </Label>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
@@ -599,7 +602,7 @@ const ContactTab = () => {
                           className="flex items-center justify-center gap-2 cursor-pointer px-4 py-2 bg-gray-100 hover:bg-gray-200 border rounded-md text-sm font-medium"
                         >
                           <Image className="h-4 w-4" />
-                          Nahrať obrázok
+                          {t('upload_image')}
                         </Label>
                         <Input
                           id="image-upload"
@@ -652,16 +655,16 @@ const ContactTab = () => {
                   {isSubmitting || isUploading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                      Odosielam...
+                      {t('sending')}
                     </>
                   ) : (
-                    "Odoslať požiadavku"
+                    t('submit_request')
                   )}
                 </Button>
                 
                 {hourlyRate && (
                   <p className="mt-2 text-sm text-gray-500 text-center">
-                    Hodinová sadzba: {formatCurrency(hourlyRate || 0)}
+                    {t('hourly_rate')}: {formatCurrency(hourlyRate || 0)}
                   </p>
                 )}
               </div>
@@ -671,12 +674,12 @@ const ContactTab = () => {
         
         <TabsContent value="message">
           <div className="text-center py-8">
-            <h3 className="text-xl font-semibold mb-4">Poslať správu remeselníkovi</h3>
+            <h3 className="text-xl font-semibold mb-4">{t('contact_craftsman')}</h3>
             <p className="mb-6 text-gray-600">
-              Kliknite na tlačidlo nižšie pre kontaktovanie remeselníka {profileData.name} priamo cez správy.
+              {t('contact_message_desc').replace('{name}', profileData.name)}
             </p>
             <Button onClick={handleSendMessage}>
-              Prejsť na správy
+              {t('go_to_messages')}
             </Button>
           </div>
         </TabsContent>
@@ -686,3 +689,4 @@ const ContactTab = () => {
 };
 
 export default ContactTab;
+

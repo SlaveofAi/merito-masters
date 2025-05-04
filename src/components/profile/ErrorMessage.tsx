@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ErrorMessageProps {
   type: 'access' | 'database' | 'unknown';
@@ -9,25 +10,26 @@ interface ErrorMessageProps {
 }
 
 const ErrorMessage: React.FC<ErrorMessageProps> = ({ type, isCurrentUser, onRetry }) => {
+  const { t } = useLanguage();
+  
   let title = '';
   let message = '';
   let action = null;
 
   switch (type) {
     case 'access':
-      title = "Chyba prístupu k profilu";
-      message = "Nemáte oprávnenie na zobrazenie tohto profilu. Toto môže byť spôsobené nastaveniami Row Level Security (RLS) v databáze.";
+      title = t("profile_access_error");
+      message = t("profile_access_message");
       
       if (isCurrentUser) {
         action = (
           <>
             <p className="text-sm text-amber-600 mb-4">
-              Hoci ste prihlásený ako vlastník profilu, RLS pravidlá môžu blokovať prístup.
-              Skúste sa odhlásiť a znova prihlásiť.
+              {t("rls_block_message")}
             </p>
             {onRetry && (
               <Button onClick={onRetry} className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors">
-                Vytvoriť profil znova
+                {t("create_profile_again")}
               </Button>
             )}
           </>
@@ -36,22 +38,22 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ type, isCurrentUser, onRetr
       break;
       
     case 'database':
-      title = "Nastala chyba pripojenia k databáze";
-      message = "Nepodarilo sa spojiť s databázou. Skúste stránku obnoviť alebo to skúste znova neskôr.";
+      title = t("database_error");
+      message = t("database_error_message");
       action = (
         <Button onClick={() => window.location.reload()} className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors">
-          Obnoviť stránku
+          {t("refresh_page")}
         </Button>
       );
       break;
       
     case 'unknown':
     default:
-      title = "Nastala neočakávaná chyba";
-      message = "Skúste stránku obnoviť alebo to skúste znova neskôr.";
+      title = t("unexpected_error");
+      message = t("try_again_later");
       action = (
         <Button onClick={() => window.location.reload()} className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition-colors">
-          Obnoviť stránku
+          {t("refresh_page")}
         </Button>
       );
       break;
@@ -69,3 +71,4 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ type, isCurrentUser, onRetr
 };
 
 export default ErrorMessage;
+

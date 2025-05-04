@@ -1,8 +1,11 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Footer = () => {
+  const { t } = useLanguage();
+  
   return (
     <footer className="bg-secondary py-12 border-t border-border/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,83 +15,83 @@ const Footer = () => {
               Majstri<span className="text-muted-foreground">.com</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Prepájame profesionálnych remeselníkov a zákazníkov po celom Slovensku.
+              {t("platform_connecting")}
             </p>
           </div>
           
           <div>
-            <h4 className="font-medium mb-4">Pre remeselníkov</h4>
+            <h4 className="font-medium mb-4">{t("for_craftsmen")}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="/register" className="hover:text-foreground transition-colors">
-                  Registrácia
+                  {t("registration")}
                 </Link>
               </li>
               <li>
                 <Link to="/login" className="hover:text-foreground transition-colors">
-                  Prihlásenie
+                  {t("login")}
                 </Link>
               </li>
               <li>
                 <Link to="/pricing" className="hover:text-foreground transition-colors">
-                  Cenník služieb
+                  {t("pricing")}
                 </Link>
               </li>
               <li>
                 <Link to="/benefits" className="hover:text-foreground transition-colors">
-                  Výhody registrácie
+                  {t("registration_benefits")}
                 </Link>
               </li>
             </ul>
           </div>
           
           <div>
-            <h4 className="font-medium mb-4">Pre zákazníkov</h4>
+            <h4 className="font-medium mb-4">{t("for_customers")}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="/craftsmen" className="hover:text-foreground transition-colors">
-                  Vyhľadať remeselníkov
+                  {t("find_craftsmen")}
                 </Link>
               </li>
               <li>
                 <Link to="/categories" className="hover:text-foreground transition-colors">
-                  Kategórie služieb
+                  {t("service_categories")}
                 </Link>
               </li>
               <li>
                 <Link to="/how-it-works" className="hover:text-foreground transition-colors">
-                  Ako to funguje
+                  {t("how_it_works_footer")}
                 </Link>
               </li>
               <li>
                 <Link to="/reviews" className="hover:text-foreground transition-colors">
-                  Hodnotenia a recenzie
+                  {t("reviews_ratings")}
                 </Link>
               </li>
             </ul>
           </div>
           
           <div>
-            <h4 className="font-medium mb-4">Spoločnosť</h4>
+            <h4 className="font-medium mb-4">{t("company")}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="/about" className="hover:text-foreground transition-colors">
-                  O nás
+                  {t("about_us_footer")}
                 </Link>
               </li>
               <li>
                 <Link to="/contact" className="hover:text-foreground transition-colors">
-                  Kontakt
+                  {t("contact")}
                 </Link>
               </li>
               <li>
                 <Link to="/privacy" className="hover:text-foreground transition-colors">
-                  Ochrana súkromia
+                  {t("privacy")}
                 </Link>
               </li>
               <li>
                 <Link to="/terms" className="hover:text-foreground transition-colors">
-                  Podmienky používania
+                  {t("terms")}
                 </Link>
               </li>
             </ul>
@@ -97,7 +100,7 @@ const Footer = () => {
         
         <div className="mt-12 pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Majstri.com. Všetky práva vyhradené.
+            &copy; {new Date().getFullYear()} Majstri.com. {t("all_rights_reserved")}
           </p>
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -125,3 +128,4 @@ const Footer = () => {
 };
 
 export default Footer;
+

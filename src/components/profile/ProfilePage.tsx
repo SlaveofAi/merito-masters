@@ -13,10 +13,12 @@ import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const { user, userType: authUserType, updateUserType } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const {
     loading,
     profileData,
@@ -192,7 +194,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                     className="flex items-center gap-2"
                   >
                     <Pencil className="w-4 h-4" /> 
-                    Upraviť profil
+                    {t('edit_profile')}
                   </Button>
                 </div>
               )}
@@ -209,3 +211,4 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
 };
 
 export default ProfilePage;
+
