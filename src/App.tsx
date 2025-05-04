@@ -21,6 +21,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import HowItWorks from "./pages/HowItWorks";
+import Pricing from "./pages/Pricing";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/about" element={<About />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/pricing" element={<Pricing />} />
             
             {/* Search route - redirect to home page */}
             <Route path="/search" element={<Navigate to="/home" replace />} />
