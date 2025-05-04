@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -44,7 +45,7 @@ interface ProfileContextType {
   fetchPortfolioImages?: (userId: string) => Promise<void>;
   removeProject: (projectId: string) => Promise<void>;
   createProject: (title: string, description: string, images: File[]) => Promise<void>;
-  fetchProfileData: () => void;
+  fetchProfileData: () => void; // Added the missing function declaration
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -210,7 +211,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchPortfolioImages,
     removeProject,
     createProject,
-    fetchProfileData,  // Make sure this is included in the context value
+    fetchProfileData,  // Include the fetchProfileData in the context value
   };
 
   return (
