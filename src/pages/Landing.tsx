@@ -41,15 +41,7 @@ const Landing = () => {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
             Platforma spájajúca profesionálnych remeselníkov s ľuďmi, ktorí hľadajú ich služby
           </p>
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6 max-w-xl mx-auto">
-            <h2 className="text-lg font-semibold text-blue-700 mb-1">
-              Nová funkcia pre remeselníkov!
-            </h2>
-            <p className="text-sm text-blue-600">
-              Získajte viac zákaziek! Zvýraznite svoj profil v kategórii i výsledkoch vyhľadávania 
-              na celý týždeň už od 10€. 
-            </p>
-          </div>
+          {/* Removed the blue announcement box that was here */}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl w-full">
