@@ -26,7 +26,7 @@ const Landing = () => {
     <div className="min-h-screen flex flex-col bg-white">
       <header className="py-6 px-4 sm:px-6 border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="text-2xl font-bold text-black">Majstri.sk</div>
+          <div className="text-2xl font-bold text-black">Majstri.com</div>
           <div className="flex items-center gap-4">
             <Link to="/login" className="text-sm font-medium hover:underline">
               Prihlásenie
@@ -37,7 +37,7 @@ const Landing = () => {
 
       <main className="flex-grow flex flex-col items-center justify-center p-4">
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Vitajte na Majstri.sk</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Vitajte na Majstri.com</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
             Platforma spájajúca profesionálnych remeselníkov s ľuďmi, ktorí hľadajú ich služby
           </p>
@@ -92,7 +92,7 @@ const Landing = () => {
 
       <footer className="bg-gray-100 py-6 px-4 text-center text-sm text-gray-600">
         <div className="max-w-7xl mx-auto">
-          <p>© {new Date().getFullYear()} Majstri.sk - Spájame remeselníkov a zákazníkov</p>
+          <p>© {new Date().getFullYear()} Majstri.com - Spájame remeselníkov a zákazníkov</p>
         </div>
       </footer>
     </div>

@@ -1,4 +1,3 @@
-
 import React from "react";
 import Layout from "@/components/Layout";
 import { Separator } from "@/components/ui/separator";
@@ -7,13 +6,13 @@ const Terms = () => {
   return (
     <Layout>
       <div className="container max-w-4xl mx-auto py-12 px-4 sm:px-6">
-        <h1 className="text-3xl font-bold mb-8 text-center">Podmienky používania webovej stránky Majstri.sk</h1>
+        <h1 className="text-3xl font-bold mb-8 text-center">Podmienky používania webovej stránky Majstri.com</h1>
         
         <div className="prose max-w-none">
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">1. Základné informácie</h2>
             <p className="text-muted-foreground">
-              Tieto podmienky používania upravujú práva a povinnosti medzi prevádzkovateľom webovej stránky Majstri.sk (ďalej len "Platforma") a jej užívateľmi. Prevádzkovateľom Platformy je fyzická osoba, ktorá je dostupná na e-mailovej adrese: <a href="mailto:dvidid35@gmail.com" className="text-primary hover:underline">dvidid35@gmail.com</a>.
+              Tieto podmienky používania upravujú práva a povinnosti medzi prevádzkovateľom webovej stránky Majstri.com (ďalej len "Platforma") a jej užívateľmi. Prevádzkovateľom Platformy je fyzická osoba, ktorá je dostupná na e-mailovej adrese: <a href="mailto:dvidid35@gmail.com" className="text-primary hover:underline">dvidid35@gmail.com</a>.
             </p>
           </section>
           

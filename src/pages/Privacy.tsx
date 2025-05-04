@@ -14,7 +14,7 @@ const Privacy = () => {
         
         <div className="prose max-w-none">
           <p className="mb-6 text-muted-foreground">
-            Týmto dokumentom ťa informujeme o tom, ako spracúvame tvoje osobné údaje pri používaní platformy Majstri.sk.
+            Týmto dokumentom ťa informujeme o tom, ako spracúvame tvoje osobné údaje pri používaní platformy Majstri.com.
           </p>
           
           <section className="mb-8">

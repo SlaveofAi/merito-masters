@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -63,7 +62,7 @@ const CustomNavigation = () => {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <Link to={user ? "/home" : "/"} className="text-2xl font-bold text-primary">
-                Majstri.sk
+                Majstri.com
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

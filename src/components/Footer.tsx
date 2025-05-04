@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="space-y-4">
             <Link to="/" className="text-2xl font-semibold tracking-tight">
-              Majstri<span className="text-muted-foreground">.sk</span>
+              Majstri<span className="text-muted-foreground">.com</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs">
               Prepájame profesionálnych remeselníkov a zákazníkov po celom Slovensku.
@@ -97,7 +97,7 @@ const Footer = () => {
         
         <div className="mt-12 pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Majstri.sk. Všetky práva vyhradené.
+            &copy; {new Date().getFullYear()} Majstri.com. Všetky práva vyhradené.
           </p>
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">

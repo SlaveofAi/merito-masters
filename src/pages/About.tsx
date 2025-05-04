@@ -17,10 +17,10 @@ const About = () => {
           </p>
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Prečo vznikla platforma Majstri.sk?</h2>
+            <h2 className="text-xl font-semibold mb-4">Prečo vznikla platforma Majstri.com?</h2>
             <p className="text-muted-foreground">
               Zháňať kvalitného remeselníka býva často stresujúce. Na druhej strane, mnoho skúsených odborníkov má problém získať nových 
-              klientov len na základe odporúčaní. Majstri.sk vzniklo ako jednoduché riešenie – transparentné, dôveryhodné a spravodlivé 
+              klientov len na základe odporúčaní. Majstri.com vzniklo ako jednoduché riešenie – transparentné, dôveryhodné a spravodlivé 
               pre obe strany.
             </p>
           </section>
@@ -48,7 +48,7 @@ const About = () => {
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Naša vízia</h2>
             <p className="text-muted-foreground">
-              Chceme, aby sa Majstri.sk stali synonymom kvality, dôvery a remeselnej zručnosti. Platforma má potenciál rásť a rozvíjať sa 
+              Chceme, aby sa Majstri.com stali synonymom kvality, dôvery a remeselnej zručnosti. Platforma má potenciál rásť a rozvíjať sa 
               – v budúcnosti plánujeme pridať platobný systém, rozšírené možnosti správy rezervácií a ďalšie užitočné nástroje 
               pre remeselníkov aj zákazníkov.
             </p>
