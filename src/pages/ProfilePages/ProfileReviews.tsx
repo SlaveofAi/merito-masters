@@ -8,6 +8,8 @@ import CustomerReviewsTab from "@/components/profile/CustomerReviewsTab";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
+import { Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const ProfileReviewsContent: React.FC = () => {
   const {
@@ -19,7 +21,8 @@ const ProfileReviewsContent: React.FC = () => {
     userType,
     createDefaultProfileIfNeeded,
     profileImageUrl,
-    fetchProfileData
+    fetchProfileData,
+    setIsEditing
   } = useProfile();
 
   // Enhanced debug log to help troubleshoot the profile data and user type
@@ -82,25 +85,42 @@ const ProfileReviewsContent: React.FC = () => {
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
-        {profileData && (
-          <ProfileHeader 
-            profileData={profileData}
-            isCurrentUser={isCurrentUser}
-            userType={userType}
-            profileImageUrl={profileImageUrl}
-            fetchProfileData={fetchProfileData}
-          />
-        )}
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          {profileData && (
+            <>
+              <ProfileHeader 
+                profileData={profileData}
+                isCurrentUser={isCurrentUser}
+                userType={userType}
+                profileImageUrl={profileImageUrl}
+                fetchProfileData={fetchProfileData}
+              />
+              
+              {isCurrentUser && (
+                <div className="flex justify-end mb-6">
+                  <Button 
+                    onClick={() => setIsEditing(true)}
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                  >
+                    <Pencil className="w-4 h-4" /> 
+                    Upraviť profil
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
 
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-6">
-          <ProfileNavigation activeTab="reviews" userType={profileData?.user_type} />
-          
-          <div className="mt-4 sm:mt-8">
-            {isCustomerProfile ? (
-              <CustomerReviewsTab />
-            ) : (
-              <ReviewsTab />
-            )}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <ProfileNavigation activeTab="reviews" userType={profileData?.user_type} />
+            
+            <div className="mt-6">
+              {isCustomerProfile ? (
+                <CustomerReviewsTab />
+              ) : (
+                <ReviewsTab />
+              )}
+            </div>
           </div>
         </div>
       </div>

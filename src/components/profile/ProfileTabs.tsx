@@ -20,7 +20,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portf
   // Don't display tabs when editing
   if (isEditing && profileData) {
     return (
-      <div className="container px-4 mx-auto py-8">
+      <div className="py-4">
         <EditProfileForm 
           profile={profileData} 
           userType={profileUserType} 
@@ -39,7 +39,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portf
       className="w-full" 
       onValueChange={setActiveTab}
     >
-      <TabsList className="grid w-full max-w-2xl mx-auto mb-8" 
+      <TabsList className="grid w-full mb-8" 
         style={{ 
           gridTemplateColumns: isCraftsman 
             ? (isCurrentUser ? "repeat(3, 1fr)" : "repeat(3, 1fr)") 

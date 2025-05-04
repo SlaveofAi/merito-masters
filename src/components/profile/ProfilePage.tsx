@@ -173,33 +173,35 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
-        {profileData && (
-          <>
-            <ProfileHeader 
-              profileData={profileData} 
-              isCurrentUser={isCurrentUser} 
-              userType={profileUserType}
-              profileImageUrl={profileImageUrl}
-              fetchProfileData={fetchProfileData}
-            />
-            
-            {isCurrentUser && (
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-end">
-                <Button 
-                  onClick={() => setIsEditing(true)}
-                  variant="outline" 
-                  className="flex items-center gap-2"
-                >
-                  <Pencil className="w-4 h-4" /> 
-                  Upraviť profil
-                </Button>
-              </div>
-            )}
-          </>
-        )}
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          {profileData && (
+            <>
+              <ProfileHeader 
+                profileData={profileData} 
+                isCurrentUser={isCurrentUser} 
+                userType={profileUserType}
+                profileImageUrl={profileImageUrl}
+                fetchProfileData={fetchProfileData}
+              />
+              
+              {isCurrentUser && (
+                <div className="flex justify-end mb-6">
+                  <Button 
+                    onClick={() => setIsEditing(true)}
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                  >
+                    <Pencil className="w-4 h-4" /> 
+                    Upraviť profil
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <ProfileTabs userType={effectiveUserType} initialTab={initialTab} />
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <ProfileTabs userType={effectiveUserType} initialTab={initialTab} />
+          </div>
         </div>
       </div>
     </Layout>
