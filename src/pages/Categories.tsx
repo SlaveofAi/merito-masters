@@ -9,8 +9,9 @@ import { Loader2, MapPin, Users } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CategoryCount {
-  trade_category: string;
+  category: string;
   count: number;
+  isCustom: boolean;
 }
 
 const Categories = () => {
@@ -33,27 +34,40 @@ const Categories = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("craftsman_profiles")
-        .select("trade_category")
-        .not("trade_category", "is", null);
+        .select("trade_category, custom_specialization");
 
       if (error) {
         console.error("Error fetching categories:", error);
         throw new Error(error.message);
       }
 
-      // Count craftsmen in each category
-      const categoryCounts: Record<string, number> = {};
+      // Process both trade categories and custom specializations
+      const categoryCounts: Record<string, { count: number, isCustom: boolean }> = {};
+      
       data.forEach(craftsman => {
+        // Process main trade category
         if (craftsman.trade_category) {
-          categoryCounts[craftsman.trade_category] = 
-            (categoryCounts[craftsman.trade_category] || 0) + 1;
+          if (!categoryCounts[craftsman.trade_category]) {
+            categoryCounts[craftsman.trade_category] = { count: 0, isCustom: false };
+          }
+          categoryCounts[craftsman.trade_category].count += 1;
+        }
+        
+        // Process custom specialization if it exists and is different from the trade category
+        if (craftsman.custom_specialization && 
+            craftsman.custom_specialization !== craftsman.trade_category) {
+          if (!categoryCounts[craftsman.custom_specialization]) {
+            categoryCounts[craftsman.custom_specialization] = { count: 0, isCustom: true };
+          }
+          categoryCounts[craftsman.custom_specialization].count += 1;
         }
       });
 
       // Convert to array for easier rendering
-      return Object.entries(categoryCounts).map(([trade_category, count]) => ({
-        trade_category,
-        count
+      return Object.entries(categoryCounts).map(([category, data]) => ({
+        category,
+        count: data.count,
+        isCustom: data.isCustom
       }));
     }
   });
@@ -82,13 +96,20 @@ const Categories = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {categories.sort((a, b) => b.count - a.count).map((category) => (
               <Card 
-                key={category.trade_category} 
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => handleCategoryClick(category.trade_category)}
+                key={category.category} 
+                className={`cursor-pointer hover:shadow-md transition-shadow ${category.isCustom ? 'border-primary/30' : ''}`}
+                onClick={() => handleCategoryClick(category.category)}
               >
                 <CardContent className={`flex items-center justify-between ${isMobile ? 'p-4' : 'p-6'}`}>
                   <div>
-                    <h3 className="font-semibold text-lg mb-1">{category.trade_category}</h3>
+                    <h3 className="font-semibold text-lg mb-1">
+                      {category.category}
+                      {category.isCustom && (
+                        <span className="ml-2 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5">
+                          Vlastná
+                        </span>
+                      )}
+                    </h3>
                     <div className="flex items-center text-muted-foreground">
                       <Users className="w-4 h-4 mr-1" />
                       <span>{category.count} remeselníkov</span>

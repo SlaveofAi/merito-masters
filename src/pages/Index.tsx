@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -91,7 +90,8 @@ const Index = () => {
     const matchesSearch = 
       craftsman.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       craftsman.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      craftsman.trade_category.toLowerCase().includes(searchTerm.toLowerCase());
+      craftsman.trade_category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      craftsman.custom_specialization?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesLocation = 
       !locationFilter || 
@@ -99,7 +99,8 @@ const Index = () => {
     
     const matchesCategory = 
       categoryFilter === "Všetky kategórie" || 
-      craftsman.trade_category === categoryFilter;
+      craftsman.trade_category === categoryFilter ||
+      craftsman.custom_specialization === categoryFilter;
     
     return matchesSearch && matchesLocation && matchesCategory;
   });
@@ -250,7 +251,7 @@ const Index = () => {
                 key={craftsman.id}
                 id={craftsman.id}
                 name={craftsman.name}
-                profession={craftsman.trade_category}
+                profession={craftsman.custom_specialization || craftsman.trade_category}
                 location={craftsman.location}
                 imageUrl={craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category)}
                 customSpecialization={craftsman.custom_specialization}
