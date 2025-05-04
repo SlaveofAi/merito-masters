@@ -12,6 +12,7 @@ import Categories from "@/pages/Categories";
 import NotFound from "@/pages/NotFound";
 import { Toaster } from "@/components/ui/toaster"
 import TermsAndConditions from "@/pages/TermsAndConditions";
+import ProfileCalendarPage from "@/pages/ProfilePages/ProfileCalendar";
 
 function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -38,6 +39,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/terms" element={<TermsAndConditions />} />
+        <Route path="/profile/calendar" element={<ProfileCalendarPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:section" element={<Profile />} />
         <Route path="/profile/:userId/:section" element={<Profile />} />
