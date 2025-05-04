@@ -18,7 +18,9 @@ const ProfilePortfolioContent: React.FC = () => {
     profileNotFound,
     error,
     createDefaultProfileIfNeeded,
-    userType: profileUserType
+    userType: profileUserType,
+    profileImageUrl,
+    fetchProfileData
   } = useProfile();
   const { userType: viewerUserType } = useAuth();
   const navigate = useNavigate();
@@ -78,7 +80,15 @@ const ProfilePortfolioContent: React.FC = () => {
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
-        <ProfileHeader />
+        {profileData && (
+          <ProfileHeader 
+            profileData={profileData}
+            isCurrentUser={isCurrentUser}
+            userType={profileUserType}
+            profileImageUrl={profileImageUrl}
+            fetchProfileData={fetchProfileData}
+          />
+        )}
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <ProfileNavigation activeTab="portfolio" userType={profileData?.user_type} />

@@ -17,7 +17,9 @@ const ProfileReviewsContent: React.FC = () => {
     profileNotFound,
     error,
     userType,
-    createDefaultProfileIfNeeded
+    createDefaultProfileIfNeeded,
+    profileImageUrl,
+    fetchProfileData
   } = useProfile();
 
   // Enhanced debug log to help troubleshoot the profile data and user type
@@ -80,10 +82,18 @@ const ProfileReviewsContent: React.FC = () => {
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
-        <ProfileHeader />
+        {profileData && (
+          <ProfileHeader 
+            profileData={profileData}
+            isCurrentUser={isCurrentUser}
+            userType={userType}
+            profileImageUrl={profileImageUrl}
+            fetchProfileData={fetchProfileData}
+          />
+        )}
 
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-6">
-          <ProfileNavigation activeTab="reviews" userType={profileData.user_type} />
+          <ProfileNavigation activeTab="reviews" userType={profileData?.user_type} />
           
           <div className="mt-4 sm:mt-8">
             {isCustomerProfile ? (

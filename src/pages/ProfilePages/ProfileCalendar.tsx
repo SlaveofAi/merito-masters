@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -20,7 +19,9 @@ const ProfileCalendarContent: React.FC = () => {
     profileNotFound,
     error,
     createDefaultProfileIfNeeded,
-    userType: profileUserType
+    userType: profileUserType,
+    profileImageUrl,
+    fetchProfileData
   } = useProfile();
   const { user, loading: authLoading, userType } = useAuth();
   const navigate = useNavigate();
@@ -129,7 +130,15 @@ const ProfileCalendarContent: React.FC = () => {
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50 pointer-events-auto">
-        <ProfileHeader />
+        {profileData && (
+          <ProfileHeader 
+            profileData={profileData}
+            isCurrentUser={isCurrentUser}
+            userType={profileUserType}
+            profileImageUrl={profileImageUrl}
+            fetchProfileData={fetchProfileData}
+          />
+        )}
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <ProfileNavigation activeTab="calendar" userType={profileData?.user_type} />

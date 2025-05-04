@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -26,8 +25,8 @@ interface ProfileContextType {
   reviewComment: string;
   customSpecialization: string;
   saving: boolean;
-  projects: any[]; // Added missing property
-  deletingImage: string | null; // Added for ProjectDetail component
+  projects: any[]; 
+  deletingImage: string | null;
   setActiveImageIndex: (index: number) => void;
   setIsEditing: (value: boolean) => void;
   setRating: (value: number) => void;
@@ -43,8 +42,9 @@ interface ProfileContextType {
   refetchReviews: () => void;
   createDefaultProfileIfNeeded: () => Promise<void>;
   fetchPortfolioImages?: (userId: string) => Promise<void>;
-  removeProject: (projectId: string) => Promise<void>; // Added missing method
-  createProject: (title: string, description: string, images: File[]) => Promise<void>; // Added missing method
+  removeProject: (projectId: string) => Promise<void>;
+  createProject: (title: string, description: string, images: File[]) => Promise<void>;
+  fetchProfileData: () => void;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -88,10 +88,10 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     createDefaultProfileIfNeeded,
     isCreatingProfile,
     error,
-    // Add the properties that were missing
     projects,
     removeProject,
-    createProject
+    createProject,
+    fetchProfileData
   } = useProfileData(profileId);
 
   const handleProfileUpdate = (updatedProfile: any) => {
@@ -172,8 +172,6 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // We no longer need to implement removeProject locally as we're using the one from useProfileData
-  
   const value = {
     loading,
     profileData,
@@ -211,7 +209,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     createDefaultProfileIfNeeded,
     fetchPortfolioImages,
     removeProject,
-    createProject, // Add createProject to the context value
+    createProject,
+    fetchProfileData,
   };
 
   return (

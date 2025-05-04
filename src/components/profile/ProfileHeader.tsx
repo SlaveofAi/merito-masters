@@ -6,13 +6,15 @@ import { useProfileData } from "@/hooks/useProfileData";
 import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock } from "lucide-react";
 import { toast } from "sonner";
 import ToppedCraftsmanFeature from './ToppedCraftsmanFeature';
+import { ProfileData } from "@/types/profile";
 
-interface ProfileHeaderProps {
-  profileData: any;
+export interface ProfileHeaderProps {
+  profileData: ProfileData;
   isCurrentUser: boolean;
   userType?: 'customer' | 'craftsman' | null;
   profileImageUrl?: string | null;
   uploadProfileImage?: (file: File) => Promise<void>;
+  fetchProfileData?: () => void;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -21,10 +23,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   userType,
   profileImageUrl,
   uploadProfileImage,
+  fetchProfileData,
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
-  const { fetchProfileData } = useProfileData();
   
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -73,7 +75,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         <ToppedCraftsmanFeature 
           isCurrentUser={isCurrentUser} 
           profileData={profileData} 
-          onProfileUpdate={fetchProfileData} 
+          onProfileUpdate={fetchProfileData || (() => {})} 
         />
       )}
       
