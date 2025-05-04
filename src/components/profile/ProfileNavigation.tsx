@@ -83,4 +83,3 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
 };
 
 export default ProfileNavigation;
-

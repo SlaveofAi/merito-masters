@@ -71,4 +71,3 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ type, isCurrentUser, onRetr
 };
 
 export default ErrorMessage;
-

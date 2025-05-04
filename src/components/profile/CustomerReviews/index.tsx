@@ -12,6 +12,7 @@ import AddReviewButton from "./AddReviewButton";
 import EditReviewSection from "./EditReviewSection";
 import { CraftsmanReviewWithCraftsman } from "./types";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const CustomerReviewsTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
@@ -19,6 +20,7 @@ const CustomerReviewsTab: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingReview, setEditingReview] = useState<CraftsmanReviewWithCraftsman | null>(null);
   const isMobile = useIsMobile();
+  const { t } = useLanguage();
   
   // Enhanced query to fetch reviews with craftsman names
   const { data: reviews, isLoading, refetch } = useQuery({
@@ -57,7 +59,7 @@ const CustomerReviewsTab: React.FC = () => {
     refetch();
     setShowAddForm(false);
     setEditingReview(null);
-    toast.success("Hodnotenie bolo úspešne upravené");
+    toast.success(t("profile_updated"));
   };
 
   const handleEditClick = (review: CraftsmanReviewWithCraftsman) => {
@@ -79,7 +81,7 @@ const CustomerReviewsTab: React.FC = () => {
   return (
     <div className={isMobile ? "px-2" : ""}>
       <h3 className={`text-xl font-semibold mb-4 ${isMobile ? 'text-center text-lg' : ''}`}>
-        Hodnotenia remeselníkov
+        {t("reviews")}
       </h3>
       
       {canAddReview && isCurrentUser && (
@@ -90,7 +92,7 @@ const CustomerReviewsTab: React.FC = () => {
             <ReviewForm 
               userId={user.id} 
               profileId="empty"
-              userName={user.user_metadata?.name || user.user_metadata?.full_name || 'Anonymný zákazník'}
+              userName={user.user_metadata?.name || user.user_metadata?.full_name || t("anonymous_customer")}
               onSuccess={handleReviewSuccess}
               isSelectCraftsman={true}
               onCancel={() => setShowAddForm(false)}

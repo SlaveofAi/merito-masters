@@ -81,3 +81,53 @@ export const allCategoriesOption = 'Všetky kategórie';
 
 // Get all categories including the "All categories" option for filtering
 export const getAllCategories = () => [allCategoriesOption, ...craftCategories];
+
+// For translating category names - import this function in components that need translated categories
+export const getTranslatedCategory = (category: string, t: (key: string) => string) => {
+  const categoryKeyMap: Record<string, string> = {
+    'Stolár': 'carpentry',
+    'Elektrikár': 'electrician',
+    'Murár': 'mason',
+    'Inštalatér': 'plumber',
+    'Maliar': 'painter',
+    'Podlahár': 'flooring',
+    'Klampiar': 'tinsmiths',
+    'Zámočník': 'locksmith',
+    'Tesár': 'carpenter',
+    'Záhradník': 'gardener',
+    'Kúrenár': 'heating',
+    'Sklenár': 'glazier',
+    'Sádrokartonista': 'drywaller',
+    'Obkladač': 'tiler',
+    'Tapetár': 'wallpaper',
+    'Kominár': 'chimney',
+    'TV/SAT Technik': 'tv_tech',
+    'Chladiar/Klimatizér': 'ac_tech',
+    'Montér nábytku': 'furniture',
+    'Autoelektrikár / Automechanik': 'auto',
+    'Kovovýroba': 'metalwork',
+    'Servis domácich spotrebičov': 'appliance',
+    'IT technik': 'it',
+    'Zvárač': 'welder',
+    'Upratovacie služby': 'cleaning',
+    'Drevorezbár / Umelecký stolár': 'woodcarving',
+    'Záhradný architekt': 'garden_architect',
+    'Okenár / Montáž okien a dverí': 'window',
+    'Montér solárnych panelov': 'solar',
+    'Lešenár': 'scaffolder',
+    'Masér / Masérka': 'masseur',
+    'Kozmetička': 'cosmetician',
+    'Nechtový dizajnér / Manikérka': 'nail',
+    'Pedikér / Pedikérka': 'pedicure',
+    'Vizážistka / Make-up artist': 'makeup',
+    'Kaderník / Kaderníčka': 'hairdresser',
+    'Barber': 'barber',
+    'Lash & Brow artist': 'lash',
+    'Tetovanie / Permanentný make-up': 'tattoo',
+    'Wellness terapeut': 'wellness',
+    [allCategoriesOption]: 'all_categories'
+  };
+  
+  const key = categoryKeyMap[category];
+  return key ? t(key) : category;
+};
