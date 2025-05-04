@@ -171,10 +171,12 @@ export type Database = {
           description: string | null
           email: string
           id: string
+          is_topped: boolean
           location: string
           name: string
           phone: string | null
           profile_image_url: string | null
+          topped_until: string | null
           trade_category: string
           updated_at: string
           years_experience: number | null
@@ -185,10 +187,12 @@ export type Database = {
           description?: string | null
           email: string
           id: string
+          is_topped?: boolean
           location: string
           name: string
           phone?: string | null
           profile_image_url?: string | null
+          topped_until?: string | null
           trade_category: string
           updated_at?: string
           years_experience?: number | null
@@ -199,10 +203,12 @@ export type Database = {
           description?: string | null
           email?: string
           id?: string
+          is_topped?: boolean
           location?: string
           name?: string
           phone?: string | null
           profile_image_url?: string | null
+          topped_until?: string | null
           trade_category?: string
           updated_at?: string
           years_experience?: number | null
@@ -367,6 +373,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      topped_payments: {
+        Row: {
+          amount: number
+          craftsman_id: string
+          created_at: string
+          currency: string
+          id: string
+          payment_status: string
+          stripe_payment_id: string | null
+          stripe_session_id: string | null
+          topped_end: string
+          topped_start: string
+        }
+        Insert: {
+          amount: number
+          craftsman_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          payment_status: string
+          stripe_payment_id?: string | null
+          stripe_session_id?: string | null
+          topped_end: string
+          topped_start?: string
+        }
+        Update: {
+          amount?: number
+          craftsman_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          payment_status?: string
+          stripe_payment_id?: string | null
+          stripe_session_id?: string | null
+          topped_end?: string
+          topped_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topped_payments_craftsman_id_fkey"
+            columns: ["craftsman_id"]
+            isOneToOne: false
+            referencedRelation: "craftsman_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_types: {
         Row: {

@@ -12,17 +12,40 @@ const FeaturedCraftsmen = () => {
   const { data: featuredCraftsmen, isLoading } = useQuery({
     queryKey: ['featured-craftsmen'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First check for topped craftsmen
+      const currentDate = new Date().toISOString();
+      
+      const { data: toppedCraftsmen, error: toppedError } = await supabase
         .from('craftsman_profiles')
         .select('*')
+        .eq('is_topped', true)
+        .gte('topped_until', currentDate)
         .limit(3);
         
-      if (error) {
-        console.error("Error fetching craftsmen:", error);
-        return [];
+      if (toppedError) {
+        console.error("Error fetching topped craftsmen:", toppedError);
       }
       
-      return data;
+      // If we don't have enough topped craftsmen, fetch regular ones to fill the slots
+      const neededRegularCraftsmen = 3 - (toppedCraftsmen?.length || 0);
+      
+      if (neededRegularCraftsmen > 0) {
+        const { data: regularCraftsmen, error: regularError } = await supabase
+          .from('craftsman_profiles')
+          .select('*')
+          .or(`is_topped.eq.false, topped_until.lt.${currentDate}`)
+          .limit(neededRegularCraftsmen);
+          
+        if (regularError) {
+          console.error("Error fetching regular craftsmen:", regularError);
+          return toppedCraftsmen || [];
+        }
+        
+        // Combine the topped and regular craftsmen
+        return [...(toppedCraftsmen || []), ...(regularCraftsmen || [])];
+      }
+      
+      return toppedCraftsmen || [];
     }
   });
 
@@ -63,6 +86,7 @@ const FeaturedCraftsmen = () => {
         location: craftsman.location,
         imageUrl: craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category),
         customSpecialization: craftsman.custom_specialization,
+        isTopped: craftsman.is_topped,
       }));
 
   // Placeholder images for craftsmen without profile images
@@ -109,6 +133,7 @@ const FeaturedCraftsmen = () => {
             location={craftsman.location}
             imageUrl={craftsman.imageUrl}
             customSpecialization={craftsman.customSpecialization}
+            isTopped={craftsman.isTopped}
           />
         ))}
       </div>

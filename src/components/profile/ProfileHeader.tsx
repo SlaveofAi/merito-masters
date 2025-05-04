@@ -1,206 +1,166 @@
-import React, { useState } from "react";
+
+import React from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { User, UploadCloud, MapPin, Phone, MessageSquare, Star } from "lucide-react";
-import EditProfileForm from "@/components/EditProfileForm";
-import { useProfile } from "@/contexts/ProfileContext";
-import { useNavigate } from "react-router-dom";
-import ImageCropper from "./ImageCropper";
-import { getCroppedImg } from "@/utils/imageCrop";
+import { useProfileData } from "@/hooks/useProfileData";
+import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock } from "lucide-react";
+import { toast } from "sonner";
+import ToppedCraftsmanFeature from './ToppedCraftsmanFeature';
 
-const ProfileHeader: React.FC = () => {
-  const {
-    profileData,
-    userType,
-    isCurrentUser,
-    isEditing,
-    setIsEditing,
-    profileImageUrl,
-    handleProfileImageUpload,
-    uploading,
-    handleProfileUpdate,
-    reviews
-  } = useProfile();
+interface ProfileHeaderProps {
+  profileData: any;
+  isCurrentUser: boolean;
+  userType?: 'customer' | 'craftsman' | null;
+  profileImageUrl?: string | null;
+  uploadProfileImage?: (file: File) => Promise<void>;
+}
 
-  const navigate = useNavigate();
-  const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
-  const [cropperVisible, setCropperVisible] = useState(false);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
-
-  if (!profileData) return null;
-
-  const calculateAverageRating = () => {
-    if (!reviews || reviews.length === 0) return 0;
-    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
-    return (total / reviews.length).toFixed(1);
-  };
-
-  const averageRating = calculateAverageRating();
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({
+  profileData,
+  isCurrentUser,
+  userType,
+  profileImageUrl,
+  uploadProfileImage,
+}) => {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = React.useState(false);
+  const { fetchProfileData } = useProfileData();
+  
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        setTempImageSrc(reader.result as string);
-        setCropperVisible(true);
-      });
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleCropComplete = (croppedArea: any) => {
-    setCroppedAreaPixels(croppedArea);
-  };
-
-  const handleCropCancel = () => {
-    setTempImageSrc(null);
-    setCropperVisible(false);
-  };
-
-  const handleCropConfirm = async () => {
-    try {
-      if (tempImageSrc && croppedAreaPixels) {
-        const croppedImage = await getCroppedImg(tempImageSrc, croppedAreaPixels);
-        if (croppedImage) {
-          handleProfileImageUpload(croppedImage);
-          setCropperVisible(false);
-          setTempImageSrc(null);
+      
+      // Clear the input value so that the same file can be selected again if needed
+      e.target.value = '';
+      
+      try {
+        setUploading(true);
+        
+        if (uploadProfileImage) {
+          await uploadProfileImage(file);
+          toast.success("Profilová fotka bola úspešne aktualizovaná");
         }
+      } catch (error) {
+        console.error("Error uploading profile image:", error);
+        toast.error("Nastala chyba pri nahrávaní profilovej fotky");
+      } finally {
+        setUploading(false);
       }
-    } catch (error) {
-      console.error('Error cropping image:', error);
     }
   };
-
-  const navigateToMessages = () => {
-    navigate("/messages");
+  
+  const openFileSelector = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
+  
+  // Get initials from name for avatar fallback
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part.charAt(0).toUpperCase())
+      .slice(0, 2)
+      .join('');
+  };
+  
+  if (!profileData) return null;
 
   return (
-    <div className="bg-white border-b border-border/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-        <div className="flex flex-col md:flex-row gap-8">
-          <div className="w-full md:w-1/3">
-            <div className="relative w-48 h-48 mx-auto md:mx-0 rounded-full overflow-hidden border-4 border-white shadow-md bg-gray-100">
-              {profileImageUrl ? (
-                <img
-                  src={profileImageUrl}
-                  alt={profileData.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <User className="w-24 h-24 text-gray-300" />
-                </div>
-              )}
-              
-              {isCurrentUser && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
-                  <label htmlFor="profile-image-upload" className="cursor-pointer flex flex-col items-center justify-center text-white">
-                    <UploadCloud className="w-8 h-8 mb-2" />
-                    <span className="text-sm">Nahrať fotku</span>
-                    <input
-                      id="profile-image-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageSelect}
-                      disabled={uploading}
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
-          </div>
+    <div className="mb-8">
+      {/* If user is a craftsman, show the topped feature component */}
+      {userType === 'craftsman' && (
+        <ToppedCraftsmanFeature 
+          isCurrentUser={isCurrentUser} 
+          profileData={profileData} 
+          onProfileUpdate={fetchProfileData} 
+        />
+      )}
+      
+      <div className="flex flex-col md:flex-row gap-6 items-start">
+        <div className="relative">
+          <Avatar className="h-24 w-24 border-2 border-muted">
+            <AvatarImage 
+              src={profileImageUrl || undefined} 
+              alt={profileData.name} 
+            />
+            <AvatarFallback className="text-xl">
+              {getInitials(profileData.name)}
+            </AvatarFallback>
+          </Avatar>
           
-          <div className="w-full md:w-2/3 text-center md:text-left">
-            {isCurrentUser && !isEditing && (
-              <Button 
-                variant="outline" 
-                className="mb-4"
-                onClick={() => setIsEditing(true)}
-              >
-                Upraviť profil
-              </Button>
+          {isCurrentUser && (
+            <Button 
+              size="icon" 
+              variant="outline" 
+              className="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-background shadow-sm"
+              onClick={openFileSelector}
+              disabled={uploading}
+            >
+              <Camera className="h-4 w-4" />
+              <span className="sr-only">Change profile photo</span>
+            </Button>
+          )}
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </div>
+        
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold mb-1">{profileData.name}</h1>
+          
+          {userType === 'craftsman' && (
+            <div className="text-lg text-muted-foreground mb-4">
+              {profileData.custom_specialization || profileData.trade_category}
+            </div>
+          )}
+          
+          <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center">
+              <MapPin className="mr-2 h-4 w-4" />
+              <span>{profileData.location}</span>
+            </div>
+            
+            {profileData.phone && (
+              <div className="flex items-center">
+                <Phone className="mr-2 h-4 w-4" />
+                <span>{profileData.phone}</span>
+              </div>
             )}
             
-            {isEditing && profileData ? (
-              <div className="mb-6">
-                <EditProfileForm 
-                  profile={profileData} 
-                  userType={userType}
-                  onUpdate={handleProfileUpdate} 
-                />
-                <Button 
-                  variant="outline" 
-                  className="mt-2"
-                  onClick={() => setIsEditing(false)}
-                >
-                  Zrušiť
-                </Button>
+            {profileData.email && (
+              <div className="flex items-center">
+                <Mail className="mr-2 h-4 w-4" />
+                <span>{profileData.email}</span>
               </div>
-            ) : (
-              <>
-                <h1 className="text-3xl md:text-4xl font-bold mb-1">
-                  {profileData.name}
-                </h1>
-                
-                {userType === 'craftsman' && 'trade_category' in profileData && (
-                  <div className="mb-3 font-medium text-lg">
-                    {profileData.custom_specialization ? (
-                      <span>{profileData.custom_specialization}</span>
-                    ) : (
-                      <span>{profileData.trade_category}</span>
-                    )}
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-center md:justify-start mb-4">
-                  {userType === 'craftsman' && (
-                    <div className="flex items-center mr-4">
-                      <Star className={`w-5 h-5 ${Number(averageRating) > 0 ? 'fill-current text-yellow-500' : ''} mr-1`} />
-                      <span className="font-semibold">{averageRating}</span>
-                      <span className="text-muted-foreground ml-1">
-                        ({reviews ? reviews.length : 0} hodnotení)
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-1 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      {profileData.location}
-                    </span>
-                  </div>
-                </div>
-                {'description' in profileData && userType === 'craftsman' && profileData.description && (
-                  <p className="text-muted-foreground mb-6 max-w-2xl mx-auto md:mx-0">
-                    {profileData.description}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                  <Button className="flex items-center">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Kontaktovať
-                  </Button>
-                  <Button variant="outline" onClick={navigateToMessages}>
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Správa
-                  </Button>
-                </div>
-              </>
             )}
+            
+            {userType === 'craftsman' && profileData.years_experience && (
+              <div className="flex items-center">
+                <Clock className="mr-2 h-4 w-4" />
+                <span>{profileData.years_experience} rokov skúseností</span>
+              </div>
+            )}
+            
+            <div className="flex items-center">
+              <User className="mr-2 h-4 w-4" />
+              <span>
+                {userType === 'customer' ? 'Zákazník' : userType === 'craftsman' ? 'Remeselník' : 'Používateľ'}
+              </span>
+            </div>
+            
+            <div className="flex items-center">
+              <CalendarRange className="mr-2 h-4 w-4" />
+              <span>Používateľ od {new Date(profileData.created_at).toLocaleDateString()}</span>
+            </div>
           </div>
         </div>
       </div>
-
-      {cropperVisible && tempImageSrc && (
-        <ImageCropper
-          imageSrc={tempImageSrc}
-          onCropComplete={handleCropComplete}
-          onCancel={handleCropCancel}
-          onConfirm={handleCropConfirm}
-        />
-      )}
     </div>
   );
 };

@@ -1,9 +1,10 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Star, MapPin, Phone, ArrowRight } from "lucide-react";
+import { Star, MapPin, Phone, ArrowRight, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,6 +17,7 @@ interface CraftsmanCardProps {
   reviewCount?: number;
   imageUrl: string;
   customSpecialization?: string | null;
+  isTopped?: boolean;
 }
 
 const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
@@ -27,6 +29,7 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
   reviewCount: initialReviewCount,
   imageUrl,
   customSpecialization,
+  isTopped = false,
 }) => {
   // Fetch real reviews data for this craftsman
   const { data: reviewsData } = useQuery({
@@ -60,7 +63,7 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
   const reviewCount = reviewsData?.length || initialReviewCount || 0;
 
   return (
-    <Card className="overflow-hidden border border-border/50 shadow-sm hover:shadow-md transition-all duration-300 group">
+    <Card className={`overflow-hidden border ${isTopped ? 'border-yellow-400 shadow-md' : 'border-border/50 shadow-sm'} hover:shadow-md transition-all duration-300 group`}>
       <div className="relative h-60 overflow-hidden">
         <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors z-10"></div>
         <img
@@ -71,6 +74,14 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
         <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white text-xs py-1 px-2 rounded-full z-20">
           {customSpecialization ? customSpecialization : profession}
         </div>
+        {isTopped && (
+          <div className="absolute top-4 right-4 z-20">
+            <Badge variant="outline" className="bg-yellow-500/90 backdrop-blur-sm text-white border-yellow-400 px-2 py-0.5 flex items-center gap-1">
+              <TrendingUp className="h-3 w-3" />
+              <span className="text-xs">TOP</span>
+            </Badge>
+          </div>
+        )}
       </div>
       <CardContent className="p-5">
         <div className="flex justify-between items-start mb-3">

@@ -6,7 +6,7 @@ import Hero from "@/components/Hero";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Search, MapPin, Filter } from "lucide-react";
+import { Loader2, Search, MapPin, Filter, TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import CraftsmanCard from "@/components/CraftsmanCard";
@@ -90,9 +90,18 @@ const Index = () => {
     return matchesSearch && matchesLocation && matchesCategory;
   });
 
-  // Sort craftsmen by proximity to user location if available
+  // Sort craftsmen by topped status and proximity to user location if available
   const sortedCraftsmen = [...(filteredCraftsmen || [])].sort((a, b) => {
-    // If location filter is set, prioritize craftsmen from that location
+    const currentDate = new Date();
+    
+    // First check topped status - topped craftsmen always come first
+    const aIsTopped = a.is_topped && new Date(a.topped_until) > currentDate;
+    const bIsTopped = b.is_topped && new Date(b.topped_until) > currentDate;
+    
+    if (aIsTopped && !bIsTopped) return -1;
+    if (!aIsTopped && bIsTopped) return 1;
+    
+    // Then check location if filter is set
     if (locationFilter) {
       const aMatchesExact = a.location.toLowerCase() === locationFilter.toLowerCase();
       const bMatchesExact = b.location.toLowerCase() === locationFilter.toLowerCase();
@@ -230,19 +239,31 @@ const Index = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedCraftsmen?.map((craftsman) => (
-              <CraftsmanCard
-                key={craftsman.id}
-                id={craftsman.id}
-                name={craftsman.name}
-                profession={craftsman.custom_specialization || craftsman.trade_category}
-                location={craftsman.location}
-                imageUrl={craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category)}
-                customSpecialization={craftsman.custom_specialization}
-              />
-            ))}
-          </div>
+          <>
+            {/* Legend for topped craftsmen */}
+            <div className="flex items-center gap-2 mb-4 text-sm">
+              <TrendingUp className="h-4 w-4 text-yellow-500" />
+              <span className="text-muted-foreground">Zvýraznené profily sú zobrazené na vrchu</span>
+            </div>
+          
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sortedCraftsmen?.map((craftsman) => {
+                const isTopped = craftsman.is_topped && new Date(craftsman.topped_until) > new Date();
+                return (
+                  <CraftsmanCard
+                    key={craftsman.id}
+                    id={craftsman.id}
+                    name={craftsman.name}
+                    profession={craftsman.custom_specialization || craftsman.trade_category}
+                    location={craftsman.location}
+                    imageUrl={craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category)}
+                    customSpecialization={craftsman.custom_specialization}
+                    isTopped={isTopped}
+                  />
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </Layout>
