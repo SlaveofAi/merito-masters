@@ -14,8 +14,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
-import { craftCategories } from "@/constants/categories";
-import { registerSchema, RegisterFormValues } from "@/lib/schemas";
+
+const craftCategories = [
+  'Stolár',
+  'Elektrikár',
+  'Murár',
+  'Inštalatér',
+  'Maliar',
+  'Podlahár',
+  'Klampiar',
+  'Zámočník',
+  'Tesár',
+  'Záhradník',
+  'Kúrenár',
+  'Sklenár'
+];
 
 type UserType = 'customer' | 'craftsman' | null;
 
@@ -217,8 +230,15 @@ const Register = () => {
         duration: 5000,
       });
       
-      // Redirect to terms page after successful registration
-      navigate("/terms");
+      if (authData.session) {
+        navigate("/profile");
+      } else {
+        toast.info("Na vašu emailovú adresu sme odoslali potvrdzovací email", {
+          description: "Pre dokončenie registrácie prosím potvrďte svoju emailovú adresu",
+          duration: 8000,
+        });
+        navigate("/login", { state: { emailConfirmationRequired: true } });
+      }
       
     } catch (error) {
       console.error("Registration error:", error);
@@ -247,7 +267,7 @@ const Register = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/terms?userType=${userType}`,
+          redirectTo: `${window.location.origin}/login?userType=${userType}`,
         },
       });
 
@@ -543,7 +563,6 @@ const Register = () => {
                           <Link
                             to="/terms"
                             className="text-primary hover:underline"
-                            target="_blank"
                           >
                             podmienkami používania
                           </Link>
