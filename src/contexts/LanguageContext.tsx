@@ -438,6 +438,7 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "highlight_profile": "Zvýraznite svoj profil",
     "highlight_profile_desc": "Využite možnosti prémiových funkcií na zvýraznenie vášho profilu vo vyhľadávaní.",
     "more_questions": "Máte ďalšie otázky o tom, ako naša platforma funguje?",
+    "customer_chat": "Chat so zákazníkmi",
     "customer_chat_desc": "Komunikujte so zákazníkmi priamo cez platformu bez potreby zdieľania osobných kontaktov",
     "profile_topping": "Zvýraznenie profilu",
     "profile_topping_desc": "Za poplatok zvýraznite svoj profil, aby sa zobrazoval na popredných miestach vo vyhľadávaní",
@@ -1049,4 +1050,3 @@ export const useLanguage = () => {
 };
 
 export default LanguageContext;
-
