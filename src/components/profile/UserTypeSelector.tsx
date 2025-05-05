@@ -1,8 +1,9 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 interface UserTypeSelectorProps {
   userId: string;
@@ -16,36 +17,29 @@ const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
   updateUserType 
 }) => {
   const navigate = useNavigate();
+  const [isProcessing, setIsProcessing] = useState<'craftsman' | 'customer' | null>(null);
 
-  const handleSelectCustomer = async () => {
+  const handleSelectUserType = async (type: 'craftsman' | 'customer') => {
     try {
-      console.log("Setting user type to customer");
-      await updateUserType('customer');
-      toast.success("Vybrali ste si typ účtu: zákazník. Váš profil sa vytvára.");
+      setIsProcessing(type);
+      console.log(`Setting user type to ${type}`);
+      
+      await updateUserType(type);
+      
+      toast.success(`Vybrali ste si typ účtu: ${type === 'craftsman' ? 'remeselník' : 'zákazník'}. Váš profil sa vytvára.`);
       
       // Reload the page after a short delay to ensure state is updated
       setTimeout(() => {
-        navigate("/profile/reviews", { replace: true });
-      }, 1000);
+        if (type === 'craftsman') {
+          navigate("/profile", { replace: true });
+        } else {
+          navigate("/profile/reviews", { replace: true });
+        }
+      }, 1500);
     } catch (error) {
-      console.error("Error setting user type to customer:", error);
+      console.error(`Error setting user type to ${type}:`, error);
       toast.error("Nastala chyba pri nastavení typu používateľa");
-    }
-  };
-
-  const handleSelectCraftsman = async () => {
-    try {
-      console.log("Setting user type to craftsman");
-      await updateUserType('craftsman');
-      toast.success("Vybrali ste si typ účtu: remeselník. Váš profil sa vytvára.");
-      
-      // Reload the page after a short delay to ensure state is updated
-      setTimeout(() => {
-        navigate("/profile", { replace: true });
-      }, 1000);
-    } catch (error) {
-      console.error("Error setting user type to craftsman:", error);
-      toast.error("Nastala chyba pri nastavení typu používateľa");
+      setIsProcessing(null);
     }
   };
 
@@ -72,17 +66,33 @@ const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
           <div className="grid grid-cols-1 gap-4 mt-6">
             <p className="font-medium">Vyberte typ používateľa:</p>
             <Button 
-              onClick={handleSelectCraftsman}
+              onClick={() => handleSelectUserType('craftsman')}
               className="w-full"
+              disabled={isProcessing !== null}
             >
-              Som remeselník
+              {isProcessing === 'craftsman' ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Spracovávam...
+                </>
+              ) : (
+                "Som remeselník"
+              )}
             </Button>
             <Button 
-              onClick={handleSelectCustomer}
+              onClick={() => handleSelectUserType('customer')}
               variant="outline"
               className="w-full"
+              disabled={isProcessing !== null}
             >
-              Som zákazník
+              {isProcessing === 'customer' ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Spracovávam...
+                </>
+              ) : (
+                "Som zákazník"
+              )}
             </Button>
             <div className="text-sm text-muted-foreground mt-2">
               Alebo
@@ -91,6 +101,7 @@ const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
               onClick={() => navigate("/register")}
               variant="secondary"
               className="w-full"
+              disabled={isProcessing !== null}
             >
               Prejsť na registráciu
             </Button>

@@ -5,6 +5,7 @@ import { ProfileProvider } from "@/contexts/ProfileContext";
 import ProfilePage from "@/components/profile/ProfilePage";
 import { useAuth } from "@/hooks/useAuth";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
+import { toast } from "sonner";
 
 const Profile = () => {
   const { id } = useParams();
@@ -22,8 +23,15 @@ const Profile = () => {
     });
   }, [id, userType, loading, user]);
   
+  // If not authenticated, redirect to login
+  if (!loading && !user) {
+    console.log("User not authenticated, redirecting to login");
+    toast.error("Pre prístup k profilu sa musíte prihlásiť", { id: "auth-redirect" });
+    return <Navigate to="/login" replace />;
+  }
+  
   // First check: Immediate redirect if we already know this is a customer
-  if (!id && userType === "customer") {
+  if (!id && userType === "customer" && window.location.pathname === "/profile") {
     console.log("Customer profile detected in main Profile route, immediate redirect to reviews");
     return <Navigate to="/profile/reviews" replace />;
   }
@@ -34,11 +42,17 @@ const Profile = () => {
       return; // Wait for loading to complete
     }
     
-    if (!id && userType === "customer") {
+    // If user type is not set and user is logged in, show user type selector
+    if (!userType && user) {
+      console.log("User type not set, will show UserTypeSelector in ProfilePage");
+      return;
+    }
+    
+    if (!id && userType === "customer" && window.location.pathname === "/profile") {
       console.log("Customer profile detected in Profile useEffect, redirecting to reviews");
       navigate("/profile/reviews", { replace: true });
     }
-  }, [id, userType, loading, navigate]);
+  }, [id, userType, loading, navigate, user]);
   
   // While auth is loading, show loading state
   if (loading) {

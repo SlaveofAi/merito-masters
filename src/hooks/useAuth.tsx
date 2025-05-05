@@ -62,6 +62,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Error fetching user type:", error);
+        
+        // Check if this is an RLS error
+        if (error.message.includes("row-level security")) {
+          console.warn("RLS policy error detected. User might not have permission to access their own type.");
+        }
+        
+        // If we have a stored type, use it as fallback
+        if (storedType === 'customer' || storedType === 'craftsman') {
+          setUserType(storedType as 'customer' | 'craftsman');
+          setUserTypeFetched(true);
+          return storedType as 'customer' | 'craftsman';
+        }
+        
         return null;
       }
 
@@ -75,7 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.log("Using cached user type from localStorage as fallback:", storedType);
           setUserType(storedType as 'customer' | 'craftsman');
           setUserTypeFetched(true);
-          return storedType;
+          return storedType as 'customer' | 'craftsman';
         } else {
           setUserType(null);
           setUserTypeFetched(true);
@@ -133,6 +146,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
       if (profileError) {
         console.error("Error checking profile existence:", profileError);
+        
+        // If RLS error, retry with a delay
+        if (profileError.message.includes("row-level security")) {
+          console.warn("RLS policy error detected. Retrying profile creation in 1 second...");
+          setTimeout(() => {
+            setProfileCreationAttempted(false);
+            checkAndCreateProfileIfNeeded(userId, userType);
+          }, 1000);
+        }
+        
         return;
       }
       
@@ -142,15 +165,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           // Use setTimeout to avoid potential Supabase deadlocks
           setTimeout(async () => {
-            await createDefaultProfile(
-              user, 
-              userType, 
-              true, // isCurrentUser 
-              () => {
-                console.log("Profile created successfully after email verification");
-                toast.success("Profil bol úspešne vytvorený", { duration: 3000 });
-              }
-            );
+            try {
+              await createDefaultProfile(
+                user, 
+                userType, 
+                true, // isCurrentUser 
+                () => {
+                  console.log("Profile created successfully after email verification");
+                  toast.success("Profil bol úspešne vytvorený", { duration: 3000 });
+                }
+              );
+            } catch (createError) {
+              console.error("Error in delayed profile creation:", createError);
+              // Reset attempted flag to allow retrying
+              setProfileCreationAttempted(false);
+            }
           }, 500);
         } catch (error) {
           console.error("Error creating default profile:", error);
@@ -182,26 +211,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         toast.error("Chyba pri aktualizácii typu používateľa v metadátach");
       }
       
-      // Update in database
-      const { error } = await supabase
-        .from('user_types')
-        .upsert({ 
-          user_id: user.id, 
-          user_type: type 
-        });
+      // Update in database - handle retries for RLS issues
+      const updateDatabase = async (retries = 3) => {
+        try {
+          const { error } = await supabase
+            .from('user_types')
+            .upsert({ 
+              user_id: user.id, 
+              user_type: type 
+            });
 
-      if (error) {
-        console.error("Error updating user type in database:", error);
-        toast.error("Chyba pri aktualizácii typu používateľa v databáze");
-        return;
-      }
+          if (error) {
+            console.error("Error updating user type in database:", error);
+            
+            // If RLS error and we have retries left, try again after a delay
+            if (error.message.includes("row-level security") && retries > 0) {
+              console.warn(`RLS policy error detected. Retrying (${retries} attempts left)...`);
+              setTimeout(() => updateDatabase(retries - 1), 500);
+              return;
+            }
+            
+            toast.error("Chyba pri aktualizácii typu používateľa v databáze");
+            return;
+          }
+          
+          console.log("Successfully updated user type in database");
+        } catch (error) {
+          console.error("Exception in updateDatabase:", error);
+        }
+      };
+      
+      // Start the update process
+      await updateDatabase();
 
       // Update in localStorage
       localStorage.setItem("userType", type);
       
       // Update state
       setUserType(type);
-      toast.success("Typ používateľa bol aktualizovaný");
       
       // Reset profile creation flag to allow creating profile for the new user type
       setProfileCreationAttempted(false);

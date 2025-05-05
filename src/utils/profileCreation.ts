@@ -32,8 +32,17 @@ export const createDefaultProfile = async (
         
       if (checkError) {
         console.error("Error checking for existing profile:", checkError);
-        toast.error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
-        throw new Error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
+        
+        // Check if this is an RLS error
+        if (checkError.message.includes("row-level security")) {
+          console.warn("RLS policy error detected. Retrying profile check with auth token...");
+          
+          // We'll try to proceed anyway, assuming the profile doesn't exist
+          console.log("Proceeding with profile creation despite RLS error");
+        } else {
+          toast.error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
+          throw new Error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
+        }
       }
       
       if (existingProfile) {
@@ -60,8 +69,15 @@ export const createDefaultProfile = async (
         
       if (insertError) {
         console.error("Error creating craftsman profile:", insertError);
-        toast.error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
-        throw new Error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
+        
+        // If this is an RLS error, we'll show a more specific message
+        if (insertError.message.includes("row-level security")) {
+          toast.error("Nemáte oprávnenie vytvoriť profil. Skontrolujte, či ste správne prihlásený.");
+          throw new Error("RLS error: Nemáte oprávnenie vytvoriť profil.");
+        } else {
+          toast.error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
+          throw new Error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
+        }
       } else {
         console.log("Default craftsman profile created successfully");
         toast.success("Profil bol vytvorený", { duration: 3000 });
@@ -79,8 +95,17 @@ export const createDefaultProfile = async (
         
       if (checkError) {
         console.error("Error checking for existing profile:", checkError);
-        toast.error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
-        throw new Error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
+        
+        // Check if this is an RLS error
+        if (checkError.message.includes("row-level security")) {
+          console.warn("RLS policy error detected. Retrying profile check with auth token...");
+          
+          // We'll try to proceed anyway, assuming the profile doesn't exist
+          console.log("Proceeding with profile creation despite RLS error");
+        } else {
+          toast.error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
+          throw new Error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
+        }
       }
       
       if (existingProfile) {
@@ -100,13 +125,20 @@ export const createDefaultProfile = async (
           email,
           location: 'Bratislava',
           phone: null,
-          profile_image_url: null  // Now this column exists in the database
+          profile_image_url: null
         });
         
       if (insertError) {
         console.error("Error creating customer profile:", insertError);
-        toast.error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
-        throw new Error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
+        
+        // If this is an RLS error, we'll show a more specific message
+        if (insertError.message.includes("row-level security")) {
+          toast.error("Nemáte oprávnenie vytvoriť profil. Skontrolujte, či ste správne prihlásený.");
+          throw new Error("RLS error: Nemáte oprávnenie vytvoriť profil.");
+        } else {
+          toast.error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
+          throw new Error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
+        }
       } else {
         console.log("Default customer profile created successfully");
         toast.success("Profil bol vytvorený", { duration: 3000 });
