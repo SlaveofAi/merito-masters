@@ -415,12 +415,14 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "view_profiles_desc": "Prehliadajte si detailné profily, hodnotenia a portfóliá remeselníkov.",
     "contact_craftsman": "Kontaktujte remeselníka",
     "contact_craftsman_desc": "Kontaktujte vybraného remeselníka priamo cez našu platformu.",
+    "book_appointment_desc": "Zarezervujte si termín na základe dostupnosti remeselníka.",
     
     // Benefits page additions
     "professional_profile": "Profesionálny profil",
     "professional_profile_desc": "Vytvorte si profesionálny online profil, ktorý odprezentuje vaše zručnosti a portfólio práce",
     "new_customers": "Noví zákazníci",
     "new_customers_desc": "Získajte prístup k zákazníkom, ktorí aktívne hľadajú služby vo vašej oblasti",
+    "availability_calendar_desc": "Spravujte svoj kalendár a umožnite zákazníkom rezervovať si termíny online",
     
     // Additional translations
     "review_moderation": "Moderovanie hodnotení",
@@ -502,9 +504,9 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "error_loading": "Nastala chyba při načítání řemeslníků. Zkuste to prosím později.",
     "try_again": "Zkusit znovu",
     "no_craftsmen_found": "Nenašli se žádní řemeslníci podle vašich kritérií. Zkuste upravit vyhledávání.",
-    "show_all_craftsmen": "Zobrazit všechny řemeslníky",
+    "show_all_craftsmen": "Zobrazit všechny řemeslníky"
     
-    // And many other translations for Czech language...
+    // Rest of Czech translations would be added here similarly to the Slovak translations
   },
   en: {
     // English translations
@@ -529,9 +531,9 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "messages": "Messages",
     "my_profile": "My profile",
     "sign_out": "Sign out",
-    "sign_in": "Sign in",
+    "sign_in": "Sign in"
     
-    // And many other translations for English language...
+    // Rest of English translations would be added here similarly to the Slovak translations
   }
 };
 
