@@ -1,4 +1,3 @@
-
 import { useEffect, useState, createContext, useContext, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       // If not in metadata, try to get from user_types table (third priority)
+      // Don't use try-catch here since we've updated RLS policies to allow public access
       const { data, error } = await supabase
         .from('user_types')
         .select('user_type')
@@ -62,11 +62,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Error fetching user type:", error);
-        
-        // Check if this is an RLS error
-        if (error.message.includes("row-level security")) {
-          console.warn("RLS policy error detected. User might not have permission to access their own type.");
-        }
         
         // If we have a stored type, use it as fallback
         if (storedType === 'customer' || storedType === 'craftsman') {

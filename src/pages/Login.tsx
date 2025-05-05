@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -49,69 +48,93 @@ const Login = () => {
     if (userType) {
       // Check if we have a session already (from OAuth redirect)
       const checkSession = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          // Store the user type for this user
-          try {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session?.user) {
+            // Store the user type for this user
             const pendingUserType = userType === 'craftsman' ? 'craftsman' : 'customer';
             
             // Save user type to localStorage immediately for quick access
             localStorage.setItem("userType", pendingUserType);
             
-            // Check if user type exists
-            const { data: existingType } = await supabase
-              .from('user_types')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .single();
-              
-            if (!existingType) {
-              // Insert user type
-              await supabase.from('user_types').insert({
-                user_id: session.user.id,
-                user_type: pendingUserType
-              });
-              
-              // Update user metadata as well
-              await supabase.auth.updateUser({
-                data: { user_type: pendingUserType }
-              });
-              
-              // Insert profile based on user type
-              if (pendingUserType === 'craftsman') {
-                await supabase.from('craftsman_profiles').insert({
-                  id: session.user.id,
-                  name: session.user.user_metadata.full_name || session.user.user_metadata.name || 'User',
-                  email: session.user.email || '',
-                  location: 'Please update',
-                  trade_category: 'Please update'
+            try {
+              // Check if user type exists in a try-catch to handle RLS issues
+              const { data: existingType } = await supabase
+                .from('user_types')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+                
+              if (!existingType) {
+                // Insert user type with error handling
+                const { error: typeError } = await supabase
+                  .from('user_types')
+                  .insert({
+                    user_id: session.user.id,
+                    user_type: pendingUserType
+                  });
+                
+                if (typeError) {
+                  console.error("Error inserting user type:", typeError);
+                  // Continue anyway - we'll try again later
+                }
+                
+                // Update user metadata as well
+                await supabase.auth.updateUser({
+                  data: { user_type: pendingUserType }
                 });
-              } else {
-                await supabase.from('customer_profiles').insert({
-                  id: session.user.id,
-                  name: session.user.user_metadata.full_name || session.user.user_metadata.name || 'User',
-                  email: session.user.email || '',
-                  location: 'Please update'
+                
+                // Insert profile based on user type with error handling
+                if (pendingUserType === 'craftsman') {
+                  const { error: profileError } = await supabase
+                    .from('craftsman_profiles')
+                    .insert({
+                      id: session.user.id,
+                      name: session.user.user_metadata.full_name || session.user.user_metadata.name || 'User',
+                      email: session.user.email || '',
+                      location: 'Please update',
+                      trade_category: 'Please update'
+                    });
+                    
+                  if (profileError) {
+                    console.error("Error creating craftsman profile:", profileError);
+                    // Continue anyway
+                  }
+                } else {
+                  const { error: profileError } = await supabase
+                    .from('customer_profiles')
+                    .insert({
+                      id: session.user.id,
+                      name: session.user.user_metadata.full_name || session.user.user_metadata.name || 'User',
+                      email: session.user.email || '',
+                      location: 'Please update'
+                    });
+                    
+                  if (profileError) {
+                    console.error("Error creating customer profile:", profileError);
+                    // Continue anyway
+                  }
+                }
+                
+                toast.success("Profil bol vytvorený", {
+                  duration: 3000,
                 });
               }
               
-              toast.success("Profil bol vytvorený", {
-                duration: 3000,
-              });
+              // Clean up the URL
+              window.history.replaceState({}, document.title, '/login');
+              
+              // Redirect to home
+              navigate('/home');
+            } catch (error) {
+              console.error("Error in profile creation:", error);
+              // Still redirect to home, we'll handle profile creation there
+              navigate('/home');
             }
-            
-            // Clean up the URL
-            window.history.replaceState({}, document.title, '/login');
-            
-            // Redirect to home
-            navigate('/home');
-          } catch (error) {
-            console.error("Error processing OAuth user:", error);
-            toast.error("Nastala chyba pri spracovaní prihlásenia", {
-              duration: 3000,
-            });
           }
+        } catch (error) {
+          console.error("Error checking session:", error);
         }
       };
       

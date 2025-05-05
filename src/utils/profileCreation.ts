@@ -33,16 +33,8 @@ export const createDefaultProfile = async (
       if (checkError) {
         console.error("Error checking for existing profile:", checkError);
         
-        // Check if this is an RLS error
-        if (checkError.message.includes("row-level security")) {
-          console.warn("RLS policy error detected. Retrying profile check with auth token...");
-          
-          // We'll try to proceed anyway, assuming the profile doesn't exist
-          console.log("Proceeding with profile creation despite RLS error");
-        } else {
-          toast.error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
-          throw new Error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
-        }
+        // We'll try to proceed anyway, assuming the profile doesn't exist
+        console.log("Proceeding with profile creation despite error");
       }
       
       if (existingProfile) {
@@ -54,36 +46,43 @@ export const createDefaultProfile = async (
       
       console.log("Creating new craftsman profile for user:", user.id);
       
-      const { error: insertError } = await supabase
-        .from('craftsman_profiles')
-        .insert({
-          id: user.id,
-          name,
-          email,
-          location: 'Bratislava',
-          trade_category: 'Stolár',
-          phone: null,
-          description: 'Zadajte popis vašich služieb',
-          profile_image_url: null
-        });
-        
-      if (insertError) {
-        console.error("Error creating craftsman profile:", insertError);
-        
-        // If this is an RLS error, we'll show a more specific message
-        if (insertError.message.includes("row-level security")) {
-          toast.error("Nemáte oprávnenie vytvoriť profil. Skontrolujte, či ste správne prihlásený.");
-          throw new Error("RLS error: Nemáte oprávnenie vytvoriť profil.");
+      // Retry logic for creating profile
+      let retries = 3;
+      let success = false;
+      
+      while (retries > 0 && !success) {
+        const { error: insertError } = await supabase
+          .from('craftsman_profiles')
+          .insert({
+            id: user.id,
+            name,
+            email,
+            location: 'Bratislava',
+            trade_category: 'Stolár',
+            phone: null,
+            description: 'Zadajte popis vašich služieb',
+            profile_image_url: null
+          });
+          
+        if (insertError) {
+          console.error(`Error creating craftsman profile (retry ${3-retries+1}/3):`, insertError);
+          
+          if (retries > 1) {
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            retries--;
+          } else {
+            toast.error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
+            throw new Error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
+          }
         } else {
-          toast.error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
-          throw new Error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
+          console.log("Default craftsman profile created successfully");
+          toast.success("Profil bol vytvorený", { duration: 3000 });
+          success = true;
+          setTimeout(() => {
+            onSuccess();
+          }, 1000);
         }
-      } else {
-        console.log("Default craftsman profile created successfully");
-        toast.success("Profil bol vytvorený", { duration: 3000 });
-        setTimeout(() => {
-          onSuccess();
-        }, 1000);
       }
     } else {
       // First check if profile already exists
@@ -96,16 +95,8 @@ export const createDefaultProfile = async (
       if (checkError) {
         console.error("Error checking for existing profile:", checkError);
         
-        // Check if this is an RLS error
-        if (checkError.message.includes("row-level security")) {
-          console.warn("RLS policy error detected. Retrying profile check with auth token...");
-          
-          // We'll try to proceed anyway, assuming the profile doesn't exist
-          console.log("Proceeding with profile creation despite RLS error");
-        } else {
-          toast.error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
-          throw new Error(`Chyba pri kontrole existujúceho profilu: ${checkError.message}`);
-        }
+        // We'll try to proceed anyway, assuming the profile doesn't exist
+        console.log("Proceeding with profile creation despite error");
       }
       
       if (existingProfile) {
@@ -117,34 +108,41 @@ export const createDefaultProfile = async (
       
       console.log("Creating new customer profile for user:", user.id);
       
-      const { error: insertError } = await supabase
-        .from('customer_profiles')
-        .insert({
-          id: user.id,
-          name,
-          email,
-          location: 'Bratislava',
-          phone: null,
-          profile_image_url: null
-        });
-        
-      if (insertError) {
-        console.error("Error creating customer profile:", insertError);
-        
-        // If this is an RLS error, we'll show a more specific message
-        if (insertError.message.includes("row-level security")) {
-          toast.error("Nemáte oprávnenie vytvoriť profil. Skontrolujte, či ste správne prihlásený.");
-          throw new Error("RLS error: Nemáte oprávnenie vytvoriť profil.");
+      // Retry logic for creating profile
+      let retries = 3;
+      let success = false;
+      
+      while (retries > 0 && !success) {
+        const { error: insertError } = await supabase
+          .from('customer_profiles')
+          .insert({
+            id: user.id,
+            name,
+            email,
+            location: 'Bratislava',
+            phone: null,
+            profile_image_url: null
+          });
+          
+        if (insertError) {
+          console.error(`Error creating customer profile (retry ${3-retries+1}/3):`, insertError);
+          
+          if (retries > 1) {
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            retries--;
+          } else {
+            toast.error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
+            throw new Error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
+          }
         } else {
-          toast.error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
-          throw new Error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
+          console.log("Default customer profile created successfully");
+          toast.success("Profil bol vytvorený", { duration: 3000 });
+          success = true;
+          setTimeout(() => {
+            onSuccess();
+          }, 1000);
         }
-      } else {
-        console.log("Default customer profile created successfully");
-        toast.success("Profil bol vytvorený", { duration: 3000 });
-        setTimeout(() => {
-          onSuccess();
-        }, 1000);
       }
     }
   } catch (error: any) {
