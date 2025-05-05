@@ -619,8 +619,6 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "professional_profile_desc": "Vytvořte si profesionální online profil, který prezentuje vaše dovednosti a portfolio práce",
     "new_customers": "Noví zákazníci",
     "new_customers_desc": "Získejte přístup k zákazníkům, kteří aktivně hledají služby ve vaší oblasti",
-    "availability_calendar": "Kalendář dostupnosti",
-    "availability_calendar_desc": "Nastavte si vlastní dostupnost a přijímejte rezervace termínů automaticky",
     "customer_chat": "Chat se zákazníky",
     "customer_chat_desc": "Komunikujte se zákazníky přímo přes platformu bez potřeby sdílení osobních kontaktů",
     "profile_topping": "Zvýraznění profilu",
@@ -891,8 +889,6 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "professional_profile_desc": "Create a professional online profile showcasing your skills and work portfolio",
     "new_customers": "New Customers",
     "new_customers_desc": "Gain access to customers actively seeking services in your area",
-    "availability_calendar": "Availability Calendar",
-    "availability_calendar_desc": "Set your own availability and receive booking appointments automatically",
     "customer_chat": "Customer Chat",
     "customer_chat_desc": "Communicate with customers directly through the platform without sharing personal contacts",
     "profile_topping": "Profile Featuring",
@@ -1053,3 +1049,4 @@ export const useLanguage = () => {
 };
 
 export default LanguageContext;
+
