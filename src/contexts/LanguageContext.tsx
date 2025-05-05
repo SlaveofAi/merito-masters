@@ -112,7 +112,6 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "add_photo": "Pridať fotografiu (voliteľné)",
     "upload_image": "Nahrať obrázok",
     "submit_request": "Odoslať požiadavku",
-    "sending": "Odosielam...",
     "hourly_rate": "Hodinová sadzba",
     "loading_dates": "Načítavam dostupné termíny...",
     "craftsman_available": "Remeselník je dostupný v označené dni",
@@ -171,28 +170,18 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     
     // How it works page
     "how_it_works_title": "Ako to funguje",
-    "choose_category": "Vyberte kategóriu",
-    "choose_category_desc": "Prechádzajte kategóriami a vyhľadajte typ remeselníka, ktorého potrebujete.",
-    "view_profiles": "Prehliadajte profily",
-    "view_profiles_desc": "Prehliadajte si detailné profily, hodnotenia a portfóliá remeselníkov.",
-    "contact_craftsman_step": "Kontaktujte remeselníka",
-    "contact_craftsman_step_desc": "Kontaktujte vybraného remeselníka priamo cez našu platformu.",
-    "book_appointment_step": "Rezervujte si termín",
-    "book_appointment_step_desc": "Vyberte si termín, ktorý vám vyhovuje, z dostupného kalendára remeselníka.",
-    "rate_after_completion": "Ohodnoťte službu",
-    "rate_after_completion_desc": "Po dokončení práce zanechajte hodnotenie a pomôžte ostatným zákazníkom.",
-    
-    "register_create_profile": "Vytvorte si profil",
-    "register_create_profile_desc": "Zaregistrujte sa a vytvorte si profesionálny profil, ktorý ukáže vaše zručnosti.",
-    "set_availability": "Nastavte dostupnosť",
-    "set_availability_desc": "Nastavte svoj kalendár, aby zákazníci videli, kedy ste k dispozícii.",
-    "communicate_with_customers": "Komunikujte so zákazníkmi",
-    "communicate_with_customers_desc": "Odpovedajte na správy a požiadavky zákazníkov prostredníctvom platformy.",
-    "gather_reviews": "Zbierajte hodnotenia",
-    "gather_reviews_desc": "Získajte pozitívne hodnotenia a budujte svou online reputaciu.",
-    "highlight_profile": "Zvýraznite svoj profil",
-    "highlight_profile_desc": "Využite možnosti prémiových funkcií na zvýraznenie vášho profilu vo vyhľadávaní.",
-    "more_questions": "Máte ďalšie otázky o tom, ako naša platforma funguje?",
+    "step_1_customer": "1. Vyberte typ remeselníka",
+    "step_1_customer_desc": "Prehliadajte kategórie a vyberte typ remeselníka, ktorého potrebujete.",
+    "step_2_customer": "2. Kontaktujte remeselníka",
+    "step_2_customer_desc": "Pošlite správu alebo si zarezervujte termín priamo cez platformu.",
+    "step_3_customer": "3. Získajte kvalitnú službu",
+    "step_3_customer_desc": "Užite si profesionálnu službu a potom zanechajte hodnotenie.",
+    "step_1_craftsman": "1. Vytvorte si profil",
+    "step_1_craftsman_desc": "Registrujte sa a vytvorte si profesionálny profil s portfóliom.",
+    "step_2_craftsman": "2. Nastavte dostupnosť",
+    "step_2_craftsman_desc": "Definujte, kedy ste k dispozícii pre nové zákazky.",
+    "step_3_craftsman": "3. Získavajte zákazky",
+    "step_3_craftsman_desc": "Buďte viditeľný a získavajte nových zákazníkov vo vašom okolí.",
     
     // Categories
     "carpentry": "Stolár",
@@ -396,10 +385,6 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "truthful_reviews_desc": "Všetky hodnotenia musia byť založené na skutočných skúsenostiach so službou",
     "fake_reviews_prohibited": "Falošné hodnotenia sú zakázané",
     "fake_reviews_prohibited_desc": "Falošné alebo zavádzajúce hodnotenia budú odstránené",
-    "craftsman_response": "Odpoveď remeselníka",
-    "craftsman_response_desc": "Remeselníci majú právo odpovedať na hodnotenia",
-    "review_moderation": "Moderovanie hodnotení",
-    "review_moderation_desc": "Hodnotenia sú kontrolované, aby spĺňali naše pravidlá komunity",
     
     // Pricing page translations
     "pricing_subtitle": "Transparentná cenová politika pre všetkých používateľov",
@@ -430,19 +415,29 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "view_profiles_desc": "Prehliadajte si detailné profily, hodnotenia a portfóliá remeselníkov.",
     "contact_craftsman": "Kontaktujte remeselníka",
     "contact_craftsman_desc": "Kontaktujte vybraného remeselníka priamo cez našu platformu.",
-    "book_appointment": "Rezervujte si termín",
-    "book_appointment_desc": "Vyberte si termín, ktorý vám vyhovuje, z dostupného kalendára remeselníka.",
-    "rate_after_completion": "Ohodnoťte službu",
-    "rate_after_completion_desc": "Po dokončení práce zanechajte hodnotenie a pomôžte ostatným zákazníkom.",
     
     // Benefits page additions
     "professional_profile": "Profesionálny profil",
     "professional_profile_desc": "Vytvorte si profesionálny online profil, ktorý odprezentuje vaše zručnosti a portfólio práce",
     "new_customers": "Noví zákazníci",
     "new_customers_desc": "Získajte prístup k zákazníkom, ktorí aktívne hľadajú služby vo vašej oblasti",
-    "availability_calendar": "Kalendár dostupnosti",
-    "availability_calendar_desc": "Nastavte si vlastnú dostupnosť a prijímajte rezervácie termínov automaticky",
-    "customer_chat": "Chat so zákazníkmi",
+    
+    // Additional translations
+    "review_moderation": "Moderovanie hodnotení",
+    "review_moderation_desc": "Hodnotenia sú kontrolované, aby spĺňali naše pravidlá komunity",
+    "rate_after_completion": "Ohodnoťte službu",
+    "rate_after_completion_desc": "Po dokončení práce zanechajte hodnotenie a pomôžte ostatným zákazníkom.",
+    "register_create_profile": "Vytvorte si profil",
+    "register_create_profile_desc": "Zaregistrujte sa a vytvorte si profesionálny profil, ktorý ukáže vaše zručnosti.",
+    "set_availability": "Nastavte dostupnosť",
+    "set_availability_desc": "Nastavte svoj kalendár, aby zákazníci videli, kedy ste k dispozícii.",
+    "communicate_with_customers": "Komunikujte so zákazníkmi",
+    "communicate_with_customers_desc": "Odpovedajte na správy a požiadavky zákazníkov prostredníctvom platformy.",
+    "gather_reviews": "Zbierajte hodnotenia",
+    "gather_reviews_desc": "Získajte pozitívne hodnotenia a budujte svou online reputaciu.",
+    "highlight_profile": "Zvýraznite svoj profil",
+    "highlight_profile_desc": "Využite možnosti prémiových funkcií na zvýraznenie vášho profilu vo vyhľadávaní.",
+    "more_questions": "Máte ďalšie otázky o tom, ako naša platforma funguje?",
     "customer_chat_desc": "Komunikujte so zákazníkmi priamo cez platformu bez potreby zdieľania osobných kontaktov",
     "profile_topping": "Zvýraznenie profilu",
     "profile_topping_desc": "Za poplatok zvýraznite svoj profil, aby sa zobrazoval na popredných miestach vo vyhľadávaní",
@@ -720,6 +715,16 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "step_2_craftsman_desc": "Definujte, kdy jste k dispozici pro nové zakázky.",
     "step_3_craftsman": "3. Získávejte zakázky",
     "step_3_craftsman_desc": "Buďte vidět a získávejte nové zákazníky ve vašem okolí.",
+    
+    // Additional keys
+    "rate_after_completion": "Ohodnoťte službu",
+    "rate_after_completion_desc": "Po dokončení práce zanechte hodnocení a pomůžte ostatním zákazníkům.",
+    "choose_category": "Vyberte kategorii",
+    "choose_category_desc": "Procházejte kategoriemi a vyhledejte typ řemeslníka, kterého potřebujete.",
+    "view_profiles": "Prohlížejte profily",
+    "view_profiles_desc": "Prohlížejte si detailní profily, hodnocení a portfolia řemeslníků.",
+    "contact_craftsman": "Kontaktujte řemeslníka",
+    "contact_craftsman_desc": "Kontaktujte vybraného řemeslníka přímo přes naši platformu.",
     "and": "a"
   },
   en: {
@@ -982,6 +987,16 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "step_2_craftsman_desc": "Define when you're available for new jobs.",
     "step_3_craftsman": "3. Get new clients",
     "step_3_craftsman_desc": "Be visible and gain new customers in your area.",
+    
+    // Additional keys
+    "rate_after_completion": "Rate the Service",
+    "rate_after_completion_desc": "After the work is completed, leave a rating to help other customers.",
+    "choose_category": "Choose a Category",
+    "choose_category_desc": "Browse categories and find the type of craftsman you need.",
+    "view_profiles": "View Profiles",
+    "view_profiles_desc": "Browse detailed profiles, ratings, and craftsmen portfolios.",
+    "contact_craftsman": "Contact a Craftsman",
+    "contact_craftsman_desc": "Contact your selected craftsman directly through our platform.",
     "and": "and"
   }
 };
