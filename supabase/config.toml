@@ -52,4 +52,3 @@ verify_signature = true
 [functions]
 [functions.auth-email]
 verify_jwt = false
-

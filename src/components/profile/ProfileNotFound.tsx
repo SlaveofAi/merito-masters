@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, ArrowLeft, AlertTriangle, User, LogOut, AlertCircle, Home, Loader2 } from "lucide-react";
@@ -6,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { createDefaultProfile } from "@/utils/profileCreation";
 
 interface ProfileNotFoundProps {
   isCurrentUser: boolean;
@@ -21,6 +23,19 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
   const navigate = useNavigate();
   const { user, signOut, userType } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
+  const [autoCreationAttempted, setAutoCreationAttempted] = useState(false);
+
+  // Automatically try to create a profile when this component loads for current user
+  useEffect(() => {
+    if (isCurrentUser && user && userType && !autoCreationAttempted && onCreateProfile) {
+      console.log("Auto-creating profile for current user:", user.id);
+      setIsCreating(true);
+      setAutoCreationAttempted(true);
+      
+      // Attempt to create the profile automatically
+      handleCreateProfile();
+    }
+  }, [isCurrentUser, user, userType, autoCreationAttempted]);
 
   const handleCreateProfile = async () => {
     if (!onCreateProfile) {
@@ -30,7 +45,7 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
     
     try {
       setIsCreating(true);
-      toast.info("Pokúšam sa vytvoriť profil...");
+      toast.info("Vytváram profil...");
       console.log("Attempting to create profile...");
       await onCreateProfile();
       // Don't set isCreating to false here as we want to keep the button disabled

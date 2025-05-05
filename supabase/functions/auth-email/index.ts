@@ -54,6 +54,7 @@ serve(async (req) => {
     console.log("Email template length:", emailContent.length);
     console.log("Email template preview:", emailContent.substring(0, 100) + "...");
     
+    // Return the completed email with proper subject
     return new Response(
       JSON.stringify({ 
         html: emailContent,

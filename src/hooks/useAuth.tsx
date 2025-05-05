@@ -1,7 +1,9 @@
+
 import { useEffect, useState, createContext, useContext, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { createDefaultProfile } from "@/utils/profileCreation";
 
 // Explicitly define the user type literals to help TypeScript understand they can be compared
 type UserType = 'customer' | 'craftsman' | null;
@@ -23,6 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userType, setUserType] = useState<UserType>(null);
   const [loading, setLoading] = useState(true);
   const [userTypeFetched, setUserTypeFetched] = useState(false);
+  const [profileCreationAttempted, setProfileCreationAttempted] = useState(false);
 
   const fetchUserType = async (userId: string) => {
     try {
@@ -62,70 +65,92 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
 
-      if (data) {
-        console.log("User type found in database:", data.user_type);
-        const type = data.user_type as 'customer' | 'craftsman';
-        setUserType(type);
+      console.log("User type data:", userTypeData);
+      
+      if (!data) {
+        console.log("No user type found for:", userId);
         
-        // Save to localStorage for backup and faster access
-        localStorage.setItem("userType", type);
-        
-        // Also update user metadata to have consistent sources
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: { user_type: type }
-        });
-        
-        if (updateError) {
-          console.error("Error updating user metadata with user_type:", updateError);
+        // Last effort - check cached user type in localStorage
+        const cachedUserType = localStorage.getItem("userType");
+        if (cachedUserType === 'customer' || cachedUserType === 'craftsman') {
+          console.log("Using cached user type from localStorage:", cachedUserType);
+          setUserType(cachedUserType as 'customer' | 'craftsman');
+          fetchedUserType = cachedUserType;
+        } else {
+          setUserType(null);
+          setUserTypeFetched(true);
+          return null;
         }
-        
-        setUserTypeFetched(true);
-        return type;
       } else {
-        console.log("No user type found in database for user:", userId);
-        
-        // Last resort - try again with user metadata
-        try {
-          const { data: userData, error: userError } = await supabase.auth.getUser();
-          
-          if (!userError && userData?.user?.user_metadata?.user_type) {
-            const recoveredType = userData.user.user_metadata.user_type;
-            if (recoveredType === 'customer' || recoveredType === 'craftsman') {
-              console.log("Recovered user type from re-fetched metadata:", recoveredType);
-              setUserType(recoveredType);
-              localStorage.setItem("userType", recoveredType);
-              
-              // Save this to the database to fix the issue
-              const { error: insertError } = await supabase
-                .from('user_types')
-                .insert({
-                  user_id: userId,
-                  user_type: recoveredType
-                });
-                
-              if (insertError) {
-                console.error("Error saving user type to database:", insertError);
-              } else {
-                console.log("Recovered user type saved to database");
-              }
-              
-              setUserTypeFetched(true);
-              return recoveredType;
-            }
-          }
-        } catch (metaError) {
-          console.error("Error retrieving user metadata:", metaError);
+        const fetchedUserType = data.user_type;
+        if (fetchedUserType === 'customer' || fetchedUserType === 'craftsman') {
+          setUserType(fetchedUserType);
+          // Cache the user type for faster access
+          localStorage.setItem("userType", fetchedUserType);
+        } else {
+          console.log("Invalid user type:", fetchedUserType);
+          setUserType(null);
+          setUserTypeFetched(true);
+          return null;
         }
-        
-        setUserType(null);
-        setUserTypeFetched(true);
-        return null;
       }
+
+      // Once we have the user type, attempt to check/create the profile
+      setUserTypeFetched(true);
+      return fetchedUserType;
     } catch (error) {
       console.error("Error in fetchUserType:", error);
       setUserType(null);
       setUserTypeFetched(true);
       return null;
+    }
+  };
+
+  // Check if profile exists for the user
+  const checkAndCreateProfileIfNeeded = async (userId: string, userType: 'customer' | 'craftsman') => {
+    if (profileCreationAttempted) return;
+    
+    try {
+      console.log("Checking if profile exists for:", userId);
+      setProfileCreationAttempted(true);
+      
+      // Check if profile exists in appropriate table
+      const table = userType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
+      const { data: profileData, error: profileError } = await supabase
+        .from(table)
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      if (profileError) {
+        console.error("Error checking profile existence:", profileError);
+        return;
+      }
+      
+      if (!profileData) {
+        console.log("Profile does not exist, creating default profile for:", userId);
+        
+        try {
+          // Use setTimeout to avoid potential Supabase deadlocks
+          setTimeout(async () => {
+            await createDefaultProfile(
+              user, 
+              userType, 
+              true, // isCurrentUser 
+              () => {
+                console.log("Profile created successfully after email verification");
+                toast.success("Profil bol úspešne vytvorený", { duration: 3000 });
+              }
+            );
+          }, 500);
+        } catch (error) {
+          console.error("Error creating default profile:", error);
+        }
+      } else {
+        console.log("Profile already exists for user:", userId);
+      }
+    } catch (error) {
+      console.error("Error in checkAndCreateProfileIfNeeded:", error);
     }
   };
 
@@ -165,6 +190,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Update state
       setUserType(type);
       toast.success("Typ používateľa bol aktualizovaný");
+      
+      // Reset profile creation flag to allow creating profile for the new user type
+      setProfileCreationAttempted(false);
+      
+      // Check and create profile if needed with the new user type
+      checkAndCreateProfileIfNeeded(user.id, type);
     } catch (error) {
       console.error("Error in updateUserType:", error);
       toast.error("Nastala chyba pri aktualizácii typu používateľa");
@@ -196,17 +227,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserType(null);
           localStorage.removeItem("userType");
           setUserTypeFetched(false);
+          setProfileCreationAttempted(false);
         }
         
         if (newSession?.user) {
           // Use setTimeout to avoid potential Supabase deadlocks
-          setTimeout(() => {
+          setTimeout(async () => {
             if (mounted) {
-              fetchUserType(newSession.user.id);
+              const type = await fetchUserType(newSession.user.id);
+              
+              // If user type exists and email is confirmed, try to create profile
+              if (type && newSession.user.email_confirmed_at && !profileCreationAttempted) {
+                checkAndCreateProfileIfNeeded(newSession.user.id, type);
+              }
             }
           }, 100);
         } else {
           setLoading(false);
+        }
+        
+        // If the user has been confirmed (email verification), try to create their profile
+        if (event === 'USER_UPDATED' && newSession?.user?.email_confirmed_at) {
+          console.log("User email confirmed, attempting to create profile");
+          setTimeout(async () => {
+            if (mounted && newSession.user) {
+              const type = await fetchUserType(newSession.user.id);
+              if (type) {
+                checkAndCreateProfileIfNeeded(newSession.user.id, type);
+              }
+            }
+          }, 500);
         }
       }
     );
@@ -220,7 +270,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserType(session.user.id).finally(() => {
+        fetchUserType(session.user.id).then(type => {
+          if (mounted && type && session.user.email_confirmed_at) {
+            checkAndCreateProfileIfNeeded(session.user.id, type);
+          }
           if (mounted) {
             setLoading(false);
           }
@@ -242,6 +295,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUserType(null);
       localStorage.removeItem("userType");
       setUserTypeFetched(false);
+      setProfileCreationAttempted(false);
     } catch (error) {
       console.error("Error signing out:", error);
       toast.error("Nastala chyba pri odhlásení");
