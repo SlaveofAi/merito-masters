@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -11,7 +10,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const ProfileCalendarContent: React.FC = () => {
   const {
@@ -27,7 +25,6 @@ const ProfileCalendarContent: React.FC = () => {
   } = useProfile();
   const { user, loading: authLoading, userType } = useAuth();
   const navigate = useNavigate();
-  const { t } = useLanguage();
 
   // Enhanced craftsman detection - check both user_type field and trade_category existence
   const isCraftsmanProfile = profileData?.user_type === "craftsman" || 
@@ -58,14 +55,14 @@ const ProfileCalendarContent: React.FC = () => {
       console.log("Craftsman profile not found, will try to create default profile");
       setTimeout(() => {
         createDefaultProfileIfNeeded?.()
-          .then(() => toast.success(t("profile_updated")))
+          .then(() => toast.success("Profil remeselníka bol vytvorený"))
           .catch(err => {
             console.error("Failed to create craftsman profile:", err);
-            toast.error(t("profile_creation_error"));
+            toast.error("Nepodarilo sa vytvoriť profil remeselníka");
           });
       }, 500);
     }
-  }, [isCurrentUser, profileNotFound, userType, createDefaultProfileIfNeeded, t]);
+  }, [isCurrentUser, profileNotFound, userType, createDefaultProfileIfNeeded]);
 
   // Redirect customer profiles to reviews page
   useEffect(() => {
@@ -89,7 +86,7 @@ const ProfileCalendarContent: React.FC = () => {
     return (
       <Layout>
         <div className="min-h-screen flex justify-center items-center">
-          <p>{t("loading")}</p>
+          <p>Presmerovanie na stránku hodnotení...</p>
         </div>
       </Layout>
     );
@@ -121,7 +118,7 @@ const ProfileCalendarContent: React.FC = () => {
         <ProfileNotFound 
           isCurrentUser={isCurrentUser} 
           onCreateProfile={createDefaultProfileIfNeeded}
-          error={error || t("profile_not_found")}
+          error={error || "Profil nebol nájdený alebo nemáte k nemu prístup."}
         />
       </Layout>
     );
@@ -153,13 +150,14 @@ const ProfileCalendarContent: React.FC = () => {
               {/* Login prompt for non-logged in users */}
               {showLoginPrompt && (
                 <div className="bg-white shadow rounded-lg p-6 mt-6 text-center">
-                  <h3 className="text-xl font-semibold mb-4">{t("account_registration_required")}</h3>
+                  <h3 className="text-xl font-semibold mb-4">Pre rezerváciu termínu sa musíte prihlásiť</h3>
                   <p className="text-gray-600 mb-6">
-                    {t("account_required_message")}
+                    Ak chcete kontaktovať tohto remeselníka a rezervovať si termín, 
+                    musíte byť prihlásený ako zákazník.
                   </p>
                   <div className="flex gap-4 justify-center">
-                    <Button onClick={() => navigate("/login")} className="pointer-events-auto">{t("login")}</Button>
-                    <Button variant="outline" onClick={() => navigate("/register")} className="pointer-events-auto">{t("register")}</Button>
+                    <Button onClick={() => navigate("/login")} className="pointer-events-auto">Prihlásiť sa</Button>
+                    <Button variant="outline" onClick={() => navigate("/register")} className="pointer-events-auto">Registrovať sa</Button>
                   </div>
                 </div>
               )}

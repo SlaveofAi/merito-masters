@@ -7,7 +7,6 @@ import ContactTab from "@/components/profile/ContactTab";
 import ProfileCalendar from "@/components/profile/ProfileCalendar";
 import EditProfileForm from "@/components/EditProfileForm";
 import { useProfile } from "@/contexts/ProfileContext";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ProfileTabsProps {
   userType: string | null;
@@ -17,7 +16,6 @@ interface ProfileTabsProps {
 const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portfolio" }) => {
   const { isCurrentUser, isEditing, profileData, userType: profileUserType, handleProfileUpdate } = useProfile();
   const [activeTab, setActiveTab] = useState(initialTab);
-  const { t } = useLanguage();
   
   // Add debug logging to understand the component state
   console.log("ProfileTabs rendering:", {
@@ -60,15 +58,15 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portf
       >
         {isCraftsman && (
           <>
-            <TabsTrigger value="portfolio">{t("portfolio")}</TabsTrigger>
-            <TabsTrigger value="reviews">{t("reviews")}</TabsTrigger>
-            {!isCurrentUser && <TabsTrigger value="contact">{t("contact_us")}</TabsTrigger>}
-            {isCurrentUser && <TabsTrigger value="calendar">{t("calendar")}</TabsTrigger>}
+            <TabsTrigger value="portfolio">Portfólio</TabsTrigger>
+            <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>
+            {!isCurrentUser && <TabsTrigger value="contact">Kontakt</TabsTrigger>}
+            {isCurrentUser && <TabsTrigger value="calendar">Kalendár</TabsTrigger>}
           </>
         )}
         
         {!isCraftsman && (
-          <TabsTrigger value="reviews">{t("reviews")}</TabsTrigger>
+          <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>
         )}
       </TabsList>
 

@@ -1,134 +1,130 @@
-
 import React from "react";
 import Layout from "@/components/Layout";
 import { Separator } from "@/components/ui/separator";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const Terms = () => {
-  const { t } = useLanguage();
-  
   return (
     <Layout>
       <div className="container max-w-4xl mx-auto py-12 px-4 sm:px-6">
-        <h1 className="text-3xl font-bold mb-8 text-center">{t("terms_of_service")}</h1>
+        <h1 className="text-3xl font-bold mb-8 text-center">Podmienky používania webovej stránky Majstri.com</h1>
         
         <div className="prose max-w-none">
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">1. {t("basic_information")}</h2>
+            <h2 className="text-xl font-semibold mb-4">1. Základné informácie</h2>
             <p className="text-muted-foreground">
-              {t("terms_intro")} <a href="mailto:dvidid35@gmail.com" className="text-primary hover:underline">dvidid35@gmail.com</a>.
+              Tieto podmienky používania upravujú práva a povinnosti medzi prevádzkovateľom webovej stránky Majstri.com (ďalej len "Platforma") a jej užívateľmi. Prevádzkovateľom Platformy je fyzická osoba, ktorá je dostupná na e-mailovej adrese: <a href="mailto:dvidid35@gmail.com" className="text-primary hover:underline">dvidid35@gmail.com</a>.
             </p>
           </section>
           
           <Separator className="my-6" />
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">2. {t("registration_age")}</h2>
+            <h2 className="text-xl font-semibold mb-4">2. Registrácia a věkové obmedzenie</h2>
             <p className="text-muted-foreground">
-              {t("registration_age_desc")}
+              Používanie Platformy je podmienené registráciou. Registrácia je povolená osobám starším ako 16 rokov. Pri registrácii sa od používateľa vyžaduje poskytnutie pravdivých údajov.
             </p>
           </section>
           
           <Separator className="my-6" />
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">3. {t("user_types")}</h2>
+            <h2 className="text-xl font-semibold mb-4">3. Typy používateľov</h2>
             <p className="text-muted-foreground">
-              {t("platform_user_types")}:
+              Platforma rozlišuje dvoch hlavných používateľov:
             </p>
             <ul className="list-disc pl-6 mt-2 space-y-1 text-muted-foreground">
-              <li><strong>{t("craftsman")}</strong>: {t("craftsman_desc")}</li>
-              <li><strong>{t("customer")}</strong>: {t("customer_desc")}</li>
+              <li><strong>Majster</strong>: poskytovateľ remeselných služieb,</li>
+              <li><strong>Zákazník</strong>: osoba, ktorá hľadá remeselné služby.</li>
             </ul>
           </section>
           
           <Separator className="my-6" />
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">4. {t("user_content")}</h2>
+            <h2 className="text-xl font-semibold mb-4">4. Obsah vytvorený používateľom</h2>
             <p className="text-muted-foreground">
-              {t("user_content_desc")}
+              Užívatelia môžu nahrávať fotografie, texty a popisy svojich prác. Za obsah zodpovedá výlučne používateľ, ktorý ho vytvoril. Platforma môže odstrániť obsah, ktorý porušuje právne predpisy alebo podmienky platformy.
             </p>
           </section>
           
           <Separator className="my-6" />
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">5. {t("ratings_reviews")}</h2>
+            <h2 className="text-xl font-semibold mb-4">5. Hodnotenia a recenzie</h2>
             <p className="text-muted-foreground">
-              {t("ratings_reviews_desc")}
+              Zákazníci môžu po ukončení práce ohodnotiť majstra. Recenzie budú moderované len v prípade, ak vznikne podozrenie, že boli písané s cieľom poškodiť reputáciu konkurencie.
             </p>
           </section>
           
           <Separator className="my-6" />
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">6. {t("bookings_communication")}</h2>
+            <h2 className="text-xl font-semibold mb-4">6. Rezervácie a komunikácia</h2>
             <p className="text-muted-foreground">
-              {t("bookings_communication_desc")}
+              Platforma umožňuje zákazníkom rezervovať si termín u majstra prostredníctvom kalendára a chatu. Po rezervácii sa v chate zobrazuje notifikácia, ktorú majster potvrdí. Po potvrdení sa rezervácia objaví v sekcii "Zákazky".
             </p>
           </section>
           
           <Separator className="my-6" />
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">7. {t("responsibility")}</h2>
+            <h2 className="text-xl font-semibold mb-4">7. Zodpovednosť</h2>
             <p className="text-muted-foreground">
-              {t("responsibility_desc")}
+              Platforma poskytuje len sprostredkovanie kontaktu a rezervácií medzi zákazníkmi a majstrami. Nenesie zodpovednosť za kvalitu, rozsah alebo úspešnosť vykonaných prác. Používateľ je plne zodpovedný za svoje konanie.
             </p>
           </section>
           
           <Separator className="my-6" />
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">8. {t("payments")}</h2>
+            <h2 className="text-xl font-semibold mb-4">8. Platby</h2>
             <p className="text-muted-foreground">
-              {t("payments_desc")}
+              V súčasnosti sa platby realizujú mimo Platformu. V budúcnosti môže byť zavedená funkcia spracovania platieb cez Platformu, o čom budú používatelia vopred informovaní.
             </p>
           </section>
           
           <Separator className="my-6" />
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">9. {t("account_restrictions")}</h2>
+            <h2 className="text-xl font-semibold mb-4">9. Obmedzenie účtov</h2>
             <p className="text-muted-foreground">
-              {t("account_restrictions_desc")}
+              Prevádzkovateľ si vyhradzuje právo zablokovať alebo zrušiť účet používateľa, ktorý poruší tieto podmienky alebo zneužije funkcie Platformy.
             </p>
           </section>
           
           <Separator className="my-6" />
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">10. {t("promotion_outside")}</h2>
+            <h2 className="text-xl font-semibold mb-4">10. Propagácia mimo Platformu</h2>
             <p className="text-muted-foreground">
-              {t("promotion_outside_desc")}
+              Majstri môžu slobodne propagovať svoje služby aj mimo Platformu.
             </p>
           </section>
           
           <Separator className="my-6" />
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">11. {t("data_protection")}</h2>
+            <h2 className="text-xl font-semibold mb-4">11. Ochrana osobných údajov (GDPR)</h2>
             <p className="text-muted-foreground">
-              {t("data_protection_desc")}
+              Platforma uchováva nasledovné osobné údaje: e-mail, telefónne číslo a lokalitu. Tieto údaje sú spracovávané v súlade so Zákonom o ochrane osobných údajov a budú doplnené v samostatnej Politike ochrany osobných údajov.
             </p>
           </section>
           
           <Separator className="my-6" />
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">12. {t("analytics_cookies")}</h2>
+            <h2 className="text-xl font-semibold mb-4">12. Analytika a cookies</h2>
             <p className="text-muted-foreground">
-              {t("analytics_cookies_desc")}
+              Platforma plánuje používanie analytických nástrojov a cookies v budúcnosti. Používatelia budú mať možnosť spravovať svoje nastavenia cookies.
             </p>
           </section>
           
           <Separator className="my-6" />
           
           <section className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">13. {t("final_provisions")}</h2>
+            <h2 className="text-xl font-semibold mb-4">13. Záverečné ustanovenia</h2>
             <p className="text-muted-foreground">
-              {t("final_provisions_desc")}
+              Tieto podmienky nadobúdajú účinnosť dňom ich zverejnenia na Platforme. Prevádzkovateľ si vyhradzuje právo tieto podmienky kedykoľvek zmeniť. O významných zmenách budú používatelia informovaní.
             </p>
           </section>
         </div>

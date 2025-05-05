@@ -11,7 +11,6 @@ import { CalendarIcon, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const ProfileCalendar: React.FC = () => {
   const { user, userType } = useAuth();
@@ -24,7 +23,6 @@ const ProfileCalendar: React.FC = () => {
   const [motivationalMessage, setMotivationalMessage] = useState<string>("");
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const isMobile = useIsMobile();
-  const { t } = useLanguage();
 
   // Enhanced craftsman detection - check both user_type field and trade_category existence
   const isCraftsmanProfile = profileData?.user_type === "craftsman" || 
@@ -113,7 +111,7 @@ const ProfileCalendar: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Error processing available dates:", err);
-      setError(`${t("error_loading")}: ${err.message}`);
+      setError(`Chyba: ${err.message}`);
     } finally {
       setIsLoadingDates(false);
     }
@@ -121,7 +119,7 @@ const ProfileCalendar: React.FC = () => {
 
   const saveAvailableDates = async () => {
     if (!user?.id || !profileData?.id) {
-      toast.error(t("login_required"));
+      toast.error("Nemôžem uložiť dostupnosť, chýba ID používateľa alebo nie ste prihlásený");
       return;
     }
 
@@ -154,12 +152,12 @@ const ProfileCalendar: React.FC = () => {
         if (error) throw error;
       }
       
-      setMotivationalMessage(t("your_availability_saved"));
-      toast.success(t("availability_updated"));
+      setMotivationalMessage("Vaša dostupnosť bola úspešne aktualizovaná!");
+      toast.success("Dostupné dni boli úspešne uložené");
     } catch (error: any) {
       console.error("Error saving available dates:", error);
-      setError(`${t("error_updating")}: ${error.message}`);
-      toast.error(t("error_updating"));
+      setError(`Chyba pri ukladaní: ${error.message}`);
+      toast.error("Chyba pri ukladaní dostupných dní");
     } finally {
       setSaving(false);
     }
@@ -200,7 +198,7 @@ const ProfileCalendar: React.FC = () => {
       <Card className="shadow-sm">
         <CardContent className={`${isMobile ? 'p-4' : 'p-6'} text-center`}>
           <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="mt-2 text-sm text-gray-500">{t("loading_dates")}</p>
+          <p className="mt-2 text-sm text-gray-500">Načítavam kalendár dostupnosti...</p>
         </CardContent>
       </Card>
     );
@@ -222,7 +220,7 @@ const ProfileCalendar: React.FC = () => {
         <CardHeader className={isMobile ? "px-3 py-2" : ""}>
           <CardTitle className="flex items-center justify-center">
             <CalendarIcon className="mr-2 h-5 w-5" />
-            <span>{t("calendar_availability")}</span>
+            <span>Kalendár dostupnosti</span>
           </CardTitle>
         </CardHeader>
         <CardContent className={isMobile ? "px-2 py-3" : ""}>
@@ -270,14 +268,14 @@ const ProfileCalendar: React.FC = () => {
             <div className="mt-3 flex items-center justify-center">
               <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
               <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500`}>
-                {t("craftsman_available")}
+                Remeselník je dostupný v označené dni
               </span>
             </div>
 
             {selectedDates.length === 0 && (
               <div className="text-center py-4">
                 <p className="text-gray-500 text-sm">
-                  {t("craftsman_currently")}
+                  Remeselník momentálne nemá stanovené žiadne dostupné termíny.
                 </p>
               </div>
             )}
@@ -285,7 +283,7 @@ const ProfileCalendar: React.FC = () => {
             {selectedDates.length > 0 && (
               <div className="mt-4 flex justify-center">
                 <div className="text-center">
-                  <p className="font-medium text-sm mb-2">{t("days_available")} ({selectedDates.length}):</p>
+                  <p className="font-medium text-sm mb-2">Dostupné dni ({selectedDates.length}):</p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {selectedDates
                       .sort((a, b) => a.getTime() - b.getTime())
@@ -297,7 +295,7 @@ const ProfileCalendar: React.FC = () => {
                       ))}
                     {selectedDates.length > (isMobile ? 3 : 5) && (
                       <div className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                        +{selectedDates.length - (isMobile ? 3 : 5)} {t("more")}
+                        +{selectedDates.length - (isMobile ? 3 : 5)} ďalších
                       </div>
                     )}
                   </div>
@@ -315,7 +313,7 @@ const ProfileCalendar: React.FC = () => {
       <CardHeader className={isMobile ? "px-3 py-2" : ""}>
         <CardTitle className="flex items-center justify-center">
           <CalendarIcon className="mr-2 h-5 w-5" />
-          <span>{t("calendar_availability")}</span>
+          <span>Kalendár dostupnosti</span>
         </CardTitle>
       </CardHeader>
       <CardContent className={isMobile ? "px-2 py-3" : ""}>
@@ -359,8 +357,8 @@ const ProfileCalendar: React.FC = () => {
             <div className="w-4 h-4 bg-green-100 border border-green-300 mr-2 rounded"></div>
             <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500`}>
               {canEditCalendar 
-                ? t("available_days") 
-                : t("craftsman_available")}
+                ? "Vaše vybrané dostupné dni" 
+                : "Remeselník je dostupný v označené dni"}
             </span>
           </div>
 
@@ -368,8 +366,8 @@ const ProfileCalendar: React.FC = () => {
             <div className="text-center py-4">
               <p className="text-gray-500 text-sm">
                 {canEditCalendar 
-                  ? t("no_time_slots") 
-                  : t("craftsman_currently")}
+                  ? "Zatiaľ ste nepridali žiadne dostupné termíny." 
+                  : "Remeselník momentálne nemá stanovené žiadne dostupné termíny."}
               </p>
             </div>
           )}
@@ -379,7 +377,7 @@ const ProfileCalendar: React.FC = () => {
           <div className="mt-4">
             {selectedDates.length > 0 && (
               <div className="mb-4">
-                <p className="font-medium text-sm mb-2 text-center">{t("your_available_days")} ({selectedDates.length}):</p>
+                <p className="font-medium text-sm mb-2 text-center">Vaše dostupné dni ({selectedDates.length}):</p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {selectedDates
                     .sort((a, b) => a.getTime() - b.getTime())
@@ -391,7 +389,7 @@ const ProfileCalendar: React.FC = () => {
                     ))}
                   {selectedDates.length > (isMobile ? 3 : 5) && (
                     <div className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                      +{selectedDates.length - (isMobile ? 3 : 5)} {t("more")}
+                      +{selectedDates.length - (isMobile ? 3 : 5)} ďalších
                     </div>
                   )}
                 </div>
@@ -412,9 +410,9 @@ const ProfileCalendar: React.FC = () => {
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t("saving")}
+                  Ukladám...
                 </>
-              ) : t("save_available_days")}
+              ) : "Uložiť dostupné dni"}
             </Button>
           </div>
         )}

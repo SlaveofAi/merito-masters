@@ -2,7 +2,6 @@
 import React from "react";
 import ReviewForm from "../ReviewForm";
 import { CraftsmanReviewWithCraftsman } from "./types";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 interface EditReviewSectionProps {
   editingReview: CraftsmanReviewWithCraftsman;
@@ -17,13 +16,9 @@ const EditReviewSection: React.FC<EditReviewSectionProps> = ({
   onSuccess,
   onCancel
 }) => {
-  const { t } = useLanguage();
-  
   return (
     <div className="mb-6">
-      <h4 className="text-md font-semibold mb-2">
-        {t("edit_review_for")}: {editingReview.craftsman?.name}
-      </h4>
+      <h4 className="text-md font-semibold mb-2">Upraviť hodnotenie pre: {editingReview.craftsman?.name}</h4>
       <ReviewForm
         userId={userId || ""}
         profileId={editingReview.craftsman_id}

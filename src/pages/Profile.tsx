@@ -1,17 +1,14 @@
-
 import React, { useEffect } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { ProfileProvider } from "@/contexts/ProfileContext";
 import ProfilePage from "@/components/profile/ProfilePage";
 import { useAuth } from "@/hooks/useAuth";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const Profile = () => {
   const { id } = useParams();
   const { userType, loading } = useAuth();
   const navigate = useNavigate();
-  const { t } = useLanguage();
   
   // First check: Immediate redirect if we already know this is a customer
   if (!id && userType === "customer") {

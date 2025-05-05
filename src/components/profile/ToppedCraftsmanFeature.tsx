@@ -8,7 +8,6 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ToppedCraftsmanFeatureProps {
   isCurrentUser: boolean;
@@ -26,11 +25,10 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
   const isTopped = profileData?.is_topped || false;
   const toppedUntil = profileData?.topped_until ? new Date(profileData.topped_until) : null;
   const isActive = isTopped && toppedUntil && new Date() < toppedUntil;
-  const { t } = useLanguage();
 
   const handlePayment = async () => {
     if (!user) {
-      toast.error(t("login_required"));
+      toast.error("Musíte byť prihlásený");
       return;
     }
     
@@ -47,8 +45,8 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
       
     } catch (error: any) {
       console.error("Error creating topped session:", error);
-      toast.error(t("error_sending"), { 
-        description: error.message || t("try_again_later") 
+      toast.error("Nepodarilo sa vytvoriť platbu", { 
+        description: error.message || "Skúste to prosím neskôr" 
       });
     } finally {
       setIsLoading(false);
@@ -72,8 +70,8 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           if (error) throw error;
           
           if (data.success) {
-            toast.success(t("your_availability_saved"), {
-              description: t("profile_is_featured")
+            toast.success("Vaša platba bola úspešne spracovaná", {
+              description: "Váš profil je teraz zvýraznený na vrchole výsledkov vyhľadávania"
             });
             // Clear the session ID from localStorage
             localStorage.removeItem('topped_session_id');
@@ -82,14 +80,14 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
             // Remove the query parameter from the URL
             window.history.replaceState({}, document.title, window.location.pathname);
           } else {
-            toast.error("Platba nebyla dokončena", {
-              description: t("try_again_later")
+            toast.error("Platba nebola dokončená", {
+              description: "Skúste to prosím znova neskôr"
             });
           }
         } catch (error: any) {
           console.error("Error verifying payment:", error);
-          toast.error(t("error_sending"), {
-            description: error.message || t("try_again_later")
+          toast.error("Chyba pri overovaní platby", {
+            description: error.message || "Skúste to prosím neskôr"
           });
         } finally {
           setIsLoading(false);
@@ -98,7 +96,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
     };
     
     checkPaymentStatus();
-  }, [onProfileUpdate, t]);
+  }, [onProfileUpdate]);
 
   // If not current user and not topped, don't show anything
   if (!isCurrentUser && !isActive) {
@@ -112,17 +110,15 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           <div>
             <CardTitle className="flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-yellow-500" />
-              {t("featured_profile")}
+              Zvýraznený profil
             </CardTitle>
             <CardDescription>
-              {isCurrentUser ? 
-                t("get_more_jobs") : 
-                t("featured_profiles")}
+              Zobrazte svoj profil na vrchu výsledkov vyhľadávania
             </CardDescription>
           </div>
           {isActive && (
             <Badge variant="outline" className="border-yellow-400 text-yellow-600 px-3 py-1">
-              <CheckCircle className="w-3 h-3 mr-1" /> {t("active")}
+              <CheckCircle className="w-3 h-3 mr-1" /> Aktívne
             </Badge>
           )}
         </div>
@@ -132,7 +128,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
         {isActive ? (
           <div className="text-sm text-muted-foreground">
             <p>
-              {t("profile_is_featured")}{" "}
+              Váš profil je zvýraznený a zobrazuje sa na vrchole výsledkov vyhľadávania do{" "}
               <span className="font-semibold">
                 {formatDistanceToNow(toppedUntil, { addSuffix: true })}
               </span>
@@ -141,7 +137,11 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
         ) : (
           <div className="text-sm text-muted-foreground">
             <p>
-              {isCurrentUser ? t("get_more_jobs") : t("featured_profiles")}
+              {isCurrentUser ? (
+                "Získajte viac zákaziek! Zvýraznite svoj profil v kategórii i výsledkoch vyhľadávania."
+              ) : (
+                "Tento profil je zvýraznený a zobrazuje sa na vrchole výsledkov vyhľadávania."
+              )}
             </p>
           </div>
         )}
@@ -155,9 +155,9 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
             className="w-full bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white"
           >
             {isLoading ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("processing")}</>
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Spracovanie</>
             ) : (
-              <>{t("highlight_profile_for")}</>
+              <>Zvýrazniť profil na 7 dní (10 €)</>
             )}
           </Button>
         </CardFooter>

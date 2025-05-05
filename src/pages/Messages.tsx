@@ -6,14 +6,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const Messages = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const { t } = useLanguage();
 
   useEffect(() => {
     // Only redirect if we're sure the user is not authenticated
@@ -21,7 +19,7 @@ const Messages = () => {
     if (!loading) {
       setIsCheckingAuth(false);
       if (!user) {
-        toast.error(t("login_required"));
+        toast.error("Pre prístup k správam sa musíte prihlásiť");
         navigate("/login", { replace: true, state: { from: "messages" } });
       } else {
         // Store user in localStorage for components that need it
@@ -29,7 +27,7 @@ const Messages = () => {
         console.log("User stored in localStorage:", user.id, "type:", user.user_metadata?.user_type);
       }
     }
-  }, [user, loading, navigate, t]);
+  }, [user, loading, navigate]);
 
   // Check if we were redirected from another page with a conversation parameter
   useEffect(() => {
@@ -43,7 +41,7 @@ const Messages = () => {
     return (
       <Layout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 mt-16">
-          <h1 className="text-2xl font-bold mb-6">{t("messages_title")}</h1>
+          <h1 className="text-2xl font-bold mb-6">Správy</h1>
           <div className="bg-white rounded-lg shadow-sm h-[75vh]">
             <Skeleton className="w-full h-full" />
           </div>
@@ -56,7 +54,7 @@ const Messages = () => {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 mt-16">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">{t("messages_title")}</h1>
+          <h1 className="text-2xl font-bold">Správy</h1>
         </div>
         <Chat />
       </div>

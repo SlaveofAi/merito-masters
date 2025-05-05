@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ReviewFormProps {
   userId: string;
@@ -49,7 +48,6 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [selectedCraftsmanId, setSelectedCraftsmanId] = useState(profileId !== "empty" ? profileId : "");
   const [craftsmen, setCraftsmen] = useState<CraftsmanOption[]>([]);
-  const { t } = useLanguage();
   
   const isEditMode = !!existingReview;
 
@@ -71,28 +69,28 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
           }
         } catch (error) {
           console.error('Error fetching craftsmen:', error);
-          toast.error(t('error_loading'));
+          toast.error('Nepodarilo sa načítať zoznam remeselníkov');
         }
       };
       
       fetchCraftsmen();
     }
-  }, [isSelectCraftsman, t]);
+  }, [isSelectCraftsman]);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) {
-      toast.error(t("login_required"));
+      toast.error("Pre pridanie hodnotenia sa musíte prihlásiť");
       return;
     }
 
     if (rating === 0) {
-      toast.error(t("rating") + " (1-5)");
+      toast.error("Prosím, vyberte hodnotenie (1-5 hviezdičiek)");
       return;
     }
     
     if (isSelectCraftsman && !selectedCraftsmanId) {
-      toast.error(t("select_craftsman"));
+      toast.error("Prosím, vyberte remeselníka");
       return;
     }
 
@@ -115,7 +113,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
           throw error;
         }
         
-        toast.success(t("profile_updated"));
+        toast.success("Hodnotenie bolo úspešne aktualizované");
       } else {
         // Add new review
         const { error } = await supabase
@@ -123,7 +121,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
           .insert({
             craftsman_id: craftsmanIdToUse,
             customer_id: userId,
-            customer_name: userName || t("anonymous_customer"),
+            customer_name: userName || 'Anonymný zákazník',
             rating,
             comment: comment.trim() || null
           });
@@ -144,7 +142,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       
     } catch (error: any) {
       console.error("Error submitting review:", error);
-      toast.error(t("error_sending") + ": " + (error.message || t("unexpected_error")));
+      toast.error("Nastala chyba pri odosielaní hodnotenia: " + (error.message || "Neznáma chyba"));
     } finally {
       setSubmitting(false);
     }
@@ -154,20 +152,20 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     <Card>
       <CardContent className="p-6">
         <h3 className="text-lg font-medium mb-4">
-          {isEditMode ? t("edit_review") : t("add_review")}
+          {isEditMode ? "Upraviť hodnotenie" : "Ohodnoťte remeselníka"}
         </h3>
         <form onSubmit={handleSubmitReview} className="space-y-4">
           {isSelectCraftsman && (
             <div className="space-y-2">
               <Label htmlFor="craftsman-select" className="block text-sm font-medium">
-                {t("select_craftsman")}
+                Vyberte remeselníka
               </Label>
               <Select 
                 value={selectedCraftsmanId} 
                 onValueChange={setSelectedCraftsmanId}
               >
                 <SelectTrigger id="craftsman-select" className="w-full">
-                  <SelectValue placeholder={t("select_craftsman")} />
+                  <SelectValue placeholder="Vyberte remeselníka" />
                 </SelectTrigger>
                 <SelectContent>
                   {craftsmen.map(craftsman => (
@@ -182,18 +180,18 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
           
           <div className="space-y-2">
             <label className="block text-sm font-medium">
-              {t("rating")}
+              Hodnotenie
             </label>
             <ReviewStarRating value={rating} onClick={setRating} size="large" />
           </div>
           
           <div className="space-y-2">
             <label htmlFor="comment" className="block text-sm font-medium">
-              {t("comment")}
+              Komentár
             </label>
             <Textarea
               id="comment"
-              placeholder={t("write_comment_placeholder")}
+              placeholder="Napíšte váš názor na prácu remeselníka..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={4}
@@ -206,7 +204,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
               className="w-full sm:w-auto"
               disabled={rating === 0 || submitting || (isSelectCraftsman && !selectedCraftsmanId)}
             >
-              {submitting ? t("sending") : isEditMode ? t("edit_review") : t("submit_review")}
+              {submitting ? "Odosielam..." : isEditMode ? "Upraviť hodnotenie" : "Odoslať hodnotenie"}
             </Button>
             
             {(isEditMode || onCancel) && (
@@ -224,7 +222,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
                 }}
                 disabled={submitting}
               >
-                {t("cancel")}
+                Zrušiť
               </Button>
             )}
           </div>

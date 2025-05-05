@@ -3,12 +3,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const Hero = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const { t } = useLanguage();
   
   const handleSearch = () => {
     navigate('/home', { state: { searchTerm } });
@@ -20,19 +18,20 @@ const Hero = () => {
       
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="inline-block mb-3 px-3 py-1 bg-black/5 backdrop-blur-sm text-sm font-medium rounded-full animate-fade-in">
-          {t("professional_craftsmen")}
+          Profesionálni remeselníci na jednom mieste
         </div>
         
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 animate-slide-up">
-          {t("find_best")} <br className="hidden sm:block" /> 
+          Nájdite najlepších <br className="hidden sm:block" /> 
           <span className="relative inline-block">
-            {t("craftsmen")}
+            remeselníkov
             <span className="absolute bottom-1 left-0 w-full h-[2px] bg-primary/30"></span>
           </span>
         </h1>
         
         <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground mb-8 animate-slide-up" style={{animationDelay: "100ms"}}>
-          {t("platform_connecting")}
+          Platforma, ktorá spája profesionálnych remeselníkov a ľudí, 
+          ktorí potrebujú kvalitné služby remeselníkov priamo na Slovensku.
         </p>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{animationDelay: "200ms"}}>
@@ -40,7 +39,7 @@ const Hero = () => {
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
             <input
               type="text"
-              placeholder={t("search_profession")}
+              placeholder="Hľadajte podľa profesie alebo lokality..."
               className="w-full pl-10 pr-4 py-2.5 rounded-md border border-border bg-white/50 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -48,22 +47,22 @@ const Hero = () => {
             />
           </div>
           <Button size="lg" className="w-full sm:w-auto" onClick={handleSearch}>
-            {t("search")}
+            Vyhľadať
           </Button>
         </div>
         
         <div className="mt-10 flex items-center justify-center gap-8 text-sm text-muted-foreground animate-slide-up" style={{animationDelay: "300ms"}}>
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-primary mr-2"></div>
-            <span>{t("craftsmen_count")}</span>
+            <span>500+ Remeselníkov</span>
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-primary mr-2"></div>
-            <span>{t("cities_count")}</span>
+            <span>100+ Miest</span>
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-primary mr-2"></div>
-            <span>{t("categories_count")}</span>
+            <span>20+ Kategórií</span>
           </div>
         </div>
       </div>

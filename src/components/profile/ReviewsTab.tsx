@@ -7,7 +7,6 @@ import ReviewsList from "./ReviewsList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const ReviewsTab: React.FC = () => {
   const { user, userType } = useAuth();
@@ -18,7 +17,6 @@ const ReviewsTab: React.FC = () => {
     error,
     refetchReviews
   } = useProfile();
-  const { t } = useLanguage();
 
   const isCurrentUser = profileData?.id === user?.id;
   
@@ -69,13 +67,13 @@ const ReviewsTab: React.FC = () => {
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4 mr-2" />
           <AlertDescription>
-            {typeof error === 'string' ? error : t("error_loading")}
+            {typeof error === 'string' ? error : 'Nastala chyba pri načítaní hodnotení. Prosím, skúste to znova neskôr.'}
             <Button 
               variant="link" 
               className="ml-2 p-0 h-auto" 
               onClick={handleRefresh}
             >
-              <RefreshCw className="h-3 w-3 mr-1" /> {t("try_again")}
+              <RefreshCw className="h-3 w-3 mr-1" /> Obnoviť
             </Button>
           </AlertDescription>
         </Alert>
@@ -83,18 +81,18 @@ const ReviewsTab: React.FC = () => {
       
       {canLeaveReview && user && profileData && (
         <div className="mb-6 border p-4 rounded-md bg-white shadow-sm">
-          <h3 className="text-lg font-medium mb-3">{t("add_review")}</h3>
+          <h3 className="text-lg font-medium mb-3">Pridať hodnotenie</h3>
           <ReviewForm 
             userId={user.id} 
             profileId={profileData.id || ''}
-            userName={user.user_metadata?.name || user.user_metadata?.full_name || t("anonymous_customer")}
+            userName={user.user_metadata?.name || user.user_metadata?.full_name || 'Anonymous'}
             onSuccess={refetchReviews}
           />
         </div>
       )}
       
       <div>
-        <h3 className="text-xl font-semibold mb-4">{t("reviews")}</h3>
+        <h3 className="text-xl font-semibold mb-4">Hodnotenia a recenzie</h3>
         <ReviewsList
           reviews={reviews || []}
           isLoading={isLoadingReviews}

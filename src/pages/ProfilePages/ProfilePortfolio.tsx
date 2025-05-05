@@ -9,7 +9,6 @@ import PortfolioTab from "@/components/profile/PortfolioTab";
 import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 const ProfilePortfolioContent: React.FC = () => {
   const {
@@ -25,7 +24,6 @@ const ProfilePortfolioContent: React.FC = () => {
   } = useProfile();
   const { userType: viewerUserType } = useAuth();
   const navigate = useNavigate();
-  const { t } = useLanguage();
   
   // Check if this is a customer profile
   const isCustomerProfile = profileData?.user_type === "customer";
@@ -73,7 +71,7 @@ const ProfilePortfolioContent: React.FC = () => {
         <ProfileNotFound
           isCurrentUser={isCurrentUser}
           onCreateProfile={createDefaultProfileIfNeeded}
-          error={error || t("profile_not_found")}
+          error={error || "Profil nebol nájdený alebo nemáte k nemu prístup."}
         />
       </Layout>
     );
