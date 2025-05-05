@@ -1,21 +1,24 @@
-import React, { useEffect } from "react";
+
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, CheckCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginFormValues } from "@/lib/schemas";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -25,9 +28,22 @@ const Login = () => {
     },
   });
 
-  // Handle user type from query params (for Google Auth redirect)
+  // Check for email confirmation required status
   useEffect(() => {
+    // Check if coming from registration with email confirmation required
+    if (location.state?.emailConfirmationRequired) {
+      setShowEmailConfirmation(true);
+    }
+    
+    // Check for email confirmation in URL parameter
     const params = new URLSearchParams(location.search);
+    if (params.get('email_confirmed') === 'true') {
+      toast.success("E-mailová adresa bola úspešne overená", {
+        duration: 5000,
+      });
+    }
+    
+    // Handle user type from query params (for Google Auth redirect)
     const userType = params.get('userType');
     
     if (userType) {
@@ -113,9 +129,17 @@ const Login = () => {
       });
 
       if (error) {
-        toast.error(error.message, {
-          duration: 3000,
-        });
+        // Check if error is due to email not confirmed
+        if (error.message.includes('Email not confirmed')) {
+          setShowEmailConfirmation(true);
+          toast.error("Prosím, potvrďte svoju e-mailovú adresu", {
+            duration: 5000,
+          });
+        } else {
+          toast.error(error.message, {
+            duration: 3000,
+          });
+        }
         setIsLoading(false);
         return;
       }
@@ -185,6 +209,42 @@ const Login = () => {
     }
   };
 
+  const handleResendConfirmationEmail = async () => {
+    const email = form.getValues("email");
+    
+    if (!email) {
+      toast.error("Prosím zadajte e-mailovú adresu", { 
+        duration: 3000 
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email
+      });
+      
+      if (error) {
+        toast.error(error.message, { duration: 3000 });
+      } else {
+        toast.success("Potvrdzovací e-mail bol odoslaný", { 
+          description: "Skontrolujte svoju e-mailovú schránku",
+          duration: 5000 
+        });
+      }
+    } catch (error) {
+      console.error("Error resending confirmation email:", error);
+      toast.error("Nastala chyba pri odosielaní potvrdzovacieho e-mailu", { 
+        duration: 3000 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="min-h-[80vh] flex items-center justify-center p-4 bg-gradient-to-b from-white to-secondary/30">
@@ -199,6 +259,24 @@ const Login = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {showEmailConfirmation && (
+                <Alert className="bg-amber-50 border-amber-200 mb-4">
+                  <CheckCircle className="h-5 w-5 text-amber-500" />
+                  <AlertTitle className="text-amber-800">Overte svoj e-mail</AlertTitle>
+                  <AlertDescription className="text-amber-700">
+                    Na vašu e-mailovú adresu sme odoslali potvrdzovací e-mail. Pre dokončenie registrácie prosím kliknite na odkaz v e-maile.
+                    <Button
+                      variant="link"
+                      className="px-0 text-amber-800 font-semibold"
+                      onClick={handleResendConfirmationEmail}
+                      disabled={isLoading}
+                    >
+                      Odoslať znova
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
