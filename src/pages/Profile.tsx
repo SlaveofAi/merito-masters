@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { ProfileProvider } from "@/contexts/ProfileContext";
@@ -7,8 +8,19 @@ import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 
 const Profile = () => {
   const { id } = useParams();
-  const { userType, loading } = useAuth();
+  const { userType, loading, user } = useAuth();
   const navigate = useNavigate();
+  
+  // Enhanced debug logging
+  useEffect(() => {
+    console.log("Profile route rendering with:", {
+      id,
+      userType,
+      loading,
+      userLoggedIn: !!user,
+      path: window.location.pathname
+    });
+  }, [id, userType, loading, user]);
   
   // First check: Immediate redirect if we already know this is a customer
   if (!id && userType === "customer") {
@@ -29,7 +41,7 @@ const Profile = () => {
   }, [id, userType, loading, navigate]);
   
   // While auth is loading, show loading state
-  if (loading && !id) {
+  if (loading) {
     return <ProfileSkeleton />;
   }
 

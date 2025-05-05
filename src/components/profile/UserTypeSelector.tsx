@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface UserTypeSelectorProps {
   userId: string;
@@ -15,6 +16,16 @@ const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
   updateUserType 
 }) => {
   const navigate = useNavigate();
+
+  const handleSelectCustomer = () => {
+    updateUserType('customer');
+    toast.success("Vybrali ste si typ účtu: zákazník. Váš profil sa vytvára.");
+  };
+
+  const handleSelectCraftsman = () => {
+    updateUserType('craftsman');
+    toast.success("Vybrali ste si typ účtu: remeselník. Váš profil sa vytvára.");
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -39,13 +50,13 @@ const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
           <div className="grid grid-cols-1 gap-4 mt-6">
             <p className="font-medium">Vyberte typ používateľa:</p>
             <Button 
-              onClick={() => updateUserType('craftsman')}
+              onClick={handleSelectCraftsman}
               className="w-full"
             >
               Som remeselník
             </Button>
             <Button 
-              onClick={() => updateUserType('customer')}
+              onClick={handleSelectCustomer}
               variant="outline"
               className="w-full"
             >

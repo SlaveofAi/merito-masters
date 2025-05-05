@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
 
-      console.log("User type data:", userTypeData);
+      console.log("User type data:", data);
       
       if (!data) {
         console.log("No user type found for:", userId);
@@ -75,29 +75,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (cachedUserType === 'customer' || cachedUserType === 'craftsman') {
           console.log("Using cached user type from localStorage:", cachedUserType);
           setUserType(cachedUserType as 'customer' | 'craftsman');
-          fetchedUserType = cachedUserType;
+          setUserTypeFetched(true);
+          return cachedUserType;
         } else {
           setUserType(null);
           setUserTypeFetched(true);
           return null;
         }
       } else {
-        const fetchedUserType = data.user_type;
-        if (fetchedUserType === 'customer' || fetchedUserType === 'craftsman') {
-          setUserType(fetchedUserType);
+        const retrievedUserType = data.user_type;
+        if (retrievedUserType === 'customer' || retrievedUserType === 'craftsman') {
+          setUserType(retrievedUserType);
           // Cache the user type for faster access
-          localStorage.setItem("userType", fetchedUserType);
+          localStorage.setItem("userType", retrievedUserType);
+          setUserTypeFetched(true);
+          return retrievedUserType;
         } else {
-          console.log("Invalid user type:", fetchedUserType);
+          console.log("Invalid user type:", retrievedUserType);
           setUserType(null);
           setUserTypeFetched(true);
           return null;
         }
       }
-
-      // Once we have the user type, attempt to check/create the profile
-      setUserTypeFetched(true);
-      return fetchedUserType;
     } catch (error) {
       console.error("Error in fetchUserType:", error);
       setUserType(null);
