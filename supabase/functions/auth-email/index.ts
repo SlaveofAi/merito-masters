@@ -13,36 +13,53 @@ interface WebhookPayload {
 }
 
 serve(async (req) => {
+  console.log("Auth email webhook received request");
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling CORS preflight request");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Log headers for debugging
+    console.log("Request headers:", Object.fromEntries(req.headers.entries()));
+    
     // Get the authorization header from the request
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error("Missing Authorization header");
       return new Response(
         JSON.stringify({ error: "Not authorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Log that we're parsing the request body
+    console.log("Parsing request body...");
+    
     // Extract the payload
     const payload: WebhookPayload = await req.json();
-    console.log("Received webhook payload:", payload);
+    console.log("Received webhook payload:", JSON.stringify(payload, null, 2));
 
     // Different email templates based on type
     const { type, email } = payload;
+    console.log(`Processing ${type} email template for ${email}`);
     
     // Generate email content
     const emailContent = await renderAuthEmail(type, email, payload.data);
     
     // Log the generated content for debugging
     console.log("Email content generated successfully");
+    console.log("Email template length:", emailContent.length);
+    console.log("Email template preview:", emailContent.substring(0, 100) + "...");
     
     return new Response(
-      JSON.stringify({ success: true, emailContent }),
+      JSON.stringify({ 
+        html: emailContent,
+        subject: getEmailSubject(type),
+        success: true 
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
@@ -54,3 +71,18 @@ serve(async (req) => {
     );
   }
 });
+
+function getEmailSubject(type: string): string {
+  switch (type) {
+    case "signup":
+      return "Potvrďte svoj účet v aplikácii Merito";
+    case "magiclink":
+      return "Odkaz na prihlásenie do aplikácie Merito";
+    case "recovery":
+      return "Žiadosť o obnovenie hesla v aplikácii Merito";
+    case "invite":
+      return "Pozvánka do aplikácie Merito";
+    default:
+      return "Aplikácia Merito - dôležitá informácia";
+  }
+}

@@ -9,17 +9,33 @@ export async function renderAuthEmail(
   email: string,
   data: any
 ): Promise<string> {
-  switch (type) {
-    case "signup":
-      return renderSignupEmail(email, data);
-    case "magiclink":
-      return renderMagicLinkEmail(email, data);
-    case "recovery":
-      return renderRecoveryEmail(email, data);
-    case "invite":
-      return renderInviteEmail(email, data);
-    default:
-      throw new Error(`Unknown email type: ${type}`);
+  console.log(`Rendering ${type} email template with data:`, JSON.stringify(data, null, 2));
+  
+  try {
+    let template: string;
+    
+    switch (type) {
+      case "signup":
+        template = renderSignupEmail(email, data);
+        break;
+      case "magiclink":
+        template = renderMagicLinkEmail(email, data);
+        break;
+      case "recovery":
+        template = renderRecoveryEmail(email, data);
+        break;
+      case "invite":
+        template = renderInviteEmail(email, data);
+        break;
+      default:
+        throw new Error(`Unknown email type: ${type}`);
+    }
+    
+    console.log(`Successfully rendered ${type} email template`);
+    return template;
+  } catch (error) {
+    console.error(`Error rendering ${type} email template:`, error);
+    throw error;
   }
 }
 
@@ -27,6 +43,8 @@ export async function renderAuthEmail(
  * Renders a styled signup confirmation email
  */
 function renderSignupEmail(email: string, data: any): string {
+  console.log("Rendering signup email with data:", JSON.stringify(data, null, 2));
+  
   const confirmationUrl = data.confirmation_url;
   const appName = "Merito";
   const logo = "https://ivssecjzxhabahdapfko.supabase.co/storage/v1/object/public/app_assets/logo.png";

@@ -37,11 +37,10 @@ enable_signup = true
 enabled = false
 port = 54327
 
-# Auth Webhook config
+# Auth email template configuration
 [auth.email_templates]
-# Enable custom email templates
 enabled = true
-custom_provider_enabled = false
+custom_provider_enabled = true
 
 # Auth Function Hooks for custom email templates
 [auth.hooks.email.template]
@@ -53,3 +52,4 @@ verify_signature = true
 [functions]
 [functions.auth-email]
 verify_jwt = false
+
