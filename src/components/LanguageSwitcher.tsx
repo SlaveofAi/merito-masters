@@ -19,6 +19,12 @@ const languages: { code: SupportedLanguage; label: string }[] = [
 const LanguageSwitcher: React.FC = () => {
   const { language, setLanguage } = useLanguage();
 
+  const handleLanguageChange = (code: SupportedLanguage) => {
+    setLanguage(code);
+    // Force reload the page to ensure all translations are applied
+    window.location.reload();
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -31,7 +37,7 @@ const LanguageSwitcher: React.FC = () => {
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
-            onClick={() => setLanguage(lang.code)}
+            onClick={() => handleLanguageChange(lang.code)}
             className={language === lang.code ? "bg-accent" : ""}
           >
             <span className="uppercase mr-2">{lang.code}</span>
