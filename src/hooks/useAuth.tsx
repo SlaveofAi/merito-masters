@@ -31,15 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log("Fetching user type for:", userId);
       
-      // First try to get user type from localStorage - fastest method for immediate UI
-      const storedType = localStorage.getItem("userType");
-      if (storedType === 'customer' || storedType === 'craftsman') {
-        console.log("Using cached user type from localStorage:", storedType);
-        setUserType(storedType);
-        // Don't return yet, still verify from server
-      }
-      
-      // Next try to get user type from user metadata (if available)
+      // First try to get user type from user metadata (highest priority)
       if (session?.user?.user_metadata?.user_type) {
         const metadataType = session.user.user_metadata.user_type;
         console.log("Found user type in metadata:", metadataType);
@@ -53,7 +45,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
       
-      // If not in metadata, try to get from user_types table
+      // Try to get from localStorage (second priority)
+      const storedType = localStorage.getItem("userType");
+      if (storedType === 'customer' || storedType === 'craftsman') {
+        console.log("Using cached user type from localStorage:", storedType);
+        setUserType(storedType);
+        // Don't return yet, still verify from server
+      }
+      
+      // If not in metadata, try to get from user_types table (third priority)
       const { data, error } = await supabase
         .from('user_types')
         .select('user_type')
@@ -65,18 +65,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
 
-      console.log("User type data:", data);
+      console.log("User type data from database:", data);
       
       if (!data) {
-        console.log("No user type found for:", userId);
+        console.log("No user type found in database for:", userId);
         
-        // Last effort - check cached user type in localStorage
-        const cachedUserType = localStorage.getItem("userType");
-        if (cachedUserType === 'customer' || cachedUserType === 'craftsman') {
-          console.log("Using cached user type from localStorage:", cachedUserType);
-          setUserType(cachedUserType as 'customer' | 'craftsman');
+        // Last effort - use cached user type in localStorage
+        if (storedType === 'customer' || storedType === 'craftsman') {
+          console.log("Using cached user type from localStorage as fallback:", storedType);
+          setUserType(storedType as 'customer' | 'craftsman');
           setUserTypeFetched(true);
-          return cachedUserType;
+          return storedType;
         } else {
           setUserType(null);
           setUserTypeFetched(true);
@@ -85,13 +84,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         const retrievedUserType = data.user_type;
         if (retrievedUserType === 'customer' || retrievedUserType === 'craftsman') {
+          console.log("Found valid user type in database:", retrievedUserType);
           setUserType(retrievedUserType);
           // Cache the user type for faster access
           localStorage.setItem("userType", retrievedUserType);
           setUserTypeFetched(true);
+          
+          // Update user metadata to ensure consistency
+          const { error: updateError } = await supabase.auth.updateUser({
+            data: { user_type: retrievedUserType }
+          });
+          
+          if (updateError) {
+            console.error("Error updating user metadata with type:", updateError);
+          }
+          
           return retrievedUserType;
         } else {
-          console.log("Invalid user type:", retrievedUserType);
+          console.log("Invalid user type in database:", retrievedUserType);
           setUserType(null);
           setUserTypeFetched(true);
           return null;
@@ -110,7 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (profileCreationAttempted) return;
     
     try {
-      console.log("Checking if profile exists for:", userId);
+      console.log("Checking if profile exists for:", userId, "with type:", userType);
       setProfileCreationAttempted(true);
       
       // Check if profile exists in appropriate table
@@ -160,6 +170,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      console.log("Updating user type to:", type);
+      
+      // First update user metadata as highest priority storage
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { user_type: type }
+      });
+
+      if (updateError) {
+        console.error("Error updating user metadata:", updateError);
+        toast.error("Chyba pri aktualizácii typu používateľa v metadátach");
+      }
+      
       // Update in database
       const { error } = await supabase
         .from('user_types')
@@ -169,23 +191,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
 
       if (error) {
-        console.error("Error updating user type:", error);
-        toast.error("Chyba pri aktualizácii typu používateľa");
+        console.error("Error updating user type in database:", error);
+        toast.error("Chyba pri aktualizácii typu používateľa v databáze");
         return;
       }
 
       // Update in localStorage
       localStorage.setItem("userType", type);
       
-      // Update in user metadata
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: { user_type: type }
-      });
-
-      if (updateError) {
-        console.error("Error updating user metadata:", updateError);
-      }
-
       // Update state
       setUserType(type);
       toast.success("Typ používateľa bol aktualizovaný");

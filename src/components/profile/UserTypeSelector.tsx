@@ -7,7 +7,7 @@ import { toast } from "sonner";
 interface UserTypeSelectorProps {
   userId: string;
   userEmail?: string | null;
-  updateUserType: (type: 'craftsman' | 'customer') => void;
+  updateUserType: (type: 'craftsman' | 'customer') => Promise<void>;
 }
 
 const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({ 
@@ -17,14 +17,36 @@ const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const handleSelectCustomer = () => {
-    updateUserType('customer');
-    toast.success("Vybrali ste si typ účtu: zákazník. Váš profil sa vytvára.");
+  const handleSelectCustomer = async () => {
+    try {
+      console.log("Setting user type to customer");
+      await updateUserType('customer');
+      toast.success("Vybrali ste si typ účtu: zákazník. Váš profil sa vytvára.");
+      
+      // Reload the page after a short delay to ensure state is updated
+      setTimeout(() => {
+        navigate("/profile/reviews", { replace: true });
+      }, 1000);
+    } catch (error) {
+      console.error("Error setting user type to customer:", error);
+      toast.error("Nastala chyba pri nastavení typu používateľa");
+    }
   };
 
-  const handleSelectCraftsman = () => {
-    updateUserType('craftsman');
-    toast.success("Vybrali ste si typ účtu: remeselník. Váš profil sa vytvára.");
+  const handleSelectCraftsman = async () => {
+    try {
+      console.log("Setting user type to craftsman");
+      await updateUserType('craftsman');
+      toast.success("Vybrali ste si typ účtu: remeselník. Váš profil sa vytvára.");
+      
+      // Reload the page after a short delay to ensure state is updated
+      setTimeout(() => {
+        navigate("/profile", { replace: true });
+      }, 1000);
+    } catch (error) {
+      console.error("Error setting user type to craftsman:", error);
+      toast.error("Nastala chyba pri nastavení typu používateľa");
+    }
   };
 
   return (
@@ -37,7 +59,7 @@ const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
         </p>
         <div className="space-y-4">
           <p className="text-sm text-amber-600">
-            Je možné, že registrácia nebola dokončená. Vyberte si typ účtu nižšie alebo sa odhláste a znova prihláste.
+            Je potrebné vybrať si typ účtu nižšie pre vytvorenie profilu.
           </p>
           <div className="bg-gray-50 p-3 rounded text-left text-sm">
             <p className="font-medium">Aktuálne informácie:</p>

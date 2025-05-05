@@ -21,21 +21,21 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
   error 
 }) => {
   const navigate = useNavigate();
-  const { user, signOut, userType } = useAuth();
+  const { user, signOut, userType, updateUserType } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [autoCreationAttempted, setAutoCreationAttempted] = useState(false);
 
   // Automatically try to create a profile when this component loads for current user
   useEffect(() => {
     if (isCurrentUser && user && userType && !autoCreationAttempted && onCreateProfile) {
-      console.log("Auto-creating profile for current user:", user.id);
+      console.log("Auto-creating profile for current user:", user.id, "with type:", userType);
       setIsCreating(true);
       setAutoCreationAttempted(true);
       
       // Attempt to create the profile automatically
       handleCreateProfile();
     }
-  }, [isCurrentUser, user, userType, autoCreationAttempted]);
+  }, [isCurrentUser, user, userType, autoCreationAttempted, onCreateProfile]);
 
   const handleCreateProfile = async () => {
     if (!onCreateProfile) {
@@ -43,17 +43,54 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
       return;
     }
     
+    if (!userType) {
+      toast.error("Typ používateľa nie je nastavený. Prosím, vyberte najprv typ používateľa.");
+      
+      // If user doesn't have a type, ask them to set it first
+      if (user) {
+        navigate('/profile');
+        return;
+      }
+    }
+    
     try {
       setIsCreating(true);
       toast.info("Vytváram profil...");
       console.log("Attempting to create profile...");
       await onCreateProfile();
-      // Don't set isCreating to false here as we want to keep the button disabled
-      // until the profile creation process completes or fails
+
+      // Reload page to reflect new profile
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (error) {
       console.error("Error in handleCreateProfile:", error);
       setIsCreating(false); // Only set back to false if there's an error
       // Error is already handled by the createDefaultProfile function
+    }
+  };
+
+  const handleSetCustomer = async () => {
+    if (!user) return;
+    try {
+      await updateUserType('customer');
+      setTimeout(() => {
+        navigate('/profile/reviews', { replace: true });
+      }, 1000);
+    } catch (error) {
+      console.error("Error setting user type:", error);
+    }
+  };
+
+  const handleSetCraftsman = async () => {
+    if (!user) return;
+    try {
+      await updateUserType('craftsman');
+      setTimeout(() => {
+        navigate('/profile', { replace: true });
+      }, 1000);
+    } catch (error) {
+      console.error("Error setting user type:", error);
     }
   };
 
@@ -149,6 +186,29 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
         <Separator className="my-4" />
         
         <div className="flex flex-col gap-3">
+          {!userType && (
+            <>
+              <p className="text-amber-600 font-medium text-sm">Najprv je potrebné vybrať typ používateľa:</p>
+              <div className="grid grid-cols-2 gap-3 mb-2">
+                <Button
+                  onClick={handleSetCraftsman}
+                  className="w-full"
+                  variant="default"
+                >
+                  Som remeselník
+                </Button>
+                <Button
+                  onClick={handleSetCustomer}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Som zákazník
+                </Button>
+              </div>
+              <Separator className="my-2" />
+            </>
+          )}
+          
           <Button 
             onClick={handleCreateProfile} 
             className="w-full flex items-center justify-center gap-2"
