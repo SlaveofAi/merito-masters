@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 // Define supported languages
@@ -461,4 +462,116 @@ const translations: Record<SupportedLanguage, Record<string, string>> = {
     "platform_description": "Platforma spojující profesionální řemeslníky s lidmi, kteří hledají jejich služby",
     "craftsman": "Jsem řemeslník",
     "customer": "Jsem zákazník",
-    "craftsman_desc": "Pre
+    "craftsman_desc": "Prezentujte své dovednosti a najděte nové klienty ve vašem okolí",
+    "customer_desc": "Najděte spolehlivé řemeslníky pro vaše projekty a vylepšení domácnosti",
+    "login": "Přihlášení",
+    "register": "Registrovat se",
+    "start": "Začít",
+    "copyright": "Spojujeme řemeslníky a zákazníky",
+    
+    // Navbar translations
+    "home": "Domů",
+    "categories": "Kategorie",
+    "find_craftsman": "Najít řemeslníka",
+    "jobs": "Zakázky",
+    "how_it_works": "Jak to funguje",
+    "benefits": "Výhody",
+    "messages": "Zprávy",
+    "my_profile": "Můj profil",
+    "sign_out": "Odhlásit se",
+    "sign_in": "Přihlásit se",
+    
+    // Index page translations
+    "professional_craftsmen": "Profesionální řemeslníci na jednom místě",
+    "find_best": "Najděte nejlepší",
+    "craftsmen": "řemeslníky",
+    "platform_connecting": "Platforma, která spojuje profesionální řemeslníky a lidi, kteří potřebují kvalitní služby řemeslníků přímo v České republice.",
+    "search_profession": "Hledejte podle profese nebo lokality...",
+    "search": "Vyhledat",
+    "craftsmen_count": "500+ Řemeslníků",
+    "cities_count": "100+ Měst",
+    "categories_count": "20+ Kategorií",
+    "find_best_craftsmen": "Najděte nejlepší řemeslníky",
+    "search_name_craft": "Hledejte podle jména nebo řemesla...",
+    "enter_location": "Zadejte lokalitu...",
+    "filter_category": "Filtrovat podle kategorie",
+    "all_categories": "Všechny kategorie",
+    "reset": "Reset",
+    "view_all_categories": "Zobrazit všechny kategorie",
+    "featured_profiles": "Zvýrazněné profily jsou zobrazeny na vrchu",
+    "error_loading": "Nastala chyba při načítání řemeslníků. Zkuste to prosím později.",
+    "try_again": "Zkusit znovu",
+    "no_craftsmen_found": "Nenašli se žádní řemeslníci podle vašich kritérií. Zkuste upravit vyhledávání.",
+    "show_all_craftsmen": "Zobrazit všechny řemeslníky",
+    
+    // And many other translations for Czech language...
+  },
+  en: {
+    // English translations
+    "welcome": "Welcome to Majstri.com",
+    "platform_description": "Platform connecting professional craftsmen with people who are looking for their services",
+    "craftsman": "I am a craftsman",
+    "customer": "I am a customer",
+    "craftsman_desc": "Present your skills and find new clients in your area",
+    "customer_desc": "Find reliable craftsmen for your projects and home improvements",
+    "login": "Login",
+    "register": "Register",
+    "start": "Start",
+    "copyright": "Connecting craftsmen and customers",
+    
+    // Navbar translations
+    "home": "Home",
+    "categories": "Categories",
+    "find_craftsman": "Find craftsman",
+    "jobs": "Jobs",
+    "how_it_works": "How it works",
+    "benefits": "Benefits",
+    "messages": "Messages",
+    "my_profile": "My profile",
+    "sign_out": "Sign out",
+    "sign_in": "Sign in",
+    
+    // And many other translations for English language...
+  }
+};
+
+// Provider component
+export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // State to store the current language
+  const [language, setLanguage] = useState<SupportedLanguage>(() => {
+    // Try to get language from localStorage
+    const storedLang = localStorage.getItem("language") as SupportedLanguage | null;
+    
+    // Check browser language
+    const browserLang = navigator.language.split("-")[0];
+    
+    // Return stored language if valid, or check browser language, default to Slovak
+    if (storedLang && ["sk", "cs", "en"].includes(storedLang)) {
+      return storedLang;
+    } else if (["sk", "cs", "en"].includes(browserLang as SupportedLanguage)) {
+      return browserLang as SupportedLanguage;
+    }
+    
+    return "sk"; // Default language is Slovak
+  });
+
+  // Translation function
+  const t = (key: string): string => {
+    return translations[language][key] || key;
+  };
+
+  // Effect to save language to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem("language", language);
+    document.documentElement.lang = language;
+  }, [language]);
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+// Custom hook to use the language context
+export const useLanguage = () => useContext(LanguageContext);
