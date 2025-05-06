@@ -2,12 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.34.0";
 import Stripe from "https://esm.sh/stripe@14.21.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 console.log("Verify topped payment function loaded");
 
@@ -21,14 +16,27 @@ serve(async (req) => {
   }
 
   try {
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    // Get Stripe key from environment variable
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      console.error("STRIPE_SECRET_KEY environment variable is not set");
+      throw new Error("Stripe API key is not configured");
+    }
+
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("Supabase environment variables are not set");
+      throw new Error("Supabase configuration is missing");
+    }
+    
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
     // Get authorization header
     const authHeader = req.headers.get("Authorization");
@@ -44,6 +52,7 @@ serve(async (req) => {
     } = await supabaseClient.auth.getUser(token);
 
     if (userError || !user) {
+      console.error("User authentication error:", userError);
       throw new Error("User not authenticated");
     }
 

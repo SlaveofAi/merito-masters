@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, TrendingUp, CheckCircle } from "lucide-react";
+import { Loader2, TrendingUp, CheckCircle, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,33 +20,43 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
   profileData,
   onProfileUpdate
 }) => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const isTopped = profileData?.is_topped || false;
   const toppedUntil = profileData?.topped_until ? new Date(profileData.topped_until) : null;
   const isActive = isTopped && toppedUntil && new Date() < toppedUntil;
 
   const handlePayment = async () => {
-    if (!user) {
+    if (!user || !session) {
       toast.error("Musíte byť prihlásený");
       return;
     }
     
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.functions.invoke('create-topped-session', {
+      setHasError(false);
+      
+      // Save session ID to localStorage before redirect
+      const sessionData = await supabase.functions.invoke('create-topped-session', {
         body: { days: 7, amount: 1000 } // 10 EUR for 7 days
       });
 
-      if (error) throw error;
+      if (!sessionData || !sessionData.url) {
+        throw new Error("Nepodarilo sa vytvoriť platobné sedenie");
+      }
+      
+      // Store session ID in localStorage before redirecting
+      localStorage.setItem('topped_session_id', sessionData.sessionId);
       
       // Redirect to Stripe checkout
-      window.location.href = data.url;
+      window.location.href = sessionData.url;
       
     } catch (error: any) {
       console.error("Error creating topped session:", error);
+      setHasError(true);
       toast.error("Nepodarilo sa vytvoriť platbu", { 
-        description: error.message || "Skúste to prosím neskôr" 
+        description: "Skúste to prosím neskôr. Ak problém pretrváva, kontaktujte podporu." 
       });
     } finally {
       setIsLoading(false);
@@ -63,13 +73,17 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
       if (toppedStatus === 'success' && sessionId) {
         try {
           setIsLoading(true);
-          const { data, error } = await supabase.functions.invoke('verify-topped-payment', {
+          setHasError(false);
+          
+          const result = await supabase.functions.invoke('verify-topped-payment', {
             body: { sessionId }
           });
           
-          if (error) throw error;
+          if (!result || result.error) {
+            throw new Error(result?.error || "Nepodarilo sa overiť platbu");
+          }
           
-          if (data.success) {
+          if (result.success) {
             toast.success("Vaša platba bola úspešne spracovaná", {
               description: "Váš profil je teraz zvýraznený na vrchole výsledkov vyhľadávania"
             });
@@ -86,8 +100,9 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           }
         } catch (error: any) {
           console.error("Error verifying payment:", error);
+          setHasError(true);
           toast.error("Chyba pri overovaní platby", {
-            description: error.message || "Skúste to prosím neskôr"
+            description: "Skúste to prosím neskôr. Ak problém pretrváva, kontaktujte podporu."
           });
         } finally {
           setIsLoading(false);
@@ -104,7 +119,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
   }
 
   return (
-    <Card className={`${isActive ? 'border-yellow-400' : 'border-gray-200'} mb-6`}>
+    <Card className={`${isActive ? 'border-yellow-400' : hasError ? 'border-red-200' : 'border-gray-200'} mb-6`}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <div>
@@ -143,6 +158,16 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
                 "Tento profil je zvýraznený a zobrazuje sa na vrchole výsledkov vyhľadávania."
               )}
             </p>
+          </div>
+        )}
+        
+        {hasError && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-md text-sm flex items-start">
+            <AlertTriangle className="w-4 h-4 text-red-500 mr-2 mt-0.5" />
+            <div>
+              <p className="font-medium text-red-700">Nepodarilo sa spustiť platbu</p>
+              <p className="text-red-600">Služba momentálne nie je dostupná. Skúste to prosím neskôr.</p>
+            </div>
           </div>
         )}
       </CardContent>
