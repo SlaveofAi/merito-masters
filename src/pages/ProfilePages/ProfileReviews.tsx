@@ -25,17 +25,26 @@ const ProfileReviewsContent: React.FC = () => {
     fetchProfileData,
     setIsEditing,
     isEditing,
-    handleProfileUpdate
+    handleProfileUpdate // Make sure we extract this from the context
   } = useProfile();
 
+  // Enhanced debug log to help troubleshoot the profile data and user type
   useEffect(() => {
-    // Only log on initial render to reduce console noise
-    if (profileData) {
-      console.log("ProfileReviews rendered with profile data:", { userType, profileUserType: profileData?.user_type });
-    }
-  }, [profileData?.id]); // Only re-run if profile ID changes
+    console.log("ProfileReviews rendering:", {
+      loading, 
+      profileFound: !!profileData,
+      userType,
+      profileUserType: profileData?.user_type,
+      isCurrentUser,
+      canLeaveReview: userType === 'customer' && profileData?.user_type === 'craftsman' && !isCurrentUser,
+      isCraftsmanProfile: profileData?.user_type === 'craftsman',
+      isCustomerProfile: profileData?.user_type === 'customer',
+      isEditing
+    });
+  }, [loading, profileData, userType, isCurrentUser, isEditing]);
 
   const handleEditClick = () => {
+    console.log("Edit profile button clicked, setting isEditing to true");
     setIsEditing(true);
   };
 
@@ -82,6 +91,7 @@ const ProfileReviewsContent: React.FC = () => {
   const isCustomerProfile = profileData.user_type && 
                            profileData.user_type.toLowerCase() === 'customer';
 
+  // Don't display tabs when editing
   if (isEditing && profileData) {
     return (
       <Layout>
@@ -156,7 +166,7 @@ const ProfileReviewsContent: React.FC = () => {
   );
 };
 
-// Wrap with memo to prevent unnecessary re-renders
+// Add handler for profile updates
 const ProfileReviews: React.FC = () => {
   return (
     <ProfileProvider>

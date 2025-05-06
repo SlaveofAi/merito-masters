@@ -13,7 +13,7 @@ export const createDefaultProfile = async (
     const errorMsg = "Nemožno vytvoriť profil: používateľ nie je prihlásený alebo typ používateľa nie je nastavený";
     console.error(errorMsg, { user: !!user, userType, isCurrentUser });
     toast.error(errorMsg);
-    return; // Don't throw error, just return - prevents app crashing
+    throw new Error(errorMsg);
   }
   
   try {
@@ -31,8 +31,10 @@ export const createDefaultProfile = async (
         .maybeSingle();
         
       if (checkError) {
-        // Log error but continue execution
         console.error("Error checking for existing profile:", checkError);
+        
+        // We'll try to proceed anyway, assuming the profile doesn't exist
+        console.log("Proceeding with profile creation despite error");
       }
       
       if (existingProfile) {
@@ -44,27 +46,43 @@ export const createDefaultProfile = async (
       
       console.log("Creating new craftsman profile for user:", user.id);
       
-      const { error: insertError } = await supabase
-        .from('craftsman_profiles')
-        .insert({
-          id: user.id,
-          name,
-          email,
-          location: 'Bratislava',
-          trade_category: 'Stolár',
-          phone: null,
-          description: 'Zadajte popis vašich služieb',
-          profile_image_url: null
-        });
+      // Retry logic for creating profile
+      let retries = 3;
+      let success = false;
+      
+      while (retries > 0 && !success) {
+        const { error: insertError } = await supabase
+          .from('craftsman_profiles')
+          .insert({
+            id: user.id,
+            name,
+            email,
+            location: 'Bratislava',
+            trade_category: 'Stolár',
+            phone: null,
+            description: 'Zadajte popis vašich služieb',
+            profile_image_url: null
+          });
           
-      if (insertError) {
-        console.error("Error creating craftsman profile:", insertError);
-        toast.error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
-        // Don't block the app from continuing - retry later
-      } else {
-        console.log("Default craftsman profile created successfully");
-        toast.success("Profil bol vytvorený", { duration: 3000 });
-        setTimeout(onSuccess, 300); // Reduced timeout for faster response
+        if (insertError) {
+          console.error(`Error creating craftsman profile (retry ${3-retries+1}/3):`, insertError);
+          
+          if (retries > 1) {
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            retries--;
+          } else {
+            toast.error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
+            throw new Error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
+          }
+        } else {
+          console.log("Default craftsman profile created successfully");
+          toast.success("Profil bol vytvorený", { duration: 3000 });
+          success = true;
+          setTimeout(() => {
+            onSuccess();
+          }, 1000);
+        }
       }
     } else {
       // First check if profile already exists
@@ -75,8 +93,10 @@ export const createDefaultProfile = async (
         .maybeSingle();
         
       if (checkError) {
-        // Log error but continue execution
         console.error("Error checking for existing profile:", checkError);
+        
+        // We'll try to proceed anyway, assuming the profile doesn't exist
+        console.log("Proceeding with profile creation despite error");
       }
       
       if (existingProfile) {
@@ -88,25 +108,41 @@ export const createDefaultProfile = async (
       
       console.log("Creating new customer profile for user:", user.id);
       
-      const { error: insertError } = await supabase
-        .from('customer_profiles')
-        .insert({
-          id: user.id,
-          name,
-          email,
-          location: 'Bratislava',
-          phone: null,
-          profile_image_url: null
-        });
+      // Retry logic for creating profile
+      let retries = 3;
+      let success = false;
+      
+      while (retries > 0 && !success) {
+        const { error: insertError } = await supabase
+          .from('customer_profiles')
+          .insert({
+            id: user.id,
+            name,
+            email,
+            location: 'Bratislava',
+            phone: null,
+            profile_image_url: null
+          });
           
-      if (insertError) {
-        console.error("Error creating customer profile:", insertError);
-        toast.error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
-        // Don't block the app from continuing - retry later
-      } else {
-        console.log("Default customer profile created successfully");
-        toast.success("Profil bol vytvorený", { duration: 3000 });
-        setTimeout(onSuccess, 300); // Reduced timeout for faster response
+        if (insertError) {
+          console.error(`Error creating customer profile (retry ${3-retries+1}/3):`, insertError);
+          
+          if (retries > 1) {
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            retries--;
+          } else {
+            toast.error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
+            throw new Error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
+          }
+        } else {
+          console.log("Default customer profile created successfully");
+          toast.success("Profil bol vytvorený", { duration: 3000 });
+          success = true;
+          setTimeout(() => {
+            onSuccess();
+          }, 1000);
+        }
       }
     }
   } catch (error: any) {
@@ -114,6 +150,6 @@ export const createDefaultProfile = async (
     toast.error("Nastala chyba pri vytváraní profilu", {
       description: error.message || "Neznáma chyba"
     });
-    // Don't throw error, just log it to prevent app crashing
+    throw error;
   }
 };
