@@ -26,6 +26,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const isTopped = profileData?.is_topped || false;
   const toppedUntil = profileData?.topped_until ? new Date(profileData.topped_until) : null;
   const isActive = isTopped && toppedUntil && new Date() < toppedUntil;
@@ -40,6 +41,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
       setIsLoading(true);
       setHasError(false);
       setErrorDetails(null);
+      setErrorCode(null);
       
       // Call the edge function to create a payment session
       const { data, error } = await supabase.functions.invoke('create-topped-session', {
@@ -50,6 +52,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
         console.error("Edge function error:", error);
         setHasError(true);
         setErrorDetails(`Edge function error: ${error.message || "Unknown error"}`);
+        setErrorCode(error.message || "unknown_error");
         toast.error("Nepodarilo sa vytvoriť platbu", {
           description: "Skúste to prosím neskôr. Ak problém pretrváva, kontaktujte podporu."
         });
@@ -59,6 +62,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
       if (!data || !data.url) {
         setHasError(true);
         setErrorDetails("No session URL returned from server");
+        setErrorCode("no_session_url");
         toast.error("Nepodarilo sa vytvoriť platobné sedenie");
         return;
       }
@@ -73,6 +77,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
       console.error("Error creating topped session:", error);
       setHasError(true);
       setErrorDetails(error.message || "Unknown error");
+      setErrorCode("client_error");
       toast.error("Nepodarilo sa vytvoriť platbu", { 
         description: "Skúste to prosím neskôr. Ak problém pretrváva, kontaktujte podporu." 
       });
@@ -93,6 +98,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
         try {
           setIsLoading(true);
           setHasError(false);
+          setErrorCode(null);
           
           const { data, error } = await supabase.functions.invoke('verify-topped-payment', {
             body: { sessionId }
@@ -122,6 +128,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           console.error("Error verifying payment:", error);
           setHasError(true);
           setErrorDetails(error.message || "Unknown error");
+          setErrorCode("verification_error");
           toast.error("Chyba pri overovaní platby", {
             description: "Skúste to prosím neskôr. Ak problém pretrváva, kontaktujte podporu."
           });
@@ -137,6 +144,19 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
     
     checkPaymentStatus();
   }, [onProfileUpdate]);
+
+  // Helper function to get user-friendly error message
+  const getErrorMessage = () => {
+    if (errorCode === "stripe_api_key_invalid") {
+      return "Služba momentálne nie je dostupná. Problém s API kľúčom.";
+    } else if (errorCode === "user_not_authenticated") {
+      return "Pre dokončenie platby sa musíte prihlásiť.";
+    } else if (errorCode?.includes("craftsman_profile")) {
+      return "Profil remeselníka nebol nájdený. Skontrolujte, či máte správne nastavený profil.";
+    } else {
+      return "Služba momentálne nie je dostupná. Skúste to prosím neskôr.";
+    }
+  };
 
   // If not current user and not topped, don't show anything
   if (!isCurrentUser && !isActive) {
@@ -192,7 +212,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
               <AlertTriangle className="w-4 h-4 text-red-500 mr-2 mt-0.5" />
               <div className="flex-1">
                 <p className="font-medium text-red-700">Nepodarilo sa spustiť platbu</p>
-                <p className="text-red-600">Služba momentálne nie je dostupná. Skúste to prosím neskôr.</p>
+                <p className="text-red-600">{getErrorMessage()}</p>
                 <Button 
                   variant="link" 
                   className="text-red-700 p-0 h-auto mt-1" 
@@ -233,6 +253,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           <div className="bg-gray-100 p-3 rounded-md overflow-x-auto">
             <code className="text-xs text-red-600 whitespace-pre-wrap break-all">
               {errorDetails || "No error details available"}
+              {errorCode && `\n\nError code: ${errorCode}`}
             </code>
           </div>
           <div className="flex justify-between mt-4">
@@ -244,6 +265,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
               onClick={() => {
                 setHasError(false);
                 setErrorDetails(null);
+                setErrorCode(null);
                 toast.info("Skúšam znova...");
                 setTimeout(handlePayment, 500);
               }}

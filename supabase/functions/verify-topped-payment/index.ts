@@ -20,7 +20,7 @@ serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
       console.error("STRIPE_SECRET_KEY environment variable is not set");
-      throw new Error("Služba momentálne nie je dostupná. Chýba API kľúč.");
+      throw new Error("Missing API key: STRIPE_SECRET_KEY");
     }
 
     try {
@@ -28,13 +28,18 @@ serve(async (req) => {
         apiVersion: "2023-10-16",
       });
       
+      // Ensure Stripe object was created successfully
+      if (!stripe) {
+        throw new Error("Failed to initialize Stripe");
+      }
+      
       // Create Supabase client
       const supabaseUrl = Deno.env.get("SUPABASE_URL");
       const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
       
       if (!supabaseUrl || !supabaseAnonKey) {
         console.error("Supabase environment variables are not set");
-        throw new Error("Supabase configuration is missing");
+        throw new Error("Missing Supabase configuration");
       }
       
       const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
@@ -58,7 +63,14 @@ serve(async (req) => {
       }
   
       // Parse request
-      const { sessionId } = await req.json();
+      let body;
+      try {
+        body = await req.json();
+      } catch (e) {
+        throw new Error("Invalid request body");
+      }
+      
+      const { sessionId } = body;
       if (!sessionId) {
         throw new Error("Session ID is required");
       }
@@ -107,7 +119,10 @@ serve(async (req) => {
         );
       } else {
         return new Response(
-          JSON.stringify({ success: false, status: session.payment_status }),
+          JSON.stringify({ 
+            success: false, 
+            status: session.payment_status 
+          }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
@@ -116,19 +131,44 @@ serve(async (req) => {
       }
     } catch (stripeError: any) {
       console.error("Stripe API error:", stripeError);
-      // Provide a more descriptive error message from Stripe
-      throw new Error(`Stripe API error: ${stripeError.message || "Unknown Stripe error"}`);
+      
+      // Extract meaningful error message from Stripe
+      let errorMessage = "Unknown Stripe error";
+      if (stripeError.message) {
+        errorMessage = stripeError.message;
+      } else if (stripeError.raw && stripeError.raw.message) {
+        errorMessage = stripeError.raw.message;
+      }
+      
+      // Provide a more descriptive error
+      throw new Error(`Stripe API error: ${errorMessage}`);
     }
   } catch (error: any) {
     console.error("Error verifying payment:", error);
+    
+    // Meaningful error codes for the frontend
+    let errorCode = "topped_payment_verification_failed";
+    let status = 500;
+    
+    if (error.message.includes("API key")) {
+      errorCode = "stripe_api_key_invalid";
+      status = 401;
+    } else if (error.message.includes("not authenticated")) {
+      errorCode = "user_not_authenticated";
+      status = 401;
+    } else if (error.message.includes("Session ID")) {
+      errorCode = "invalid_session_id";
+      status = 400;
+    }
+    
     return new Response(
       JSON.stringify({ 
         error: error.message || "Unknown error",
-        errorCode: "topped_payment_verification_failed" 
+        errorCode: errorCode 
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+        status: status,
       }
     );
   }
