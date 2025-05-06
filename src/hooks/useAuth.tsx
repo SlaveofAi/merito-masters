@@ -1,3 +1,4 @@
+
 import { useEffect, useState, createContext, useContext, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,13 +99,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           localStorage.setItem("userType", retrievedUserType);
           setUserTypeFetched(true);
           
-          // Update user metadata to ensure consistency
-          const { error: updateError } = await supabase.auth.updateUser({
-            data: { user_type: retrievedUserType }
-          });
-          
-          if (updateError) {
-            console.error("Error updating user metadata with type:", updateError);
+          // Update user metadata with a safe check for active session
+          if (session) {
+            try {
+              // Use setTimeout to avoid potential Supabase deadlocks
+              setTimeout(async () => {
+                try {
+                  const { error: updateError } = await supabase.auth.updateUser({
+                    data: { user_type: retrievedUserType }
+                  });
+                  
+                  if (updateError) {
+                    if (updateError.message.includes("session missing")) {
+                      console.log("Session not available for metadata update, will try again later");
+                    } else {
+                      console.error("Error updating user metadata with type:", updateError);
+                    }
+                  }
+                } catch (e) {
+                  console.error("Exception in metadata update:", e);
+                }
+              }, 1000);
+            } catch (e) {
+              console.error("Exception setting up metadata update:", e);
+            }
           }
           
           return retrievedUserType;
@@ -196,17 +214,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log("Updating user type to:", type);
       
-      // First update user metadata as highest priority storage
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: { user_type: type }
-      });
-
-      if (updateError) {
-        console.error("Error updating user metadata:", updateError);
-        toast.error("Chyba pri aktualizácii typu používateľa v metadátach");
-      }
+      // Store in localStorage immediately for reliability
+      localStorage.setItem("userType", type);
       
-      // Update in database - handle retries for RLS issues
+      // Update state right away for responsive UI
+      setUserType(type);
+      
+      // Update in database first - handle retries for RLS issues
       const updateDatabase = async (retries = 3) => {
         try {
           const { error } = await supabase
@@ -231,6 +245,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
           
           console.log("Successfully updated user type in database");
+          
+          // Only try to update metadata if we have a valid session
+          if (session) {
+            // Try metadata update after successful database update
+            try {
+              const { error: updateError } = await supabase.auth.updateUser({
+                data: { user_type: type }
+              });
+
+              if (updateError) {
+                if (updateError.message.includes("session missing")) {
+                  console.warn("No active session for metadata update - using localStorage only");
+                } else {
+                  console.error("Error updating user metadata:", updateError);
+                  toast.error("Chyba pri aktualizácii typu používateľa v metadátach");
+                }
+              } else {
+                console.log("Successfully updated metadata with user_type");
+              }
+            } catch (err) {
+              console.error("Exception during metadata update:", err);
+            }
+          } else {
+            console.warn("No active session for metadata update - using localStorage only");
+          }
         } catch (error) {
           console.error("Exception in updateDatabase:", error);
         }
@@ -238,18 +277,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Start the update process
       await updateDatabase();
-
-      // Update in localStorage
-      localStorage.setItem("userType", type);
-      
-      // Update state
-      setUserType(type);
       
       // Reset profile creation flag to allow creating profile for the new user type
       setProfileCreationAttempted(false);
       
       // Check and create profile if needed with the new user type
-      checkAndCreateProfileIfNeeded(user.id, type);
+      if (session) { // Only try if we have a valid session
+        checkAndCreateProfileIfNeeded(user.id, type);
+      }
     } catch (error) {
       console.error("Error in updateUserType:", error);
       toast.error("Nastala chyba pri aktualizácii typu používateľa");
@@ -274,6 +309,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (!mounted) return;
         
+        // Always update the session state
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
@@ -369,7 +405,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     userId: user?.id, 
     userType, 
     loading,
-    userTypeFetched
+    userTypeFetched,
+    hasSession: !!session
   });
 
   return (

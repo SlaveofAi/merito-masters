@@ -79,6 +79,15 @@ export const createDefaultProfile = async (
           console.log("Default craftsman profile created successfully");
           toast.success("Profil bol vytvorený", { duration: 3000 });
           success = true;
+          
+          // Don't try to update metadata here - it's causing the auth session missing error
+          // Instead we'll store user type in localStorage as a backup
+          try {
+            localStorage.setItem("userType", userType);
+          } catch (e) {
+            console.error("Error saving user type to localStorage:", e);
+          }
+          
           setTimeout(() => {
             onSuccess();
           }, 1000);
@@ -139,6 +148,15 @@ export const createDefaultProfile = async (
           console.log("Default customer profile created successfully");
           toast.success("Profil bol vytvorený", { duration: 3000 });
           success = true;
+          
+          // Don't try to update metadata here - it's causing the auth session missing error
+          // Instead we'll store user type in localStorage as a backup
+          try {
+            localStorage.setItem("userType", userType);
+          } catch (e) {
+            console.error("Error saving user type to localStorage:", e);
+          }
+          
           setTimeout(() => {
             onSuccess();
           }, 1000);

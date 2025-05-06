@@ -5,7 +5,7 @@ import { CraftsmanReview, ReviewReply } from "@/types/profile";
 import { useAuth } from "@/hooks/useAuth";
 
 export const useProfileReviews = (id?: string) => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   
   const fetchReviews = async (userId: string): Promise<CraftsmanReview[]> => {
     try {
@@ -88,11 +88,12 @@ export const useProfileReviews = (id?: string) => {
     error,
     refetch: refetchReviews
   } = useQuery({
-    queryKey: ['reviews', userId],
+    queryKey: ['reviews', userId, !!session], // Add session to the query key to refresh when auth state changes
     queryFn: () => fetchReviews(userId || ''),
     enabled: !!userId,
     retry: 1,
     gcTime: 0, // Use gcTime instead of cacheTime to ensure fresh data
+    staleTime: 30000, // Set stale time to 30 seconds to reduce unnecessary refetches
   });
 
   return {
