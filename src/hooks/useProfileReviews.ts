@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CraftsmanReview, ReviewReply } from "@/types/profile";
+import { CraftsmanReview } from "@/types/profile";
 import { useAuth } from "@/hooks/useAuth";
 
 export const useProfileReviews = (id?: string) => {
@@ -25,7 +25,7 @@ export const useProfileReviews = (id?: string) => {
       
       if (reviewsError) {
         console.error("Error fetching reviews:", reviewsError);
-        throw new Error(`Error fetching reviews: ${reviewsError.message}`);
+        return []; // Return empty array instead of throwing error
       }
       
       if (!reviewsData || !Array.isArray(reviewsData) || reviewsData.length === 0) {
@@ -42,7 +42,7 @@ export const useProfileReviews = (id?: string) => {
         
       if (repliesError) {
         console.error("Error fetching review replies:", repliesError);
-        // Return reviews without replies
+        // Return reviews without replies instead of failing
         return reviewsData as CraftsmanReview[];
       }
       
@@ -61,7 +61,7 @@ export const useProfileReviews = (id?: string) => {
       return reviewsWithReplies;
     } catch (error) {
       console.error("Error in fetchReviews:", error);
-      throw error;
+      return []; // Return empty array instead of throwing error
     }
   };
 
@@ -77,7 +77,7 @@ export const useProfileReviews = (id?: string) => {
     queryKey: ['reviews', userId],
     queryFn: () => fetchReviews(userId || ''),
     enabled: !!userId,
-    retry: 1,
+    retry: 2, // Increased retry attempts
     gcTime: 300000, // 5 minutes cache
     staleTime: 180000, // Consider data fresh for 3 minutes
   });

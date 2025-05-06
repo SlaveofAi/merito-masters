@@ -13,7 +13,7 @@ export const createDefaultProfile = async (
     const errorMsg = "Nemožno vytvoriť profil: používateľ nie je prihlásený alebo typ používateľa nie je nastavený";
     console.error(errorMsg, { user: !!user, userType, isCurrentUser });
     toast.error(errorMsg);
-    throw new Error(errorMsg);
+    return; // Don't throw error, just return - prevents app crashing
   }
   
   try {
@@ -31,6 +31,7 @@ export const createDefaultProfile = async (
         .maybeSingle();
         
       if (checkError) {
+        // Log error but continue execution
         console.error("Error checking for existing profile:", checkError);
       }
       
@@ -57,12 +58,13 @@ export const createDefaultProfile = async (
         });
           
       if (insertError) {
+        console.error("Error creating craftsman profile:", insertError);
         toast.error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
-        throw new Error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
+        // Don't block the app from continuing - retry later
       } else {
         console.log("Default craftsman profile created successfully");
         toast.success("Profil bol vytvorený", { duration: 3000 });
-        setTimeout(onSuccess, 500);
+        setTimeout(onSuccess, 300); // Reduced timeout for faster response
       }
     } else {
       // First check if profile already exists
@@ -73,6 +75,7 @@ export const createDefaultProfile = async (
         .maybeSingle();
         
       if (checkError) {
+        // Log error but continue execution
         console.error("Error checking for existing profile:", checkError);
       }
       
@@ -97,12 +100,13 @@ export const createDefaultProfile = async (
         });
           
       if (insertError) {
+        console.error("Error creating customer profile:", insertError);
         toast.error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
-        throw new Error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
+        // Don't block the app from continuing - retry later
       } else {
         console.log("Default customer profile created successfully");
         toast.success("Profil bol vytvorený", { duration: 3000 });
-        setTimeout(onSuccess, 500);
+        setTimeout(onSuccess, 300); // Reduced timeout for faster response
       }
     }
   } catch (error: any) {
@@ -110,6 +114,6 @@ export const createDefaultProfile = async (
     toast.error("Nastala chyba pri vytváraní profilu", {
       description: error.message || "Neznáma chyba"
     });
-    throw error;
+    // Don't throw error, just log it to prevent app crashing
   }
 };

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -12,13 +13,16 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useAuth } from "@/hooks/useAuth";
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = React.useState(false);
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
-
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const { user } = useAuth();
+  
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -26,6 +30,13 @@ const Login = () => {
       password: "",
     },
   });
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/home');
+    }
+  }, [user, navigate]);
 
   // Check for email confirmation required status
   useEffect(() => {
@@ -77,7 +88,6 @@ const Login = () => {
                 
                 if (typeError) {
                   console.error("Error inserting user type:", typeError);
-                  // Continue anyway - we'll try again later
                 }
                 
                 // Update user metadata as well
@@ -85,47 +95,19 @@ const Login = () => {
                   data: { user_type: pendingUserType }
                 });
                 
-                // Insert profile based on user type with error handling
+                // Create profile
                 if (pendingUserType === 'craftsman') {
-                  const { error: profileError } = await supabase
-                    .from('craftsman_profiles')
-                    .insert({
-                      id: session.user.id,
-                      name: session.user.user_metadata.full_name || session.user.user_metadata.name || 'User',
-                      email: session.user.email || '',
-                      location: 'Please update',
-                      trade_category: 'Please update'
-                    });
-                    
-                  if (profileError) {
-                    console.error("Error creating craftsman profile:", profileError);
-                    // Continue anyway
-                  }
+                  await createCraftsmanProfile(session.user);
                 } else {
-                  const { error: profileError } = await supabase
-                    .from('customer_profiles')
-                    .insert({
-                      id: session.user.id,
-                      name: session.user.user_metadata.full_name || session.user.user_metadata.name || 'User',
-                      email: session.user.email || '',
-                      location: 'Please update'
-                    });
-                    
-                  if (profileError) {
-                    console.error("Error creating customer profile:", profileError);
-                    // Continue anyway
-                  }
+                  await createCustomerProfile(session.user);
                 }
-                
-                toast.success("Profil bol vytvorený", {
-                  duration: 3000,
-                });
               }
               
               // Clean up the URL
               window.history.replaceState({}, document.title, '/login');
               
               // Redirect to home
+              toast.success("Prihlásenie úspešné", { duration: 3000 });
               navigate('/home');
             } catch (error) {
               console.error("Error in profile creation:", error);
@@ -142,8 +124,52 @@ const Login = () => {
     }
   }, [location, navigate]);
 
+  const createCraftsmanProfile = async (user: any) => {
+    try {
+      const { error: profileError } = await supabase
+        .from('craftsman_profiles')
+        .insert({
+          id: user.id,
+          name: user.user_metadata.full_name || user.user_metadata.name || 'User',
+          email: user.email || '',
+          location: 'Please update',
+          trade_category: 'Please update'
+        });
+        
+      if (profileError) {
+        console.error("Error creating craftsman profile:", profileError);
+      } else {
+        toast.success("Profil bol vytvorený", { duration: 3000 });
+      }
+    } catch (error) {
+      console.error("Error creating profile:", error);
+    }
+  };
+
+  const createCustomerProfile = async (user: any) => {
+    try {
+      const { error: profileError } = await supabase
+        .from('customer_profiles')
+        .insert({
+          id: user.id,
+          name: user.user_metadata.full_name || user.user_metadata.name || 'User',
+          email: user.email || '',
+          location: 'Please update'
+        });
+        
+      if (profileError) {
+        console.error("Error creating customer profile:", profileError);
+      } else {
+        toast.success("Profil bol vytvorený", { duration: 3000 });
+      }
+    } catch (error) {
+      console.error("Error creating profile:", error);
+    }
+  };
+
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
+    setLoginAttempts(prev => prev + 1);
 
     try {
       const { data: authData, error } = await supabase.auth.signInWithPassword({
@@ -170,20 +196,34 @@ const Login = () => {
       // After successful login, fetch user type to cache it immediately
       if (authData?.user) {
         try {
-          const { data: userTypeData } = await supabase
-            .from('user_types')
-            .select('user_type')
-            .eq('user_id', authData.user.id)
-            .maybeSingle();
-            
-          if (userTypeData && (userTypeData.user_type === 'customer' || userTypeData.user_type === 'craftsman')) {
-            // Store in localStorage for immediate access on page load
-            localStorage.setItem("userType", userTypeData.user_type);
-            
-            // Also update the user metadata to ensure consistency
-            await supabase.auth.updateUser({
-              data: { user_type: userTypeData.user_type }
-            });
+          // Fetch from localStorage first as fastest option
+          const cachedType = localStorage.getItem("userType");
+          
+          if (cachedType === 'customer' || cachedType === 'craftsman') {
+            console.log("Using cached user type:", cachedType);
+          } else {
+            // Try to get from metadata first
+            if (authData?.user?.user_metadata?.user_type === 'customer' || 
+                authData?.user?.user_metadata?.user_type === 'craftsman') {
+              localStorage.setItem("userType", authData.user.user_metadata.user_type);
+            } else {
+              // Last resort - check database
+              const { data: userTypeData } = await supabase
+                .from('user_types')
+                .select('user_type')
+                .eq('user_id', authData.user.id)
+                .maybeSingle();
+                
+              if (userTypeData && (userTypeData.user_type === 'customer' || userTypeData.user_type === 'craftsman')) {
+                // Store in localStorage for immediate access on page load
+                localStorage.setItem("userType", userTypeData.user_type);
+                
+                // Also update the user metadata to ensure consistency
+                await supabase.auth.updateUser({
+                  data: { user_type: userTypeData.user_type }
+                });
+              }
+            }
           }
         } catch (fetchError) {
           console.error("Error fetching user type after login:", fetchError);
@@ -195,8 +235,13 @@ const Login = () => {
         duration: 3000,
       });
       
-      // Redirect to home page after successful login
-      navigate("/home");
+      // Force reload to ensure all auth state is properly updated
+      if (loginAttempts > 1) {
+        window.location.href = '/home';
+      } else {
+        // Redirect to home page after successful login
+        navigate("/home");
+      }
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Pri prihlásení nastala chyba", {
