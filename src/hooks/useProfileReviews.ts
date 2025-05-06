@@ -8,16 +8,15 @@ export const useProfileReviews = (id?: string) => {
   const { user } = useAuth();
   
   const fetchReviews = async (userId: string): Promise<CraftsmanReview[]> => {
+    // Early exit for invalid IDs to prevent unnecessary API calls
+    if (!userId || userId === ":id") {
+      return [];
+    }
+    
     try {
-      // Ensure we have a valid userId
-      if (!userId || userId === ":id") {
-        console.log("Invalid userId for fetching reviews:", userId);
-        return [];
-      }
-      
       console.log("Fetching reviews for craftsman:", userId);
       
-      // First fetch the reviews - now protected by RLS
+      // First fetch the reviews
       const { data: reviewsData, error: reviewsError } = await supabase
         .from('craftsman_reviews')
         .select('*')
@@ -29,22 +28,13 @@ export const useProfileReviews = (id?: string) => {
         throw new Error(`Error fetching reviews: ${reviewsError.message}`);
       }
       
-      if (!reviewsData || !Array.isArray(reviewsData)) {
-        console.log("No reviews found for craftsman:", userId);
+      if (!reviewsData || !Array.isArray(reviewsData) || reviewsData.length === 0) {
         return [];
       }
 
-      console.log("Found reviews:", reviewsData.length);
-
-      // Then fetch all replies for these reviews
+      // Then fetch replies only if there are reviews
       const reviewIds = reviewsData.map(review => review.id);
       
-      // Only fetch replies if there are reviews
-      if (reviewIds.length === 0) {
-        return reviewsData as CraftsmanReview[];
-      }
-      
-      // Fetch replies directly from the craftsman_review_replies table
       const { data: repliesData, error: repliesError } = await supabase
         .from('craftsman_review_replies')
         .select('*')
@@ -56,20 +46,16 @@ export const useProfileReviews = (id?: string) => {
         return reviewsData as CraftsmanReview[];
       }
       
-      console.log("Found replies:", repliesData ? repliesData.length : 0);
-      
-      // Merge reviews with their replies - fix the type error by explicitly making reply a string | null | ReviewReply
+      // Merge reviews with their replies
       const reviewsWithReplies = reviewsData.map(review => {
         const replyData = repliesData && Array.isArray(repliesData) ? 
           repliesData.find(r => r.review_id === review.id) : 
           null;
           
-        console.log(`Processing review ${review.id}, found reply:`, replyData);
-        
         return {
           ...review,
           reply: replyData || null
-        } as CraftsmanReview; // Cast to CraftsmanReview to fix type error
+        } as CraftsmanReview;
       });
       
       return reviewsWithReplies;
@@ -92,7 +78,8 @@ export const useProfileReviews = (id?: string) => {
     queryFn: () => fetchReviews(userId || ''),
     enabled: !!userId,
     retry: 1,
-    gcTime: 0, // Use gcTime instead of cacheTime to ensure fresh data
+    gcTime: 300000, // 5 minutes cache
+    staleTime: 180000, // Consider data fresh for 3 minutes
   });
 
   return {

@@ -27,33 +27,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profileCreationAttempted, setProfileCreationAttempted] = useState(false);
 
   const fetchUserType = async (userId: string) => {
+    if (!userId) return null;
+    
     try {
-      console.log("Fetching user type for:", userId);
-      
-      // First try to get user type from user metadata (highest priority)
+      // First try to get user type from localStorage (fastest)
+      const storedType = localStorage.getItem("userType");
+      if (storedType === 'customer' || storedType === 'craftsman') {
+        console.log("Using cached user type from localStorage:", storedType);
+        setUserType(storedType as 'customer' | 'craftsman');
+        // Don't return yet, still verify from metadata or server
+      }
+
+      // Then check user metadata (second priority)
       if (session?.user?.user_metadata?.user_type) {
         const metadataType = session.user.user_metadata.user_type;
-        console.log("Found user type in metadata:", metadataType);
         
         if (metadataType === 'customer' || metadataType === 'craftsman') {
+          console.log("Found user type in metadata:", metadataType);
           setUserType(metadataType);
-          // Save to localStorage for faster access next time
           localStorage.setItem("userType", metadataType);
           setUserTypeFetched(true);
           return metadataType;
         }
       }
       
-      // Try to get from localStorage (second priority)
-      const storedType = localStorage.getItem("userType");
-      if (storedType === 'customer' || storedType === 'craftsman') {
-        console.log("Using cached user type from localStorage:", storedType);
-        setUserType(storedType);
-        // Don't return yet, still verify from server
-      }
-      
-      // If not in metadata, try to get from user_types table (third priority)
-      // Don't use try-catch here since we've updated RLS policies to allow public access
+      // Finally check database (third priority)
       const { data, error } = await supabase
         .from('user_types')
         .select('user_type')
@@ -63,7 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error("Error fetching user type:", error);
         
-        // If we have a stored type, use it as fallback
         if (storedType === 'customer' || storedType === 'craftsman') {
           setUserType(storedType as 'customer' | 'craftsman');
           setUserTypeFetched(true);
@@ -73,14 +70,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
 
-      console.log("User type data from database:", data);
-      
       if (!data) {
         console.log("No user type found in database for:", userId);
         
-        // Last effort - use cached user type in localStorage
         if (storedType === 'customer' || storedType === 'craftsman') {
-          console.log("Using cached user type from localStorage as fallback:", storedType);
           setUserType(storedType as 'customer' | 'craftsman');
           setUserTypeFetched(true);
           return storedType as 'customer' | 'craftsman';
@@ -94,19 +87,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (retrievedUserType === 'customer' || retrievedUserType === 'craftsman') {
           console.log("Found valid user type in database:", retrievedUserType);
           setUserType(retrievedUserType);
-          // Cache the user type for faster access
           localStorage.setItem("userType", retrievedUserType);
           setUserTypeFetched(true);
-          
-          // Update user metadata to ensure consistency
-          const { error: updateError } = await supabase.auth.updateUser({
-            data: { user_type: retrievedUserType }
-          });
-          
-          if (updateError) {
-            console.error("Error updating user metadata with type:", updateError);
-          }
-          
           return retrievedUserType;
         } else {
           console.log("Invalid user type in database:", retrievedUserType);
@@ -123,7 +105,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Check if profile exists for the user
   const checkAndCreateProfileIfNeeded = async (userId: string, userType: 'customer' | 'craftsman') => {
     if (profileCreationAttempted) return;
     
@@ -131,7 +112,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log("Checking if profile exists for:", userId, "with type:", userType);
       setProfileCreationAttempted(true);
       
-      // Check if profile exists in appropriate table
       const table = userType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
       const { data: profileData, error: profileError } = await supabase
         .from(table)
@@ -141,16 +121,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
       if (profileError) {
         console.error("Error checking profile existence:", profileError);
-        
-        // If RLS error, retry with a delay
-        if (profileError.message.includes("row-level security")) {
-          console.warn("RLS policy error detected. Retrying profile creation in 1 second...");
-          setTimeout(() => {
-            setProfileCreationAttempted(false);
-            checkAndCreateProfileIfNeeded(userId, userType);
-          }, 1000);
-        }
-        
         return;
       }
       
@@ -158,24 +128,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log("Profile does not exist, creating default profile for:", userId);
         
         try {
-          // Use setTimeout to avoid potential Supabase deadlocks
-          setTimeout(async () => {
-            try {
-              await createDefaultProfile(
-                user, 
-                userType, 
-                true, // isCurrentUser 
-                () => {
-                  console.log("Profile created successfully after email verification");
-                  toast.success("Profil bol úspešne vytvorený", { duration: 3000 });
-                }
-              );
-            } catch (createError) {
-              console.error("Error in delayed profile creation:", createError);
-              // Reset attempted flag to allow retrying
-              setProfileCreationAttempted(false);
+          await createDefaultProfile(
+            user, 
+            userType, 
+            true, // isCurrentUser 
+            () => {
+              console.log("Profile created successfully");
+              toast.success("Profil bol úspešne vytvorený", { duration: 3000 });
             }
-          }, 500);
+          );
         } catch (error) {
           console.error("Error creating default profile:", error);
         }
@@ -196,54 +157,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log("Updating user type to:", type);
       
-      // First update user metadata as highest priority storage
+      // Update in localStorage first (immediate feedback)
+      localStorage.setItem("userType", type);
+      setUserType(type);
+      
+      // Then update user metadata
       const { error: updateError } = await supabase.auth.updateUser({
         data: { user_type: type }
       });
 
       if (updateError) {
         console.error("Error updating user metadata:", updateError);
-        toast.error("Chyba pri aktualizácii typu používateľa v metadátach");
       }
       
-      // Update in database - handle retries for RLS issues
-      const updateDatabase = async (retries = 3) => {
-        try {
-          const { error } = await supabase
-            .from('user_types')
-            .upsert({ 
-              user_id: user.id, 
-              user_type: type 
-            });
+      // Update in database
+      const { error } = await supabase
+        .from('user_types')
+        .upsert({ 
+          user_id: user.id, 
+          user_type: type 
+        });
 
-          if (error) {
-            console.error("Error updating user type in database:", error);
-            
-            // If RLS error and we have retries left, try again after a delay
-            if (error.message.includes("row-level security") && retries > 0) {
-              console.warn(`RLS policy error detected. Retrying (${retries} attempts left)...`);
-              setTimeout(() => updateDatabase(retries - 1), 500);
-              return;
-            }
-            
-            toast.error("Chyba pri aktualizácii typu používateľa v databáze");
-            return;
-          }
-          
-          console.log("Successfully updated user type in database");
-        } catch (error) {
-          console.error("Exception in updateDatabase:", error);
-        }
-      };
-      
-      // Start the update process
-      await updateDatabase();
-
-      // Update in localStorage
-      localStorage.setItem("userType", type);
-      
-      // Update state
-      setUserType(type);
+      if (error) {
+        console.error("Error updating user type in database:", error);
+        toast.error("Chyba pri aktualizácii typu používateľa");
+        return;
+      }
       
       // Reset profile creation flag to allow creating profile for the new user type
       setProfileCreationAttempted(false);
@@ -257,23 +196,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Improved initialization sequence to prevent race conditions
-    let mounted = true;
-    setLoading(true);
-    
-    // Immediately check localStorage for faster initial render
+    // First check localStorage for faster initial render
     const storedType = localStorage.getItem("userType");
     if (storedType === 'customer' || storedType === 'craftsman') {
       setUserType(storedType);
     }
     
-    // Set up auth state listener FIRST to avoid potential deadlocks
+    // Keep track if component is mounted to prevent state updates after unmount
+    let mounted = true;
+    setLoading(true);
+    
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.log("Auth state changed:", event, newSession?.user?.id);
-        
+      async (event, newSession) => {
         if (!mounted) return;
         
+        console.log("Auth state changed:", event);
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
@@ -282,55 +220,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           localStorage.removeItem("userType");
           setUserTypeFetched(false);
           setProfileCreationAttempted(false);
+          setLoading(false);
+          return;
         }
         
         if (newSession?.user) {
-          // Use setTimeout to avoid potential Supabase deadlocks
-          setTimeout(async () => {
-            if (mounted) {
-              const type = await fetchUserType(newSession.user.id);
-              
-              // If user type exists and email is confirmed, try to create profile
-              if (type && newSession.user.email_confirmed_at && !profileCreationAttempted) {
-                checkAndCreateProfileIfNeeded(newSession.user.id, type);
-              }
-            }
-          }, 100);
+          const type = await fetchUserType(newSession.user.id);
+          
+          // If user type exists and email is confirmed, try to create profile
+          if (type && newSession.user.email_confirmed_at && !profileCreationAttempted) {
+            checkAndCreateProfileIfNeeded(newSession.user.id, type);
+          }
+          
+          // User is authenticated, finish loading
+          if (mounted) {
+            setLoading(false);
+          }
         } else {
-          setLoading(false);
-        }
-        
-        // If the user has been confirmed (email verification), try to create their profile
-        if (event === 'USER_UPDATED' && newSession?.user?.email_confirmed_at) {
-          console.log("User email confirmed, attempting to create profile");
-          setTimeout(async () => {
-            if (mounted && newSession.user) {
-              const type = await fetchUserType(newSession.user.id);
-              if (type) {
-                checkAndCreateProfileIfNeeded(newSession.user.id, type);
-              }
-            }
-          }, 500);
+          if (mounted) {
+            setLoading(false);
+          }
         }
       }
     );
 
-    // THEN check for existing session
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       
-      console.log("Initial session check:", session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
         fetchUserType(session.user.id).then(type => {
-          if (mounted && type && session.user.email_confirmed_at) {
+          if (!mounted) return;
+          
+          if (type && session.user.email_confirmed_at) {
             checkAndCreateProfileIfNeeded(session.user.id, type);
           }
-          if (mounted) {
-            setLoading(false);
-          }
+          
+          setLoading(false);
         });
       } else {
         setLoading(false);
@@ -359,18 +288,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const contextValue = {
     session,
     user,
-    loading: loading || (!!user && !userTypeFetched), // Consider loading until userType is fetched
+    loading: loading || (!!user && !userTypeFetched),
     userType,
     signOut,
     updateUserType
   };
-
-  console.log("Auth context state:", { 
-    userId: user?.id, 
-    userType, 
-    loading,
-    userTypeFetched
-  });
 
   return (
     <AuthContext.Provider value={contextValue}>
