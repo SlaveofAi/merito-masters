@@ -66,7 +66,7 @@ serve(async (req) => {
       throw new Error("Invalid request body");
     }
     
-    const { days = 7, amount = 1000 } = body; // Default 7 days and 10 EUR
+    const { days = 7, amount = 999 } = body; // Default 7 days and 9.99 EUR
 
     // Calculate end date - default to 7 days from now
     const currentDate = new Date();
@@ -107,7 +107,7 @@ serve(async (req) => {
                 name: "Top Craftsman Feature - 1 Week",
                 description: "Feature your profile at the top of search results for one week",
               },
-              unit_amount: amount, // amount in cents (10 EUR)
+              unit_amount: amount, // amount in cents (9.99 EUR)
             },
             quantity: 1,
           },

@@ -47,7 +47,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
       
       // Call the edge function to create a payment session
       const { data, error } = await supabase.functions.invoke('create-topped-session', {
-        body: { days: 7, amount: 1000 } // 10 EUR for 7 days
+        body: { days: 7, amount: 999 } // 9.99 EUR for 7 days
       });
 
       if (error) {
@@ -264,7 +264,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
               {isLoading ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Spracovanie</>
               ) : (
-                <>Zvýrazniť profil na 7 dní (10 €)</>
+                <>Zvýrazniť profil na 7 dní (9,99 €)</>
               )}
             </Button>
           </CardFooter>
