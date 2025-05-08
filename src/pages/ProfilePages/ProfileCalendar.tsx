@@ -9,7 +9,7 @@ import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 const ProfileCalendarContent: React.FC = () => {
   const {
@@ -25,6 +25,13 @@ const ProfileCalendarContent: React.FC = () => {
   } = useProfile();
   const { user, loading: authLoading, userType } = useAuth();
   const navigate = useNavigate();
+
+  // If not authenticated, redirect to landing page
+  if (!authLoading && !user) {
+    console.log("User not authenticated, redirecting to landing page");
+    toast.error("Pre prístup k profilu sa musíte zaregistrovať", { id: "auth-redirect" });
+    return <Navigate to="/" replace />;
+  }
 
   // Enhanced craftsman detection - check both user_type field and trade_category existence
   const isCraftsmanProfile = profileData?.user_type === "craftsman" || 
@@ -147,20 +154,7 @@ const ProfileCalendarContent: React.FC = () => {
             <div className="w-full max-w-md pointer-events-auto">
               <ProfileCalendar />
               
-              {/* Login prompt for non-logged in users */}
-              {showLoginPrompt && (
-                <div className="bg-white shadow rounded-lg p-6 mt-6 text-center">
-                  <h3 className="text-xl font-semibold mb-4">Pre rezerváciu termínu sa musíte prihlásiť</h3>
-                  <p className="text-gray-600 mb-6">
-                    Ak chcete kontaktovať tohto remeselníka a rezervovať si termín, 
-                    musíte byť prihlásený ako zákazník.
-                  </p>
-                  <div className="flex gap-4 justify-center">
-                    <Button onClick={() => navigate("/login")} className="pointer-events-auto">Prihlásiť sa</Button>
-                    <Button variant="outline" onClick={() => navigate("/register")} className="pointer-events-auto">Registrovať sa</Button>
-                  </div>
-                </div>
-              )}
+              {/* Login prompt removed since we redirect unauth users to landing page */}
             </div>
           </div>
         </div>

@@ -11,6 +11,9 @@ import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EditProfileForm from "@/components/EditProfileForm";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const ProfileReviewsContent: React.FC = () => {
   const {
@@ -25,8 +28,17 @@ const ProfileReviewsContent: React.FC = () => {
     fetchProfileData,
     setIsEditing,
     isEditing,
-    handleProfileUpdate // Make sure we extract this from the context
+    handleProfileUpdate
   } = useProfile();
+  
+  const { user, loading: authLoading } = useAuth();
+
+  // If not authenticated, redirect to landing page
+  if (!authLoading && !user) {
+    console.log("User not authenticated, redirecting to landing page");
+    toast.error("Pre prístup k profilu sa musíte zaregistrovať", { id: "auth-redirect" });
+    return <Navigate to="/" replace />;
+  }
 
   // Enhanced debug log to help troubleshoot the profile data and user type
   useEffect(() => {
@@ -48,7 +60,7 @@ const ProfileReviewsContent: React.FC = () => {
     setIsEditing(true);
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <Layout>
         <ProfileSkeleton />
@@ -153,7 +165,7 @@ const ProfileReviewsContent: React.FC = () => {
             <ProfileNavigation activeTab="reviews" userType={profileData?.user_type} />
             
             <div className="mt-6">
-              {isCustomerProfile ? (
+              {(profileData?.user_type === 'customer') ? (
                 <CustomerReviewsTab />
               ) : (
                 <ReviewsTab />

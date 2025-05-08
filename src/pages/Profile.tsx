@@ -23,11 +23,11 @@ const Profile = () => {
     });
   }, [id, userType, loading, user]);
   
-  // If not authenticated, redirect to login
+  // If not authenticated, redirect to landing page
   if (!loading && !user) {
-    console.log("User not authenticated, redirecting to login");
-    toast.error("Pre prístup k profilu sa musíte prihlásiť", { id: "auth-redirect" });
-    return <Navigate to="/login" replace />;
+    console.log("User not authenticated, redirecting to landing page");
+    toast.error("Pre prístup k profilu sa musíte zaregistrovať", { id: "auth-redirect" });
+    return <Navigate to="/" replace />;
   }
   
   // First check: Immediate redirect if we already know this is a customer

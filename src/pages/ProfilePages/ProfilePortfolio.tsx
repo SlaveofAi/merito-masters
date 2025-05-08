@@ -7,8 +7,9 @@ import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import PortfolioTab from "@/components/profile/PortfolioTab";
 import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const ProfilePortfolioContent: React.FC = () => {
   const {
@@ -22,7 +23,7 @@ const ProfilePortfolioContent: React.FC = () => {
     profileImageUrl,
     fetchProfileData
   } = useProfile();
-  const { userType: viewerUserType } = useAuth();
+  const { userType: viewerUserType, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
   // Check if this is a customer profile
@@ -37,7 +38,14 @@ const ProfilePortfolioContent: React.FC = () => {
     }
   }, [isCustomerProfile, isCurrentUser, loading, profileData?.id, navigate]);
 
-  if (loading) {
+  // If not authenticated, redirect to landing page
+  if (!authLoading && !user) {
+    console.log("User not authenticated, redirecting to landing page");
+    toast.error("Pre prístup k profilu sa musíte zaregistrovať", { id: "auth-redirect" });
+    return <Navigate to="/" replace />;
+  }
+
+  if (loading || authLoading) {
     return (
       <Layout>
         <ProfileSkeleton />
