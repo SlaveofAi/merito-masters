@@ -24,6 +24,11 @@ serve(async (req) => {
     }
 
     try {
+      // Important: Ensure we're using the correct Stripe key format
+      if (!stripeKey.startsWith("sk_test_") && !stripeKey.startsWith("sk_live_")) {
+        throw new Error("Invalid Stripe API key format. Keys should start with sk_test_ or sk_live_");
+      }
+      
       const stripe = new Stripe(stripeKey, {
         apiVersion: "2023-10-16",
       });
@@ -75,10 +80,14 @@ serve(async (req) => {
         throw new Error("Session ID is required");
       }
   
+      console.log("Verifying payment for session:", sessionId);
+      
       // Retrieve the checkout session to check its status
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       
       if (session.payment_status === "paid") {
+        console.log("Payment verified as paid for session:", sessionId);
+        
         // Update the payment record
         const { error: updatePaymentError } = await supabaseClient
           .from("topped_payments")
@@ -118,6 +127,7 @@ serve(async (req) => {
           }
         );
       } else {
+        console.log("Payment not completed for session:", sessionId, "Status:", session.payment_status);
         return new Response(
           JSON.stringify({ 
             success: false, 
@@ -134,31 +144,45 @@ serve(async (req) => {
       
       // Extract meaningful error message from Stripe
       let errorMessage = "Unknown Stripe error";
+      let errorCode = "stripe_unknown_error";
+      
       if (stripeError.message) {
         errorMessage = stripeError.message;
       } else if (stripeError.raw && stripeError.raw.message) {
         errorMessage = stripeError.raw.message;
       }
       
-      // Provide a more descriptive error
-      throw new Error(`Stripe API error: ${errorMessage}`);
+      if (errorMessage.includes("Invalid API Key")) {
+        errorCode = "invalid_api_key";
+      } else if (errorMessage.includes("No such session")) {
+        errorCode = "session_not_found";
+      }
+      
+      // Return a clear error response
+      return new Response(
+        JSON.stringify({ 
+          error: `Stripe API error: ${errorMessage}`,
+          errorCode: errorCode
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, // Use 400 instead of 500 for client-related errors
+        }
+      );
     }
   } catch (error: any) {
     console.error("Error verifying payment:", error);
     
     // Meaningful error codes for the frontend
     let errorCode = "topped_payment_verification_failed";
-    let status = 500;
+    let status = 400; // Use 400 instead of 500 for client errors
     
-    if (error.message.includes("API key")) {
+    if (error.message?.includes("API key")) {
       errorCode = "stripe_api_key_invalid";
-      status = 401;
-    } else if (error.message.includes("not authenticated")) {
+    } else if (error.message?.includes("not authenticated")) {
       errorCode = "user_not_authenticated";
-      status = 401;
-    } else if (error.message.includes("Session ID")) {
+    } else if (error.message?.includes("Session ID")) {
       errorCode = "invalid_session_id";
-      status = 400;
     }
     
     return new Response(

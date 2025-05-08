@@ -43,6 +43,8 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
       setErrorDetails(null);
       setErrorCode(null);
       
+      console.log("Starting create-topped-session with token", !!session.access_token);
+      
       // Call the edge function to create a payment session
       const { data, error } = await supabase.functions.invoke('create-topped-session', {
         body: { days: 7, amount: 1000 } // 10 EUR for 7 days
@@ -59,16 +61,38 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
         return;
       }
 
+      console.log("Create topped session response:", data);
+
       if (!data || !data.url) {
+        console.error("No session URL in response:", data);
         setHasError(true);
-        setErrorDetails("No session URL returned from server");
-        setErrorCode("no_session_url");
-        toast.error("Nepodarilo sa vytvoriť platobné sedenie");
+        
+        // Handle errors from the edge function
+        if (data && data.error) {
+          setErrorDetails(data.error);
+          setErrorCode(data.errorCode || "no_session_url");
+          
+          // Display more specific error messages
+          if (data.errorCode === "stripe_api_key_invalid" || data.errorCode === "invalid_api_key") {
+            toast.error("Konfiguračná chyba platobnej brány", {
+              description: "Prosím, kontaktujte administrátora."
+            });
+          } else {
+            toast.error("Nepodarilo sa vytvoriť platobné sedenie");
+          }
+        } else {
+          setErrorDetails("No session URL returned from server");
+          setErrorCode("no_session_url");
+          toast.error("Nepodarilo sa vytvoriť platobné sedenie");
+        }
         return;
       }
       
-      // Store session ID in sessionStorage before redirecting (more reliable than localStorage)
+      // Store session ID in both sessionStorage and localStorage for redundancy
       sessionStorage.setItem('topped_session_id', data.sessionId);
+      localStorage.setItem('topped_session_id', data.sessionId);
+      
+      console.log("Redirecting to Stripe checkout:", data.url);
       
       // Redirect to Stripe checkout
       window.location.href = data.url;
@@ -100,13 +124,18 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           setHasError(false);
           setErrorCode(null);
           
+          console.log("Verifying payment for session:", sessionId);
+          
           const { data, error } = await supabase.functions.invoke('verify-topped-payment', {
             body: { sessionId }
           });
           
           if (error) {
+            console.error("Verification function error:", error);
             throw new Error(error.message || "Nepodarilo sa overiť platbu");
           }
+          
+          console.log("Payment verification response:", data);
           
           if (data?.success) {
             toast.success("Vaša platba bola úspešne spracovaná", {
@@ -147,8 +176,8 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
 
   // Helper function to get user-friendly error message
   const getErrorMessage = () => {
-    if (errorCode === "stripe_api_key_invalid") {
-      return "Služba momentálne nie je dostupná. Problém s API kľúčom.";
+    if (errorCode === "stripe_api_key_invalid" || errorCode === "invalid_api_key") {
+      return "Konfiguračná chyba platobného systému. Prosím kontaktujte administrátora.";
     } else if (errorCode === "user_not_authenticated") {
       return "Pre dokončenie platby sa musíte prihlásiť.";
     } else if (errorCode?.includes("craftsman_profile")) {

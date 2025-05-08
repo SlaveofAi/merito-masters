@@ -76,6 +76,12 @@ serve(async (req) => {
     console.log("Creating checkout session for craftsman:", user.id);
     
     try {
+      // Important: Ensure we're using the correct Stripe key format
+      // Stripe keys typically start with "sk_test_" or "sk_live_"
+      if (!stripeKey.startsWith("sk_test_") && !stripeKey.startsWith("sk_live_")) {
+        throw new Error("Invalid Stripe API key format. Keys should start with sk_test_ or sk_live_");
+      }
+      
       const stripe = new Stripe(stripeKey, {
         apiVersion: "2023-10-16",
       });
@@ -153,31 +159,47 @@ serve(async (req) => {
       
       // Extract meaningful error message from Stripe
       let errorMessage = "Unknown Stripe error";
+      let errorCode = "stripe_unknown_error";
+      
       if (stripeError.message) {
         errorMessage = stripeError.message;
       } else if (stripeError.raw && stripeError.raw.message) {
         errorMessage = stripeError.raw.message;
       }
       
-      // Provide a more descriptive error
-      throw new Error(`Stripe API error: ${errorMessage}`);
+      if (errorMessage.includes("Invalid API Key")) {
+        errorCode = "invalid_api_key";
+      } else if (errorMessage.includes("No such customer")) {
+        errorCode = "customer_not_found";
+      } else if (errorMessage.includes("rate limit")) {
+        errorCode = "rate_limited";
+      }
+      
+      // Return a clear error response with status code 400 for client errors
+      return new Response(
+        JSON.stringify({ 
+          error: `Stripe API error: ${errorMessage}`,
+          errorCode: errorCode
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, // Use 400 instead of 500 for client-related errors
+        }
+      );
     }
   } catch (error: any) {
     console.error("Error creating topped session:", error);
     
     // Meaningful error codes for the frontend
     let errorCode = "topped_session_creation_failed";
-    let status = 500;
+    let status = 400; // Use 400 instead of 500 for client errors
     
-    if (error.message.includes("API key")) {
+    if (error.message?.includes("API key")) {
       errorCode = "stripe_api_key_invalid";
-      status = 401;
-    } else if (error.message.includes("not authenticated")) {
+    } else if (error.message?.includes("not authenticated")) {
       errorCode = "user_not_authenticated";
-      status = 401;
-    } else if (error.message.includes("profile not found")) {
+    } else if (error.message?.includes("profile not found")) {
       errorCode = "craftsman_profile_not_found";
-      status = 404;
     }
     
     return new Response(
