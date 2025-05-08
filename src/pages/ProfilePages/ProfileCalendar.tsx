@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Navigate, useNavigate } from "react-router-dom";
+import AuthRequiredMessage from "@/components/profile/AuthRequiredMessage";
 
 const ProfileCalendarContent: React.FC = () => {
   const {
@@ -26,11 +28,10 @@ const ProfileCalendarContent: React.FC = () => {
   const { user, loading: authLoading, userType } = useAuth();
   const navigate = useNavigate();
 
-  // If not authenticated, redirect to landing page
+  // If not authenticated, show auth required message
   if (!authLoading && !user) {
-    console.log("User not authenticated, redirecting to landing page");
-    toast.error("Pre prístup k profilu sa musíte zaregistrovať", { id: "auth-redirect" });
-    return <Navigate to="/" replace />;
+    console.log("User not authenticated, showing auth required message");
+    return <AuthRequiredMessage />;
   }
 
   // Enhanced craftsman detection - check both user_type field and trade_category existence
@@ -131,9 +132,6 @@ const ProfileCalendarContent: React.FC = () => {
     );
   }
 
-  // Check if user is attempting to send a booking request but not logged in
-  const showLoginPrompt = !user && !isCurrentUser && isCraftsmanProfile;
-
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50 pointer-events-auto">
@@ -153,8 +151,6 @@ const ProfileCalendarContent: React.FC = () => {
           <div className="mt-8 flex justify-center pointer-events-auto">
             <div className="w-full max-w-md pointer-events-auto">
               <ProfileCalendar />
-              
-              {/* Login prompt removed since we redirect unauth users to landing page */}
             </div>
           </div>
         </div>

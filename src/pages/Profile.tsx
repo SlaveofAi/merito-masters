@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { ProfileProvider } from "@/contexts/ProfileContext";
@@ -6,13 +5,13 @@ import ProfilePage from "@/components/profile/ProfilePage";
 import { useAuth } from "@/hooks/useAuth";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { toast } from "sonner";
+import AuthRequiredMessage from "@/components/profile/AuthRequiredMessage";
 
 const Profile = () => {
   const { id } = useParams();
   const { userType, loading, user } = useAuth();
   const navigate = useNavigate();
   
-  // Enhanced debug logging
   useEffect(() => {
     console.log("Profile route rendering with:", {
       id,
@@ -23,11 +22,10 @@ const Profile = () => {
     });
   }, [id, userType, loading, user]);
   
-  // If not authenticated, redirect to landing page
+  // If not authenticated, show auth required message
   if (!loading && !user) {
-    console.log("User not authenticated, redirecting to landing page");
-    toast.error("Pre prístup k profilu sa musíte zaregistrovať", { id: "auth-redirect" });
-    return <Navigate to="/" replace />;
+    console.log("User not authenticated, showing auth required message");
+    return <AuthRequiredMessage />;
   }
   
   // First check: Immediate redirect if we already know this is a customer

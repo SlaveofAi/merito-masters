@@ -7,9 +7,9 @@ import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import PortfolioTab from "@/components/profile/PortfolioTab";
 import { useProfile, ProfileProvider } from "@/contexts/ProfileContext";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
+import AuthRequiredMessage from "@/components/profile/AuthRequiredMessage";
 
 const ProfilePortfolioContent: React.FC = () => {
   const {
@@ -38,11 +38,10 @@ const ProfilePortfolioContent: React.FC = () => {
     }
   }, [isCustomerProfile, isCurrentUser, loading, profileData?.id, navigate]);
 
-  // If not authenticated, redirect to landing page
+  // If not authenticated, show auth required message
   if (!authLoading && !user) {
-    console.log("User not authenticated, redirecting to landing page");
-    toast.error("Pre prístup k profilu sa musíte zaregistrovať", { id: "auth-redirect" });
-    return <Navigate to="/" replace />;
+    console.log("User not authenticated, showing auth required message");
+    return <AuthRequiredMessage />;
   }
 
   if (loading || authLoading) {

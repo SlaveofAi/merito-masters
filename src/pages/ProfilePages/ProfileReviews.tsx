@@ -14,6 +14,7 @@ import EditProfileForm from "@/components/EditProfileForm";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import AuthRequiredMessage from "@/components/profile/AuthRequiredMessage";
 
 const ProfileReviewsContent: React.FC = () => {
   const {
@@ -33,11 +34,10 @@ const ProfileReviewsContent: React.FC = () => {
   
   const { user, loading: authLoading } = useAuth();
 
-  // If not authenticated, redirect to landing page
+  // If not authenticated, show auth required message
   if (!authLoading && !user) {
-    console.log("User not authenticated, redirecting to landing page");
-    toast.error("Pre prístup k profilu sa musíte zaregistrovať", { id: "auth-redirect" });
-    return <Navigate to="/" replace />;
+    console.log("User not authenticated, showing auth required message");
+    return <AuthRequiredMessage />;
   }
 
   // Enhanced debug log to help troubleshoot the profile data and user type
