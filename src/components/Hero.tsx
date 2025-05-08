@@ -12,8 +12,16 @@ const Hero = () => {
     navigate('/home', { state: { searchTerm } });
   };
   
+  const handleUserTypeSelection = (type: string) => {
+    // Store the user type in session storage to use in registration
+    sessionStorage.setItem("userType", type);
+    
+    // Navigate to registration
+    navigate("/register");
+  };
+  
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-white to-secondary/30">
+    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-white to-secondary/30">
       <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.01),transparent)] pointer-events-none"></div>
       
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -63,6 +71,52 @@ const Hero = () => {
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-primary mr-2"></div>
             <span>20+ Kategórií</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* User Type Selection */}
+      <div className="mt-16 w-full max-w-4xl mx-auto px-4 animate-slide-up" style={{animationDelay: "400ms"}}>
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold">Vytvorte si účet a získajte prístup k profilom</h2>
+          <p className="text-muted-foreground mt-2">Vyberte si typ účtu a začnite používať Majstri.com</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div 
+            onClick={() => handleUserTypeSelection('craftsman')}
+            className="bg-white rounded-lg p-6 shadow-sm border border-border/50 hover:border-primary/50 hover:shadow transition-all cursor-pointer text-center"
+          >
+            <div className="h-40 flex items-center justify-center mb-4 bg-secondary/20 rounded-lg overflow-hidden">
+              <img 
+                src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6" 
+                alt="Craftsman" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <h3 className="text-xl font-medium mb-2">Som remeselník</h3>
+            <p className="text-muted-foreground text-sm mb-4">
+              Prezentujte svoje zručnosti a nájdite nových klientov vo vašom okolí
+            </p>
+            <Button className="w-full">Registrovať ako remeselník</Button>
+          </div>
+          
+          <div 
+            onClick={() => handleUserTypeSelection('customer')}
+            className="bg-white rounded-lg p-6 shadow-sm border border-border/50 hover:border-primary/50 hover:shadow transition-all cursor-pointer text-center"
+          >
+            <div className="h-40 flex items-center justify-center mb-4 bg-secondary/20 rounded-lg overflow-hidden">
+              <img 
+                src="https://images.unsplash.com/photo-1721322800607-8c38375eef04" 
+                alt="Customer" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <h3 className="text-xl font-medium mb-2">Som zákazník</h3>
+            <p className="text-muted-foreground text-sm mb-4">
+              Nájdite spoľahlivých remeselníkov pre vaše projekty a vylepšenia domácnosti
+            </p>
+            <Button variant="outline" className="w-full">Registrovať ako zákazník</Button>
           </div>
         </div>
       </div>
