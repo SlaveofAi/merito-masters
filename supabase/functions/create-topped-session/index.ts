@@ -23,6 +23,12 @@ serve(async (req) => {
       throw new Error("Missing API key: STRIPE_SECRET_KEY");
     }
 
+    // Validate Stripe API key format
+    if (!stripeKey.startsWith("sk_test_") && !stripeKey.startsWith("sk_live_")) {
+      console.error("Invalid Stripe API key format:", stripeKey.substring(0, 7) + "...");
+      throw new Error("Invalid Stripe API key format. Keys should start with sk_test_ or sk_live_");
+    }
+
     // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
@@ -53,8 +59,14 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const requestData = await req.json();
-    const { days = 7, amount = 1000 } = requestData; // Default 7 days and 10 EUR
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      throw new Error("Invalid request body");
+    }
+    
+    const { days = 7, amount = 1000 } = body; // Default 7 days and 10 EUR
 
     // Calculate end date - default to 7 days from now
     const currentDate = new Date();
@@ -76,20 +88,11 @@ serve(async (req) => {
     console.log("Creating checkout session for craftsman:", user.id);
     
     try {
-      // Important: Ensure we're using the correct Stripe key format
-      // Stripe keys typically start with "sk_test_" or "sk_live_"
-      if (!stripeKey.startsWith("sk_test_") && !stripeKey.startsWith("sk_live_")) {
-        throw new Error("Invalid Stripe API key format. Keys should start with sk_test_ or sk_live_");
-      }
-      
+      // Initialize Stripe with proper error handling
       const stripe = new Stripe(stripeKey, {
         apiVersion: "2023-10-16",
+        httpClient: Stripe.createFetchHttpClient(),
       });
-      
-      // Ensure Stripe object was created successfully
-      if (!stripe) {
-        throw new Error("Failed to initialize Stripe");
-      }
       
       // Origin for success/cancel URLs
       const origin = req.headers.get("origin") || 'https://majstri.com';
@@ -154,7 +157,7 @@ serve(async (req) => {
           status: 200,
         }
       );
-    } catch (stripeError: any) {
+    } catch (stripeError) {
       console.error("Stripe API error:", stripeError);
       
       // Extract meaningful error message from Stripe
@@ -183,16 +186,16 @@ serve(async (req) => {
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400, // Use 400 instead of 500 for client-related errors
+          status: 400,
         }
       );
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error creating topped session:", error);
     
     // Meaningful error codes for the frontend
     let errorCode = "topped_session_creation_failed";
-    let status = 400; // Use 400 instead of 500 for client errors
+    let status = 400;
     
     if (error.message?.includes("API key")) {
       errorCode = "stripe_api_key_invalid";
