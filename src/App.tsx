@@ -14,6 +14,7 @@ import ProfileReviews from "./pages/ProfilePages/ProfileReviews";
 import ProfileCalendar from "./pages/ProfilePages/ProfileCalendar";
 import Messages from "./pages/Messages";
 import ApprovedBookings from "./pages/ApprovedBookings";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Categories from "./pages/Categories";
@@ -64,6 +65,9 @@ const App = () => (
             <Route path="/profile/:id/portfolio" element={<ProfilePortfolio />} />
             <Route path="/profile/:id/reviews" element={<ProfileReviews />} />
             <Route path="/profile/:id/calendar" element={<ProfileCalendar />} />
+            
+            {/* Notifications route */}
+            <Route path="/notifications" element={<Notifications />} />
             
             <Route path="/messages" element={<Messages />} />
             {/* Bookings route */}

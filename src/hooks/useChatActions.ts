@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -121,6 +122,40 @@ export const useChatActions = (
       
       console.log("Message sent successfully:", message);
       
+      // Create notification for the receiver
+      try {
+        // Get sender's name for the notification
+        const userTypeTable = userType === 'customer' ? 'customer_profiles' : 'craftsman_profiles';
+        const { data: senderProfile } = await supabase
+          .from(userTypeTable)
+          .select('name')
+          .eq('id', user.id)
+          .single();
+        
+        const senderName = senderProfile?.name || 'Užívateľ';
+        
+        const notificationData = {
+          user_id: contactId,
+          title: "Nová správa",
+          content: `${senderName}: ${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`,
+          type: 'message' as const,
+          metadata: {
+            conversation_id: convId,
+            contact_id: user.id
+          }
+        };
+        
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert(notificationData);
+          
+        if (notificationError) {
+          console.error("Error creating notification:", notificationError);
+        }
+      } catch (err) {
+        console.error("Error creating message notification:", err);
+      }
+      
       // Create booking request if needed
       if (metadata?.type === 'booking_request' && metadata.booking_id) {
         console.log('Creating booking request:', {
@@ -163,6 +198,40 @@ export const useChatActions = (
           }
           
           console.log("Booking request created successfully:", bookingResult);
+          
+          // Create notification for craftsman about new booking request
+          if (normalizedUserType === 'customer') {
+            try {
+              const { data: customerProfile } = await supabase
+                .from('customer_profiles')
+                .select('name')
+                .eq('id', user.id)
+                .single();
+              
+              const customerName = customerProfile?.name || 'Zákazník';
+              
+              const notificationData = {
+                user_id: contactId, // The craftsman
+                title: "Nová žiadosť o rezerváciu",
+                content: `${customerName} poslal novú žiadosť o rezerváciu na ${metadata.details?.date}`,
+                type: 'booking_request' as const,
+                metadata: {
+                  booking_id: metadata.booking_id,
+                  contact_id: user.id
+                }
+              };
+              
+              const { error: notificationError } = await supabase
+                .from('notifications')
+                .insert(notificationData);
+                
+              if (notificationError) {
+                console.error("Error creating booking notification:", notificationError);
+              }
+            } catch (err) {
+              console.error("Error creating booking notification:", err);
+            }
+          }
         } catch (err) {
           console.error("Error creating booking:", err);
           // Don't throw here to prevent message from failing if booking fails
