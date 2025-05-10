@@ -9,7 +9,7 @@ import { Menu } from "lucide-react";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
-  const { isLoggedIn, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -54,7 +54,7 @@ const Navbar = () => {
               </SheetTrigger>
               <SheetContent side="right">
                 <div className="flex flex-col space-y-4 mt-8">
-                  {isLoggedIn ? (
+                  {user ? (
                     <>
                       <Link to="/notifications">
                         <Button variant="ghost" className="w-full justify-start">Notifikácie</Button>
@@ -68,7 +68,7 @@ const Navbar = () => {
                       <Link to="/bookings">
                         <Button variant="ghost" className="w-full justify-start">Zákazky</Button>
                       </Link>
-                      <Button onClick={logout} variant="ghost" className="w-full justify-start">
+                      <Button onClick={signOut} variant="ghost" className="w-full justify-start">
                         Odhlásiť sa
                       </Button>
                     </>
@@ -78,7 +78,7 @@ const Navbar = () => {
                         <Button variant="ghost" className="w-full justify-start">Prihlásenie</Button>
                       </Link>
                       <Link to="/register">
-                        <Button variant="primary" className="w-full bg-primary text-white">
+                        <Button variant="default" className="w-full bg-primary text-white">
                           Registrácia
                         </Button>
                       </Link>

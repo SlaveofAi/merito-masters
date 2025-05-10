@@ -72,7 +72,7 @@ export const useBookingActions = () => {
           content: status === 'approved' 
             ? `${craftsmanName} schválil vašu rezerváciu na ${bookingDate}`
             : `${craftsmanName} zamietol vašu rezerváciu na ${bookingDate}`,
-          type: 'booking_update',
+          type: 'booking_update' as const,
           metadata: {
             booking_id: bookingId,
             status: status,

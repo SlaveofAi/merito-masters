@@ -145,13 +145,9 @@ export const useChatActions = (
           }
         };
         
-        const { error: notificationError } = await supabase
+        await supabase
           .from('notifications')
           .insert(notificationData);
-          
-        if (notificationError) {
-          console.error("Error creating notification:", notificationError);
-        }
       } catch (err) {
         console.error("Error creating message notification:", err);
       }
@@ -221,13 +217,9 @@ export const useChatActions = (
                 }
               };
               
-              const { error: notificationError } = await supabase
+              await supabase
                 .from('notifications')
                 .insert(notificationData);
-                
-              if (notificationError) {
-                console.error("Error creating booking notification:", notificationError);
-              }
             } catch (err) {
               console.error("Error creating booking notification:", err);
             }

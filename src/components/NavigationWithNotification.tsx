@@ -9,18 +9,18 @@ interface NavigationWithNotificationProps {
 }
 
 const NavigationWithNotification: React.FC<NavigationWithNotificationProps> = ({ className }) => {
-  const { isLoggedIn, userType } = useAuth();
+  const { user, userType } = useAuth();
   const location = useLocation();
 
   return (
     <div className={`flex items-center space-x-4 ${className}`}>
       {/* Only show notifications button if user is logged in */}
-      {isLoggedIn && (
+      {user && (
         <NotificationIndicator />
       )}
       
       {/* Keep existing navigation links */}
-      {isLoggedIn ? (
+      {user ? (
         <>
           <Link to="/messages">
             <Button variant="ghost">Správy</Button>
@@ -40,7 +40,10 @@ const NavigationWithNotification: React.FC<NavigationWithNotificationProps> = ({
             <Button variant="ghost">Prihlásenie</Button>
           </Link>
           <Link to="/register">
-            <Button variant="primary" className="bg-primary text-white hover:bg-primary-dark transition-colors duration-200">
+            <Button 
+              variant="default" 
+              className="bg-primary text-white hover:bg-primary-dark transition-colors duration-200"
+            >
               Registrácia
             </Button>
           </Link>
