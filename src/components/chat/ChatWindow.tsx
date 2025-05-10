@@ -5,8 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   Send, 
   Info, 
-  Phone, 
-  Video, 
   MoreVertical, 
   Archive, 
   Trash2,
@@ -515,16 +513,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               Rezervácia
             </Button>
           )}
-          {!isMobile && (
-            <>
-              <Button variant="ghost" size="icon" title="Videohovor">
-                <Video className="h-5 w-5 text-gray-500" />
-              </Button>
-              <Button variant="ghost" size="icon" title="Telefonický hovor">
-                <Phone className="h-5 w-5 text-gray-500" />
-              </Button>
-            </>
-          )}
           <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
             <DialogTrigger asChild>
               <Button variant="ghost" size="icon" title="Informácie o užívateľovi">
@@ -666,18 +654,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   <Calendar className="h-4 w-4 mr-2" />
                   Rezervácia termínu
                 </DropdownMenuItem>
-              )}
-              {isMobile && (
-                <>
-                  <DropdownMenuItem>
-                    <Phone className="h-4 w-4 mr-2" />
-                    Telefonický hovor
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Video className="h-4 w-4 mr-2" />
-                    Videohovor
-                  </DropdownMenuItem>
-                </>
               )}
               <DropdownMenuItem onClick={() => setShowArchiveDialog(true)}>
                 <Archive className="h-4 w-4 mr-2" />
