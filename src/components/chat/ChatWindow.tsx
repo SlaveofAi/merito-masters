@@ -18,7 +18,8 @@ import {
   Clock,
   Euro,
   Image,
-  FileText
+  FileText,
+  Phone
 } from "lucide-react";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
@@ -480,7 +481,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   }
   
   const getCraftsmanId = () => {
-    return contact?.contactId || contact?.id || '';
+    return contactDetails?.contactId || contact?.id || '';
   };
   
   const renderHeader = () => {
