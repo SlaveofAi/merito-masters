@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,11 +32,10 @@ const NavigationWithNotification: React.FC<NavigationWithNotificationProps> = ({
           <Link to="/profile">
             <Button variant="ghost">Profil</Button>
           </Link>
-          {userType === 'craftsman' && (
-            <Link to="/bookings">
-              <Button variant="ghost">Zákazky</Button>
-            </Link>
-          )}
+          {/* Show bookings button for all users, not just craftsmen */}
+          <Link to="/bookings">
+            <Button variant="ghost">Zákazky</Button>
+          </Link>
         </>
       ) : (
         <>
