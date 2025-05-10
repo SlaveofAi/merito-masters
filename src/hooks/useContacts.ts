@@ -40,31 +40,38 @@ export const useContacts = () => {
         
         console.log(`Fetched ${conversations?.length || 0} conversations`);
         
-        // No conversations yet, get potential contacts
+        // No conversations yet, return empty array for craftsman
+        // Only customers can see potential craftsmen contacts
         if (!conversations || conversations.length === 0) {
-          console.log(`No conversations found, fetching potential ${contactType} contacts`);
-          
-          const { data, error } = await supabase
-            .from(contactType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles')
-            .select('id, name, profile_image_url')
-            .limit(10);
+          if (userType === 'customer') {
+            console.log(`No conversations found, fetching potential ${contactType} contacts`);
             
-          if (error) {
-            console.error("Error fetching potential contacts:", error);
-            toast.error("Nastala chyba pri načítaní kontaktov");
+            const { data, error } = await supabase
+              .from('craftsman_profiles')
+              .select('id, name, profile_image_url')
+              .limit(10);
+              
+            if (error) {
+              console.error("Error fetching potential contacts:", error);
+              toast.error("Nastala chyba pri načítaní kontaktov");
+              return [];
+            }
+            
+            return data.map((contact): ChatContact => ({
+              id: contact.id,
+              contactId: contact.id,
+              name: contact.name,
+              avatar_url: contact.profile_image_url,
+              last_message: 'Kliknite pre zahájenie konverzácie',
+              last_message_time: new Date().toISOString(),
+              unread_count: 0,
+              user_type: contactType
+            }));
+          } else {
+            // For craftsmen, just return empty array when no conversations exist
+            console.log('No conversations found for craftsman, not showing any contacts');
             return [];
           }
-          
-          return data.map((contact): ChatContact => ({
-            id: contact.id,
-            contactId: contact.id,
-            name: contact.name,
-            avatar_url: contact.profile_image_url,
-            last_message: 'Kliknite pre zahájenie konverzácie',
-            last_message_time: new Date().toISOString(),
-            unread_count: 0,
-            user_type: contactType
-          }));
         }
         
         // Get contact details for each conversation
