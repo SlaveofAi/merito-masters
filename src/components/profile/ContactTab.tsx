@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
-import { Image, Loader2 } from "lucide-react";
+import { Image, Loader2, MessageSquare } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
 const ContactTab = () => {
@@ -467,7 +467,8 @@ const ContactTab = () => {
         <p className="mb-6 text-gray-600">
           Pre viac informácií nás prosím kontaktujte prostredníctvom správy.
         </p>
-        <Button onClick={handleSendMessage}>
+        <Button onClick={handleSendMessage} className="flex items-center">
+          <MessageSquare className="mr-2 h-5 w-5" />
           Poslať správu
         </Button>
       </div>
@@ -675,8 +676,9 @@ const ContactTab = () => {
             <p className="mb-6 text-gray-600">
               Kliknite na tlačidlo nižšie pre kontaktovanie remeselníka {profileData.name} priamo cez správy.
             </p>
-            <Button onClick={handleSendMessage}>
-              Prejsť na správy
+            <Button onClick={handleSendMessage} className="flex items-center">
+              <MessageSquare className="mr-2 h-5 w-5" />
+              Poslať správu
             </Button>
           </div>
         </TabsContent>

@@ -1,8 +1,10 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import NotificationIndicator from "./notifications/NotificationIndicator";
+import { MessageSquare } from "lucide-react";
 
 interface NavigationWithNotificationProps {
   className?: string;
@@ -23,7 +25,10 @@ const NavigationWithNotification: React.FC<NavigationWithNotificationProps> = ({
       {user ? (
         <>
           <Link to="/messages">
-            <Button variant="ghost">Správy</Button>
+            <Button variant="ghost">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Správy
+            </Button>
           </Link>
           <Link to="/profile">
             <Button variant="ghost">Profil</Button>
