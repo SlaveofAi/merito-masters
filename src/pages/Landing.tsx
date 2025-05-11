@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import Footer from "@/components/Footer";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -41,7 +42,6 @@ const Landing = () => {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
             Platforma spájajúca profesionálnych remeselníkov s ľuďmi, ktorí hľadajú ich služby
           </p>
-          {/* Removed the blue announcement box that was here */}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl w-full">
@@ -91,11 +91,8 @@ const Landing = () => {
         </div>
       </main>
 
-      <footer className="bg-gray-100 py-6 px-4 text-center text-sm text-gray-600">
-        <div className="max-w-7xl mx-auto">
-          <p>© {new Date().getFullYear()} Majstri.com - Spájame remeselníkov a zákazníkov</p>
-        </div>
-      </footer>
+      {/* Replace the inline footer with the shared Footer component */}
+      <Footer />
     </div>
   );
 };
