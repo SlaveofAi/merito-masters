@@ -18,36 +18,22 @@ const ReviewsTab: React.FC = () => {
     refetchReviews
   } = useProfile();
 
+  // Initialize all variables first before any conditionals
   const isCurrentUser = profileData?.id === user?.id;
-  
   const isCraftsmanProfile = profileData?.user_type === 'craftsman' || 
                            (profileData && 'trade_category' in profileData);
   
-  const canLeaveReview = user && 
-    userType && userType.toLowerCase() === 'customer' && 
+  // Handle cases where user or userType might be null
+  const userTypeValue = userType || null;
+  const isLoggedIn = !!user;
+  
+  // Determine if the user can leave a review - compute once outside of JSX
+  const canLeaveReview = isLoggedIn && 
+    userTypeValue === 'customer' && 
     isCraftsmanProfile && 
     !isCurrentUser;
   
-  const canReplyToReview = user && userType && userType.toLowerCase() === 'craftsman' && isCurrentUser;
-
-  // Check if the current user is a customer viewing a craftsman's profile
-  const isCustomerViewingCraftsman = user && 
-    userType && userType.toLowerCase() === 'customer' && 
-    isCraftsmanProfile && 
-    !isCurrentUser;
-
-  console.log("Reviews tab rendering with critical variables:", { 
-    reviews: reviews?.length, 
-    isCurrentUser, 
-    canLeaveReview, 
-    userType, 
-    profileType: isCraftsmanProfile ? 'craftsman' : 'customer',
-    userId: user?.id,
-    profileId: profileData?.id,
-    isCraftsmanProfile,
-    hasTrade: profileData && 'trade_category' in profileData,
-    error
-  });
+  const canReplyToReview = isLoggedIn && userTypeValue === 'craftsman' && isCurrentUser;
 
   useEffect(() => {
     if (profileData?.id) {
@@ -79,6 +65,7 @@ const ReviewsTab: React.FC = () => {
         </Alert>
       )}
       
+      {/* Only render the review form if user can leave a review */}
       {canLeaveReview && user && profileData && (
         <div className="mb-6 border p-4 rounded-md bg-white shadow-sm">
           <h3 className="text-lg font-medium mb-3">Pridať hodnotenie</h3>
@@ -97,7 +84,7 @@ const ReviewsTab: React.FC = () => {
           reviews={reviews || []}
           isLoading={isLoadingReviews}
           canReplyToReview={canReplyToReview}
-          canEditReview={userType === 'customer'} // Enable edit for all customers
+          canEditReview={userTypeValue === 'customer'} // Enable edit for all customers
           userId={user?.id}
           onRefresh={handleRefresh}
           error={error}
