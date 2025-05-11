@@ -129,27 +129,52 @@ const ProfileCalendar: React.FC = () => {
     try {
       console.log("Saving dates for craftsman:", profileData.id, selectedDates);
       
-      // First delete all existing dates
-      const { error: deleteError } = await supabase
+      // First, get existing dates
+      const { data: existingData, error: fetchError } = await supabase
         .from('craftsman_availability')
-        .delete()
+        .select('date')
         .eq('craftsman_id', profileData.id);
         
-      if (deleteError) throw deleteError;
+      if (fetchError) throw fetchError;
       
-      // Insert new dates if there are any
-      if (selectedDates.length > 0) {
-        const datesToInsert = selectedDates.map(date => ({
+      // Convert existing dates to string format for comparison
+      const existingDateStrings = existingData?.map(item => item.date) || [];
+      console.log("Existing dates:", existingDateStrings);
+      
+      // Get dates to insert (new dates not in existingDates)
+      const datesToInsert = selectedDates
+        .map(date => date.toISOString().split('T')[0])
+        .filter(dateStr => !existingDateStrings.includes(dateStr))
+        .map(dateStr => ({
           craftsman_id: profileData.id,
-          date: date.toISOString().split('T')[0],
+          date: dateStr,
           time_slots: ["9:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"]
         }));
-        
-        const { error } = await supabase
+      
+      // Get dates to delete (dates in existingDates but not in selectedDates)
+      const selectedDateStrings = selectedDates.map(date => date.toISOString().split('T')[0]);
+      const datesToDelete = existingDateStrings.filter(dateStr => !selectedDateStrings.includes(dateStr));
+      
+      console.log("Dates to insert:", datesToInsert.length, "Dates to delete:", datesToDelete.length);
+      
+      // Delete dates that are no longer selected
+      if (datesToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('craftsman_availability')
+          .delete()
+          .eq('craftsman_id', profileData.id)
+          .in('date', datesToDelete);
+          
+        if (deleteError) throw deleteError;
+      }
+      
+      // Insert new dates if there are any
+      if (datesToInsert.length > 0) {
+        const { error: insertError } = await supabase
           .from('craftsman_availability')
           .insert(datesToInsert);
           
-        if (error) throw error;
+        if (insertError) throw insertError;
       }
       
       setMotivationalMessage("Vaša dostupnosť bola úspešne aktualizovaná!");
