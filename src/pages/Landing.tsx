@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,14 +10,22 @@ import { Helmet } from "react-helmet-async";
 const Landing = () => {
   const navigate = useNavigate();
   const [userType, setUserType] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   
   // Redirect authenticated users to home page
   useEffect(() => {
-    if (user) {
+    // Log state for debugging
+    console.log("Landing page - Auth state:", { 
+      isLoggedIn: !!user, 
+      isLoading: loading,
+      currentPath: window.location.pathname
+    });
+
+    if (!loading && user) {
+      console.log("User is authenticated, redirecting to home page");
       navigate("/home", { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, loading]);
 
   const handleUserTypeSelection = (type: string) => {
     setUserType(type);
@@ -31,6 +40,15 @@ const Landing = () => {
       duration: 3000,
     });
   };
+
+  // If we're still checking auth state, show loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-white">

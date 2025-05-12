@@ -1,4 +1,3 @@
-
 import { useEffect, useState, createContext, useContext, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -381,11 +380,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
+      console.log("Signing out user...");
       await supabase.auth.signOut();
-      setUserType(null);
+      
+      // Clear local storage items
       localStorage.removeItem("userType");
+      
+      // Update state
+      setUserType(null);
+      setUser(null);
+      setSession(null);
       setUserTypeFetched(false);
       setProfileCreationAttempted(false);
+      
+      toast.success("Úspešne ste sa odhlásili", {
+        duration: 3000,
+      });
     } catch (error) {
       console.error("Error signing out:", error);
       toast.error("Nastala chyba pri odhlásení");

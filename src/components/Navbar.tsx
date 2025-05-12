@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import NavigationWithNotification from "./NavigationWithNotification";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -31,6 +31,13 @@ const Navbar = () => {
   const logoLinkPath = user ? "/home" : "/";
   const isLoggedIn = !!user;
 
+  const handleSignOut = async (e) => {
+    e.preventDefault();
+    await signOut();
+    // Force reload the page to ensure all auth state is cleared
+    window.location.href = '/';
+  };
+
   return (
     <div
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -47,6 +54,16 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
             <NavigationWithNotification />
+            {isLoggedIn && (
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={handleSignOut}
+                className="ml-2"
+              >
+                <LogOut className="w-4 h-4 mr-2" /> Odhlásiť sa
+              </Button>
+            )}
           </div>
 
           {/* Mobile Navigation */}
@@ -73,8 +90,8 @@ const Navbar = () => {
                       <Link to="/bookings">
                         <Button variant="ghost" className="w-full justify-start">Zákazky</Button>
                       </Link>
-                      <Button onClick={signOut} variant="ghost" className="w-full justify-start">
-                        Odhlásiť sa
+                      <Button onClick={handleSignOut} variant="destructive" className="w-full justify-start">
+                        <LogOut className="w-4 h-4 mr-2" /> Odhlásiť sa
                       </Button>
                     </>
                   ) : (
