@@ -27,10 +27,6 @@ const Navbar = () => {
     };
   }, []);
 
-  // Determine if user is logged in and where to navigate when clicking logo
-  const logoLinkPath = user ? "/home" : "/";
-  const isLoggedIn = !!user;
-
   return (
     <div
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -40,7 +36,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Link to either home page or landing page based on user authentication */}
-          <Link to={logoLinkPath} className="flex items-center">
+          <Link to={user ? "/home" : "/"} className="flex items-center">
             <span className="text-xl font-bold text-black">Majstri.com</span>
           </Link>
 
@@ -59,7 +55,7 @@ const Navbar = () => {
               </SheetTrigger>
               <SheetContent side="right">
                 <div className="flex flex-col space-y-4 mt-8">
-                  {isLoggedIn ? (
+                  {user ? (
                     <>
                       <Link to="/notifications">
                         <Button variant="ghost" className="w-full justify-start">Notifikácie</Button>

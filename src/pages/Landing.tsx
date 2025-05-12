@@ -1,22 +1,13 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
-import { useAuth } from "@/hooks/useAuth";
 
 const Landing = () => {
   const navigate = useNavigate();
   const [userType, setUserType] = useState<string | null>(null);
-  const { user } = useAuth();
-  
-  // Redirect authenticated users to home page
-  useEffect(() => {
-    if (user) {
-      navigate("/home", { replace: true });
-    }
-  }, [user, navigate]);
 
   const handleUserTypeSelection = (type: string) => {
     setUserType(type);
@@ -100,6 +91,7 @@ const Landing = () => {
         </div>
       </main>
 
+      {/* Replace the inline footer with the shared Footer component */}
       <Footer />
     </div>
   );
