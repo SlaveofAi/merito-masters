@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
+import { Helmet } from "react-helmet-async";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -34,6 +35,11 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      <Helmet>
+        <title>Majstri.com - Spojenie remeselníkov a zákazníkov</title>
+        <meta name="description" content="Majstri.com - Platforma spájajúca profesionálnych remeselníkov s ľuďmi, ktorí hľadajú ich služby. Nájdite overených odborníkov na váš projekt." />
+      </Helmet>
+      
       <header className="py-6 px-4 sm:px-6 border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="text-2xl font-bold text-black">Majstri.com</div>
