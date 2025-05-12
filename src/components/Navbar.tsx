@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import NavigationWithNotification from "./NavigationWithNotification";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -27,6 +27,12 @@ const Navbar = () => {
     };
   }, []);
 
+  const handleSignOut = async () => {
+    await signOut();
+    // Force page reload after signout to clear any cached state
+    window.location.href = '/';
+  };
+
   return (
     <div
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -43,6 +49,12 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
             <NavigationWithNotification />
+            {user && (
+              <Button onClick={handleSignOut} variant="ghost" className="flex items-center">
+                <LogOut className="h-4 w-4 mr-2" />
+                Odhlásiť sa
+              </Button>
+            )}
           </div>
 
           {/* Mobile Navigation */}
@@ -69,7 +81,12 @@ const Navbar = () => {
                       <Link to="/bookings">
                         <Button variant="ghost" className="w-full justify-start">Zákazky</Button>
                       </Link>
-                      <Button onClick={signOut} variant="ghost" className="w-full justify-start">
+                      <Button 
+                        onClick={handleSignOut} 
+                        variant="ghost" 
+                        className="w-full justify-start flex items-center text-red-600"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
                         Odhlásiť sa
                       </Button>
                     </>
