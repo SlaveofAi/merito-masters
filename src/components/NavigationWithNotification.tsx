@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,7 +21,7 @@ const NavigationWithNotification: React.FC<NavigationWithNotificationProps> = ({
         <NotificationIndicator />
       )}
       
-      {/* Keep existing navigation links */}
+      {/* Navigation links based on authentication state */}
       {user ? (
         <>
           <Link to="/messages">

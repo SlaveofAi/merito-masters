@@ -33,6 +33,9 @@ const Navbar = () => {
     window.location.href = '/';
   };
 
+  // Check if we're on authentication pages to avoid showing certain elements
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
   return (
     <div
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -48,7 +51,8 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            <NavigationWithNotification />
+            {!isAuthPage && <NavigationWithNotification />}
+            
             {user && (
               <Button onClick={handleSignOut} variant="ghost" className="flex items-center">
                 <LogOut className="h-4 w-4 mr-2" />
