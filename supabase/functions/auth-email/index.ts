@@ -76,14 +76,14 @@ serve(async (req) => {
 function getEmailSubject(type: string): string {
   switch (type) {
     case "signup":
-      return "Potvrďte svoj účet v aplikácii Merito";
+      return "Potvrdenie registrácie v aplikácii Merito";
     case "magiclink":
-      return "Odkaz na prihlásenie do aplikácie Merito";
+      return "Prihlásenie do aplikácie Merito";
     case "recovery":
-      return "Žiadosť o obnovenie hesla v aplikácii Merito";
+      return "Obnovenie hesla v aplikácii Merito";
     case "invite":
       return "Pozvánka do aplikácie Merito";
     default:
-      return "Aplikácia Merito - dôležitá informácia";
+      return "Dôležitá správa z aplikácie Merito";
   }
 }
