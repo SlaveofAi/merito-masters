@@ -1,65 +1,74 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
-import { corsHeaders } from "../../functions/_shared/cors.ts";
+import { Resend } from "npm:resend@1.2.1";
+import { corsHeaders } from "../_shared/cors.ts";
 
+// Initialize Resend with API key from environment variable
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-interface EmailParams {
+// Define the request body interface
+interface EmailRequest {
   to: string | string[];
   subject: string;
   html: string;
-  from?: string;
   text?: string;
+  from?: string;
   replyTo?: string;
 }
 
-serve(async (req) => {
-  console.log("Email sending request received");
-  
+serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    console.log("Handling CORS preflight request");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get the request body
-    const body: EmailParams = await req.json();
-    console.log("Email parameters:", JSON.stringify(body, null, 2));
+    // Parse the request body
+    const body: EmailRequest = await req.json();
+    console.log("Received email request:", JSON.stringify(body, null, 2));
     
+    // Validate the required fields
     if (!body.to || !body.subject || !body.html) {
-      console.error("Missing required email parameters");
       return new Response(
         JSON.stringify({ error: "Missing required email parameters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Default from address if not provided
-    const fromAddress = body.from || "Merito <no-reply@resend.dev>";
-
-    // Send the email using Resend
-    const emailResponse = await resend.emails.send({
-      from: fromAddress,
+    // Prepare email payload
+    const emailPayload = {
+      from: body.from || "Merito <onboarding@resend.dev>",
       to: body.to,
       subject: body.subject,
       html: body.html,
       text: body.text,
       reply_to: body.replyTo
-    });
-
-    console.log("Email sent successfully:", emailResponse);
+    };
     
+    console.log("Sending email with payload:", JSON.stringify(emailPayload, null, 2));
+    
+    // Send the email
+    const { data, error } = await resend.emails.send(emailPayload);
+    
+    if (error) {
+      console.error("Error sending email:", error);
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log("Email sent successfully:", JSON.stringify(data, null, 2));
+    
+    // Return success response
     return new Response(
-      JSON.stringify({ success: true, id: emailResponse.id }),
+      JSON.stringify({ data, success: true }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
-    console.error("Error sending email:", error);
-    
+  } catch (error: any) {
+    console.error("Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
