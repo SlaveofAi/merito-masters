@@ -1,3 +1,5 @@
 
-// The above file was created just to trigger a deployment of the SQL migration
-// It will be removed after the migration is applied
+// This file triggers a deployment of the Supabase functions
+// The custom email templates should now be active
+
+console.log("Supabase functions deployment triggered");

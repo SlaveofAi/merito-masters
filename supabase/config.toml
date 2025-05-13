@@ -37,7 +37,7 @@ enable_signup = true
 enabled = false
 port = 54327
 
-# Auth email template configuration - MAKE SURE THIS SECTION IS ENABLED
+# Auth email template configuration
 [auth.email_templates]
 enabled = true
 custom_provider_enabled = true
