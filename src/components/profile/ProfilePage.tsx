@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -192,7 +191,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 isCurrentUser={isCurrentUser} 
                 userType={profileUserType}
                 profileImageUrl={profileImageUrl}
-                uploadProfileImage={(file) => handleProfileImageUpload(file)}
+                uploadProfileImage={handleProfileImageUpload}
                 fetchProfileData={fetchProfileData}
               />
               
