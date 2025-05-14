@@ -35,7 +35,7 @@ const Messages = () => {
         const contactTypeTable = userType === 'customer' ? 'craftsman_profiles' : 'customer_profiles';
         const { data: contactData, error: contactError } = await supabase
           .from(contactTypeTable)
-          .select('id, name, profile_image_url, user_type')
+          .select('id, name, profile_image_url')
           .eq('id', contactId)
           .single();
           
@@ -46,7 +46,7 @@ const Messages = () => {
           const fallbackTable = userType === 'customer' ? 'customer_profiles' : 'craftsman_profiles';
           const { data: fallbackData, error: fallbackError } = await supabase
             .from(fallbackTable)
-            .select('id, name, profile_image_url, user_type')
+            .select('id, name, profile_image_url')
             .eq('id', contactId)
             .single();
             
@@ -63,7 +63,7 @@ const Messages = () => {
             contactId: fallbackData.id,
             name: fallbackData.name,
             avatar_url: fallbackData.profile_image_url,
-            user_type: fallbackData.user_type || (userType === 'customer' ? 'craftsman' : 'customer'),
+            user_type: userType === 'customer' ? 'craftsman' : 'customer',
             conversation_id: conversationId
           }));
           
@@ -75,7 +75,7 @@ const Messages = () => {
             contactId: contactData.id,
             name: contactData.name,
             avatar_url: contactData.profile_image_url,
-            user_type: contactData.user_type || (userType === 'customer' ? 'craftsman' : 'customer'),
+            user_type: userType === 'customer' ? 'craftsman' : 'customer',
             conversation_id: conversationId
           }));
         }

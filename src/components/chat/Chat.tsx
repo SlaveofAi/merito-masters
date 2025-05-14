@@ -10,7 +10,7 @@ import { ChatContact } from '@/types/chat';
 
 const Chat = () => {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
-  const { contacts, refetchContacts } = useContacts();
+  const { contacts, refetchContacts, contactsLoading } = useContacts();
   const { messages, refetchMessages, contactDetails, customerReviews, isLoading } = useMessages(selectedContact, refetchContacts);
 
   // Get chat actions (send, archive, delete messages)
@@ -68,14 +68,14 @@ const Chat = () => {
       <div className="w-1/3 border-r border-gray-200">
         <ChatList 
           contacts={contacts} 
-          selectedContact={selectedContact}
+          selectedContactId={selectedContact?.id}
           onSelectContact={setSelectedContact}
+          loading={contactsLoading}
         />
       </div>
       
       <div className="w-2/3">
         <ChatWindow
-          selectedContact={selectedContact}
           messages={messages}
           isLoading={isLoading}
           contactDetails={contactDetails}

@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfileCore } from "@/hooks/useProfileCore";
@@ -62,6 +63,7 @@ export const useProfileData = (id?: string) => {
         setProfileImageUrl(url);
         toast.success("Profilová fotka bola úspešne aktualizovaná");
       }
+      return Promise.resolve();
     } catch (error) {
       console.error("Error uploading profile image:", error);
       toast.error("Nastala chyba pri nahrávaní profilovej fotky");
