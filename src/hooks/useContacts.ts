@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -40,38 +39,11 @@ export const useContacts = () => {
         
         console.log(`Fetched ${conversations?.length || 0} conversations`);
         
-        // No conversations yet, return empty array for craftsman
-        // Only customers can see potential craftsmen contacts
+        // No conversations yet, return empty array for both customer and craftsman
         if (!conversations || conversations.length === 0) {
-          if (userType === 'customer') {
-            console.log(`No conversations found, fetching potential ${contactType} contacts`);
-            
-            const { data, error } = await supabase
-              .from('craftsman_profiles')
-              .select('id, name, profile_image_url')
-              .limit(10);
-              
-            if (error) {
-              console.error("Error fetching potential contacts:", error);
-              toast.error("Nastala chyba pri načítaní kontaktov");
-              return [];
-            }
-            
-            return data.map((contact): ChatContact => ({
-              id: contact.id,
-              contactId: contact.id,
-              name: contact.name,
-              avatar_url: contact.profile_image_url,
-              last_message: 'Kliknite pre zahájenie konverzácie',
-              last_message_time: new Date().toISOString(),
-              unread_count: 0,
-              user_type: contactType
-            }));
-          } else {
-            // For craftsmen, just return empty array when no conversations exist
-            console.log('No conversations found for craftsman, not showing any contacts');
-            return [];
-          }
+          // Return empty array - no potential contacts until a conversation is initiated
+          console.log('No conversations found, returning empty contacts list');
+          return [];
         }
         
         // Get contact details for each conversation

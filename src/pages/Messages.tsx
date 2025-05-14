@@ -52,12 +52,8 @@ const Messages = () => {
     );
   }
 
-  // Show empty state message in these cases:
-  // 1. Craftsman with no contacts
-  // 2. Customer with no contacts to message
-  const showEmptyStateMessage = 
-    (userType === 'craftsman' && (!contacts || contacts.length === 0)) ||
-    (userType === 'customer' && (!contacts || contacts.length === 0));
+  // Show empty state message for both craftsmen with no contacts and customers with no conversations
+  const showEmptyStateMessage = !contacts || contacts.length === 0;
 
   // Customize empty state message based on user type
   const getEmptyStateMessage = () => {
@@ -69,7 +65,7 @@ const Messages = () => {
     } else {
       return {
         title: "Zatiaľ nemáte žiadne správy",
-        description: "Konverzácie sa zobrazia, keď začnete komunikovať s remeselníkmi. Môžete iniciovať konverzácie z profilu remeselníka."
+        description: "Aby ste mohli začať konverzáciu, musíte najprv poslať správu remeselníkovi z jeho profilu."
       };
     }
   };
