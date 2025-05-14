@@ -12,7 +12,7 @@ import ProfileTabs from "@/components/profile/ProfileTabs";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
+import { Pencil, MessageSquare } from "lucide-react";
 
 const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const { user, userType: authUserType, updateUserType } = useAuth();
@@ -27,6 +27,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     userType: profileUserType,
     profileImageUrl,
     fetchProfileData,
+    handleProfileImageUpload,
     setIsEditing
   } = useProfile();
 
@@ -81,6 +82,13 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
       }, 500);
     }
   }, [isCurrentUser, profileNotFound, createDefaultProfileIfNeeded]);
+
+  // Handler for the send message button
+  const handleSendMessage = () => {
+    if (profileData && profileData.id) {
+      navigate(`/messages?contact=${profileData.id}`);
+    }
+  };
 
   // For current user but no user type detected
   if (user && !authUserType && isCurrentUser) {
@@ -170,6 +178,9 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     );
   }
 
+  const isCraftsmanProfile = profileData.user_type === 'craftsman' || 'trade_category' in profileData;
+  const viewingAsCraftsman = isCraftsmanProfile && !isCurrentUser;
+
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
@@ -181,21 +192,34 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 isCurrentUser={isCurrentUser} 
                 userType={profileUserType}
                 profileImageUrl={profileImageUrl}
+                uploadProfileImage={(file) => handleProfileImageUpload(file)}
                 fetchProfileData={fetchProfileData}
               />
               
-              {isCurrentUser && (
-                <div className="flex justify-end mb-6">
+              <div className="flex justify-between mb-6">
+                {/* Show Send Message button when viewing someone else's craftsman profile */}
+                {viewingAsCraftsman && (
+                  <Button 
+                    onClick={handleSendMessage}
+                    variant="default" 
+                    className="flex items-center gap-2"
+                  >
+                    <MessageSquare className="w-4 h-4" /> 
+                    Poslať správu
+                  </Button>
+                )}
+                
+                {isCurrentUser && (
                   <Button 
                     onClick={() => setIsEditing(true)}
                     variant="outline" 
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 ml-auto"
                   >
                     <Pencil className="w-4 h-4" /> 
                     Upraviť profil
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </>
           )}
 
