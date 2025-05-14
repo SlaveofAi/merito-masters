@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useProfileData } from "@/hooks/useProfileData";
 import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock, MessageSquare } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import ToppedCraftsmanFeature from './ToppedCraftsmanFeature';
 import { ProfileData, CraftsmanProfile } from "@/types/profile";
 import { useAuth } from "@/hooks/useAuth";
