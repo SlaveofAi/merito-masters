@@ -27,8 +27,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     userType: profileUserType,
     profileImageUrl,
     fetchProfileData,
-    setIsEditing,
-    handleProfileImageUpload
+    setIsEditing
   } = useProfile();
 
   // Debug log to help with troubleshooting
@@ -183,7 +182,6 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 userType={profileUserType}
                 profileImageUrl={profileImageUrl}
                 fetchProfileData={fetchProfileData}
-                uploadProfileImage={isCurrentUser ? handleProfileImageUpload : undefined}
               />
               
               {isCurrentUser && (
@@ -202,7 +200,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
           )}
 
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <ProfileTabs userType={getEffectiveUserType()} initialTab={initialTab} />
+            <ProfileTabs userType={effectiveUserType} initialTab={initialTab} />
           </div>
         </div>
       </div>

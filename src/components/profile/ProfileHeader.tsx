@@ -3,13 +3,10 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useProfileData } from "@/hooks/useProfileData";
-import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock, MessageSquare } from "lucide-react";
+import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock } from "lucide-react";
 import { toast } from "sonner";
 import ToppedCraftsmanFeature from './ToppedCraftsmanFeature';
 import { ProfileData, CraftsmanProfile } from "@/types/profile";
-import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 
 export interface ProfileHeaderProps {
   profileData: ProfileData;
@@ -30,8 +27,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
-  const { user } = useAuth();
-  const navigate = useNavigate();
   
   // Type guard function to check if a profile is a craftsman profile
   const isCraftsmanProfile = (profile: ProfileData): profile is CraftsmanProfile => {
@@ -74,75 +69,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       .map(part => part.charAt(0).toUpperCase())
       .slice(0, 2)
       .join('');
-  };
-  
-  // Function to handle sending a message to the craftsman
-  const handleSendMessage = async () => {
-    if (!user) {
-      toast.error("Pre kontaktovanie remeselníka sa musíte prihlásiť");
-      navigate("/login", { state: { from: "profile-contact" } });
-      return;
-    }
-    
-    if (!profileData) {
-      toast.error("Nepodarilo sa načítať profil remeselníka");
-      return;
-    }
-    
-    try {
-      // Check if conversation already exists
-      const { data: existingConversation, error: fetchError } = await supabase
-        .from("chat_conversations")
-        .select("id")
-        .eq("customer_id", user.id)
-        .eq("craftsman_id", profileData.id)
-        .maybeSingle();
-        
-      if (fetchError && fetchError.code !== "PGRST116") {
-        console.error("Error checking for conversation:", fetchError);
-        toast.error("Nastala chyba pri kontrole konverzácie");
-        return;
-      }
-      
-      let conversationId;
-      
-      if (existingConversation) {
-        // Use existing conversation
-        conversationId = existingConversation.id;
-      } else {
-        // Create new conversation
-        const { data: newConversation, error: createError } = await supabase
-          .from("chat_conversations")
-          .insert({
-            customer_id: user.id,
-            craftsman_id: profileData.id
-          })
-          .select();
-          
-        if (createError) {
-          console.error("Error creating conversation:", createError);
-          toast.error("Nepodarilo sa vytvoriť konverzáciu");
-          return;
-        }
-        
-        conversationId = newConversation?.[0]?.id;
-      }
-      
-      if (conversationId) {
-        // Navigate to messages with the conversation context
-        navigate("/messages", { 
-          state: { 
-            from: "profile",
-            conversationId,
-            contactId: profileData.id 
-          } 
-        });
-        toast.success("Presmerované do správ");
-      }
-    } catch (err) {
-      console.error("Error navigating to chat:", err);
-      toast.error("Nastala chyba pri presmerovaní do správ");
-    }
   };
   
   if (!profileData) return null;
@@ -193,29 +119,13 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         </div>
         
         <div className="flex-1">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-bold mb-1">{profileData.name}</h1>
-              
-              {userType === 'craftsman' && isCraftsmanProfile(profileData) && (
-                <div className="text-lg text-muted-foreground mb-4">
-                  {profileData.custom_specialization || profileData.trade_category}
-                </div>
-              )}
+          <h1 className="text-2xl font-bold mb-1">{profileData.name}</h1>
+          
+          {userType === 'craftsman' && isCraftsmanProfile(profileData) && (
+            <div className="text-lg text-muted-foreground mb-4">
+              {profileData.custom_specialization || profileData.trade_category}
             </div>
-            
-            {/* Add send message button for customers viewing craftsman profiles */}
-            {!isCurrentUser && userType === 'customer' && profileData.user_type === 'craftsman' && (
-              <Button 
-                onClick={handleSendMessage}
-                className="ml-auto"
-                variant="default"
-              >
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Poslať správu
-              </Button>
-            )}
-          </div>
+          )}
           
           <div className="flex flex-col gap-2 text-sm text-muted-foreground">
             <div className="flex items-center">
