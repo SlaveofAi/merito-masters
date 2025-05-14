@@ -1,3 +1,4 @@
+
 import React from "react";
 import Layout from "@/components/Layout";
 import { Separator } from "@/components/ui/separator";
@@ -12,7 +13,7 @@ const Terms = () => {
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">1. Základné informácie</h2>
             <p className="text-muted-foreground">
-              Tieto podmienky používania upravujú práva a povinnosti medzi prevádzkovateľom webovej stránky Majstri.com (ďalej len "Platforma") a jej užívateľmi. Prevádzkovateľom Platformy je fyzická osoba, ktorá je dostupná na e-mailovej adrese: <a href="mailto:dvidid35@gmail.com" className="text-primary hover:underline">dvidid35@gmail.com</a>.
+              Tieto podmienky používania upravujú práva a povinnosti medzi prevádzkovateľom webovej stránky Majstri.com (ďalej len "Platforma") a jej užívateľmi. Prevádzkovateľom Platformy je fyzická osoba, ktorá je dostupná na e-mailovej adrese: <a href="mailto:info@maj-stri.com" className="text-primary hover:underline">info@maj-stri.com</a>.
             </p>
           </section>
           

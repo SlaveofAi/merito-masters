@@ -20,7 +20,7 @@ const Privacy = () => {
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-4">1. Kto spracúva tvoje údaje?</h2>
             <p className="text-muted-foreground">
-              Prevádzkovateľom osobných údajov je fyzická osoba, ktorú môžeš kontaktovať na e-mailovej adrese: <a href="mailto:dvidid35@gmail.com" className="text-primary hover:underline">dvidid35@gmail.com</a>
+              Prevádzkovateľom osobných údajov je fyzická osoba, ktorú môžeš kontaktovať na e-mailovej adrese: <a href="mailto:info@maj-stri.com" className="text-primary hover:underline">info@maj-stri.com</a>
             </p>
           </section>
           
