@@ -104,6 +104,7 @@ export const useProfileData = (id: string | undefined) => {
       if (url) {
         setProfileImageUrl(url);
         toast.success("Profilová fotka bola úspešne aktualizovaná");
+        return Promise.resolve();
       }
       return Promise.resolve();
     } catch (error) {
@@ -112,6 +113,11 @@ export const useProfileData = (id: string | undefined) => {
       return Promise.reject(error);
     }
   }, [user, userType, uploadProfileImage]);
+
+  // Function to fetch profile data again - needed for ProfileContext
+  const fetchProfileData = useCallback(() => {
+    refetchProfile();
+  }, [refetchProfile]);
 
   return {
     profile,
@@ -126,5 +132,6 @@ export const useProfileData = (id: string | undefined) => {
     updating,
     profileImageUrl,
     handleProfileImageUpload,
+    fetchProfileData,
   };
 };

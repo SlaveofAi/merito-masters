@@ -89,9 +89,9 @@ const Chat = () => {
       
       <div className="w-2/3">
         <ChatWindow
-          selectedContact={selectedContact}
+          contact={selectedContact}
           messages={messages}
-          loading={isLoading}
+          isLoading={isLoading}
           contactDetails={contactDetails}
           customerReviews={customerReviews}
           sendMessage={sendMessage}

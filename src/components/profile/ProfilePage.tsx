@@ -28,7 +28,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     userType: profileUserType,
     profileImageUrl,
     fetchProfileData,
-    handleProfileImageUpload,
+    handleProfileImageUpload: uploadProfileImage,
     setIsEditing
   } = useProfile();
 
@@ -259,7 +259,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 isCurrentUser={isCurrentUser} 
                 userType={profileUserType}
                 profileImageUrl={profileImageUrl}
-                uploadProfileImage={(file) => handleProfileImageUpload(file)}
+                uploadProfileImage={(file) => uploadProfileImage(file)}
                 fetchProfileData={fetchProfileData}
               />
               
