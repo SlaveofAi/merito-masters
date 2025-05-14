@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
@@ -13,18 +14,20 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 const Chat: React.FC = () => {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const { contacts, contactsLoading, refetchContacts } = useContacts();
-  const { messages, refetchMessages, contactDetails, customerReviews } = useMessages(selectedContact, refetchContacts);
+  const { messages, refetchMessages, contactDetails, customerReviews, hasActiveConversation } = useMessages(selectedContact, refetchContacts);
   const { sendMessage, archiveConversation, deleteConversation } = useChatActions(
     selectedContact,
     setSelectedContact,
     refetchMessages
   );
+  const { userType } = useAuth();
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -158,6 +161,14 @@ const Chat: React.FC = () => {
     return id;
   };
   
+  // Check if the customer should see an empty chat view
+  // This is true when they have craftsman contacts but no active conversations
+  const showCustomerEmptyChat = userType === 'customer' && 
+                              contacts && 
+                              contacts.length > 0 && 
+                              selectedContact && 
+                              !selectedContact.conversation_id;
+  
   // Mobile view using Sheet component
   if (isMobile) {
     return (
@@ -192,7 +203,7 @@ const Chat: React.FC = () => {
               <div className="flex-1 overflow-hidden">
                 <ChatWindow 
                   contact={selectedContact} 
-                  messages={messages}
+                  messages={showCustomerEmptyChat ? [] : messages}
                   onSendMessage={handleSendMessage}
                   onArchive={archiveConversation}
                   onDelete={deleteConversation}
@@ -219,7 +230,7 @@ const Chat: React.FC = () => {
     );
   }
   
-  // Desktop view (unchanged)
+  // Desktop view
   return (
     <div className="flex flex-col">
       <div className="flex bg-white rounded-lg shadow-sm overflow-hidden h-[75vh]">
@@ -234,7 +245,7 @@ const Chat: React.FC = () => {
         <div className="hidden sm:block sm:w-2/3">
           <ChatWindow 
             contact={selectedContact} 
-            messages={messages}
+            messages={showCustomerEmptyChat ? [] : messages}
             onSendMessage={handleSendMessage}
             onArchive={archiveConversation}
             onDelete={deleteConversation}

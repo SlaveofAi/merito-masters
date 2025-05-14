@@ -52,7 +52,8 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
     isLoading: messagesQuery.isLoading,
     contactDetails: contactDetailsQuery.data,
     customerReviews: customerReviewsQuery.data || [],
-    supportEmail: "info@maj-stri.com" // Updated email address
+    supportEmail: "info@maj-stri.com", // Updated email address
+    hasActiveConversation: !!selectedContact?.conversation_id  // Flag to indicate if there's an active conversation
   };
 }
 

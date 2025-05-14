@@ -52,11 +52,12 @@ const Messages = () => {
     );
   }
 
-  // Show empty state message for both craftsmen with no contacts 
-  // or customers with no conversations yet
+  // Show empty state message in these cases:
+  // 1. Craftsman with no contacts
+  // 2. Customer with no contacts to message
   const showEmptyStateMessage = 
-    (userType === 'craftsman' && contacts && contacts.length === 0) ||
-    (userType === 'customer' && contacts && contacts.length === 0);
+    (userType === 'craftsman' && (!contacts || contacts.length === 0)) ||
+    (userType === 'customer' && (!contacts || contacts.length === 0));
 
   // Customize empty state message based on user type
   const getEmptyStateMessage = () => {
