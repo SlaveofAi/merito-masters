@@ -10,17 +10,12 @@ import { ChatContact } from "@/types/chat";
 
 interface ChatListProps {
   contacts: ChatContact[];
-  selectedContactId?: string;
+  selectedContactId: string | undefined;
   onSelectContact: (contact: ChatContact) => void;
-  loading?: boolean;
+  loading: boolean;
 }
 
-const ChatList: React.FC<ChatListProps> = ({ 
-  contacts, 
-  selectedContactId, 
-  onSelectContact, 
-  loading = false 
-}) => {
+const ChatList: React.FC<ChatListProps> = ({ contacts, selectedContactId, onSelectContact, loading }) => {
   const [searchTerm, setSearchTerm] = useState("");
   
   const filteredContacts = contacts.filter(contact => 

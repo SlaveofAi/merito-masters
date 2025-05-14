@@ -12,8 +12,7 @@ import ProfileTabs from "@/components/profile/ProfileTabs";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Pencil, MessageSquare } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Pencil } from "lucide-react";
 
 const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const { user, userType: authUserType, updateUserType } = useAuth();
@@ -28,7 +27,6 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     userType: profileUserType,
     profileImageUrl,
     fetchProfileData,
-    handleProfileImageUpload: uploadProfileImage,
     setIsEditing
   } = useProfile();
 
@@ -83,79 +81,6 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
       }, 500);
     }
   }, [isCurrentUser, profileNotFound, createDefaultProfileIfNeeded]);
-
-  // Handler for the send message button with enhanced functionality
-  const handleSendMessage = async () => {
-    if (!profileData || !user) {
-      toast.error("Pre poslanie správy musíte byť prihlásený");
-      navigate('/login');
-      return;
-    }
-    
-    try {
-      console.log("Handling send message click:", {
-        userId: user.id,
-        craftsmanId: profileData.id,
-        userType: authUserType
-      });
-
-      // Determine customer and craftsman IDs based on user type
-      const normalizedUserType = authUserType?.toLowerCase() || '';
-      const customerId = normalizedUserType === 'customer' ? user.id : profileData.id;
-      const craftsmanId = normalizedUserType === 'customer' ? profileData.id : user.id;
-      
-      // Check if conversation already exists
-      const { data: existingConv, error: fetchError } = await supabase
-        .from('chat_conversations')
-        .select('id')
-        .eq('customer_id', customerId)
-        .eq('craftsman_id', craftsmanId)
-        .maybeSingle();
-        
-      let conversationId;
-      
-      if (fetchError) {
-        console.error("Error checking for existing conversation:", fetchError);
-        toast.error("Nastala chyba pri kontrole existujúcej konverzácie");
-        return;
-      }
-      
-      if (existingConv) {
-        console.log("Found existing conversation:", existingConv.id);
-        conversationId = existingConv.id;
-      } else {
-        // Create new conversation
-        const { data: newConv, error: insertError } = await supabase
-          .from('chat_conversations')
-          .insert({
-            customer_id: customerId,
-            craftsman_id: craftsmanId
-          })
-          .select();
-          
-        if (insertError) {
-          console.error("Error creating conversation:", insertError);
-          toast.error("Nastala chyba pri vytváraní konverzácie");
-          return;
-        }
-        
-        if (newConv && newConv.length > 0) {
-          conversationId = newConv[0].id;
-          console.log("Created new conversation:", conversationId);
-        } else {
-          toast.error("Nepodarilo sa vytvoriť konverzáciu");
-          return;
-        }
-      }
-      
-      // Navigate to messages with contact query param 
-      navigate(`/messages?contact=${profileData.id}&conversation=${conversationId}`);
-      
-    } catch (error) {
-      console.error("Error setting up conversation:", error);
-      toast.error("Nastala chyba pri nastavovaní konverzácie");
-    }
-  };
 
   // For current user but no user type detected
   if (user && !authUserType && isCurrentUser) {
@@ -245,9 +170,6 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     );
   }
 
-  const isCraftsmanProfile = profileData.user_type === 'craftsman' || 'trade_category' in profileData;
-  const viewingAsCraftsman = isCraftsmanProfile && !isCurrentUser;
-
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
@@ -259,34 +181,21 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 isCurrentUser={isCurrentUser} 
                 userType={profileUserType}
                 profileImageUrl={profileImageUrl}
-                uploadProfileImage={(file) => uploadProfileImage(file)}
                 fetchProfileData={fetchProfileData}
               />
               
-              <div className="flex justify-between mb-6">
-                {/* Show Send Message button when viewing someone else's craftsman profile */}
-                {viewingAsCraftsman && (
-                  <Button 
-                    onClick={handleSendMessage}
-                    variant="default" 
-                    className="flex items-center gap-2"
-                  >
-                    <MessageSquare className="w-4 h-4" /> 
-                    Poslať správu
-                  </Button>
-                )}
-                
-                {isCurrentUser && (
+              {isCurrentUser && (
+                <div className="flex justify-end mb-6">
                   <Button 
                     onClick={() => setIsEditing(true)}
                     variant="outline" 
-                    className="flex items-center gap-2 ml-auto"
+                    className="flex items-center gap-2"
                   >
                     <Pencil className="w-4 h-4" /> 
                     Upraviť profil
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </>
           )}
 
