@@ -7,6 +7,7 @@ import { useMessages } from '@/hooks/useMessages';
 import { useChatActions } from '@/hooks/useChatActions';
 import { useChatSubscription } from '@/hooks/useChatSubscription';
 import { ChatContact } from '@/types/chat';
+import { toast } from 'sonner';
 
 const Chat = () => {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
@@ -63,6 +64,18 @@ const Chat = () => {
     }
   }, [contacts, selectedContact]);
 
+  // If a contact is selected but has no messages, show a message prompt
+  useEffect(() => {
+    if (selectedContact && !selectedContact.conversation_id && messages.length === 0) {
+      console.log("New conversation with contact:", selectedContact.name);
+      // Optionally show a toast or welcome message
+      toast.info(`Nová konverzácia s ${selectedContact.name}`, {
+        description: "Napíšte správu pre začiatok konverzácie",
+        duration: 3000
+      });
+    }
+  }, [selectedContact, messages.length]);
+
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden flex h-[75vh]">
       <div className="w-1/3 border-r border-gray-200">
@@ -76,8 +89,9 @@ const Chat = () => {
       
       <div className="w-2/3">
         <ChatWindow
+          selectedContact={selectedContact}
           messages={messages}
-          isLoading={isLoading}
+          loading={isLoading}
           contactDetails={contactDetails}
           customerReviews={customerReviews}
           sendMessage={sendMessage}
