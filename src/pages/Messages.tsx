@@ -2,18 +2,99 @@
 import React, { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import Chat from "@/components/chat/Chat";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useContacts } from "@/hooks/useContacts";
+import { supabase } from "@/integrations/supabase/client";
 
 const Messages = () => {
   const { user, loading, userType } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const { contacts, contactsLoading } = useContacts();
+  const [processingContact, setProcessingContact] = useState(false);
+  const { contacts, contactsLoading, refetchContacts } = useContacts();
+  
+  // Get contact and conversation IDs from URL if present
+  const contactId = searchParams.get('contact');
+  const conversationId = searchParams.get('conversation');
+
+  // Process contact data if provided in URL
+  useEffect(() => {
+    const processContactData = async () => {
+      if (!user || !contactId || processingContact) return;
+      
+      try {
+        setProcessingContact(true);
+        console.log(`Processing contact data for contact ID: ${contactId}, conversation ID: ${conversationId}`);
+        
+        // Fetch the contact's profile data to get their name
+        const contactTypeTable = userType === 'customer' ? 'craftsman_profiles' : 'customer_profiles';
+        const { data: contactData, error: contactError } = await supabase
+          .from(contactTypeTable)
+          .select('id, name, profile_image_url, user_type')
+          .eq('id', contactId)
+          .single();
+          
+        if (contactError || !contactData) {
+          console.error("Error fetching contact data:", contactError);
+          
+          // Try the other profile type as fallback
+          const fallbackTable = userType === 'customer' ? 'customer_profiles' : 'craftsman_profiles';
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from(fallbackTable)
+            .select('id, name, profile_image_url, user_type')
+            .eq('id', contactId)
+            .single();
+            
+          if (fallbackError || !fallbackData) {
+            console.error("Error fetching fallback contact data:", fallbackError);
+            toast.error("Nepodarilo sa načítať údaje kontaktu");
+            return;
+          }
+          
+          console.log("Contact data found in fallback table:", fallbackData);
+          // Store user in localStorage for Chat component
+          localStorage.setItem('selectedContact', JSON.stringify({
+            id: fallbackData.id,
+            contactId: fallbackData.id,
+            name: fallbackData.name,
+            avatar_url: fallbackData.profile_image_url,
+            user_type: fallbackData.user_type || (userType === 'customer' ? 'craftsman' : 'customer'),
+            conversation_id: conversationId
+          }));
+          
+        } else {
+          console.log("Contact data found:", contactData);
+          // Store contact in localStorage for Chat component
+          localStorage.setItem('selectedContact', JSON.stringify({
+            id: contactData.id,
+            contactId: contactData.id,
+            name: contactData.name,
+            avatar_url: contactData.profile_image_url,
+            user_type: contactData.user_type || (userType === 'customer' ? 'craftsman' : 'customer'),
+            conversation_id: conversationId
+          }));
+        }
+        
+        // Trigger a refetch to make sure contacts list is updated
+        refetchContacts();
+        
+      } catch (error) {
+        console.error("Error processing contact data:", error);
+        toast.error("Nastala chyba pri spracovaní údajov kontaktu");
+      } finally {
+        setProcessingContact(false);
+      }
+    };
+    
+    if (contactId && user && !loading) {
+      processContactData();
+    }
+  }, [contactId, conversationId, user, loading, userType, processingContact, refetchContacts]);
 
   useEffect(() => {
     // Only redirect if we're sure the user is not authenticated
@@ -52,8 +133,10 @@ const Messages = () => {
     );
   }
 
-  // Show empty state message for both craftsmen with no contacts and customers with no conversations
-  const showEmptyStateMessage = !contacts || contacts.length === 0;
+  // Determine if we should show the Chat component, even if there are no contacts
+  // but we have a contact parameter in the URL
+  const hasContactParam = !!contactId;
+  const showEmptyStateMessage = !hasContactParam && (!contacts || contacts.length === 0);
 
   // Customize empty state message based on user type
   const getEmptyStateMessage = () => {

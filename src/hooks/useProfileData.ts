@@ -48,10 +48,11 @@ export const useProfileData = (id?: string) => {
     }
   }, [profileData]);
 
-  const handleProfileImageUpload = async (file: File | Blob) => {
+  // Modify handleProfileImageUpload to return a Promise
+  const handleProfileImageUpload = async (file: File | Blob): Promise<void> => {
     if (!profileData || !user) {
       toast.error("Nie je možné nahrať fotku, používateľ nie je prihlásený");
-      return;
+      return Promise.reject("User not logged in");
     }
     
     setUploading(true);
@@ -64,6 +65,7 @@ export const useProfileData = (id?: string) => {
     } catch (error) {
       console.error("Error uploading profile image:", error);
       toast.error("Nastala chyba pri nahrávaní profilovej fotky");
+      return Promise.reject(error);
     } finally {
       setUploading(false);
     }

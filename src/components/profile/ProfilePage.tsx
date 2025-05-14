@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -12,6 +13,7 @@ import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Pencil, MessageSquare } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const { user, userType: authUserType, updateUserType } = useAuth();
@@ -82,10 +84,76 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     }
   }, [isCurrentUser, profileNotFound, createDefaultProfileIfNeeded]);
 
-  // Handler for the send message button
-  const handleSendMessage = () => {
-    if (profileData && profileData.id) {
-      navigate(`/messages?contact=${profileData.id}`);
+  // Handler for the send message button with enhanced functionality
+  const handleSendMessage = async () => {
+    if (!profileData || !user) {
+      toast.error("Pre poslanie správy musíte byť prihlásený");
+      navigate('/login');
+      return;
+    }
+    
+    try {
+      console.log("Handling send message click:", {
+        userId: user.id,
+        craftsmanId: profileData.id,
+        userType: authUserType
+      });
+
+      // Determine customer and craftsman IDs based on user type
+      const normalizedUserType = authUserType?.toLowerCase() || '';
+      const customerId = normalizedUserType === 'customer' ? user.id : profileData.id;
+      const craftsmanId = normalizedUserType === 'customer' ? profileData.id : user.id;
+      
+      // Check if conversation already exists
+      const { data: existingConv, error: fetchError } = await supabase
+        .from('chat_conversations')
+        .select('id')
+        .eq('customer_id', customerId)
+        .eq('craftsman_id', craftsmanId)
+        .maybeSingle();
+        
+      let conversationId;
+      
+      if (fetchError) {
+        console.error("Error checking for existing conversation:", fetchError);
+        toast.error("Nastala chyba pri kontrole existujúcej konverzácie");
+        return;
+      }
+      
+      if (existingConv) {
+        console.log("Found existing conversation:", existingConv.id);
+        conversationId = existingConv.id;
+      } else {
+        // Create new conversation
+        const { data: newConv, error: insertError } = await supabase
+          .from('chat_conversations')
+          .insert({
+            customer_id: customerId,
+            craftsman_id: craftsmanId
+          })
+          .select();
+          
+        if (insertError) {
+          console.error("Error creating conversation:", insertError);
+          toast.error("Nastala chyba pri vytváraní konverzácie");
+          return;
+        }
+        
+        if (newConv && newConv.length > 0) {
+          conversationId = newConv[0].id;
+          console.log("Created new conversation:", conversationId);
+        } else {
+          toast.error("Nepodarilo sa vytvoriť konverzáciu");
+          return;
+        }
+      }
+      
+      // Navigate to messages with contact query param 
+      navigate(`/messages?contact=${profileData.id}&conversation=${conversationId}`);
+      
+    } catch (error) {
+      console.error("Error setting up conversation:", error);
+      toast.error("Nastala chyba pri nastavovaní konverzácie");
     }
   };
 
@@ -191,7 +259,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 isCurrentUser={isCurrentUser} 
                 userType={profileUserType}
                 profileImageUrl={profileImageUrl}
-                uploadProfileImage={handleProfileImageUpload}
+                uploadProfileImage={(file) => handleProfileImageUpload(file)}
                 fetchProfileData={fetchProfileData}
               />
               
