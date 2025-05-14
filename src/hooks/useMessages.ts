@@ -52,6 +52,7 @@ export function useMessages(selectedContact: ChatContact | null, refetchContacts
     isLoading: messagesQuery.isLoading,
     contactDetails: contactDetailsQuery.data,
     customerReviews: customerReviewsQuery.data || [],
+    supportEmail: "info@maj-stri.com" // Updated email address
   };
 }
 

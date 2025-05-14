@@ -52,7 +52,28 @@ const Messages = () => {
     );
   }
 
-  const showEmptyStateMessage = userType === 'craftsman' && contacts && contacts.length === 0;
+  // Show empty state message for both craftsmen with no contacts 
+  // or customers with no conversations yet
+  const showEmptyStateMessage = 
+    (userType === 'craftsman' && contacts && contacts.length === 0) ||
+    (userType === 'customer' && contacts && contacts.length === 0);
+
+  // Customize empty state message based on user type
+  const getEmptyStateMessage = () => {
+    if (userType === 'craftsman') {
+      return {
+        title: "Zatiaľ nemáte žiadne správy",
+        description: "Konverzácie sa zobrazia, keď vám zákazníci pošlú správy. Zákazníci môžu iniciovať konverzácie z vášho profilu."
+      };
+    } else {
+      return {
+        title: "Zatiaľ nemáte žiadne správy",
+        description: "Konverzácie sa zobrazia, keď začnete komunikovať s remeselníkmi. Môžete iniciovať konverzácie z profilu remeselníka."
+      };
+    }
+  };
+
+  const emptyState = getEmptyStateMessage();
 
   return (
     <Layout>
@@ -64,9 +85,9 @@ const Messages = () => {
         {showEmptyStateMessage ? (
           <div className="bg-white rounded-lg shadow-sm p-10 h-[75vh] flex flex-col items-center justify-center text-center">
             <div className="max-w-md">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Zatiaľ nemáte žiadne správy</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">{emptyState.title}</h2>
               <p className="text-gray-600 mb-6">
-                Konverzácie sa zobrazia, keď vám zákazníci pošlú správy. Zákazníci môžu iniciovať konverzácie z vášho profilu.
+                {emptyState.description}
               </p>
             </div>
           </div>
