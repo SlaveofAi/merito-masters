@@ -147,15 +147,19 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     try {
       // Make sure handleProfileImageUpload returns a Promise
       if (handleProfileImageUpload) {
+        // Call the function and capture the result
         const result = handleProfileImageUpload(file);
         
-        // If it's already a Promise-like object, return it
-        if (result && typeof result.then === 'function') {
+        // Check if the result is already a Promise-like object with a 'then' method
+        if (result && typeof (result as any).then === 'function') {
           return result as Promise<void>;
         }
+        
+        // If it's not a Promise, just return a resolved Promise
+        return Promise.resolve();
       }
       
-      // Otherwise, return a resolved Promise
+      // If handleProfileImageUpload doesn't exist, return a resolved Promise
       return Promise.resolve();
     } catch (error) {
       return Promise.reject(error);
