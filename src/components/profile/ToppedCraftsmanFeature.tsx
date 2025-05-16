@@ -268,6 +268,12 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
   if (!isCurrentUser && !isActive) {
     return null;
   }
+  
+  // NEW CONDITION: If it's topped but not the current user, don't show the card
+  // This hides the banner for customers viewing a topped craftsman's profile
+  if (!isCurrentUser && isActive) {
+    return null;
+  }
 
   return (
     <>

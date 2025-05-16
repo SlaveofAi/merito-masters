@@ -146,11 +146,13 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const safeHandleProfileImageUpload = (file: File): Promise<void> => {
     try {
       // Make sure handleProfileImageUpload returns a Promise
-      const result = handleProfileImageUpload(file);
-      
-      // If it already returns a Promise, use that
-      if (result instanceof Promise) {
-        return result;
+      if (handleProfileImageUpload) {
+        const result = handleProfileImageUpload(file);
+        
+        // If it's already a Promise, return it
+        if (result && typeof result.then === 'function') {
+          return result;
+        }
       }
       
       // Otherwise, return a resolved Promise

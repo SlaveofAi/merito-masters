@@ -15,3 +15,8 @@ export interface Notification {
     topped_until?: string;
   };
 }
+
+// Add this type definition for chat windows to support profile redirection
+export interface ChatContactClickHandler {
+  onContactNameClick?: (contactId: string) => void;
+}

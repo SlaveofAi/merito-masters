@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
@@ -114,6 +113,17 @@ const Chat: React.FC = () => {
     }
   }, [contacts, location, navigate, isMobile]);
   
+  // New handler for navigating to profile when clicking on contact name
+  const handleNavigateToProfile = (contactId: string) => {
+    if (contactId) {
+      console.log("Navigating to profile:", contactId);
+      navigate(`/profile/${contactId}`);
+      if (isMobile) {
+        setSheetOpen(false);
+      }
+    }
+  };
+  
   const handleContactSelect = (contact: ChatContact) => {
     console.log("Selected contact:", contact);
     setSelectedContact(contact);
@@ -196,7 +206,10 @@ const Chat: React.FC = () => {
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
-                <h2 className="text-lg font-semibold">
+                <h2 
+                  className="text-lg font-semibold cursor-pointer hover:text-blue-600 transition-colors"
+                  onClick={() => selectedContact && handleNavigateToProfile(selectedContact.contactId || selectedContact.id)}
+                >
                   {selectedContact?.name || "Chat"}
                 </h2>
               </div>
@@ -210,6 +223,7 @@ const Chat: React.FC = () => {
                   contactDetails={contactDetails}
                   customerReviews={customerReviews}
                   isMobile={true}
+                  onContactNameClick={handleNavigateToProfile}
                 />
               </div>
             </div>
@@ -251,6 +265,7 @@ const Chat: React.FC = () => {
             onDelete={deleteConversation}
             contactDetails={contactDetails}
             customerReviews={customerReviews}
+            onContactNameClick={handleNavigateToProfile}
           />
         </div>
       </div>
