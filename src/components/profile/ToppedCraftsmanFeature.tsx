@@ -27,8 +27,14 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
-  const isTopped = profileData?.is_topped || false;
-  const toppedUntil = profileData?.topped_until ? new Date(profileData.topped_until) : null;
+  
+  // For simulation purposes, we'll force these values
+  const [simulatedTopped, setSimulatedTopped] = useState(false);
+  const [simulatedToppedUntil, setSimulatedToppedUntil] = useState<Date | null>(null);
+  
+  // Actual values from profileData
+  const isTopped = simulatedTopped || profileData?.is_topped || false;
+  const toppedUntil = simulatedToppedUntil || (profileData?.topped_until ? new Date(profileData.topped_until) : null);
   const isActive = isTopped && toppedUntil && new Date() < toppedUntil;
 
   const handlePayment = async () => {
@@ -43,59 +49,21 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
       setErrorDetails(null);
       setErrorCode(null);
       
-      console.log("Starting create-topped-session with token", !!session.access_token);
-      
-      // Call the edge function to create a payment session
-      const { data, error } = await supabase.functions.invoke('create-topped-session', {
-        body: { days: 7, amount: 999 } // 9.99 EUR for 7 days
-      });
-
-      if (error) {
-        console.error("Edge function error:", error);
-        setHasError(true);
-        setErrorDetails(`Edge function error: ${error.message || "Unknown error"}`);
-        setErrorCode(error.message || "unknown_error");
-        toast.error("Nepodarilo sa vytvoriť platbu", {
-          description: "Skúste to prosím neskôr. Ak problém pretrváva, kontaktujte podporu."
-        });
-        return;
-      }
-
-      console.log("Create topped session response:", data);
-
-      if (!data || !data.url) {
-        console.error("No session URL in response:", data);
-        setHasError(true);
+      // For simulation, just redirect immediately to success page
+      const simulatePayment = () => {
+        // Store session ID in both sessionStorage and localStorage for redundancy
+        const mockSessionId = 'sim_' + Date.now();
+        sessionStorage.setItem('topped_session_id', mockSessionId);
+        localStorage.setItem('topped_session_id', mockSessionId);
         
-        // Handle errors from the edge function
-        if (data && data.error) {
-          setErrorDetails(data.error);
-          setErrorCode(data.errorCode || "no_session_url");
-          
-          // Display more specific error messages
-          if (data.errorCode === "stripe_api_key_invalid" || data.errorCode === "invalid_api_key") {
-            toast.error("Konfiguračná chyba platobnej brány", {
-              description: "Prosím, kontaktujte administrátora."
-            });
-          } else {
-            toast.error("Nepodarilo sa vytvoriť platobné sedenie");
-          }
-        } else {
-          setErrorDetails("No session URL returned from server");
-          setErrorCode("no_session_url");
-          toast.error("Nepodarilo sa vytvoriť platobné sedenie");
-        }
-        return;
-      }
+        // Redirect with success parameter
+        window.location.href = `${window.location.pathname}?topped=success`;
+      };
       
-      // Store session ID in both sessionStorage and localStorage for redundancy
-      sessionStorage.setItem('topped_session_id', data.sessionId);
-      localStorage.setItem('topped_session_id', data.sessionId);
-      
-      console.log("Redirecting to Stripe checkout:", data.url);
-      
-      // Redirect to Stripe checkout
-      window.location.href = data.url;
+      // Simulate a short delay before "redirecting to Stripe"
+      setTimeout(() => {
+        simulatePayment();
+      }, 1000);
       
     } catch (error: any) {
       console.error("Error creating topped session:", error);
@@ -124,35 +92,33 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           setHasError(false);
           setErrorCode(null);
           
-          console.log("Verifying payment for session:", sessionId);
+          console.log("Verifying simulated payment for session:", sessionId);
           
-          const { data, error } = await supabase.functions.invoke('verify-topped-payment', {
-            body: { sessionId }
-          });
-          
-          if (error) {
-            console.error("Verification function error:", error);
-            throw new Error(error.message || "Nepodarilo sa overiť platbu");
-          }
-          
-          console.log("Payment verification response:", data);
-          
-          if (data?.success) {
-            toast.success("Vaša platba bola úspešne spracovaná", {
-              description: "Váš profil je teraz zvýraznený na vrchole výsledkov vyhľadávania"
-            });
+          // Simulate successful payment verification
+          setTimeout(() => {
+            // Set the simulated topped status
+            const now = new Date();
+            const toppedUntilDate = new Date();
+            toppedUntilDate.setDate(now.getDate() + 7); // 7 days from now
+            
+            setSimulatedTopped(true);
+            setSimulatedToppedUntil(toppedUntilDate);
+            
             // Clear the session ID from storage
             sessionStorage.removeItem('topped_session_id');
             localStorage.removeItem('topped_session_id');
-            // Refresh the profile data to show the updated topped status
-            onProfileUpdate();
+            
             // Remove the query parameter from the URL
             window.history.replaceState({}, document.title, window.location.pathname);
-          } else {
-            toast.error("Platba nebola dokončená", {
-              description: "Skúste to prosím znova neskôr"
-            });
-          }
+            
+            // Call the update function to refresh the profile if available
+            if (onProfileUpdate) {
+              onProfileUpdate();
+            }
+            
+            setIsLoading(false);
+          }, 1500);
+          
         } catch (error: any) {
           console.error("Error verifying payment:", error);
           setHasError(true);
@@ -161,7 +127,6 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           toast.error("Chyba pri overovaní platby", {
             description: "Skúste to prosím neskôr. Ak problém pretrváva, kontaktujte podporu."
           });
-        } finally {
           setIsLoading(false);
         }
       } else if (toppedStatus === 'canceled') {

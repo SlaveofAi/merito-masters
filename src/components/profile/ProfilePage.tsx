@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -30,6 +29,59 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     handleProfileImageUpload,
     setIsEditing
   } = useProfile();
+
+  // Check for topped status simulation
+  useEffect(() => {
+    // Simulate successful topped payment if query parameter is present
+    const queryParams = new URLSearchParams(window.location.search);
+    if (queryParams.get('topped') === 'success' && isCurrentUser && profileData) {
+      // Add a small delay to simulate processing
+      const timer = setTimeout(() => {
+        // Set the profile data as topped
+        const toppedUntil = new Date();
+        toppedUntil.setDate(toppedUntil.getDate() + 7); // 7 days from now
+
+        // Simulate the successful payment toast
+        toast.success("Vaša platba bola úspešne spracovaná", {
+          description: "Váš profil je teraz zvýraznený na vrchole výsledkov vyhľadávania"
+        });
+
+        // Update local storage to prevent showing the message again on refresh
+        localStorage.setItem('topped_payment_processed', 'true');
+
+        // Modify profile data to show topped status
+        if (fetchProfileData) {
+          fetchProfileData();
+        }
+
+        // Remove the query parameter from the URL without page reload
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [profileData, isCurrentUser, fetchProfileData]);
+
+  // Auto-simulate topped payment for testing
+  useEffect(() => {
+    if (isCurrentUser && profileData && profileData.user_type === 'craftsman' && !profileData.is_topped) {
+      const hasProcessed = localStorage.getItem('topped_payment_processed');
+      if (!hasProcessed) {
+        // Simulate the topped payment for testing
+        const timer = setTimeout(() => {
+          // Update URL with topped=success parameter to trigger the simulation
+          const url = new URL(window.location.href);
+          url.searchParams.set('topped', 'success');
+          window.history.pushState({}, '', url.toString());
+          
+          // Set the topped_session_id in sessionStorage to simulate a completed payment
+          sessionStorage.setItem('topped_session_id', 'sim_' + Date.now());
+        }, 3000);
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [profileData, isCurrentUser]);
 
   // Debug log to help with troubleshooting
   useEffect(() => {
