@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -125,12 +126,14 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     if (isCurrentUser && profileNotFound && createDefaultProfileIfNeeded) {
       console.log("Profile not found for current user, attempting to create default profile");
       setTimeout(() => {
-        createDefaultProfileIfNeeded?.().catch(err => {
-          console.error("Error creating profile:", err);
-          toast.error("Nastala chyba pri vytváraní profilu", {
-            description: err.message || "Neočakávaná chyba"
+        if (createDefaultProfileIfNeeded) {
+          createDefaultProfileIfNeeded().catch(err => {
+            console.error("Error creating profile:", err);
+            toast.error("Nastala chyba pri vytváraní profilu", {
+              description: err.message || "Neočakávaná chyba"
+            });
           });
-        });
+        }
       }, 500);
     }
   }, [isCurrentUser, profileNotFound, createDefaultProfileIfNeeded]);
@@ -142,25 +145,16 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     }
   };
   
-  // Safe wrapper for handleProfileImageUpload to ensure it returns a Promise
+  // Fixed safe wrapper for handleProfileImageUpload to ensure it always returns a Promise
   const safeHandleProfileImageUpload = (file: File): Promise<void> => {
-    try {
-      // Make sure handleProfileImageUpload returns a Promise
-      if (handleProfileImageUpload) {
-        // Call the function and capture the result
-        const result = handleProfileImageUpload(file);
-        
-        // Check if the result is already a Promise-like object with a 'then' method
-        if (result && typeof (result as any).then === 'function') {
-          return result as Promise<void>;
-        }
-        
-        // If it's not a Promise, just return a resolved Promise
-        return Promise.resolve();
-      }
-      
-      // If handleProfileImageUpload doesn't exist, return a resolved Promise
+    if (!handleProfileImageUpload) {
       return Promise.resolve();
+    }
+    
+    try {
+      const result = handleProfileImageUpload(file);
+      // Handle both Promise and non-Promise returns safely
+      return Promise.resolve(result);
     } catch (error) {
       return Promise.reject(error);
     }
