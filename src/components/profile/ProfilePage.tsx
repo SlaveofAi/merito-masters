@@ -149,9 +149,9 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
       if (handleProfileImageUpload) {
         const result = handleProfileImageUpload(file);
         
-        // If it's already a Promise, return it
+        // If it's already a Promise-like object, return it
         if (result && typeof result.then === 'function') {
-          return result;
+          return result as Promise<void>;
         }
       }
       

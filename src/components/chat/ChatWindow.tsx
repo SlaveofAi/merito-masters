@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import { format } from "date-fns";
 import { sk } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatContact, Message } from "@/types/chat";
+import { ChatContactClickHandler } from "@/types/notification";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,7 +58,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BookingRequestForm from "@/components/booking/BookingRequestForm";
 
-interface ChatWindowProps {
+interface ChatWindowProps extends ChatContactClickHandler {
   contact: ChatContact | null;
   messages: Message[];
   onSendMessage: (content: string, metadata?: any) => void;
