@@ -4,7 +4,7 @@ export interface Notification {
   user_id: string;
   title: string;
   content: string;
-  type: 'message' | 'booking_request' | 'booking_update';
+  type: 'message' | 'booking_request' | 'booking_update' | 'topped_status';
   read: boolean;
   created_at: string;
   metadata?: {
@@ -12,5 +12,6 @@ export interface Notification {
     contact_id?: string;
     booking_id?: string;
     status?: string;
+    topped_until?: string;
   };
 }

@@ -141,6 +141,24 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
       navigate(`/messages?contact=${profileData.id}`);
     }
   };
+  
+  // Safe wrapper for handleProfileImageUpload to ensure it returns a Promise
+  const safeHandleProfileImageUpload = (file: File): Promise<void> => {
+    try {
+      // Make sure handleProfileImageUpload returns a Promise
+      const result = handleProfileImageUpload(file);
+      
+      // If it already returns a Promise, use that
+      if (result instanceof Promise) {
+        return result;
+      }
+      
+      // Otherwise, return a resolved Promise
+      return Promise.resolve();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  };
 
   // For current user but no user type detected
   if (user && !authUserType && isCurrentUser) {
@@ -244,7 +262,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 isCurrentUser={isCurrentUser} 
                 userType={profileUserType}
                 profileImageUrl={profileImageUrl}
-                uploadProfileImage={(file) => handleProfileImageUpload(file)}
+                uploadProfileImage={safeHandleProfileImageUpload}
                 fetchProfileData={fetchProfileData}
               />
               

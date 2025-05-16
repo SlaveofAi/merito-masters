@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Star, MapPin, Phone, ArrowRight, TrendingUp } from "lucide-react";
+import { Star, MapPin, Phone, ArrowRight, TrendingUp, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,7 +63,14 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
   const reviewCount = reviewsData?.length || initialReviewCount || 0;
 
   return (
-    <Card className={`overflow-hidden border ${isTopped ? 'border-yellow-400 shadow-md' : 'border-border/50 shadow-sm'} hover:shadow-md transition-all duration-300 group`}>
+    <Card 
+      className={`overflow-hidden transition-all duration-300 group hover:shadow-md 
+        ${isTopped 
+          ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-100' 
+          : 'border-border/50 shadow-sm'
+        }
+      `}
+    >
       <div className="relative h-60 overflow-hidden">
         <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors z-10"></div>
         <img
@@ -77,15 +84,20 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
         {isTopped && (
           <div className="absolute top-4 right-4 z-20">
             <Badge variant="outline" className="bg-yellow-500/90 backdrop-blur-sm text-white border-yellow-400 px-2 py-0.5 flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
-              <span className="text-xs">TOP</span>
+              <Crown className="h-3 w-3 fill-white" />
+              <span className="text-xs">PREMIUM</span>
             </Badge>
           </div>
         )}
       </div>
       <CardContent className="p-5">
         <div className="flex justify-between items-start mb-3">
-          <h3 className="font-semibold text-lg">{name}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-lg">{name}</h3>
+            {isTopped && (
+              <Crown className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+            )}
+          </div>
           <div className="flex items-center">
             <Star className={`w-4 h-4 ${rating > 0 ? 'fill-current text-yellow-500' : 'text-gray-300'} mr-1`} />
             <span className="text-sm font-medium">{rating > 0 ? rating.toFixed(1) : '0.0'}</span>

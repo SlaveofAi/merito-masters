@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, TrendingUp, CheckCircle, AlertTriangle, RefreshCw } from "lucide-react";
+import { Loader2, TrendingUp, CheckCircle, AlertTriangle, RefreshCw, Crown } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +36,76 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
   const isTopped = simulatedTopped || profileData?.is_topped || false;
   const toppedUntil = simulatedToppedUntil || (profileData?.topped_until ? new Date(profileData.topped_until) : null);
   const isActive = isTopped && toppedUntil && new Date() < toppedUntil;
+
+  // Function to check if topped status has expired
+  const checkToppedExpiration = async () => {
+    if (isTopped && toppedUntil && new Date() > toppedUntil && isCurrentUser) {
+      console.log("Topped status expired, updating profile");
+      
+      try {
+        // Update the craftsman profile to remove topped status
+        const { error } = await supabase
+          .from('craftsman_profiles')
+          .update({ 
+            is_topped: false,
+            topped_until: null 
+          })
+          .eq('id', profileData.id);
+          
+        if (error) {
+          console.error("Error updating topped status:", error);
+          return;
+        }
+        
+        // Reset simulated values
+        setSimulatedTopped(false);
+        setSimulatedToppedUntil(null);
+        
+        // Create notification about expiration
+        await createNotification(
+          profileData.id, 
+          "Premium profil vypršal", 
+          "Váš prémiový profil vypršal. Pre pokračovanie prémiových výhod si obnovte platbu."
+        );
+        
+        // Refresh the profile data
+        onProfileUpdate();
+        
+        toast.info("Váš premium profil vypršal", {
+          description: "Obnovte platbu pre pokračovanie prémiových výhod"
+        });
+      } catch (error) {
+        console.error("Error checking topped expiration:", error);
+      }
+    }
+  };
+  
+  // Create notification function
+  const createNotification = async (userId: string, title: string, content: string) => {
+    try {
+      if (!userId) return;
+      
+      const { error } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          title,
+          content,
+          type: "topped_status",
+          read: false,
+          metadata: {
+            status: "topped",
+            topped_until: toppedUntil?.toISOString()
+          }
+        });
+        
+      if (error) {
+        console.error("Error creating notification:", error);
+      }
+    } catch (error) {
+      console.error("Error in createNotification:", error);
+    }
+  };
 
   const handlePayment = async () => {
     if (!user || !session) {
@@ -95,7 +165,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           console.log("Verifying simulated payment for session:", sessionId);
           
           // Simulate successful payment verification
-          setTimeout(() => {
+          setTimeout(async () => {
             // Set the simulated topped status
             const now = new Date();
             const toppedUntilDate = new Date();
@@ -103,6 +173,31 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
             
             setSimulatedTopped(true);
             setSimulatedToppedUntil(toppedUntilDate);
+            
+            // Update the craftsman profile to be topped
+            if (profileData && user) {
+              const { error } = await supabase
+                .from('craftsman_profiles')
+                .update({ 
+                  is_topped: true,
+                  topped_until: toppedUntilDate.toISOString() 
+                })
+                .eq('id', profileData.id);
+                
+              if (error) {
+                console.error("Error updating craftsman profile:", error);
+                setHasError(true);
+                setErrorDetails(error.message);
+                return;
+              }
+              
+              // Create notification
+              await createNotification(
+                profileData.id, 
+                "Premium profil aktivovaný", 
+                "Váš profil je teraz zvýraznený na vrchole výsledkov vyhľadávania počas nasledujúcich 7 dní."
+              );
+            }
             
             // Clear the session ID from storage
             sessionStorage.removeItem('topped_session_id');
@@ -115,6 +210,11 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
             if (onProfileUpdate) {
               onProfileUpdate();
             }
+            
+            // Success toast
+            toast.success("Premium profil aktivovaný", {
+              description: "Váš profil je teraz zvýraznený na vrchole výsledkov vyhľadávania."
+            });
             
             setIsLoading(false);
           }, 1500);
@@ -137,7 +237,19 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
     };
     
     checkPaymentStatus();
-  }, [onProfileUpdate]);
+  }, [onProfileUpdate, profileData, user]);
+  
+  // Check for topped status expiration periodically
+  useEffect(() => {
+    checkToppedExpiration();
+    
+    // Check for expiration every hour
+    const interval = setInterval(() => {
+      checkToppedExpiration();
+    }, 3600000); // 1 hour
+    
+    return () => clearInterval(interval);
+  }, [isTopped, toppedUntil, isCurrentUser]);
 
   // Helper function to get user-friendly error message
   const getErrorMessage = () => {
@@ -159,20 +271,27 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
 
   return (
     <>
-      <Card className={`${isActive ? 'border-yellow-400' : hasError ? 'border-red-200' : 'border-gray-200'} mb-6`}>
+      <Card className={`${isActive ? 'border-yellow-400 bg-yellow-50/30' : hasError ? 'border-red-200' : 'border-gray-200'} mb-6`}>
         <CardHeader className="pb-2">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2 text-yellow-500" />
-                Zvýraznený profil
+                {isActive ? (
+                  <Crown className="w-5 h-5 mr-2 text-yellow-500 fill-yellow-500" />
+                ) : (
+                  <TrendingUp className="w-5 h-5 mr-2 text-yellow-500" />
+                )}
+                {isActive ? "Premium profil" : "Zvýraznený profil"}
               </CardTitle>
               <CardDescription>
-                Zobrazte svoj profil na vrchu výsledkov vyhľadávania
+                {isActive ? 
+                  "Váš profil je zvýraznený na vrchole výsledkov vyhľadávania" : 
+                  "Zobrazte svoj profil na vrchu výsledkov vyhľadávania"
+                }
               </CardDescription>
             </div>
             {isActive && (
-              <Badge variant="outline" className="border-yellow-400 text-yellow-600 px-3 py-1">
+              <Badge variant="outline" className="border-yellow-400 text-yellow-600 bg-yellow-100 px-3 py-1">
                 <CheckCircle className="w-3 h-3 mr-1" /> Aktívne
               </Badge>
             )}
@@ -229,7 +348,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
               {isLoading ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Spracovanie</>
               ) : (
-                <>Zvýrazniť profil na 7 dní (9,99 €)</>
+                <>Získať premium profil na 7 dní (9,99 €)</>
               )}
             </Button>
           </CardFooter>

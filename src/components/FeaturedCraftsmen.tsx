@@ -20,6 +20,7 @@ const FeaturedCraftsmen = () => {
         .select('*')
         .eq('is_topped', true)
         .gte('topped_until', currentDate)
+        .order('topped_until', { ascending: true })
         .limit(3);
         
       if (toppedError) {
@@ -58,7 +59,7 @@ const FeaturedCraftsmen = () => {
       location: "Bratislava",
       imageUrl: "https://images.unsplash.com/photo-1466096115517-bceecbfb6fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
       customSpecialization: null,
-      isTopped: false,
+      isTopped: true,
     },
     {
       id: "2",

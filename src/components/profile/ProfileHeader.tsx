@@ -2,8 +2,8 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useProfileData } from "@/hooks/useProfileData";
-import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock, Crown } from "lucide-react";
 import { toast } from "sonner";
 import ToppedCraftsmanFeature from './ToppedCraftsmanFeature';
 import { ProfileData, CraftsmanProfile } from "@/types/profile";
@@ -71,6 +71,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       .join('');
   };
   
+  // Check if craftsman profile is topped
+  const isTopped = isCraftsmanProfile(profileData) && profileData.is_topped;
+  
   if (!profileData) return null;
 
   return (
@@ -86,7 +89,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       
       <div className="flex flex-col md:flex-row gap-6 items-start">
         <div className="relative">
-          <Avatar className="h-24 w-24 border-2 border-muted">
+          <Avatar className={`h-24 w-24 border-2 ${isTopped ? 'border-yellow-400' : 'border-muted'}`}>
             <AvatarImage 
               src={profileImageUrl || undefined} 
               alt={profileData.name} 
@@ -119,7 +122,15 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         </div>
         
         <div className="flex-1">
-          <h1 className="text-2xl font-bold mb-1">{profileData.name}</h1>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl font-bold">{profileData.name}</h1>
+            {isTopped && (
+              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300 flex items-center gap-1">
+                <Crown className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                <span>Premium</span>
+              </Badge>
+            )}
+          </div>
           
           {userType === 'craftsman' && isCraftsmanProfile(profileData) && (
             <div className="text-lg text-muted-foreground mb-4">
