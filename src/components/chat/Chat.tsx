@@ -16,9 +16,12 @@ import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
-interface ChatProps extends ChatContactClickHandler {}
+interface ChatProps extends ChatContactClickHandler {
+  initialContact?: any;
+  contactIdFromUrl?: string | null;
+}
 
-const Chat: React.FC<ChatProps> = ({ onContactNameClick }) => {
+const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contactIdFromUrl }) => {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -45,11 +48,99 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick }) => {
   
   useChatSubscription(selectedContact, refetchMessages, refetchContacts);
   
+  // Handle initial contact selection based on URL params or location state
   useEffect(() => {
-    console.log("Current contacts:", contacts);
-    console.log("Current location:", location);
-    console.log("Current location state:", location.state);
-  }, [contacts, location]);
+    console.log("Initial contact data:", { initialContact, contactIdFromUrl, contacts });
+    
+    // Wait until contacts are loaded
+    if (contactsLoading || !contacts) {
+      return;
+    }
+    
+    // First priority: Select contact from initialContact prop (from profile page)
+    if (initialContact && !selectedContact) {
+      console.log("Setting contact from initialContact:", initialContact);
+      
+      // Check if we already have this contact in our contacts list
+      const existingContact = contacts.find(c => 
+        c.id === initialContact.id || c.contactId === initialContact.id
+      );
+      
+      if (existingContact) {
+        console.log("Found existing contact in contacts list:", existingContact);
+        setSelectedContact(existingContact);
+        if (isMobile) setSheetOpen(true);
+      } else {
+        // Create a synthetic contact for initial messaging
+        const syntheticContact: ChatContact = {
+          id: initialContact.id,
+          contactId: initialContact.id,
+          name: initialContact.name || "Contact",
+          avatar_url: initialContact.profile_image_url || undefined,
+          last_message: "",
+          last_message_time: new Date().toISOString(),
+          unread_count: 0,
+          user_type: initialContact.user_type || (userType === 'customer' ? 'craftsman' : 'customer'),
+          conversation_id: undefined // No conversation yet
+        };
+        
+        console.log("Created synthetic contact for initial messaging:", syntheticContact);
+        setSelectedContact(syntheticContact);
+        if (isMobile) setSheetOpen(true);
+      }
+      
+      // Clear the location state to avoid re-selecting this contact on navigation
+      navigate('/messages', { replace: true });
+      return;
+    }
+    
+    // Second priority: Select contact from URL param
+    if (contactIdFromUrl && contacts.length > 0 && !selectedContact) {
+      const contact = contacts.find(c => c.id === contactIdFromUrl || c.contactId === contactIdFromUrl);
+      if (contact) {
+        console.log("Setting selected contact from URL param:", contact);
+        setSelectedContact(contact);
+        if (isMobile) setSheetOpen(true);
+        // Clear the URL parameter
+        navigate('/messages', { replace: true });
+      }
+      return;
+    }
+    
+    // Third priority: Handle redirects from location state
+    if (location.state && !selectedContact) {
+      console.log("Current location state:", location.state);
+      
+      // Handle booking redirects
+      if (location.state.from === 'booking') {
+        console.log("Redirected from booking page with data:", location.state);
+        
+        const { contactId, conversationId } = location.state;
+        
+        if (contactId && contacts.length > 0) {
+          const contact = contacts.find(c => c.id === contactId || c.contactId === contactId);
+          if (contact) {
+            console.log("Setting selected contact from booking redirect (contact ID):", contact);
+            setSelectedContact(contact);
+            if (isMobile) setSheetOpen(true);
+            navigate('/messages', { replace: true });
+            return;
+          }
+        }
+        
+        if (conversationId && contacts.length > 0) {
+          const contact = contacts.find(c => c.conversation_id === conversationId);
+          if (contact) {
+            console.log("Setting selected contact from booking redirect (conversation ID):", contact);
+            setSelectedContact(contact);
+            if (isMobile) setSheetOpen(true);
+            navigate('/messages', { replace: true });
+            return;
+          }
+        }
+      }
+    }
+  }, [contacts, contactsLoading, initialContact, contactIdFromUrl, selectedContact, location, navigate, isMobile, userType]);
   
   useEffect(() => {
     refetchContacts();
@@ -61,60 +152,6 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick }) => {
     
     return () => clearInterval(refreshInterval);
   }, [refetchContacts, refreshData]);
-  
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const contactId = searchParams.get('contact');
-    const conversationId = searchParams.get('conversation');
-    
-    const redirectedFromBooking = location.state?.from === 'booking';
-    const bookingContactId = location.state?.contactId;
-    const bookingConversationId = location.state?.conversationId;
-    
-    if (redirectedFromBooking && contacts && contacts.length > 0) {
-      console.log("Redirected from booking page with data:", location.state);
-      
-      if (bookingContactId) {
-        const contact = contacts.find(c => c.id === bookingContactId || c.contactId === bookingContactId);
-        if (contact) {
-          console.log("Setting selected contact from booking redirect (contact ID):", contact);
-          setSelectedContact(contact);
-          if (isMobile) setSheetOpen(true);
-          navigate('/messages', { replace: true });
-          return;
-        }
-      }
-      
-      if (bookingConversationId) {
-        const contact = contacts.find(c => c.conversation_id === bookingConversationId);
-        if (contact) {
-          console.log("Setting selected contact from booking redirect (conversation ID):", contact);
-          setSelectedContact(contact);
-          if (isMobile) setSheetOpen(true);
-          navigate('/messages', { replace: true });
-          return;
-        }
-      }
-    }
-    
-    if (contactId && contacts && contacts.length > 0) {
-      const contact = contacts.find(c => c.id === contactId || c.contactId === contactId);
-      if (contact) {
-        console.log("Setting selected contact from URL params:", contact);
-        setSelectedContact(contact);
-        if (isMobile) setSheetOpen(true);
-        navigate('/messages', { replace: true });
-      }
-    } else if (conversationId && contacts && contacts.length > 0) {
-      const contact = contacts.find(c => c.conversation_id === conversationId);
-      if (contact) {
-        console.log("Setting selected contact from conversation ID:", contact);
-        setSelectedContact(contact);
-        if (isMobile) setSheetOpen(true);
-        navigate('/messages', { replace: true });
-      }
-    }
-  }, [contacts, location, navigate, isMobile]);
   
   // New handler for navigating to profile when clicking on contact name
   const handleNavigateToProfile = (contactId: string) => {

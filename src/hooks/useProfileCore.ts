@@ -133,6 +133,7 @@ export const useProfileCore = (id?: string) => {
   }, [id, user, authUserType]);
 
   useEffect(() => {
+    // This effect runs when user or id changes to determine if viewing own profile
     if (user) {
       // Determine if the profile being viewed belongs to the current user
       if (!id || id === ":id" || id === "") {

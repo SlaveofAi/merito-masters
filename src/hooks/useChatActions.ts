@@ -43,6 +43,8 @@ export const useChatActions = (
         const customerId = normalizedUserType === 'customer' ? user.id : contactId;
         const craftsmanId = normalizedUserType === 'craftsman' ? user.id : contactId;
         
+        console.log("Creating conversation between customer", customerId, "and craftsman", craftsmanId);
+        
         try {
           // Check if conversation already exists
           const { data: existingConv, error: fetchError } = await supabase
@@ -245,10 +247,12 @@ export const useChatActions = (
     onSuccess: (data) => {
       // Update selected contact if needed
       if (selectedContact && !selectedContact.conversation_id && data?.conversationId) {
-        setSelectedContact({
+        const updatedContact = {
           ...selectedContact,
           conversation_id: data.conversationId
-        });
+        };
+        console.log("Updating selected contact with new conversation ID:", updatedContact);
+        setSelectedContact(updatedContact);
       }
       
       // Refresh data
