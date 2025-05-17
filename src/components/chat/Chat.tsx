@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
@@ -15,6 +14,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatProps extends ChatContactClickHandler {
   initialContact?: any;
