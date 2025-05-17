@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { ProfileProvider } from "@/contexts/ProfileContext";
@@ -28,7 +29,8 @@ const Profile = () => {
     return <AuthRequiredMessage />;
   }
   
-  // First check: Immediate redirect if we already know this is a customer
+  // First check: Immediate redirect if we already know this is a customer without an ID param
+  // and we're on the main profile route
   if (!id && userType === "customer" && window.location.pathname === "/profile") {
     console.log("Customer profile detected in main Profile route, immediate redirect to reviews");
     return <Navigate to="/profile/reviews" replace />;

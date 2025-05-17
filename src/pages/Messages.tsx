@@ -39,6 +39,13 @@ const Messages = () => {
     }
   }, [location, user]);
 
+  // Function to handle contact profile navigation
+  const handleContactProfileNavigation = (contactId: string) => {
+    if (contactId) {
+      navigate(`/profile/${contactId}`);
+    }
+  };
+
   if (loading || isCheckingAuth) {
     return (
       <Layout>
@@ -89,7 +96,7 @@ const Messages = () => {
             </div>
           </div>
         ) : (
-          <Chat />
+          <Chat onContactProfileClick={handleContactProfileNavigation} />
         )}
       </div>
     </Layout>
