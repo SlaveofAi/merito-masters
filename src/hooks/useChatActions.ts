@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,6 +93,13 @@ export const useChatActions = (
       if (metadata?.type === 'booking_request' && !metadata.booking_id) {
         metadata.booking_id = uuidv4();
         console.log("Generated booking_id:", metadata.booking_id);
+      }
+      
+      // Don't send empty initialization messages to the database
+      // Just return the conversation ID so the UI can update
+      if (metadata?.type === 'initialization' && content.trim() === " ") {
+        console.log("Initialization message, skipping database insert");
+        return { conversationId: convId };
       }
       
       // Prepare message data

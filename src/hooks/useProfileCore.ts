@@ -94,6 +94,7 @@ export const useProfileCore = (id?: string) => {
       }
 
       // Now fetch the profile data based on user type
+      // IMPORTANT FIX: Use the identified fetchedUserType, not the user type from auth context
       const table = fetchedUserType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
       console.log(`Fetching ${table} profile for user:`, userId);
       
@@ -132,6 +133,7 @@ export const useProfileCore = (id?: string) => {
     }
   }, [id, user, authUserType]);
 
+  // Ensure we properly track if this is the current user's profile
   useEffect(() => {
     // This effect runs when user or id changes to determine if viewing own profile
     if (user) {

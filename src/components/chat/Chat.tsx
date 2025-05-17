@@ -50,10 +50,10 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
   
   // Handle initial contact selection based on URL params or location state
   useEffect(() => {
-    console.log("Initial contact data:", { initialContact, contactIdFromUrl, contacts });
+    console.log("Initial contact data:", { initialContact, contactIdFromUrl, contacts, userType });
     
     // Wait until contacts are loaded
-    if (contactsLoading || !contacts) {
+    if (contactsLoading) {
       return;
     }
     
@@ -62,7 +62,7 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
       console.log("Setting contact from initialContact:", initialContact);
       
       // Check if we already have this contact in our contacts list
-      const existingContact = contacts.find(c => 
+      const existingContact = contacts?.find(c => 
         c.id === initialContact.id || c.contactId === initialContact.id
       );
       
@@ -72,6 +72,7 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
         if (isMobile) setSheetOpen(true);
       } else {
         // Create a synthetic contact for initial messaging
+        // FIX: Ensure we have proper user_type and other fields set
         const syntheticContact: ChatContact = {
           id: initialContact.id,
           contactId: initialContact.id,
@@ -87,6 +88,18 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
         console.log("Created synthetic contact for initial messaging:", syntheticContact);
         setSelectedContact(syntheticContact);
         if (isMobile) setSheetOpen(true);
+
+        // Immediately attempt to send an empty message to create the conversation
+        // This ensures the chat window is properly set up
+        setTimeout(() => {
+          sendMessage(" ", { type: "initialization" }).then(() => {
+            // After creating the conversation, refresh contacts to show it in the list
+            refetchContacts();
+            setTimeout(refetchMessages, 500);
+          }).catch(err => {
+            console.error("Error initializing chat:", err);
+          });
+        }, 500);
       }
       
       // Clear the location state to avoid re-selecting this contact on navigation
@@ -95,7 +108,7 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
     }
     
     // Second priority: Select contact from URL param
-    if (contactIdFromUrl && contacts.length > 0 && !selectedContact) {
+    if (contactIdFromUrl && contacts?.length > 0 && !selectedContact) {
       const contact = contacts.find(c => c.id === contactIdFromUrl || c.contactId === contactIdFromUrl);
       if (contact) {
         console.log("Setting selected contact from URL param:", contact);
@@ -103,6 +116,71 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
         if (isMobile) setSheetOpen(true);
         // Clear the URL parameter
         navigate('/messages', { replace: true });
+      } else {
+        // FIX: Contact ID is provided but not found in existing contacts
+        // This happens when coming from profile "Send Message" button
+        // We should create a synthetic contact and initialize chat
+        console.log("Contact ID provided but not found in contacts, creating synthetic contact");
+        
+        // Attempt to load the contact details from Supabase
+        const fetchContactDetails = async () => {
+          try {
+            // First determine if this is a customer or craftsman
+            const { data: userTypeData } = await supabase
+              .from('user_types')
+              .select('user_type')
+              .eq('user_id', contactIdFromUrl)
+              .maybeSingle();
+              
+            if (!userTypeData) {
+              console.error("Could not determine user type for contact");
+              return;
+            }
+            
+            // Then fetch profile from appropriate table
+            const isContactCraftsman = userTypeData.user_type === 'craftsman';
+            const profileTable = isContactCraftsman ? 'craftsman_profiles' : 'customer_profiles';
+            
+            const { data: profile } = await supabase
+              .from(profileTable)
+              .select('*')
+              .eq('id', contactIdFromUrl)
+              .maybeSingle();
+              
+            if (profile) {
+              // Create synthetic contact
+              const syntheticContact: ChatContact = {
+                id: contactIdFromUrl,
+                contactId: contactIdFromUrl,
+                name: profile.name || "Contact",
+                avatar_url: profile.profile_image_url || undefined,
+                last_message: "",
+                last_message_time: new Date().toISOString(),
+                unread_count: 0,
+                user_type: userTypeData.user_type,
+                conversation_id: undefined
+              };
+              
+              console.log("Created synthetic contact from database:", syntheticContact);
+              setSelectedContact(syntheticContact);
+              if (isMobile) setSheetOpen(true);
+              
+              // Initialize the conversation
+              setTimeout(() => {
+                sendMessage(" ", { type: "initialization" }).then(() => {
+                  refetchContacts();
+                  setTimeout(refetchMessages, 500);
+                }).catch(err => {
+                  console.error("Error initializing chat:", err);
+                });
+              }, 500);
+            }
+          } catch (error) {
+            console.error("Error fetching contact details:", error);
+          }
+        };
+        
+        fetchContactDetails();
       }
       return;
     }
@@ -117,7 +195,7 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
         
         const { contactId, conversationId } = location.state;
         
-        if (contactId && contacts.length > 0) {
+        if (contactId && contacts?.length > 0) {
           const contact = contacts.find(c => c.id === contactId || c.contactId === contactId);
           if (contact) {
             console.log("Setting selected contact from booking redirect (contact ID):", contact);
@@ -128,7 +206,7 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
           }
         }
         
-        if (conversationId && contacts.length > 0) {
+        if (conversationId && contacts?.length > 0) {
           const contact = contacts.find(c => c.conversation_id === conversationId);
           if (contact) {
             console.log("Setting selected contact from booking redirect (conversation ID):", contact);
@@ -140,7 +218,7 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
         }
       }
     }
-  }, [contacts, contactsLoading, initialContact, contactIdFromUrl, selectedContact, location, navigate, isMobile, userType]);
+  }, [contacts, contactsLoading, initialContact, contactIdFromUrl, selectedContact, location, navigate, isMobile, userType, sendMessage, refetchContacts, refetchMessages]);
   
   useEffect(() => {
     refetchContacts();
@@ -171,6 +249,7 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
     }
   };
   
+  // Handle contact selection
   const handleContactSelect = (contact: ChatContact) => {
     console.log("Selected contact:", contact);
     setSelectedContact(contact);

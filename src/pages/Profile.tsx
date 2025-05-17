@@ -29,10 +29,13 @@ const Profile = () => {
     console.log("User not authenticated, showing auth required message");
     return <AuthRequiredMessage />;
   }
-  
+
   // First check: Only redirect if this is the current user's profile (no ID or ID matches user.id)
   // and we're on the main profile route
-  if (!id && userType === "customer" && window.location.pathname === "/profile") {
+  // FIX: Be more explicit about checking for current user's profile
+  const isCurrentUserProfile = !id || id === "" || id === ":id" || id === user?.id;
+  
+  if (isCurrentUserProfile && userType === "customer" && window.location.pathname === "/profile") {
     console.log("Customer profile detected in main Profile route, immediate redirect to reviews");
     return <Navigate to="/profile/reviews" replace />;
   }
@@ -50,7 +53,8 @@ const Profile = () => {
     }
     
     // Only redirect if this is the current user's profile with no ID specified
-    if (!id && userType === "customer" && window.location.pathname === "/profile") {
+    const isCurrentUserProfile = !id || id === "" || id === ":id" || id === user?.id;
+    if (isCurrentUserProfile && userType === "customer" && window.location.pathname === "/profile") {
       console.log("Customer profile detected in Profile useEffect, redirecting to reviews");
       navigate("/profile/reviews", { replace: true });
     }

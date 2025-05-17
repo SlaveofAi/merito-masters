@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useContacts } from "@/hooks/useContacts";
+import { supabase } from "@/integrations/supabase/client";
 
 const Messages = () => {
   const { user, loading, userType } = useAuth();
@@ -59,7 +60,7 @@ const Messages = () => {
     }
   }, [location, user, redirectedFromProfile, contactFromLocation, contactIdFromParams, conversationIdFromParams, refetchContacts]);
 
-  // Function to handle contact profile navigation
+  // Function to handle contact profile navigation - FIX: improved to directly navigate to the correct profile
   const handleContactProfileNavigation = (contactId: string) => {
     if (contactId) {
       console.log("Navigating to profile from Messages.tsx:", contactId);
@@ -112,7 +113,7 @@ const Messages = () => {
           <h1 className="text-2xl font-bold">Správy</h1>
         </div>
         
-        {showEmptyStateMessage && !initialContact ? (
+        {showEmptyStateMessage && !initialContact && !contactIdFromParams ? (
           <div className="bg-white rounded-lg shadow-sm p-10 h-[75vh] flex flex-col items-center justify-center text-center">
             <div className="max-w-md">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">{emptyState.title}</h2>
