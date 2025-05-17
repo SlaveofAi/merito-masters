@@ -96,7 +96,7 @@ const Messages = () => {
             </div>
           </div>
         ) : (
-          <Chat onContactProfileClick={handleContactProfileNavigation} />
+          <Chat onContactNameClick={handleContactProfileNavigation} />
         )}
       </div>
     </Layout>

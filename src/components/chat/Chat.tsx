@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
@@ -5,7 +6,7 @@ import { useContacts } from "@/hooks/useContacts";
 import { useMessages } from "@/hooks/useMessages";
 import { useChatActions } from "@/hooks/useChatActions";
 import { useChatSubscription } from "@/hooks/useChatSubscription";
-import { ChatContact } from "@/types/chat";
+import { ChatContact, ChatContactClickHandler } from "@/types/chat";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import BookingRequestForm from "@/components/booking/BookingRequestForm";
@@ -15,7 +16,9 @@ import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
-const Chat: React.FC = () => {
+interface ChatProps extends ChatContactClickHandler {}
+
+const Chat: React.FC<ChatProps> = ({ onContactNameClick }) => {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -117,7 +120,14 @@ const Chat: React.FC = () => {
   const handleNavigateToProfile = (contactId: string) => {
     if (contactId) {
       console.log("Navigating to profile:", contactId);
-      navigate(`/profile/${contactId}`);
+      
+      // Use the provided callback if available, otherwise use default navigation
+      if (onContactNameClick) {
+        onContactNameClick(contactId);
+      } else {
+        navigate(`/profile/${contactId}`);
+      }
+      
       if (isMobile) {
         setSheetOpen(false);
       }
@@ -172,7 +182,6 @@ const Chat: React.FC = () => {
   };
   
   // Check if the customer should see an empty chat view
-  // This is true when they have craftsman contacts but no active conversations
   const showCustomerEmptyChat = userType === 'customer' && 
                               contacts && 
                               contacts.length > 0 && 
