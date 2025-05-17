@@ -19,7 +19,8 @@ const Profile = () => {
       userType,
       loading,
       userLoggedIn: !!user,
-      path: window.location.pathname
+      path: window.location.pathname,
+      isCurrentUserProfile: !id || id === user?.id
     });
   }, [id, userType, loading, user]);
   
@@ -29,7 +30,7 @@ const Profile = () => {
     return <AuthRequiredMessage />;
   }
   
-  // First check: Immediate redirect if we already know this is a customer without an ID param
+  // First check: Only redirect if this is the current user's profile (no ID or ID matches user.id)
   // and we're on the main profile route
   if (!id && userType === "customer" && window.location.pathname === "/profile") {
     console.log("Customer profile detected in main Profile route, immediate redirect to reviews");
@@ -48,6 +49,7 @@ const Profile = () => {
       return;
     }
     
+    // Only redirect if this is the current user's profile with no ID specified
     if (!id && userType === "customer" && window.location.pathname === "/profile") {
       console.log("Customer profile detected in Profile useEffect, redirecting to reviews");
       navigate("/profile/reviews", { replace: true });

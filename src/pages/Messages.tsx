@@ -42,6 +42,8 @@ const Messages = () => {
   // Function to handle contact profile navigation
   const handleContactProfileNavigation = (contactId: string) => {
     if (contactId) {
+      console.log("Navigating to profile from Messages.tsx:", contactId);
+      // Force navigation to the contact's profile, not the current user's profile
       navigate(`/profile/${contactId}`);
     }
   };
