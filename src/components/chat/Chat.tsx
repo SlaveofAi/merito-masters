@@ -72,7 +72,6 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
         if (isMobile) setSheetOpen(true);
       } else {
         // Create a synthetic contact for initial messaging
-        // FIX: Ensure we have proper user_type and other fields set
         const syntheticContact: ChatContact = {
           id: initialContact.id,
           contactId: initialContact.id,
@@ -117,7 +116,7 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
         // Clear the URL parameter
         navigate('/messages', { replace: true });
       } else {
-        // FIX: Contact ID is provided but not found in existing contacts
+        // Contact ID is provided but not found in existing contacts
         // This happens when coming from profile "Send Message" button
         // We should create a synthetic contact and initialize chat
         console.log("Contact ID provided but not found in contacts, creating synthetic contact");
@@ -234,12 +233,14 @@ const Chat: React.FC<ChatProps> = ({ onContactNameClick, initialContact, contact
   // New handler for navigating to profile when clicking on contact name
   const handleNavigateToProfile = (contactId: string) => {
     if (contactId) {
-      console.log("Navigating to profile:", contactId);
+      console.log("Navigating to profile from Chat.tsx:", contactId);
       
-      // Use the provided callback if available, otherwise use default navigation
+      // IMPORTANT FIX: Never navigate to own profile when clicking on a contact
+      // Always navigate to the contact's profile using absolute path
       if (onContactNameClick) {
         onContactNameClick(contactId);
       } else {
+        // Force navigation to the specific profile ID, not a relative path
         navigate(`/profile/${contactId}`);
       }
       

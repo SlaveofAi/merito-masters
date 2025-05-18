@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import Chat from "@/components/chat/Chat";
@@ -60,11 +59,11 @@ const Messages = () => {
     }
   }, [location, user, redirectedFromProfile, contactFromLocation, contactIdFromParams, conversationIdFromParams, refetchContacts]);
 
-  // Function to handle contact profile navigation - FIX: improved to directly navigate to the correct profile
+  // Function to handle contact profile navigation - improved to directly navigate to the correct profile
   const handleContactProfileNavigation = (contactId: string) => {
     if (contactId) {
       console.log("Navigating to profile from Messages.tsx:", contactId);
-      // Force navigation to the contact's profile, not the current user's profile
+      // Always navigate to the absolute path with the contact's specific ID
       navigate(`/profile/${contactId}`);
     }
   };
