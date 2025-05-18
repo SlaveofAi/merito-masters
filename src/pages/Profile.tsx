@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useParams, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { ProfileProvider } from "@/contexts/ProfileContext";
@@ -14,6 +13,8 @@ const Profile = () => {
   const { userType, loading, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // IMPORTANT: All hooks must be called before any conditional returns
   
   // Get userType from query parameter if available (for Google OAuth redirect)
   useEffect(() => {
@@ -41,23 +42,7 @@ const Profile = () => {
     });
   }, [id, userType, loading, user]);
   
-  // If not authenticated, show auth required message
-  if (!loading && !user) {
-    console.log("User not authenticated, showing auth required message");
-    return <AuthRequiredMessage />;
-  }
-  
-  // First check: Immediate redirect if we already know this is a customer
-  // Only redirect if:
-  // 1. No profile ID is provided (viewing own profile)
-  // 2. User is a customer
-  // 3. We're on the main profile page (not /profile/reviews)
-  if (!id && userType === "customer" && window.location.pathname === "/profile") {
-    console.log("Customer profile detected in main Profile route, immediate redirect to reviews");
-    return <Navigate to="/profile/reviews" replace />;
-  }
-  
-  // Second check: If still loading, monitor for changes
+  // Use this effect for customer redirects
   useEffect(() => {
     if (loading) {
       return; // Wait for loading to complete
@@ -76,9 +61,25 @@ const Profile = () => {
     }
   }, [id, userType, loading, navigate, user]);
   
+  // After all hooks are defined, we can have conditional returns
+  // This fixes the "Rendered fewer hooks than expected" error
+  
+  // If not authenticated, show auth required message
+  if (!loading && !user) {
+    console.log("User not authenticated, showing auth required message");
+    return <AuthRequiredMessage />;
+  }
+  
   // While auth is loading, show loading state
   if (loading) {
     return <ProfileSkeleton />;
+  }
+  
+  // Immediate redirect for customers
+  // First check: Immediate redirect if we already know this is a customer
+  if (!id && userType === "customer" && window.location.pathname === "/profile") {
+    console.log("Customer profile detected in main Profile route, immediate redirect to reviews");
+    return <Navigate to="/profile/reviews" replace />;
   }
   
   // We need to check if the user is trying to navigate to their own profile
