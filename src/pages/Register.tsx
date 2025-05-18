@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -147,8 +148,9 @@ const Register = () => {
       
       sessionStorage.setItem("userType", userType);
       
+      // Try to sign in immediately after registration
       try {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: data.password
         });
@@ -232,8 +234,10 @@ const Register = () => {
       });
       
       if (authData.session) {
+        // Directly navigate to the profile page after successful registration
         navigate("/profile");
       } else {
+        // If email confirmation is required, navigate to the login page
         toast.info("Na vašu emailovú adresu sme odoslali potvrdzovací email", {
           description: "Pre dokončenie registrácie prosím potvrďte svoju emailovú adresu",
           duration: 8000,
@@ -268,7 +272,7 @@ const Register = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/login?userType=${userType}`,
+          redirectTo: `${window.location.origin}/profile?userType=${userType}`,
         },
       });
 
