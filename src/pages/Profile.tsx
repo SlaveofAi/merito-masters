@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { toast } from "sonner";
 import AuthRequiredMessage from "@/components/profile/AuthRequiredMessage";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
   const { id } = useParams();
@@ -61,6 +62,14 @@ const Profile = () => {
   // While auth is loading, show loading state
   if (loading) {
     return <ProfileSkeleton />;
+  }
+  
+  // We need to check if the user is trying to navigate to their own profile
+  // by using an ID that matches their own ID
+  const isViewingOwnProfileById = id && user && id === user.id;
+  if (isViewingOwnProfileById) {
+    console.log("User is viewing their own profile by ID, redirecting to /profile");
+    return <Navigate to="/profile" replace />;
   }
 
   // For the main Profile route, we want to show the calendar if explicitly requested

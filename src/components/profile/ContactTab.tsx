@@ -377,6 +377,8 @@ const ContactTab = () => {
     }
     
     try {
+      console.log("Sending message to craftsman from ContactTab:", profileData.id);
+      
       // Check if conversation already exists
       const { data: existingConversation, error: fetchError } = await supabase
         .from("chat_conversations")
@@ -396,6 +398,7 @@ const ContactTab = () => {
       if (existingConversation) {
         // Use existing conversation
         conversationId = existingConversation.id;
+        console.log("Found existing conversation:", conversationId);
       } else {
         // Create new conversation
         const { data: newConversation, error: createError } = await supabase
@@ -413,6 +416,7 @@ const ContactTab = () => {
         }
         
         conversationId = newConversation?.[0]?.id;
+        console.log("Created new conversation:", conversationId);
       }
       
       if (conversationId) {
@@ -421,7 +425,8 @@ const ContactTab = () => {
           state: { 
             from: "profile",
             conversationId,
-            contactId: profileData.id 
+            contactId: profileData.id,
+            contactName: profileData.name || "Remeselník"
           } 
         });
         toast.success("Presmerované do správ");

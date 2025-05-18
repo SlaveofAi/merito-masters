@@ -13,6 +13,7 @@ import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Pencil } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const { user, userType: authUserType, updateUserType } = useAuth();
@@ -139,15 +140,70 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   }, [isCurrentUser, profileNotFound, createDefaultProfileIfNeeded]);
 
   // Handler for the send message button
-  const handleSendMessage = () => {
-    if (profileData && profileData.id) {
-      console.log("Navigating to messages with craftsman:", profileData.id);
-      navigate(`/messages`, {
-        state: { 
-          from: "profile",
-          contactId: profileData.id 
+  const handleSendMessage = async () => {
+    if (!profileData || !profileData.id || !user) {
+      console.error("Missing data for sending message:", { profileData, user });
+      toast.error("Nie je možné poslať správu. Chýbajú potrebné údaje.");
+      return;
+    }
+    
+    try {
+      console.log("Sending message to craftsman:", profileData.id);
+      
+      // Check if conversation already exists
+      const { data: existingConversation, error: fetchError } = await supabase
+        .from("chat_conversations")
+        .select("id")
+        .eq("customer_id", user.id)
+        .eq("craftsman_id", profileData.id)
+        .maybeSingle();
+        
+      if (fetchError && fetchError.code !== "PGRST116") {
+        console.error("Error checking for conversation:", fetchError);
+        toast.error("Nastala chyba pri kontrole konverzácie");
+        return;
+      }
+      
+      let conversationId;
+      
+      if (existingConversation) {
+        // Use existing conversation
+        conversationId = existingConversation.id;
+        console.log("Found existing conversation:", conversationId);
+      } else {
+        // Create new conversation
+        const { data: newConversation, error: createError } = await supabase
+          .from("chat_conversations")
+          .insert({
+            customer_id: user.id,
+            craftsman_id: profileData.id
+          })
+          .select();
+          
+        if (createError) {
+          console.error("Error creating conversation:", createError);
+          toast.error("Nepodarilo sa vytvoriť konverzáciu");
+          return;
         }
-      });
+        
+        conversationId = newConversation?.[0]?.id;
+        console.log("Created new conversation:", conversationId);
+      }
+      
+      if (conversationId) {
+        // Navigate to messages with the conversation context
+        navigate("/messages", { 
+          state: { 
+            from: "profile",
+            conversationId,
+            contactId: profileData.id 
+          } 
+        });
+        toast.success("Presmerované do správ");
+      }
+    } catch (err) {
+      console.error("Error navigating to chat:", err);
+      toast.error("Nastala chyba pri presmerovaní do správ");
     }
   };
   

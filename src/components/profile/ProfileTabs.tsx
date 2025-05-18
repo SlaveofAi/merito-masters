@@ -83,22 +83,22 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portf
         {/* Tab content */}
         {isCraftsman && (
           <>
-            <TabsContent value="portfolio">
+            <TabsContent value="portfolio" className="mx-auto">
               <PortfolioTab />
             </TabsContent>
             
-            <TabsContent value="reviews">
+            <TabsContent value="reviews" className="mx-auto">
               <ReviewsTab />
             </TabsContent>
 
             {!isCurrentUser && (
-              <TabsContent value="contact">
+              <TabsContent value="contact" className="mx-auto">
                 <ContactTab />
               </TabsContent>
             )}
 
             {isCurrentUser && (
-              <TabsContent value="calendar">
+              <TabsContent value="calendar" className="mx-auto">
                 <ProfileCalendar />
               </TabsContent>
             )}
@@ -106,7 +106,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portf
         )}
         
         {!isCraftsman && (
-          <TabsContent value="reviews">
+          <TabsContent value="reviews" className="mx-auto">
             <ReviewsTab />
           </TabsContent>
         )}

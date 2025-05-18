@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
@@ -80,41 +81,63 @@ const Chat: React.FC = () => {
         } else if (user && userType === 'customer') {
           console.log("Contact not found, attempting to create conversation");
           try {
-            // Create a conversation first
-            const { data: craftsmanData, error: profileError } = await supabase
-              .from('craftsman_profiles')
-              .select('name')
-              .eq('id', craftId)
-              .single();
+            // Check if conversation exists first
+            const { data: existingConversation, error: convFetchError } = await supabase
+              .from("chat_conversations")
+              .select("id")
+              .eq("customer_id", user.id)
+              .eq("craftsman_id", craftId)
+              .maybeSingle();
               
-            if (profileError) {
-              throw new Error("Could not find craftsman profile");
+            if (convFetchError && convFetchError.code !== "PGRST116") {
+              throw new Error("Failed to check existing conversation");
             }
             
-            // Create conversation
-            const { data: conv, error: convError } = await supabase
-              .from('chat_conversations')
-              .insert({
-                customer_id: user.id,
-                craftsman_id: craftId
-              })
-              .select('id')
-              .single();
+            let conversationId;
+            
+            if (existingConversation) {
+              conversationId = existingConversation.id;
+              console.log("Found existing conversation:", conversationId);
+            } else {
+              // Create a conversation first
+              const { data: craftsmanData, error: profileError } = await supabase
+                .from('craftsman_profiles')
+                .select('name')
+                .eq('id', craftId)
+                .single();
+                
+              if (profileError) {
+                throw new Error("Could not find craftsman profile");
+              }
               
-            if (convError) {
-              throw new Error("Failed to create conversation");
+              // Create conversation
+              const { data: conv, error: convError } = await supabase
+                .from('chat_conversations')
+                .insert({
+                  customer_id: user.id,
+                  craftsman_id: craftId
+                })
+                .select('id')
+                .single();
+                
+              if (convError) {
+                throw new Error("Failed to create conversation");
+              }
+              
+              conversationId = conv.id;
+              console.log("Created new conversation:", conversationId);
             }
             
             // Create synthetic contact to show immediately
             const newContact: ChatContact = {
               id: craftId,
               contactId: craftId,
-              name: craftsmanData.name || "Craftsman",
+              name: location.state.contactName || "Remeselník",
               user_type: 'craftsman',
-              conversation_id: conv.id
+              conversation_id: conversationId
             };
             
-            console.log("Created new conversation and contact:", newContact);
+            console.log("Created new contact for conversation:", newContact);
             setSelectedContact(newContact);
             if (isMobile) setSheetOpen(true);
             
