@@ -1,26 +1,19 @@
+
 import React, { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import Chat from "@/components/chat/Chat";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useContacts } from "@/hooks/useContacts";
-import { supabase } from "@/integrations/supabase/client";
 
 const Messages = () => {
   const { user, loading, userType } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const { contacts, contactsLoading, refetchContacts } = useContacts();
-
-  // Extract contact information from URL parameters or location state
-  const contactIdFromParams = searchParams.get('contact');
-  const conversationIdFromParams = searchParams.get('conversation');
-  const contactFromLocation = location.state?.contact;
-  const redirectedFromProfile = location.state?.from === 'profile';
+  const { contacts, contactsLoading } = useContacts();
 
   useEffect(() => {
     // Only redirect if we're sure the user is not authenticated
@@ -38,35 +31,13 @@ const Messages = () => {
     }
   }, [user, loading, navigate]);
 
-  // Check if we were redirected from another page with parameters
+  // Check if we were redirected from another page with a conversation parameter
   useEffect(() => {
-    if (user) {
-      if (redirectedFromProfile && contactFromLocation) {
-        console.log("Redirected from profile page with contact:", contactFromLocation);
-        // This data will be handled in the Chat component
-      } else if (location.state?.from === 'booking') {
-        console.log("Redirected from booking page with conversation:", location.state);
-        // This data will be handled in the Chat component
-      }
-      
-      // If coming from either source, make sure contacts are refreshed
-      if ((redirectedFromProfile && contactFromLocation) || 
-          location.state?.from === 'booking' ||
-          contactIdFromParams || 
-          conversationIdFromParams) {
-        refetchContacts();
-      }
+    if (user && location.state?.from === 'booking') {
+      console.log("Redirected from booking page with conversation:", location.state);
+      // This data will be handled in the Chat component
     }
-  }, [location, user, redirectedFromProfile, contactFromLocation, contactIdFromParams, conversationIdFromParams, refetchContacts]);
-
-  // Function to handle contact profile navigation - improved to directly navigate to the correct profile
-  const handleContactProfileNavigation = (contactId: string) => {
-    if (contactId) {
-      console.log("Navigating to profile from Messages.tsx:", contactId);
-      // Always navigate to the absolute path with the contact's specific ID
-      navigate(`/profile/${contactId}`);
-    }
-  };
+  }, [location, user]);
 
   if (loading || isCheckingAuth) {
     return (
@@ -101,10 +72,6 @@ const Messages = () => {
 
   const emptyState = getEmptyStateMessage();
 
-  // If we have a contact from profile navigation but no matching contact in the contacts list,
-  // we'll need to create a synthetic contact for initial message sending
-  const initialContact = redirectedFromProfile && contactFromLocation ? contactFromLocation : null;
-
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 mt-16">
@@ -112,7 +79,7 @@ const Messages = () => {
           <h1 className="text-2xl font-bold">Správy</h1>
         </div>
         
-        {showEmptyStateMessage && !initialContact && !contactIdFromParams ? (
+        {showEmptyStateMessage ? (
           <div className="bg-white rounded-lg shadow-sm p-10 h-[75vh] flex flex-col items-center justify-center text-center">
             <div className="max-w-md">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">{emptyState.title}</h2>
@@ -122,11 +89,7 @@ const Messages = () => {
             </div>
           </div>
         ) : (
-          <Chat 
-            onContactNameClick={handleContactProfileNavigation} 
-            initialContact={initialContact}
-            contactIdFromUrl={contactIdFromParams}
-          />
+          <Chat />
         )}
       </div>
     </Layout>

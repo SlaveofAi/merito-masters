@@ -26,8 +26,6 @@ export const useProfileCore = (id?: string) => {
       if (!userId || userId === ":id" || userId === "") {
         userId = user?.id;
         console.log("Using current user ID:", userId);
-      } else {
-        console.log("Using provided profile ID:", userId);
       }
       
       // Exit early if we still don't have a userId to query
@@ -38,13 +36,54 @@ export const useProfileCore = (id?: string) => {
         return;
       }
 
-      // Check if the profile being viewed is the current user's profile
-      const isViewingSelf = user?.id === userId;
-      console.log("Is viewing own profile:", isViewingSelf);
-      setIsCurrentUser(isViewingSelf);
+      // Use the userType from Auth context if it's for the current user
+      let fetchedUserType = null;
+      const isOwner = user?.id === userId;
+      
+      if (isOwner && authUserType) {
+        console.log("Using userType from auth context:", authUserType);
+        fetchedUserType = authUserType;
+        setUserType(authUserType);
+        
+        // Always update localStorage with the latest user type
+        localStorage.setItem("userType", authUserType);
+        
+        // Proceed directly to fetching profile data with the known user type
+        const table = authUserType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
+        console.log(`Fetching ${table} profile for user:`, userId);
+        
+        const { data: profileData, error: profileError } = await supabase
+          .from(table)
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+  
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+          setError(`Error fetching profile: ${profileError.message}`);
+          setProfileNotFound(true);
+        } else if (profileData) {
+          console.log("Profile data found:", profileData);
+          
+          // Explicitly add user_type to the profile data to ensure it's always available
+          const enrichedProfileData = {
+            ...profileData,
+            user_type: authUserType
+          };
+  
+          console.log("Enriched profile data:", enrichedProfileData);
+          setProfileData(enrichedProfileData as ProfileData);
+          setProfileNotFound(false);
+        } else {
+          console.log("No profile data found for:", userId);
+          setProfileNotFound(true);
+        }
+        
+        setLoading(false);
+        return;
+      }
 
-      // IMPORTANT: We need to fetch the user type for the profile we're viewing,
-      // not just use the current user's type
+      // If not the current user or no auth user type available, fetch from the database
       console.log("Fetching user type from database for:", userId);
       const { data: userTypeData, error: userTypeError } = await supabase
         .from('user_types')
@@ -60,19 +99,38 @@ export const useProfileCore = (id?: string) => {
         return;
       }
 
-      console.log("User type data for profile:", userTypeData);
+      console.log("User type data:", userTypeData);
       
       if (!userTypeData) {
         console.log("No user type found for:", userId);
-        setUserType(null);
-        setProfileNotFound(true);
-        setLoading(false);
-        return;
+        
+        // Last effort - check cached user type in localStorage
+        if (isOwner) {
+          const cachedUserType = localStorage.getItem("userType");
+          if (cachedUserType === 'customer' || cachedUserType === 'craftsman') {
+            console.log("Using cached user type from localStorage:", cachedUserType);
+            setUserType(cachedUserType as 'customer' | 'craftsman');
+            fetchedUserType = cachedUserType;
+          } else {
+            setUserType(null);
+            setProfileNotFound(true);
+            setLoading(false);
+            return;
+          }
+        } else {
+          setUserType(null);
+          setProfileNotFound(true);
+          setLoading(false);
+          return;
+        }
       } else {
-        const fetchedUserType = userTypeData.user_type;
+        fetchedUserType = userTypeData.user_type;
         if (fetchedUserType === 'customer' || fetchedUserType === 'craftsman') {
-          console.log("Setting user type from database for viewed profile:", fetchedUserType);
           setUserType(fetchedUserType);
+          // Cache the user type for faster access
+          if (isOwner) {
+            localStorage.setItem("userType", fetchedUserType);
+          }
         } else {
           console.log("Invalid user type:", fetchedUserType);
           setUserType(null);
@@ -82,8 +140,8 @@ export const useProfileCore = (id?: string) => {
         }
       }
 
-      // Now fetch the profile data based on the fetched user type
-      const table = userTypeData.user_type === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
+      // Now fetch the profile data based on user type
+      const table = fetchedUserType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
       console.log(`Fetching ${table} profile for user:`, userId);
       
       const { data: profileData, error: profileError } = await supabase
@@ -102,7 +160,7 @@ export const useProfileCore = (id?: string) => {
         // Explicitly add user_type to the profile data to ensure it's always available
         const enrichedProfileData = {
           ...profileData,
-          user_type: userTypeData.user_type
+          user_type: fetchedUserType
         };
 
         console.log("Enriched profile data:", enrichedProfileData);
@@ -119,11 +177,9 @@ export const useProfileCore = (id?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [id, user]);
+  }, [id, user, authUserType]);
 
-  // Ensure we properly track if this is the current user's profile
   useEffect(() => {
-    // This effect runs when user or id changes to determine if viewing own profile
     if (user) {
       // Determine if the profile being viewed belongs to the current user
       if (!id || id === ":id" || id === "") {
@@ -138,6 +194,7 @@ export const useProfileCore = (id?: string) => {
 
   useEffect(() => {
     // Only fetch profile data when auth is no longer loading
+    // This prevents premature fetches without user type info
     if (!authLoading) {
       fetchProfileData();
     }

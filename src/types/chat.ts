@@ -60,8 +60,3 @@ export interface ChatMessage {
   read: boolean;
   metadata?: MessageMetadata;
 }
-
-// Type for the function that handles clicking on a contact's name
-export type ChatContactClickHandler = {
-  onContactNameClick?: (contactId: string) => void;
-};

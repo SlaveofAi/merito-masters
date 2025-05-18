@@ -77,8 +77,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   onDelete,
   contactDetails,
   customerReviews = [],
-  isMobile = false,
-  onContactNameClick
+  isMobile = false
 }) => {
   const { user, userType } = useAuth();
   const [messageText, setMessageText] = useState("");
@@ -218,17 +217,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       return "bg-green-50";
     }
     return "bg-yellow-50";
-  };
-  
-  // Handle profile click for navigating to customer's profile page
-  const handleProfileClick = () => {
-    if (contact && onContactNameClick) {
-      // Close dialog if it's open
-      setShowProfileDialog(false);
-      
-      // Navigate to profile using the provided callback
-      onContactNameClick(contact.contactId || contact.id);
-    }
   };
   
   const isBookingRequest = (message: Message) => {
@@ -501,15 +489,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const renderHeader = () => {
     return (
       <div className={`p-2 ${isMobile ? 'px-2' : 'p-4'} border-b flex justify-between items-center`}>
-        <div className="flex items-center cursor-pointer" onClick={handleProfileClick}>
+        <div className="flex items-center">
           <Avatar className={`${isMobile ? 'h-8 w-8 mr-2' : 'h-10 w-10 mr-3'}`}>
             <AvatarImage src={getAvatarUrl()} alt={getContactName()} />
             <AvatarFallback>{getContactName().substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
-            <h2 className={`font-semibold ${isMobile ? 'text-base' : ''} hover:text-primary transition-colors`}>
-              {getContactName()}
-            </h2>
+            <h2 className={`font-semibold ${isMobile ? 'text-base' : ''}`}>{getContactName()}</h2>
             {!isMobile && (
               <p className="text-xs text-gray-500">
                 {contact.user_type === 'craftsman' ? 'Remeselník' : 'Zákazník'}
@@ -538,20 +524,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>
-                  <div className="flex items-center">
-                    <span>Profil užívateľa</span>
-                    {userType === 'craftsman' && contact.user_type === 'customer' && (
-                      <Button 
-                        variant="link" 
-                        className="ml-2 text-primary" 
-                        onClick={handleProfileClick}
-                      >
-                        Zobraziť profil
-                      </Button>
-                    )}
-                  </div>
-                </DialogTitle>
+                <DialogTitle>Profil užívateľa</DialogTitle>
                 <DialogDescription>
                   Informácie o užívateľovi {getContactName()}
                 </DialogDescription>
@@ -563,12 +536,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                     <AvatarFallback>{getContactName().substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 
-                      className="font-medium text-lg cursor-pointer hover:text-primary transition-colors"
-                      onClick={handleProfileClick}
-                    >
-                      {getContactName()}
-                    </h3>
+                    <h3 className="font-medium text-lg">{getContactName()}</h3>
                     <div className="flex items-center">
                       <Badge variant="outline" className="mt-1">
                         {contact.user_type === 'craftsman' ? 'Remeselník' : 'Zákazník'}
@@ -688,12 +656,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 <DropdownMenuItem onClick={() => setShowBookingForm(true)}>
                   <Calendar className="h-4 w-4 mr-2" />
                   Rezervácia termínu
-                </DropdownMenuItem>
-              )}
-              {userType === 'craftsman' && contact.user_type === 'customer' && (
-                <DropdownMenuItem onClick={handleProfileClick}>
-                  <User className="h-4 w-4 mr-2" />
-                  Zobraziť profil zákazníka
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={() => setShowArchiveDialog(true)}>
