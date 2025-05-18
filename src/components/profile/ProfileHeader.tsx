@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock, Crown } from "
 import { toast } from "sonner";
 import ToppedCraftsmanFeature from './ToppedCraftsmanFeature';
 import { ProfileData, CraftsmanProfile } from "@/types/profile";
+import ImageCropper from './ImageCropper';
 
 export interface ProfileHeaderProps {
   profileData: ProfileData;
@@ -27,6 +28,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
   // Type guard function to check if a profile is a craftsman profile
   const isCraftsmanProfile = (profile: ProfileData): profile is CraftsmanProfile => {
@@ -40,19 +43,32 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       // Clear the input value so that the same file can be selected again if needed
       e.target.value = '';
       
-      try {
-        setUploading(true);
-        
-        if (uploadProfileImage) {
-          await uploadProfileImage(file);
-          toast.success("Profilová fotka bola úspešne aktualizovaná");
+      // Show image cropper dialog instead of directly uploading
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result) {
+          setSelectedImage(reader.result.toString());
+          setShowImageCropper(true);
         }
-      } catch (error) {
-        console.error("Error uploading profile image:", error);
-        toast.error("Nastala chyba pri nahrávaní profilovej fotky");
-      } finally {
-        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleCroppedImage = async (blob: Blob) => {
+    try {
+      setUploading(true);
+      setShowImageCropper(false);
+      
+      if (uploadProfileImage) {
+        await uploadProfileImage(new File([blob], 'profile-image.jpg', { type: 'image/jpeg' }));
+        toast.success("Profilová fotka bola úspešne aktualizovaná");
       }
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+      toast.error("Nastala chyba pri nahrávaní profilovej fotky");
+    } finally {
+      setUploading(false);
     }
   };
   
@@ -78,6 +94,15 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
   return (
     <div className="mb-8">
+      {showImageCropper && selectedImage && (
+        <ImageCropper
+          imageSrc={selectedImage}
+          onCropComplete={handleCroppedImage}
+          onCancel={() => setShowImageCropper(false)}
+          aspectRatio={1}
+        />
+      )}
+    
       {/* If user is a craftsman, show the topped feature component */}
       {userType === 'craftsman' && (
         <ToppedCraftsmanFeature 

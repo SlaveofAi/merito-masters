@@ -17,14 +17,17 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       return null;
     }
 
-    const fileName = `profile-${userId}-${Math.random().toString(36).substring(2)}.jpg`;
+    // Generate unique filename to avoid caching issues
+    const timestamp = new Date().getTime();
+    const fileName = `profile-${userId}-${timestamp}-${Math.random().toString(36).substring(2)}.jpg`;
     const filePath = `${fileName}`;
     
     const { error: uploadError } = await supabase.storage
       .from('profile_images')
       .upload(filePath, file, {
         contentType: 'image/jpeg',
-        upsert: true
+        upsert: true,
+        cacheControl: 'no-cache' // Prevent caching
       });
       
     if (uploadError) {
@@ -32,9 +35,10 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       throw uploadError;
     }
     
+    // Add a cache-busting parameter to the URL
     const { data } = supabase.storage
       .from('profile_images')
-      .getPublicUrl(filePath);
+      .getPublicUrl(`${filePath}?t=${timestamp}`);
     
     const tableToUpdate = userType === 'craftsman' ? TABLES.CRAFTSMAN_PROFILES : TABLES.CUSTOMER_PROFILES;
     

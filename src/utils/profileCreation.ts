@@ -22,6 +22,9 @@ export const createDefaultProfile = async (
     const email = user.email || '';
     const name = user.user_metadata?.name || user.user_metadata?.full_name || 'User';
     
+    // Get trade category from metadata if available (for craftsmen)
+    const tradeCategory = user.user_metadata?.trade_category || 'Stolár';
+    
     if (userType === 'craftsman') {
       // First check if profile already exists
       const { data: existingProfile, error: checkError } = await supabase
@@ -58,7 +61,8 @@ export const createDefaultProfile = async (
             name,
             email,
             location: 'Bratislava',
-            trade_category: 'Stolár',
+            trade_category: tradeCategory, // Use the trade_category from metadata if available
+            custom_specialization: tradeCategory, // Set the same value for custom specialization
             phone: null,
             description: 'Zadajte popis vašich služieb',
             profile_image_url: null

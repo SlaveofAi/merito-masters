@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -29,7 +28,16 @@ const craftCategories = [
   'Tesár',
   'Záhradník',
   'Kúrenár',
-  'Sklenár'
+  'Sklenár',
+  'Mechanik',
+  'Pokrývač',
+  'Zváračka/Zvárač',
+  'Automechanik',
+  'Obkladač',
+  'Kominár',
+  'Čalúnnik',
+  'Studniar',
+  'Kamenár'
 ];
 
 type UserType = 'customer' | 'craftsman' | null;
@@ -117,14 +125,21 @@ const Register = () => {
     setIsLoading(true);
 
     try {
+      const userMetadata = {
+        name: data.name,
+        user_type: userType
+      };
+      
+      // For craftsmen, include the selected trade_category in metadata
+      if (userType === 'craftsman') {
+        userMetadata.trade_category = (data as CraftsmanFormValues).tradeCategory;
+      }
+
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          data: {
-            name: data.name,
-            user_type: userType
-          }
+          data: userMetadata
         }
       });
 
@@ -190,7 +205,8 @@ const Register = () => {
           location: data.location,
           trade_category: (data as CraftsmanFormValues).tradeCategory,
           description: (data as CraftsmanFormValues).description || null,
-          years_experience: (data as CraftsmanFormValues).yearsExperience || null
+          years_experience: (data as CraftsmanFormValues).yearsExperience || null,
+          custom_specialization: (data as CraftsmanFormValues).tradeCategory // Store selected category also as custom specialization
         };
 
         console.log("Storing craftsman profile:", craftsmanData);
@@ -474,7 +490,7 @@ const Register = () => {
                                 <SelectTrigger className="pl-10">
                                   <SelectValue placeholder="Vyberte kategóriu" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[300px] overflow-y-auto">
                                   {craftCategories.map((category) => (
                                     <SelectItem key={category} value={category}>
                                       {category}
