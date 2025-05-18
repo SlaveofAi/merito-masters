@@ -177,6 +177,7 @@ const Register = () => {
         console.log("User type stored successfully");
       }
 
+      // Store profile data in appropriate table
       if (userType === 'craftsman') {
         const craftsmanData = {
           id: authData.user.id,
