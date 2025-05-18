@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { useParams, Navigate, useNavigate } from "react-router-dom";
+import { useParams, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { ProfileProvider } from "@/contexts/ProfileContext";
 import ProfilePage from "@/components/profile/ProfilePage";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,23 @@ const Profile = () => {
   const { id } = useParams();
   const { userType, loading, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get userType from query parameter if available (for Google OAuth redirect)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const queryUserType = params.get('userType');
+    
+    if (queryUserType === 'customer' || queryUserType === 'craftsman') {
+      console.log("Found userType in URL params:", queryUserType);
+      localStorage.setItem("userType", queryUserType);
+      sessionStorage.setItem("userType", queryUserType);
+      
+      // Remove the query parameter from the URL without reloading the page
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [location]);
   
   useEffect(() => {
     console.log("Profile route rendering with:", {

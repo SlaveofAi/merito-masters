@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
+import { createDefaultProfile } from "@/utils/profileCreation";
 
 const craftCategories = [
   'Stolár',
@@ -229,13 +230,32 @@ const Register = () => {
         }
       }
 
+      // Create default profile immediately
+      if (authData.user && authData.session) {
+        try {
+          // Add a slight delay to ensure DB operations complete
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          await createDefaultProfile(
+            authData.user,
+            userType,
+            true,
+            () => console.log("Default profile created after registration")
+          );
+        } catch (profileError) {
+          console.error("Error creating default profile:", profileError);
+        }
+      }
+
       toast.success("Registrácia úspešná!", {
         duration: 5000,
       });
       
       if (authData.session) {
-        // Directly navigate to the profile page after successful registration
-        navigate("/profile");
+        // Wait briefly to ensure data is saved before redirecting
+        setTimeout(() => {
+          navigate("/profile", { replace: true });
+        }, 1000);
       } else {
         // If email confirmation is required, navigate to the login page
         toast.info("Na vašu emailovú adresu sme odoslali potvrdzovací email", {
@@ -268,6 +288,8 @@ const Register = () => {
       }
 
       sessionStorage.setItem("pendingUserType", userType);
+      sessionStorage.setItem("userType", userType);
+      localStorage.setItem("userType", userType); // Store in localStorage for persistence
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
