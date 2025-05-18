@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { ProfileProvider } from "@/contexts/ProfileContext";
@@ -29,6 +30,10 @@ const Profile = () => {
   }
   
   // First check: Immediate redirect if we already know this is a customer
+  // Only redirect if:
+  // 1. No profile ID is provided (viewing own profile)
+  // 2. User is a customer
+  // 3. We're on the main profile page (not /profile/reviews)
   if (!id && userType === "customer" && window.location.pathname === "/profile") {
     console.log("Customer profile detected in main Profile route, immediate redirect to reviews");
     return <Navigate to="/profile/reviews" replace />;
@@ -46,6 +51,7 @@ const Profile = () => {
       return;
     }
     
+    // Only redirect if viewing own profile (no ID passed), not when viewing someone else's
     if (!id && userType === "customer" && window.location.pathname === "/profile") {
       console.log("Customer profile detected in Profile useEffect, redirecting to reviews");
       navigate("/profile/reviews", { replace: true });

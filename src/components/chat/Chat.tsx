@@ -14,6 +14,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const Chat: React.FC = () => {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
@@ -26,7 +27,7 @@ const Chat: React.FC = () => {
     setSelectedContact,
     refetchMessages
   );
-  const { userType } = useAuth();
+  const { user, userType } = useAuth();
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,58 +61,138 @@ const Chat: React.FC = () => {
   }, [refetchContacts, refreshData]);
   
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const contactId = searchParams.get('contact');
-    const conversationId = searchParams.get('conversation');
-    
-    const redirectedFromBooking = location.state?.from === 'booking';
-    const bookingContactId = location.state?.contactId;
-    const bookingConversationId = location.state?.conversationId;
-    
-    if (redirectedFromBooking && contacts && contacts.length > 0) {
-      console.log("Redirected from booking page with data:", location.state);
-      
-      if (bookingContactId) {
-        const contact = contacts.find(c => c.id === bookingContactId || c.contactId === bookingContactId);
-        if (contact) {
-          console.log("Setting selected contact from booking redirect (contact ID):", contact);
-          setSelectedContact(contact);
+    const handleNavigationRequests = async () => {
+      // Step 1: Check for profile page redirects first
+      if (location.state?.from === 'profile' && location.state?.contactId) {
+        console.log("Handling navigation from profile page", location.state);
+        const craftId = location.state.contactId;
+        
+        // Check if this contact already exists in our contacts list
+        let existingContact = contacts?.find(c => c.id === craftId || c.contactId === craftId);
+        
+        if (existingContact) {
+          console.log("Found existing contact in contacts list:", existingContact);
+          setSelectedContact(existingContact);
           if (isMobile) setSheetOpen(true);
+          // Clear location state to prevent reprocessing
           navigate('/messages', { replace: true });
           return;
+        } else if (user && userType === 'customer') {
+          console.log("Contact not found, attempting to create conversation");
+          try {
+            // Create a conversation first
+            const { data: craftsmanData, error: profileError } = await supabase
+              .from('craftsman_profiles')
+              .select('name')
+              .eq('id', craftId)
+              .single();
+              
+            if (profileError) {
+              throw new Error("Could not find craftsman profile");
+            }
+            
+            // Create conversation
+            const { data: conv, error: convError } = await supabase
+              .from('chat_conversations')
+              .insert({
+                customer_id: user.id,
+                craftsman_id: craftId
+              })
+              .select('id')
+              .single();
+              
+            if (convError) {
+              throw new Error("Failed to create conversation");
+            }
+            
+            // Create synthetic contact to show immediately
+            const newContact: ChatContact = {
+              id: craftId,
+              contactId: craftId,
+              name: craftsmanData.name || "Craftsman",
+              user_type: 'craftsman',
+              conversation_id: conv.id
+            };
+            
+            console.log("Created new conversation and contact:", newContact);
+            setSelectedContact(newContact);
+            if (isMobile) setSheetOpen(true);
+            
+            // Force refresh contacts
+            setTimeout(() => {
+              refetchContacts();
+            }, 500);
+            
+            // Clear location state
+            navigate('/messages', { replace: true });
+            return;
+          } catch (err) {
+            console.error("Error creating conversation from profile:", err);
+            toast.error("Nepodarilo sa vytvoriť konverzáciu");
+            navigate('/messages', { replace: true });
+            return;
+          }
         }
       }
       
-      if (bookingConversationId) {
-        const contact = contacts.find(c => c.conversation_id === bookingConversationId);
+      // Step 2: Handle other navigation requests
+      const searchParams = new URLSearchParams(location.search);
+      const contactId = searchParams.get('contact');
+      const conversationId = searchParams.get('conversation');
+      
+      const redirectedFromBooking = location.state?.from === 'booking';
+      const bookingContactId = location.state?.contactId;
+      const bookingConversationId = location.state?.conversationId;
+      
+      if (redirectedFromBooking && contacts && contacts.length > 0) {
+        console.log("Redirected from booking page with data:", location.state);
+        
+        if (bookingContactId) {
+          const contact = contacts.find(c => c.id === bookingContactId || c.contactId === bookingContactId);
+          if (contact) {
+            console.log("Setting selected contact from booking redirect (contact ID):", contact);
+            setSelectedContact(contact);
+            if (isMobile) setSheetOpen(true);
+            navigate('/messages', { replace: true });
+            return;
+          }
+        }
+        
+        if (bookingConversationId) {
+          const contact = contacts.find(c => c.conversation_id === bookingConversationId);
+          if (contact) {
+            console.log("Setting selected contact from booking redirect (conversation ID):", contact);
+            setSelectedContact(contact);
+            if (isMobile) setSheetOpen(true);
+            navigate('/messages', { replace: true });
+            return;
+          }
+        }
+      }
+      
+      if (contactId && contacts && contacts.length > 0) {
+        const contact = contacts.find(c => c.id === contactId || c.contactId === contactId);
         if (contact) {
-          console.log("Setting selected contact from booking redirect (conversation ID):", contact);
+          console.log("Setting selected contact from URL params:", contact);
           setSelectedContact(contact);
           if (isMobile) setSheetOpen(true);
           navigate('/messages', { replace: true });
-          return;
+        }
+      } else if (conversationId && contacts && contacts.length > 0) {
+        const contact = contacts.find(c => c.conversation_id === conversationId);
+        if (contact) {
+          console.log("Setting selected contact from conversation ID:", contact);
+          setSelectedContact(contact);
+          if (isMobile) setSheetOpen(true);
+          navigate('/messages', { replace: true });
         }
       }
-    }
+    };
     
-    if (contactId && contacts && contacts.length > 0) {
-      const contact = contacts.find(c => c.id === contactId || c.contactId === contactId);
-      if (contact) {
-        console.log("Setting selected contact from URL params:", contact);
-        setSelectedContact(contact);
-        if (isMobile) setSheetOpen(true);
-        navigate('/messages', { replace: true });
-      }
-    } else if (conversationId && contacts && contacts.length > 0) {
-      const contact = contacts.find(c => c.conversation_id === conversationId);
-      if (contact) {
-        console.log("Setting selected contact from conversation ID:", contact);
-        setSelectedContact(contact);
-        if (isMobile) setSheetOpen(true);
-        navigate('/messages', { replace: true });
-      }
+    if (contacts && contacts.length >= 0) {
+      handleNavigationRequests();
     }
-  }, [contacts, location, navigate, isMobile]);
+  }, [contacts, location, navigate, isMobile, user, userType, refetchContacts]);
   
   // New handler for navigating to profile when clicking on contact name
   const handleNavigateToProfile = (contactId: string) => {

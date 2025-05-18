@@ -12,7 +12,7 @@ import ProfileTabs from "@/components/profile/ProfileTabs";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Pencil, MessageSquare } from "lucide-react";
+import { MessageSquare, Pencil } from "lucide-react";
 
 const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const { user, userType: authUserType, updateUserType } = useAuth();
@@ -141,7 +141,13 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   // Handler for the send message button
   const handleSendMessage = () => {
     if (profileData && profileData.id) {
-      navigate(`/messages?contact=${profileData.id}`);
+      console.log("Navigating to messages with craftsman:", profileData.id);
+      navigate(`/messages`, {
+        state: { 
+          from: "profile",
+          contactId: profileData.id 
+        }
+      });
     }
   };
   
@@ -251,6 +257,11 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   const isCraftsmanProfile = profileData.user_type === 'craftsman' || 'trade_category' in profileData;
   const viewingAsCraftsman = isCraftsmanProfile && !isCurrentUser;
 
+  // Check if customer is viewing craftsman
+  const isCustomerViewingCraftsman = !isCurrentUser && 
+                                    authUserType === 'customer' && 
+                                    isCraftsmanProfile;
+
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
@@ -267,8 +278,8 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
               />
               
               <div className="flex justify-between mb-6">
-                {/* Show Send Message button when viewing someone else's craftsman profile */}
-                {viewingAsCraftsman && (
+                {/* Show Send Message button when customer is viewing craftsman profile */}
+                {isCustomerViewingCraftsman && (
                   <Button 
                     onClick={handleSendMessage}
                     variant="default" 
@@ -293,7 +304,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
             </>
           )}
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow-sm p-6 mx-auto">
             <ProfileTabs userType={effectiveUserType} initialTab={initialTab} />
           </div>
         </div>

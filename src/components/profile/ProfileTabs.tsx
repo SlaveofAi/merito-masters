@@ -7,6 +7,7 @@ import ContactTab from "@/components/profile/ContactTab";
 import ProfileCalendar from "@/components/profile/ProfileCalendar";
 import EditProfileForm from "@/components/EditProfileForm";
 import { useProfile } from "@/contexts/ProfileContext";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ProfileTabsProps {
   userType: string | null;
@@ -15,6 +16,7 @@ interface ProfileTabsProps {
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portfolio" }) => {
   const { isCurrentUser, isEditing, profileData, userType: profileUserType, handleProfileUpdate } = useProfile();
+  const { userType: authUserType } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
   
   // Add debug logging to understand the component state
@@ -22,8 +24,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portf
     isEditing,
     userType,
     profileUserType,
+    authUserType,
     hasProfileData: !!profileData,
-    activeTab
+    activeTab,
+    isCurrentUser
   });
   
   // Don't display tabs when editing
@@ -42,14 +46,18 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portf
 
   // Display the appropriate tabs based on the user type
   const isCraftsman = userType === 'craftsman';
+  // Check if viewing user is a customer looking at a craftsman profile
+  const isCustomerViewingCraftsman = !isCurrentUser && 
+                                    authUserType === 'customer' && 
+                                    isCraftsman;
 
   return (
     <Tabs 
       defaultValue={activeTab} 
-      className="w-full" 
+      className="w-full mx-auto" 
       onValueChange={setActiveTab}
     >
-      <TabsList className="grid w-full mb-8" 
+      <TabsList className="grid w-full mb-8 max-w-md mx-auto" 
         style={{ 
           gridTemplateColumns: isCraftsman 
             ? (isCurrentUser ? "repeat(3, 1fr)" : "repeat(3, 1fr)") 
@@ -70,36 +78,39 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portf
         )}
       </TabsList>
 
-      {/* Tab content */}
-      {isCraftsman && (
-        <>
-          <TabsContent value="portfolio">
-            <PortfolioTab />
-          </TabsContent>
-          
+      {/* Center tab content by adding max-width and mx-auto */}
+      <div className="max-w-3xl mx-auto">
+        {/* Tab content */}
+        {isCraftsman && (
+          <>
+            <TabsContent value="portfolio">
+              <PortfolioTab />
+            </TabsContent>
+            
+            <TabsContent value="reviews">
+              <ReviewsTab />
+            </TabsContent>
+
+            {!isCurrentUser && (
+              <TabsContent value="contact">
+                <ContactTab />
+              </TabsContent>
+            )}
+
+            {isCurrentUser && (
+              <TabsContent value="calendar">
+                <ProfileCalendar />
+              </TabsContent>
+            )}
+          </>
+        )}
+        
+        {!isCraftsman && (
           <TabsContent value="reviews">
             <ReviewsTab />
           </TabsContent>
-
-          {!isCurrentUser && (
-            <TabsContent value="contact">
-              <ContactTab />
-            </TabsContent>
-          )}
-
-          {isCurrentUser && (
-            <TabsContent value="calendar">
-              <ProfileCalendar />
-            </TabsContent>
-          )}
-        </>
-      )}
-      
-      {!isCraftsman && (
-        <TabsContent value="reviews">
-          <ReviewsTab />
-        </TabsContent>
-      )}
+        )}
+      </div>
     </Tabs>
   );
 };

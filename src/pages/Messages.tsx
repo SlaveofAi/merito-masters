@@ -33,9 +33,16 @@ const Messages = () => {
 
   // Check if we were redirected from another page with a conversation parameter
   useEffect(() => {
-    if (user && location.state?.from === 'booking') {
-      console.log("Redirected from booking page with conversation:", location.state);
-      // This data will be handled in the Chat component
+    if (user && location.state) {
+      console.log("Detected redirect to messages with state:", location.state);
+      
+      if (location.state.from === 'profile' && location.state.contactId) {
+        console.log("Redirected from profile page with contact:", location.state.contactId);
+        // The Contact component will handle the actual conversation creation
+      } else if (location.state.from === 'booking') {
+        console.log("Redirected from booking page with conversation:", location.state);
+        // This data will be handled in the Chat component
+      }
     }
   }, [location, user]);
 
