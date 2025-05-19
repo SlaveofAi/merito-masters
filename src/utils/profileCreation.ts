@@ -85,8 +85,7 @@ export const createDefaultProfile = async (
           toast.success("Profil bol vytvorený", { duration: 3000 });
           success = true;
           
-          // Don't try to update metadata here - it's causing the auth session missing error
-          // Instead we'll store user type in localStorage as a backup
+          // Store user type in localStorage as a backup
           try {
             localStorage.setItem("userType", userType);
           } catch (e) {
@@ -98,7 +97,7 @@ export const createDefaultProfile = async (
           }, 1000);
         }
       }
-    } else {
+    } else { // Customer profile creation
       // First check if profile already exists
       const { data: existingProfile, error: checkError } = await supabase
         .from('customer_profiles')
@@ -154,8 +153,7 @@ export const createDefaultProfile = async (
           toast.success("Profil bol vytvorený", { duration: 3000 });
           success = true;
           
-          // Don't try to update metadata here - it's causing the auth session missing error
-          // Instead we'll store user type in localStorage as a backup
+          // Store user type in localStorage as a backup
           try {
             localStorage.setItem("userType", userType);
           } catch (e) {

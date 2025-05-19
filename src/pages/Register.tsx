@@ -131,7 +131,7 @@ const Register = () => {
       };
       
       // For craftsmen, include the selected trade_category in metadata
-      if (userType === 'craftsman') {
+      if (userType === 'craftsman' && 'tradeCategory' in data) {
         userMetadata.trade_category = (data as CraftsmanFormValues).tradeCategory;
       }
 
@@ -163,6 +163,7 @@ const Register = () => {
       console.log("User registered successfully:", authData.user.id);
       
       sessionStorage.setItem("userType", userType);
+      localStorage.setItem("userType", userType); // Ensure user type is available in localStorage
       
       // Try to sign in immediately after registration
       try {
@@ -246,7 +247,7 @@ const Register = () => {
         }
       }
 
-      // Create default profile immediately
+      // Create default profile immediately with a slight delay
       if (authData.user && authData.session) {
         try {
           // Add a slight delay to ensure DB operations complete
@@ -435,7 +436,7 @@ const Register = () => {
                   name="phone"
                   render={({ field }) => (
                     <FormItem className="space-y-2">
-                      <FormLabel>Telefónne číslo (voliteľné)</FormLabel>
+                      <FormLabel>Telefónne č��slo (voliteľné)</FormLabel>
                       <div className="relative">
                         <Phone className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                         <FormControl>

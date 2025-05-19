@@ -32,6 +32,7 @@ const Profile = () => {
     }
   }, [location]);
   
+  // Debug log
   useEffect(() => {
     console.log("Profile route rendering with:", {
       id,
