@@ -4,19 +4,20 @@ import Cropper from 'react-easy-crop';
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { ZoomIn, ZoomOut } from "lucide-react";
+import { getCroppedImg } from "@/utils/imageCrop";
 
 interface ImageCropperProps {
   imageSrc: string;
   onCropComplete: (croppedArea: any) => void;
   onCancel: () => void;
-  onConfirm: () => void;
+  aspectRatio?: number;
 }
 
 const ImageCropper: React.FC<ImageCropperProps> = ({ 
   imageSrc, 
   onCropComplete, 
   onCancel,
-  onConfirm
+  aspectRatio = 1
 }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -32,8 +33,18 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
 
   const handleCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
-    onCropComplete(croppedAreaPixels);
-  }, [onCropComplete]);
+  }, []);
+
+  const handleConfirm = async () => {
+    if (!croppedAreaPixels) return;
+    
+    try {
+      const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
+      onCropComplete(croppedImage);
+    } catch (error) {
+      console.error('Error getting cropped image:', error);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
@@ -47,7 +58,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={1}
+            aspect={aspectRatio}
             onCropChange={onCropChange}
             onCropComplete={handleCropComplete}
             onZoomChange={setZoom}
@@ -73,7 +84,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
             <Button variant="outline" onClick={onCancel}>
               Zrušiť
             </Button>
-            <Button onClick={onConfirm}>
+            <Button onClick={handleConfirm}>
               Potvrdiť
             </Button>
           </div>

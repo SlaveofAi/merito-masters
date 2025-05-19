@@ -35,16 +35,23 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       throw uploadError;
     }
     
-    // Add a cache-busting parameter to the URL
+    // Get the public URL for the uploaded image
     const { data } = supabase.storage
       .from('profile_images')
-      .getPublicUrl(`${filePath}?t=${timestamp}`);
+      .getPublicUrl(`${filePath}`);
     
+    // Add a cache-busting parameter to the URL
+    const publicUrl = `${data.publicUrl}?t=${timestamp}`;
+    
+    // Determine which table to update based on user type
     const tableToUpdate = userType === 'craftsman' ? TABLES.CRAFTSMAN_PROFILES : TABLES.CUSTOMER_PROFILES;
     
+    console.log(`Updating ${tableToUpdate} for user ${userId} with image URL: ${publicUrl}`);
+    
+    // Update the profile_image_url in the database
     const { error: updateError } = await supabase
       .from(tableToUpdate)
-      .update({ profile_image_url: data.publicUrl })
+      .update({ profile_image_url: publicUrl })
       .eq('id', userId);
       
     if (updateError) {
@@ -52,8 +59,8 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       throw updateError;
     }
     
-    toast.success("Profilová fotka bola aktualizovaná");
-    return data.publicUrl;
+    console.log("Profile image updated successfully");
+    return publicUrl;
   } catch (error: any) {
     console.error('Error uploading image:', error);
     toast.error(`Nastala chyba pri nahrávaní obrázka: ${error.message || 'Neznáma chyba'}`);

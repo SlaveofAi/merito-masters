@@ -59,6 +59,8 @@ export const useProfileData = (id?: string) => {
       const url = await uploadProfileImage(file, profileData.id, fetchedUserType || userType);
       if (url) {
         setProfileImageUrl(url);
+        // Re-fetch the profile data to ensure all data is up-to-date
+        await fetchProfileData();
         toast.success("Profilová fotka bola úspešne aktualizovaná");
       }
     } catch (error) {

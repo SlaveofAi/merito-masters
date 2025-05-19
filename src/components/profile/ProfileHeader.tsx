@@ -63,6 +63,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       if (uploadProfileImage) {
         await uploadProfileImage(new File([blob], 'profile-image.jpg', { type: 'image/jpeg' }));
         toast.success("Profilová fotka bola úspešne aktualizovaná");
+        
+        // Refresh profile data to show the new image
+        if (fetchProfileData) {
+          fetchProfileData();
+        }
       }
     } catch (error) {
       console.error("Error uploading profile image:", error);
