@@ -56,12 +56,16 @@ export const useProfileData = (id?: string) => {
     
     setUploading(true);
     try {
+      console.log(`Uploading profile image for user ${profileData.id} with type ${fetchedUserType || userType}`);
       const url = await uploadProfileImage(file, profileData.id, fetchedUserType || userType);
+      
       if (url) {
         setProfileImageUrl(url);
         // Re-fetch the profile data to ensure all data is up-to-date
         await fetchProfileData();
         toast.success("Profilová fotka bola úspešne aktualizovaná");
+      } else {
+        throw new Error("Failed to upload image or get URL");
       }
     } catch (error) {
       console.error("Error uploading profile image:", error);

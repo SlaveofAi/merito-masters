@@ -11,6 +11,8 @@ export const TABLES = {
 
 export const uploadProfileImage = async (file: File | Blob, userId: string, userType: string | null) => {
   try {
+    console.log(`Starting image upload for user ${userId} with type ${userType}`);
+    
     // Check file size
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
       toast.error("Obrázok je príliš veľký. Maximálna veľkosť je 5MB.");
@@ -21,6 +23,8 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
     const timestamp = new Date().getTime();
     const fileName = `profile-${userId}-${timestamp}-${Math.random().toString(36).substring(2)}.jpg`;
     const filePath = `${fileName}`;
+    
+    console.log(`Uploading file to ${filePath}`);
     
     const { error: uploadError } = await supabase.storage
       .from('profile_images')

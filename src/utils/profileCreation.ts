@@ -48,6 +48,7 @@ export const createDefaultProfile = async (
       }
       
       console.log("Creating new craftsman profile for user:", user.id);
+      console.log("With trade category:", tradeCategory);
       
       // Retry logic for creating profile
       let retries = 3;

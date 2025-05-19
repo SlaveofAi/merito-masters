@@ -31,8 +31,14 @@ export const useProfileImages = (
 
   useEffect(() => {
     if (profileData) {
-      if ('profile_image_url' in profileData) {
-        setProfileImageUrl(profileData.profile_image_url || null);
+      // Set profile image URL with cache-busting parameter
+      if ('profile_image_url' in profileData && profileData.profile_image_url) {
+        const imageUrl = profileData.profile_image_url;
+        // Add cache buster if not already present
+        const url = imageUrl.includes('?') ? imageUrl : `${imageUrl}?t=${Date.now()}`;
+        setProfileImageUrl(url);
+      } else {
+        setProfileImageUrl(null);
       }
       
       if (userType === 'craftsman') {

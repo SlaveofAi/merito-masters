@@ -48,6 +48,6 @@ export const getCroppedImg = async (
       }
       const file = new File([blob], 'cropped-image.jpeg', { type: 'image/jpeg' });
       resolve(file);
-    }, 'image/jpeg');
+    }, 'image/jpeg', 0.95); // Adding quality parameter to ensure good image quality
   });
 };
