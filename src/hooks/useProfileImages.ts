@@ -31,16 +31,21 @@ export const useProfileImages = (
 
   useEffect(() => {
     if (profileData) {
+      console.log("useProfileImages: Setting profile image from data:", profileData);
+      
       // Set profile image URL with cache-busting parameter
-      if ('profile_image_url' in profileData && profileData.profile_image_url) {
+      if (profileData.profile_image_url) {
         const imageUrl = profileData.profile_image_url;
         // Add cache buster if not already present
         const url = imageUrl.includes('?') ? imageUrl : `${imageUrl}?t=${Date.now()}`;
+        console.log("Setting profile image URL:", url);
         setProfileImageUrl(url);
       } else {
+        console.log("No profile image URL found in profile data");
         setProfileImageUrl(null);
       }
       
+      // Only fetch portfolio images for craftsmen
       if (userType === 'craftsman') {
         fetchPortfolioImages(profileData.id);
       }

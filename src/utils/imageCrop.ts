@@ -13,7 +13,7 @@ export const createImage = (url: string): Promise<HTMLImageElement> =>
 export const getCroppedImg = async (
   imageSrc: string,
   pixelCrop: { x: number; y: number; width: number; height: number }
-): Promise<File> => {
+): Promise<Blob> => {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -40,14 +40,13 @@ export const getCroppedImg = async (
   );
 
   // Get the data URL from the canvas
-  return new Promise<File>((resolve, reject) => {
+  return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (!blob) {
         reject(new Error('Canvas is empty'));
         return;
       }
-      const file = new File([blob], 'cropped-image.jpeg', { type: 'image/jpeg' });
-      resolve(file);
+      resolve(blob);
     }, 'image/jpeg', 0.95); // Adding quality parameter to ensure good image quality
   });
 };

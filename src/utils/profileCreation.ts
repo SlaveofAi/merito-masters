@@ -35,7 +35,6 @@ export const createDefaultProfile = async (
         
       if (checkError) {
         console.error("Error checking for existing profile:", checkError);
-        
         // We'll try to proceed anyway, assuming the profile doesn't exist
         console.log("Proceeding with profile creation despite error");
       }
@@ -55,46 +54,53 @@ export const createDefaultProfile = async (
       let success = false;
       
       while (retries > 0 && !success) {
-        const { error: insertError } = await supabase
-          .from('craftsman_profiles')
-          .insert({
-            id: user.id,
-            name,
-            email,
-            location: 'Bratislava',
-            trade_category: tradeCategory, // Use the trade_category from metadata if available
-            custom_specialization: tradeCategory, // Set the same value for custom specialization
-            phone: null,
-            description: 'Zadajte popis vašich služieb',
-            profile_image_url: null
-          });
-          
-        if (insertError) {
-          console.error(`Error creating craftsman profile (retry ${3-retries+1}/3):`, insertError);
-          
-          if (retries > 1) {
-            // Wait before retrying
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            retries--;
+        try {
+          const { error: insertError } = await supabase
+            .from('craftsman_profiles')
+            .insert({
+              id: user.id,
+              name,
+              email,
+              location: 'Bratislava',
+              trade_category: tradeCategory,
+              custom_specialization: tradeCategory,
+              phone: null,
+              description: 'Zadajte popis vašich služieb',
+              profile_image_url: null
+            });
+            
+          if (insertError) {
+            console.error(`Error creating craftsman profile (retry ${3-retries+1}/3):`, insertError);
+            
+            if (retries > 1) {
+              // Wait before retrying
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              retries--;
+            } else {
+              toast.error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
+              throw insertError;
+            }
           } else {
-            toast.error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
-            throw new Error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
+            console.log("Default craftsman profile created successfully");
+            toast.success("Profil bol vytvorený", { duration: 3000 });
+            success = true;
+            
+            // Store user type in localStorage as a backup
+            try {
+              localStorage.setItem("userType", userType);
+            } catch (e) {
+              console.error("Error saving user type to localStorage:", e);
+            }
+            
+            setTimeout(() => {
+              onSuccess();
+            }, 1000);
           }
-        } else {
-          console.log("Default craftsman profile created successfully");
-          toast.success("Profil bol vytvorený", { duration: 3000 });
-          success = true;
-          
-          // Store user type in localStorage as a backup
-          try {
-            localStorage.setItem("userType", userType);
-          } catch (e) {
-            console.error("Error saving user type to localStorage:", e);
-          }
-          
-          setTimeout(() => {
-            onSuccess();
-          }, 1000);
+        } catch (err) {
+          console.error("Error in profile creation try/catch block:", err);
+          retries--;
+          if (retries === 0) throw err;
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
     } else { // Customer profile creation
@@ -107,7 +113,6 @@ export const createDefaultProfile = async (
         
       if (checkError) {
         console.error("Error checking for existing profile:", checkError);
-        
         // We'll try to proceed anyway, assuming the profile doesn't exist
         console.log("Proceeding with profile creation despite error");
       }
@@ -126,43 +131,50 @@ export const createDefaultProfile = async (
       let success = false;
       
       while (retries > 0 && !success) {
-        const { error: insertError } = await supabase
-          .from('customer_profiles')
-          .insert({
-            id: user.id,
-            name,
-            email,
-            location: 'Bratislava',
-            phone: null,
-            profile_image_url: null
-          });
-          
-        if (insertError) {
-          console.error(`Error creating customer profile (retry ${3-retries+1}/3):`, insertError);
-          
-          if (retries > 1) {
-            // Wait before retrying
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            retries--;
+        try {
+          const { error: insertError } = await supabase
+            .from('customer_profiles')
+            .insert({
+              id: user.id,
+              name,
+              email,
+              location: 'Bratislava',
+              phone: null,
+              profile_image_url: null
+            });
+            
+          if (insertError) {
+            console.error(`Error creating customer profile (retry ${3-retries+1}/3):`, insertError);
+            
+            if (retries > 1) {
+              // Wait before retrying
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              retries--;
+            } else {
+              toast.error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
+              throw insertError;
+            }
           } else {
-            toast.error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
-            throw new Error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
+            console.log("Default customer profile created successfully");
+            toast.success("Profil bol vytvorený", { duration: 3000 });
+            success = true;
+            
+            // Store user type in localStorage as a backup
+            try {
+              localStorage.setItem("userType", userType);
+            } catch (e) {
+              console.error("Error saving user type to localStorage:", e);
+            }
+            
+            setTimeout(() => {
+              onSuccess();
+            }, 1000);
           }
-        } else {
-          console.log("Default customer profile created successfully");
-          toast.success("Profil bol vytvorený", { duration: 3000 });
-          success = true;
-          
-          // Store user type in localStorage as a backup
-          try {
-            localStorage.setItem("userType", userType);
-          } catch (e) {
-            console.error("Error saving user type to localStorage:", e);
-          }
-          
-          setTimeout(() => {
-            onSuccess();
-          }, 1000);
+        } catch (err) {
+          console.error("Error in profile creation try/catch block:", err);
+          retries--;
+          if (retries === 0) throw err;
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
     }
