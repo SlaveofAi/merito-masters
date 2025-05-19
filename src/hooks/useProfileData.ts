@@ -32,7 +32,8 @@ export const useProfileData = (id?: string) => {
     portfolioImages,
     profileImageUrl,
     setProfileImageUrl,
-    fetchPortfolioImages
+    fetchPortfolioImages,
+    refreshProfileImage
   } = useProfileImages(profileData, fetchedUserType || userType);
 
   const {
@@ -56,13 +57,23 @@ export const useProfileData = (id?: string) => {
     
     setUploading(true);
     try {
-      console.log(`Uploading profile image for user ${profileData.id} with type ${fetchedUserType || userType}`);
-      const url = await uploadProfileImage(file, profileData.id, fetchedUserType || userType);
+      const effectiveUserType = fetchedUserType || userType;
+      console.log(`Uploading profile image for user ${profileData.id} with type ${effectiveUserType}`);
+      
+      const url = await uploadProfileImage(file, profileData.id, effectiveUserType);
       
       if (url) {
         setProfileImageUrl(url);
+        
         // Re-fetch the profile data to ensure all data is up-to-date
+        console.log("Profile image uploaded successfully, refreshing profile data");
         await fetchProfileData();
+        
+        // Additional refresh of the profile image to ensure UI updates
+        setTimeout(() => {
+          refreshProfileImage();
+        }, 500);
+        
         toast.success("Profilová fotka bola úspešne aktualizovaná");
       } else {
         throw new Error("Failed to upload image or get URL");
@@ -263,6 +274,7 @@ export const useProfileData = (id?: string) => {
     projects,
     removeProject,
     createProject,
-    fetchProfileData
+    fetchProfileData,
+    refreshProfileImage
   };
 };

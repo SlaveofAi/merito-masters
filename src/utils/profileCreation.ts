@@ -25,6 +25,32 @@ export const createDefaultProfile = async (
     // Get trade category from metadata if available (for craftsmen)
     const tradeCategory = user.user_metadata?.trade_category || 'Stolár';
     
+    // First ensure user type is set in the database
+    try {
+      const { error: userTypeError } = await supabase
+        .from('user_types')
+        .upsert({
+          user_id: user.id,
+          user_type: userType
+        });
+      
+      if (userTypeError) {
+        console.error("Error setting user type:", userTypeError);
+      } else {
+        console.log("User type set successfully:", userType);
+        
+        // Store user type in localStorage and sessionStorage as backup
+        try {
+          localStorage.setItem("userType", userType);
+          sessionStorage.setItem("userType", userType);
+        } catch (e) {
+          console.error("Error saving user type to storage:", e);
+        }
+      }
+    } catch (e) {
+      console.error("Error in userType setting:", e);
+    }
+    
     if (userType === 'craftsman') {
       // First check if profile already exists
       const { data: existingProfile, error: checkError } = await supabase

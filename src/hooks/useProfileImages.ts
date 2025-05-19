@@ -32,6 +32,7 @@ export const useProfileImages = (
   useEffect(() => {
     if (profileData) {
       console.log("useProfileImages: Setting profile image from data:", profileData);
+      console.log("Current user type:", userType);
       
       // Set profile image URL with cache-busting parameter
       if (profileData.profile_image_url) {
@@ -52,10 +53,21 @@ export const useProfileImages = (
     }
   }, [profileData, userType]);
 
+  const refreshProfileImage = () => {
+    console.log("Manually refreshing profile image");
+    if (profileData && profileData.profile_image_url) {
+      const imageUrl = profileData.profile_image_url;
+      const url = `${imageUrl.split('?')[0]}?t=${Date.now()}`;
+      console.log("Refreshed profile image URL:", url);
+      setProfileImageUrl(url);
+    }
+  };
+
   return {
     portfolioImages,
     profileImageUrl,
     setProfileImageUrl,
-    fetchPortfolioImages
+    fetchPortfolioImages,
+    refreshProfileImage
   };
 };

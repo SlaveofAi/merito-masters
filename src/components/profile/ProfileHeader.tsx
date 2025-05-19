@@ -61,7 +61,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       setShowImageCropper(false);
       
       if (uploadProfileImage) {
-        await uploadProfileImage(new File([blob], 'profile-image.jpg', { type: 'image/jpeg' }));
+        // Convert blob to File for compatibility
+        const file = new File([blob], 'profile-image.jpg', { type: 'image/jpeg' });
+        await uploadProfileImage(file);
         toast.success("Profilová fotka bola úspešne aktualizovaná");
         
         // Refresh profile data to show the new image

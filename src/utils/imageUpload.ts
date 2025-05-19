@@ -52,18 +52,19 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
     
     console.log(`Updating ${tableToUpdate} for user ${userId} with image URL: ${publicUrl}`);
     
-    // Update the profile_image_url in the database
-    const { error: updateError } = await supabase
+    // Update the profile_image_url in the database with explicit debugging
+    const { error: updateError, data: updateData } = await supabase
       .from(tableToUpdate)
       .update({ profile_image_url: publicUrl })
-      .eq('id', userId);
+      .eq('id', userId)
+      .select();
       
     if (updateError) {
       console.error("Database update error:", updateError);
       throw updateError;
     }
     
-    console.log("Profile image updated successfully");
+    console.log("Profile image updated successfully:", updateData);
     return publicUrl;
   } catch (error: any) {
     console.error('Error uploading image:', error);

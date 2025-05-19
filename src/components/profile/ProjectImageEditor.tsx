@@ -29,9 +29,12 @@ const ProjectImageEditor: React.FC<ProjectImageEditorProps> = ({ imageSrc, onSav
         throw new Error("No cropped area data");
       }
       
-      // Get the cropped image as a File
-      const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
-      onSave(croppedImage);
+      // Get the cropped image as a Blob
+      const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+      
+      // Convert blob to File for compatibility
+      const croppedImageFile = new File([croppedImageBlob], 'project-image.jpg', { type: 'image/jpeg' });
+      onSave(croppedImageFile);
     } catch (error) {
       console.error("Error saving cropped image:", error);
     } finally {

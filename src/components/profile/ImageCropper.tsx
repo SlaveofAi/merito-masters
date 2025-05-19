@@ -8,7 +8,7 @@ import { getCroppedImg } from "@/utils/imageCrop";
 
 interface ImageCropperProps {
   imageSrc: string;
-  onCropComplete: (croppedArea: any) => void;
+  onCropComplete: (croppedArea: Blob) => void;
   onCancel: () => void;
   aspectRatio?: number;
 }

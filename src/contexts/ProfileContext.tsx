@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -45,7 +44,8 @@ interface ProfileContextType {
   fetchPortfolioImages?: (userId: string) => Promise<void>;
   removeProject: (projectId: string) => Promise<void>;
   createProject: (title: string, description: string, images: File[]) => Promise<void>;
-  fetchProfileData: () => void; 
+  fetchProfileData: () => void;
+  refreshProfileImage?: () => void; 
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -92,7 +92,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     projects,
     removeProject,
     createProject,
-    fetchProfileData
+    fetchProfileData,
+    refreshProfileImage
   } = useProfileData(profileId);
 
   const handleProfileUpdate = (updatedProfile: any) => {
@@ -177,7 +178,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const value = {
     loading,
     profileData,
-    userType: fetchedUserType,  // Using fetchedUserType here, not userType
+    userType: fetchedUserType,
     isCurrentUser,
     profileNotFound,
     error,
@@ -212,7 +213,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchPortfolioImages,
     removeProject,
     createProject,
-    fetchProfileData
+    fetchProfileData,
+    refreshProfileImage
   };
 
   return (
