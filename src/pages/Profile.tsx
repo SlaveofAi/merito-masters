@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useParams, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { ProfileProvider } from "@/contexts/ProfileContext";
@@ -6,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { toast } from "sonner";
 import AuthRequiredMessage from "@/components/profile/AuthRequiredMessage";
-import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
   const { id } = useParams();
