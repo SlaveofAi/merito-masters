@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ export interface ProfileHeaderProps {
   profileImageUrl?: string | null;
   uploadProfileImage?: (file: File) => Promise<void>;
   fetchProfileData?: () => void;
+  refreshProfileImage?: () => void;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -25,6 +25,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   profileImageUrl,
   uploadProfileImage,
   fetchProfileData,
+  refreshProfileImage,
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
@@ -69,6 +70,13 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         // Refresh profile data to show the new image
         if (fetchProfileData) {
           fetchProfileData();
+        }
+        
+        // Additional refresh to ensure the UI updates
+        if (refreshProfileImage) {
+          setTimeout(() => {
+            refreshProfileImage();
+          }, 500);
         }
       }
     } catch (error) {

@@ -13,6 +13,12 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
   try {
     console.log(`Starting image upload for user ${userId} with type ${userType}`);
     
+    if (!userType) {
+      console.error("User type is required for profile image upload");
+      toast.error("Chyba: Typ užívateľa nie je definovaný.");
+      return null;
+    }
+    
     // Check file size
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
       toast.error("Obrázok je príliš veľký. Maximálna veľkosť je 5MB.");
@@ -48,7 +54,9 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
     const publicUrl = `${data.publicUrl}?t=${timestamp}`;
     
     // Determine which table to update based on user type
-    const tableToUpdate = userType === 'craftsman' ? TABLES.CRAFTSMAN_PROFILES : TABLES.CUSTOMER_PROFILES;
+    const tableToUpdate = userType.toLowerCase() === 'craftsman' 
+      ? TABLES.CRAFTSMAN_PROFILES 
+      : TABLES.CUSTOMER_PROFILES;
     
     console.log(`Updating ${tableToUpdate} for user ${userId} with image URL: ${publicUrl}`);
     

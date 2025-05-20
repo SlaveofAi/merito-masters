@@ -30,7 +30,8 @@ const ProfileReviewsContent: React.FC = () => {
     fetchProfileData,
     setIsEditing,
     isEditing,
-    handleProfileUpdate
+    handleProfileUpdate,
+    refreshProfileImage
   } = useProfile();
   
   const { user, loading: authLoading } = useAuth();
@@ -52,9 +53,10 @@ const ProfileReviewsContent: React.FC = () => {
       canLeaveReview: userType === 'customer' && profileData?.user_type === 'craftsman' && !isCurrentUser,
       isCraftsmanProfile: profileData?.user_type === 'craftsman',
       isCustomerProfile: profileData?.user_type === 'customer',
-      isEditing
+      isEditing,
+      profileImageUrl
     });
-  }, [loading, profileData, userType, isCurrentUser, isEditing]);
+  }, [loading, profileData, userType, isCurrentUser, isEditing, profileImageUrl]);
 
   const handleEditClick = () => {
     console.log("Edit profile button clicked, setting isEditing to true");
@@ -116,6 +118,7 @@ const ProfileReviewsContent: React.FC = () => {
               userType={userType}
               profileImageUrl={profileImageUrl}
               fetchProfileData={fetchProfileData}
+              refreshProfileImage={refreshProfileImage}
             />
             <div className="bg-white rounded-lg shadow-sm p-6">
               <ProfileNavigation activeTab="reviews" userType={profileData?.user_type} />
@@ -145,6 +148,7 @@ const ProfileReviewsContent: React.FC = () => {
                 userType={userType}
                 profileImageUrl={profileImageUrl}
                 fetchProfileData={fetchProfileData}
+                refreshProfileImage={refreshProfileImage}
               />
               
               {isCurrentUser && (

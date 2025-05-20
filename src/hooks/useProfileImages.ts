@@ -12,6 +12,12 @@ export const useProfileImages = (
 
   const fetchPortfolioImages = async (userId: string) => {
     try {
+      // Only fetch portfolio images for craftsmen
+      if (userType !== 'craftsman') {
+        console.log("Skipping portfolio images fetch for non-craftsman user");
+        return;
+      }
+
       // Ensure we have a valid userId
       if (!userId || userId === ":id") {
         console.log("Invalid userId for fetching portfolio images:", userId);
@@ -40,7 +46,7 @@ export const useProfileImages = (
 
   useEffect(() => {
     if (profileData) {
-      console.log("useProfileImages: Setting profile image from data:", profileData);
+      console.log("useProfileImages: Processing profile data:", profileData);
       console.log("Current user type:", userType);
       
       // Set profile image URL with cache-busting parameter
@@ -56,7 +62,7 @@ export const useProfileImages = (
       }
       
       // Only fetch portfolio images for craftsmen
-      if (userType === 'craftsman' || profileData.user_type === 'craftsman') {
+      if ((userType === 'craftsman' || profileData.user_type === 'craftsman') && profileData.id) {
         fetchPortfolioImages(profileData.id);
       }
     }
