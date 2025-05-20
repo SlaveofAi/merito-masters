@@ -12,6 +12,14 @@ export const useProfileImages = (
 
   const fetchPortfolioImages = async (userId: string) => {
     try {
+      // Ensure we have a valid userId
+      if (!userId || userId === ":id") {
+        console.log("Invalid userId for fetching portfolio images:", userId);
+        return;
+      }
+      
+      console.log("Fetching portfolio images for craftsman:", userId);
+      
       const { data, error } = await supabase
         .from('portfolio_images')
         .select('*')
@@ -23,6 +31,7 @@ export const useProfileImages = (
         return;
       }
 
+      console.log("Portfolio images fetched:", data?.length || 0);
       setPortfolioImages(data || []);
     } catch (error) {
       console.error("Error in fetchPortfolioImages:", error);
@@ -47,7 +56,7 @@ export const useProfileImages = (
       }
       
       // Only fetch portfolio images for craftsmen
-      if (userType === 'craftsman') {
+      if (userType === 'craftsman' || profileData.user_type === 'craftsman') {
         fetchPortfolioImages(profileData.id);
       }
     }
@@ -57,7 +66,9 @@ export const useProfileImages = (
     console.log("Manually refreshing profile image");
     if (profileData && profileData.profile_image_url) {
       const imageUrl = profileData.profile_image_url;
-      const url = `${imageUrl.split('?')[0]}?t=${Date.now()}`;
+      // Split by ? to handle URLs that already have parameters
+      const baseUrl = imageUrl.split('?')[0];
+      const url = `${baseUrl}?t=${Date.now()}`;
       console.log("Refreshed profile image URL:", url);
       setProfileImageUrl(url);
     }

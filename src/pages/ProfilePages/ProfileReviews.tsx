@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import AuthRequiredMessage from "@/components/profile/AuthRequiredMessage";
 
+// This component is correctly wrapped with ProfileProvider in the parent component
 const ProfileReviewsContent: React.FC = () => {
   const {
     loading,
@@ -178,8 +179,9 @@ const ProfileReviewsContent: React.FC = () => {
   );
 };
 
-// Add handler for profile updates
+// This is the actual component that is exported and used in routes
 const ProfileReviews: React.FC = () => {
+  // Wrap the content with ProfileProvider to make the useProfile hook work
   return (
     <ProfileProvider>
       <ProfileReviewsContent />
