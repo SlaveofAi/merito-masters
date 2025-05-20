@@ -33,7 +33,7 @@ interface ProfileContextType {
   setReviewComment: (value: string) => void;
   setCustomSpecialization: (value: string) => void;
   updateCustomSpecialization: (value: string) => Promise<void>;
-  handleProfileImageUpload: (event: React.ChangeEvent<HTMLInputElement> | File | Blob) => void;
+  handleProfileImageUpload: (input: React.ChangeEvent<HTMLInputElement> | File | Blob) => Promise<void>;
   handlePortfolioImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleProfileUpdate: (updatedProfile: any) => void;
   handleSubmitReview: (e: React.FormEvent) => void;
@@ -163,15 +163,23 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Use our hook version of the image upload functions
-  const handleProfileImageUpload = (input: React.ChangeEvent<HTMLInputElement> | File | Blob) => {
-    if (input instanceof File || input instanceof Blob) {
-      return handleProfileImageUploadHook(input);
-    } 
-    
-    // If it's an event, get the file from the event
-    if (input.target && input.target.files && input.target.files.length > 0) {
-      return handleProfileImageUploadHook(input.target.files[0]);
+  // Improved version of handleProfileImageUpload with better typing and error handling
+  const handleProfileImageUpload = async (input: React.ChangeEvent<HTMLInputElement> | File | Blob): Promise<void> => {
+    try {
+      if (input instanceof File || input instanceof Blob) {
+        return await handleProfileImageUploadHook(input);
+      } 
+      
+      // If it's an event, get the file from the event
+      if (input.target && input.target.files && input.target.files.length > 0) {
+        return await handleProfileImageUploadHook(input.target.files[0]);
+      }
+      
+      throw new Error("Invalid input for profile image upload");
+    } catch (error) {
+      console.error("Error in handleProfileImageUpload:", error);
+      toast.error("Nastala chyba pri nahrávaní profilovej fotky");
+      return Promise.reject(error);
     }
   };
 

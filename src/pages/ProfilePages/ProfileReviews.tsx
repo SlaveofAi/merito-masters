@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -31,7 +30,8 @@ const ProfileReviewsContent: React.FC = () => {
     setIsEditing,
     isEditing,
     handleProfileUpdate,
-    refreshProfileImage
+    refreshProfileImage,
+    handleProfileImageUpload
   } = useProfile();
   
   const { user, loading: authLoading } = useAuth();
@@ -54,9 +54,10 @@ const ProfileReviewsContent: React.FC = () => {
       isCraftsmanProfile: profileData?.user_type === 'craftsman',
       isCustomerProfile: profileData?.user_type === 'customer',
       isEditing,
-      profileImageUrl
+      profileImageUrl,
+      hasProfileImageUploadFn: !!handleProfileImageUpload
     });
-  }, [loading, profileData, userType, isCurrentUser, isEditing, profileImageUrl]);
+  }, [loading, profileData, userType, isCurrentUser, isEditing, profileImageUrl, handleProfileImageUpload]);
 
   const handleEditClick = () => {
     console.log("Edit profile button clicked, setting isEditing to true");
@@ -119,6 +120,7 @@ const ProfileReviewsContent: React.FC = () => {
               profileImageUrl={profileImageUrl}
               fetchProfileData={fetchProfileData}
               refreshProfileImage={refreshProfileImage}
+              uploadProfileImage={handleProfileImageUpload}
             />
             <div className="bg-white rounded-lg shadow-sm p-6">
               <ProfileNavigation activeTab="reviews" userType={profileData?.user_type} />
@@ -149,6 +151,7 @@ const ProfileReviewsContent: React.FC = () => {
                 profileImageUrl={profileImageUrl}
                 fetchProfileData={fetchProfileData}
                 refreshProfileImage={refreshProfileImage}
+                uploadProfileImage={handleProfileImageUpload}
               />
               
               {isCurrentUser && (

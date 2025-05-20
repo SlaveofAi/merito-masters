@@ -43,6 +43,8 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
           console.error("Error creating bucket:", createBucketError);
           toast.error("Chyba: Úložisko pre obrázky neexistuje.");
           return null;
+        } else {
+          console.log("Successfully created profile_images bucket");
         }
       } else {
         toast.error("Chyba: Problém s úložiskom pre obrázky.");
@@ -69,6 +71,8 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       console.error("Upload error:", uploadError);
       toast.error(`Chyba pri nahrávaní: ${uploadError.message}`);
       return null;
+    } else {
+      console.log("File uploaded successfully");
     }
     
     // Get the public URL for the uploaded image

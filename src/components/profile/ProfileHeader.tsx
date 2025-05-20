@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -65,7 +64,39 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       console.log("User type in handleCroppedImage:", userType);
       console.log("Profile data in handleCroppedImage:", profileData);
       
-      if (uploadProfileImage) {
+      if (!uploadProfileImage) {
+        // If the uploadProfileImage function was not provided, use direct upload from utils
+        const { uploadProfileImage: directUpload } = await import('@/utils/imageUpload');
+        if (directUpload && profileData && profileData.id && profileData.user_type) {
+          // Convert blob to File for compatibility
+          const file = new File([blob], 'profile-image.jpg', { type: 'image/jpeg' });
+          const url = await directUpload(file, profileData.id, profileData.user_type);
+          
+          if (url) {
+            toast.success("Profilová fotka bola úspešne aktualizovaná");
+            
+            // Refresh profile data to show the new image
+            if (fetchProfileData) {
+              console.log("Calling fetchProfileData after direct upload");
+              await fetchProfileData();
+            }
+            
+            // Additional refresh to ensure the UI updates
+            if (refreshProfileImage) {
+              console.log("Calling refreshProfileImage after direct upload");
+              setTimeout(() => {
+                refreshProfileImage();
+              }, 500);
+            } else {
+              // Force a page refresh as last resort
+              window.location.reload();
+            }
+          }
+        } else {
+          throw new Error("Missing required data for profile image upload");
+        }
+      } else {
+        // Use the provided upload function if available
         // Convert blob to File for compatibility
         const file = new File([blob], 'profile-image.jpg', { type: 'image/jpeg' });
         await uploadProfileImage(file);
@@ -84,9 +115,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             refreshProfileImage();
           }, 500);
         }
-      } else {
-        console.error("uploadProfileImage function is not provided to ProfileHeader");
-        toast.error("Nastala chyba: Funkcia pre nahrávanie obrázka nie je dostupná");
       }
     } catch (error) {
       console.error("Error uploading profile image:", error);
