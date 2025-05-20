@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock, Crown } from "lucide-react";
+import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock, Crown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import ToppedCraftsmanFeature from './ToppedCraftsmanFeature';
 import { ProfileData, CraftsmanProfile } from "@/types/profile";
@@ -61,6 +62,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       setUploading(true);
       setShowImageCropper(false);
       
+      console.log("User type in handleCroppedImage:", userType);
+      console.log("Profile data in handleCroppedImage:", profileData);
+      
       if (uploadProfileImage) {
         // Convert blob to File for compatibility
         const file = new File([blob], 'profile-image.jpg', { type: 'image/jpeg' });
@@ -69,15 +73,20 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         
         // Refresh profile data to show the new image
         if (fetchProfileData) {
-          fetchProfileData();
+          console.log("Calling fetchProfileData after upload");
+          await fetchProfileData();
         }
         
         // Additional refresh to ensure the UI updates
         if (refreshProfileImage) {
+          console.log("Calling refreshProfileImage after upload");
           setTimeout(() => {
             refreshProfileImage();
           }, 500);
         }
+      } else {
+        console.error("uploadProfileImage function is not provided to ProfileHeader");
+        toast.error("Nastala chyba: Funkcia pre nahrávanie obrázka nie je dostupná");
       }
     } catch (error) {
       console.error("Error uploading profile image:", error);
@@ -130,13 +139,21 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       <div className="flex flex-col md:flex-row gap-6 items-start">
         <div className="relative">
           <Avatar className={`h-24 w-24 border-2 ${isTopped ? 'border-yellow-400' : 'border-muted'}`}>
-            <AvatarImage 
-              src={profileImageUrl || undefined} 
-              alt={profileData.name} 
-            />
-            <AvatarFallback className="text-xl">
-              {getInitials(profileData.name)}
-            </AvatarFallback>
+            {uploading ? (
+              <div className="flex items-center justify-center w-full h-full bg-gray-100">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <>
+                <AvatarImage 
+                  src={profileImageUrl || undefined} 
+                  alt={profileData.name}
+                />
+                <AvatarFallback className="text-xl">
+                  {getInitials(profileData.name)}
+                </AvatarFallback>
+              </>
+            )}
           </Avatar>
           
           {isCurrentUser && (
@@ -147,7 +164,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               onClick={openFileSelector}
               disabled={uploading}
             >
-              <Camera className="h-4 w-4" />
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Camera className="h-4 w-4" />
+              )}
               <span className="sr-only">Change profile photo</span>
             </Button>
           )}

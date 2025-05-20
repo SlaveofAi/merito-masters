@@ -9,6 +9,7 @@ export const useProfileImages = (
 ) => {
   const [portfolioImages, setPortfolioImages] = useState<any[]>([]);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
 
   const fetchPortfolioImages = async (userId: string) => {
     try {
@@ -53,7 +54,11 @@ export const useProfileImages = (
       if (profileData.profile_image_url) {
         const imageUrl = profileData.profile_image_url;
         // Add cache buster if not already present
-        const url = imageUrl.includes('?') ? imageUrl : `${imageUrl}?t=${Date.now()}`;
+        const cacheBuster = `t=${lastRefresh}`;
+        const url = imageUrl.includes('?') 
+          ? `${imageUrl.split('?')[0]}?${cacheBuster}` 
+          : `${imageUrl}?${cacheBuster}`;
+        
         console.log("Setting profile image URL:", url);
         setProfileImageUrl(url);
       } else {
@@ -66,10 +71,13 @@ export const useProfileImages = (
         fetchPortfolioImages(profileData.id);
       }
     }
-  }, [profileData, userType]);
+  }, [profileData, userType, lastRefresh]);
 
   const refreshProfileImage = () => {
     console.log("Manually refreshing profile image");
+    // Update the lastRefresh timestamp to force the useEffect to run again
+    setLastRefresh(Date.now());
+    
     if (profileData && profileData.profile_image_url) {
       const imageUrl = profileData.profile_image_url;
       // Split by ? to handle URLs that already have parameters

@@ -25,6 +25,31 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       return null;
     }
 
+    // First, check if the storage bucket exists
+    const { data: bucketData, error: bucketError } = await supabase.storage
+      .getBucket('profile_images');
+
+    if (bucketError) {
+      console.error("Error checking storage bucket:", bucketError);
+      if (bucketError.message.includes("does not exist")) {
+        // Try to create the bucket if it doesn't exist
+        console.log("Attempting to create profile_images bucket");
+        const { error: createBucketError } = await supabase.storage
+          .createBucket('profile_images', {
+            public: true
+          });
+        
+        if (createBucketError) {
+          console.error("Error creating bucket:", createBucketError);
+          toast.error("Chyba: Úložisko pre obrázky neexistuje.");
+          return null;
+        }
+      } else {
+        toast.error("Chyba: Problém s úložiskom pre obrázky.");
+        return null;
+      }
+    }
+
     // Generate unique filename to avoid caching issues
     const timestamp = new Date().getTime();
     const fileName = `profile-${userId}-${timestamp}-${Math.random().toString(36).substring(2)}.jpg`;
@@ -32,7 +57,7 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
     
     console.log(`Uploading file to ${filePath}`);
     
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError, data: uploadData } = await supabase.storage
       .from('profile_images')
       .upload(filePath, file, {
         contentType: 'image/jpeg',
@@ -42,7 +67,8 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       
     if (uploadError) {
       console.error("Upload error:", uploadError);
-      throw uploadError;
+      toast.error(`Chyba pri nahrávaní: ${uploadError.message}`);
+      return null;
     }
     
     // Get the public URL for the uploaded image
@@ -50,8 +76,15 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       .from('profile_images')
       .getPublicUrl(`${filePath}`);
     
+    if (!data || !data.publicUrl) {
+      console.error("Failed to get public URL for uploaded image");
+      toast.error("Chyba: Nepodarilo sa získať URL obrázka.");
+      return null;
+    }
+    
     // Add a cache-busting parameter to the URL
     const publicUrl = `${data.publicUrl}?t=${timestamp}`;
+    console.log("Generated public URL:", publicUrl);
     
     // Determine which table to update based on user type
     const tableToUpdate = userType.toLowerCase() === 'craftsman' 
@@ -59,6 +92,23 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       : TABLES.CUSTOMER_PROFILES;
     
     console.log(`Updating ${tableToUpdate} for user ${userId} with image URL: ${publicUrl}`);
+    
+    // First, check if the record exists
+    const { data: existingData, error: checkError } = await supabase
+      .from(tableToUpdate)
+      .select('id')
+      .eq('id', userId)
+      .single();
+      
+    if (checkError) {
+      console.error("Error checking if profile exists:", checkError);
+      // If the profile doesn't exist, we might want to create it
+      if (checkError.code === 'PGRST116') {
+        console.error("Profile does not exist for this user");
+        toast.error("Profil neexistuje. Vytvorte najprv profil.");
+        return null;
+      }
+    }
     
     // Update the profile_image_url in the database with explicit debugging
     const { error: updateError, data: updateData } = await supabase
@@ -69,7 +119,8 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       
     if (updateError) {
       console.error("Database update error:", updateError);
-      throw updateError;
+      toast.error(`Chyba pri aktualizácii profilu: ${updateError.message}`);
+      return null;
     }
     
     console.log("Profile image updated successfully:", updateData);
