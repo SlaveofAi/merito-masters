@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import Layout from "@/components/Layout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -103,9 +104,6 @@ const ProfileReviewsContent: React.FC = () => {
       </Layout>
     );
   }
-
-  const isCustomerProfile = profileData.user_type && 
-                           profileData.user_type.toLowerCase() === 'customer';
 
   // Don't display tabs when editing
   if (isEditing && profileData) {

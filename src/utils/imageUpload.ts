@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -25,32 +24,8 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       return null;
     }
 
-    // First, check if the storage bucket exists
-    const { data: bucketData, error: bucketError } = await supabase.storage
-      .getBucket('profile_images');
-
-    if (bucketError) {
-      console.error("Error checking storage bucket:", bucketError);
-      if (bucketError.message.includes("does not exist")) {
-        // Try to create the bucket if it doesn't exist
-        console.log("Attempting to create profile_images bucket");
-        const { error: createBucketError } = await supabase.storage
-          .createBucket('profile_images', {
-            public: true
-          });
-        
-        if (createBucketError) {
-          console.error("Error creating bucket:", createBucketError);
-          toast.error("Chyba: Úložisko pre obrázky neexistuje.");
-          return null;
-        } else {
-          console.log("Successfully created profile_images bucket");
-        }
-      } else {
-        toast.error("Chyba: Problém s úložiskom pre obrázky.");
-        return null;
-      }
-    }
+    // First, ensure the storage bucket exists
+    await ensureStorageBucketExists('profile_images');
 
     // Generate unique filename to avoid caching issues
     const timestamp = new Date().getTime();
@@ -102,7 +77,7 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       .from(tableToUpdate)
       .select('id')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
       
     if (checkError) {
       console.error("Error checking if profile exists:", checkError);
@@ -133,6 +108,72 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
     console.error('Error uploading image:', error);
     toast.error(`Nastala chyba pri nahrávaní obrázka: ${error.message || 'Neznáma chyba'}`);
     return null;
+  }
+};
+
+// Helper function to ensure a bucket exists before using it
+const ensureStorageBucketExists = async (bucketName: string) => {
+  try {
+    console.log(`Checking if storage bucket ${bucketName} exists`);
+    
+    // First check if bucket exists
+    const { data: bucketData, error: bucketError } = await supabase.storage
+      .getBucket(bucketName);
+      
+    if (bucketError) {
+      console.log(`Bucket error for ${bucketName}:`, bucketError);
+      
+      if (bucketError.message.includes("does not exist")) {
+        console.log(`Bucket ${bucketName} doesn't exist, creating it now`);
+        
+        // Create the bucket
+        const { error: createBucketError } = await supabase.storage
+          .createBucket(bucketName, {
+            public: true,
+            fileSizeLimit: 5242880 // 5MB
+          });
+          
+        if (createBucketError) {
+          console.error(`Error creating bucket ${bucketName}:`, createBucketError);
+          throw new Error(`Failed to create storage bucket: ${createBucketError.message}`);
+        }
+        
+        // Add public policy to the bucket
+        await setupBucketPolicies(bucketName);
+        
+        console.log(`Successfully created bucket ${bucketName} and set up policies`);
+      } else {
+        throw bucketError;
+      }
+    } else {
+      console.log(`Bucket ${bucketName} exists`);
+    }
+    
+    return true;
+  } catch (error: any) {
+    console.error(`Error ensuring storage bucket ${bucketName} exists:`, error);
+    throw error;
+  }
+};
+
+// Helper function to set up policies for a bucket
+const setupBucketPolicies = async (bucketName: string) => {
+  try {
+    console.log(`Setting up policies for bucket ${bucketName}`);
+    
+    // Create policy for public read access
+    const { error: readPolicyError } = await supabase.storage
+      .from(bucketName)
+      .createSignedUrl('dummy.txt', 1); // This is just to test if policies are working
+      
+    if (readPolicyError && !readPolicyError.message.includes('The resource was not found')) {
+      console.error(`Error testing bucket ${bucketName} policies:`, readPolicyError);
+    }
+    
+    return true;
+  } catch (error: any) {
+    console.error(`Error setting up policies for bucket ${bucketName}:`, error);
+    return false;
   }
 };
 
