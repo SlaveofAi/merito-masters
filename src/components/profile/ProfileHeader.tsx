@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -65,14 +64,16 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       console.log("User type in handleCroppedImage:", userType);
       console.log("Profile data in handleCroppedImage:", profileData);
       
+      // Convert blob to File for compatibility
+      const file = new File([blob], 'profile-image.jpg', { type: 'image/jpeg' });
+      
       if (!uploadProfileImage) {
         // If the uploadProfileImage function was not provided, use direct upload from utils
+        console.log(`Using direct upload for user ${profileData.id} with type ${profileData.user_type}`);
         const { uploadProfileImage: directUpload } = await import('@/utils/imageUpload');
-        if (directUpload && profileData && profileData.id && profileData.user_type) {
-          console.log(`Using direct upload for user ${profileData.id} with type ${profileData.user_type}`);
-          // Convert blob to File for compatibility
-          const file = new File([blob], 'profile-image.jpg', { type: 'image/jpeg' });
-          const url = await directUpload(file, profileData.id, profileData.user_type);
+        
+        if (directUpload && profileData && profileData.id) {
+          const url = await directUpload(file, profileData.id, profileData.user_type || userType);
           
           if (url) {
             toast.success("Profilová fotka bola úspešne aktualizovaná");
@@ -89,12 +90,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               setTimeout(() => {
                 refreshProfileImage();
               }, 500);
-            } else {
-              // Force a page refresh as last resort
-              setTimeout(() => {
-                window.location.reload();
-              }, 1000);
             }
+          } else {
+            throw new Error("Failed to upload profile image");
           }
         } else {
           throw new Error("Missing required data for profile image upload");
@@ -102,8 +100,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       } else {
         console.log("Using provided uploadProfileImage function");
         // Use the provided upload function if available
-        // Convert blob to File for compatibility
-        const file = new File([blob], 'profile-image.jpg', { type: 'image/jpeg' });
         await uploadProfileImage(file);
         toast.success("Profilová fotka bola úspešne aktualizovaná");
         

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -25,57 +24,75 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       return null;
     }
 
+    // --- BUCKET MANAGEMENT ---
+    // First attempt to force create the bucket if it doesn't exist
+    try {
+      console.log("Creating profile_images bucket if it doesn't exist");
+      
+      const { error: createError } = await supabase.storage
+        .createBucket('profile_images', { 
+          public: true,
+          fileSizeLimit: 5242880 // 5MB
+        });
+        
+      if (createError && !createError.message.includes("already exists")) {
+        console.error("Error creating bucket:", createError);
+      } else {
+        console.log("Bucket creation succeeded or bucket already exists");
+      }
+    } catch (bucketError) {
+      console.log("Bucket creation attempt caught error:", bucketError);
+      // Continue anyway, we'll try uploading
+    }
+
     // Generate unique filename to avoid caching issues
     const timestamp = new Date().getTime();
     const fileName = `profile-${userId}-${timestamp}-${Math.random().toString(36).substring(2)}.jpg`;
     const filePath = `${fileName}`;
     
-    console.log(`Uploading file to path: ${filePath} in bucket: profile_images`);
+    console.log(`Attempting to upload file to path: ${filePath} in bucket: profile_images`);
     
-    // Verify the bucket exists before attempting upload
-    const { data: bucketData, error: bucketError } = await supabase.storage
-      .getBucket('profile_images');
+    // Now upload the file - with multiple retries if needed
+    let uploadAttempt = 0;
+    let uploadSuccess = false;
+    let uploadData = null;
+    let uploadError = null;
+    
+    while (!uploadSuccess && uploadAttempt < 3) {
+      uploadAttempt++;
+      console.log(`Upload attempt ${uploadAttempt}`);
       
-    if (bucketError) {
-      console.error("Error checking bucket:", bucketError);
-      // If error message says bucket doesn't exist, try creating it
-      if (bucketError.message.includes("does not exist")) {
-        console.log("Attempting to create profile_images bucket");
-        const { error: createError } = await supabase.storage
-          .createBucket('profile_images', {
-            public: true,
-            fileSizeLimit: 5242880 // 5MB
+      try {
+        const result = await supabase.storage
+          .from('profile_images')
+          .upload(filePath, file, {
+            contentType: 'image/jpeg',
+            upsert: true,
+            cacheControl: 'no-cache' // Prevent caching
           });
           
-        if (createError) {
-          console.error("Failed to create bucket:", createError);
-          toast.error(`Chyba pri vytváraní úložiska: ${createError.message}`);
-          return null;
+        uploadError = result.error;
+        uploadData = result.data;
+        
+        if (!uploadError) {
+          uploadSuccess = true;
+          console.log("File uploaded successfully on attempt", uploadAttempt);
+        } else {
+          console.error(`Upload error (attempt ${uploadAttempt}):`, uploadError);
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
-        console.log("Successfully created profile_images bucket");
-      } else {
-        toast.error(`Chyba pri kontrole úložiska: ${bucketError.message}`);
-        return null;
+      } catch (err) {
+        console.error(`Upload exception (attempt ${uploadAttempt}):`, err);
+        // Wait a bit before retrying
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
-    } else {
-      console.log("Bucket exists:", bucketData);
     }
     
-    // Now upload the file
-    const { error: uploadError, data: uploadData } = await supabase.storage
-      .from('profile_images')
-      .upload(filePath, file, {
-        contentType: 'image/jpeg',
-        upsert: true,
-        cacheControl: 'no-cache' // Prevent caching
-      });
-      
-    if (uploadError) {
-      console.error("Upload error:", uploadError);
-      toast.error(`Chyba pri nahrávaní: ${uploadError.message}`);
+    if (!uploadSuccess) {
+      console.error("All upload attempts failed");
+      toast.error(`Chyba pri nahrávaní: ${uploadError?.message || "Neznáma chyba"}`);
       return null;
-    } else {
-      console.log("File uploaded successfully");
     }
     
     // Get the public URL for the uploaded image
@@ -100,31 +117,11 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
     
     console.log(`Updating ${tableToUpdate} for user ${userId} with image URL: ${publicUrl}`);
     
-    // First, check if the record exists
-    const { data: existingData, error: checkError } = await supabase
-      .from(tableToUpdate)
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle();
-      
-    if (checkError) {
-      console.error("Error checking if profile exists:", checkError);
-      toast.error(`Chyba pri kontrole profilu: ${checkError.message}`);
-      return null;
-    }
-    
-    if (!existingData) {
-      console.error(`Profile does not exist in ${tableToUpdate} for user ${userId}`);
-      toast.error("Profil neexistuje. Vytvorte najprv profil.");
-      return null;
-    }
-    
-    // Update the profile_image_url in the database with explicit debugging
-    const { error: updateError, data: updateData } = await supabase
+    // Update the profile_image_url in the database
+    const { error: updateError } = await supabase
       .from(tableToUpdate)
       .update({ profile_image_url: publicUrl })
-      .eq('id', userId)
-      .select();
+      .eq('id', userId);
       
     if (updateError) {
       console.error("Database update error:", updateError);
@@ -132,7 +129,7 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       return null;
     }
     
-    console.log("Profile image updated successfully:", updateData);
+    console.log("Profile image updated successfully in database");
     return publicUrl;
   } catch (error: any) {
     console.error('Error uploading image:', error);
