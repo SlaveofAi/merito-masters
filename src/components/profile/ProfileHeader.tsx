@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -269,6 +270,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </div>
         </div>
       </div>
+      
+      {/* Display service description for craftsman profiles */}
+      {userType === 'craftsman' && isCraftsmanProfile(profileData) && profileData.description && (
+        <div className="mt-4 bg-gray-50 p-4 rounded-md border">
+          <h3 className="text-sm font-medium mb-2">Popis služieb</h3>
+          <p className="text-sm text-muted-foreground">{profileData.description}</p>
+        </div>
+      )}
     </div>
   );
 };
