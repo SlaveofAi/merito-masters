@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         // If the uploadProfileImage function was not provided, use direct upload from utils
         const { uploadProfileImage: directUpload } = await import('@/utils/imageUpload');
         if (directUpload && profileData && profileData.id && profileData.user_type) {
+          console.log(`Using direct upload for user ${profileData.id} with type ${profileData.user_type}`);
           // Convert blob to File for compatibility
           const file = new File([blob], 'profile-image.jpg', { type: 'image/jpeg' });
           const url = await directUpload(file, profileData.id, profileData.user_type);
@@ -89,13 +91,16 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               }, 500);
             } else {
               // Force a page refresh as last resort
-              window.location.reload();
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
             }
           }
         } else {
           throw new Error("Missing required data for profile image upload");
         }
       } else {
+        console.log("Using provided uploadProfileImage function");
         // Use the provided upload function if available
         // Convert blob to File for compatibility
         const file = new File([blob], 'profile-image.jpg', { type: 'image/jpeg' });

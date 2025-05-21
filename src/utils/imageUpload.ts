@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -24,16 +25,43 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       return null;
     }
 
-    // First, ensure the storage bucket exists
-    await ensureStorageBucketExists('profile_images');
-
     // Generate unique filename to avoid caching issues
     const timestamp = new Date().getTime();
     const fileName = `profile-${userId}-${timestamp}-${Math.random().toString(36).substring(2)}.jpg`;
     const filePath = `${fileName}`;
     
-    console.log(`Uploading file to ${filePath}`);
+    console.log(`Uploading file to path: ${filePath} in bucket: profile_images`);
     
+    // Verify the bucket exists before attempting upload
+    const { data: bucketData, error: bucketError } = await supabase.storage
+      .getBucket('profile_images');
+      
+    if (bucketError) {
+      console.error("Error checking bucket:", bucketError);
+      // If error message says bucket doesn't exist, try creating it
+      if (bucketError.message.includes("does not exist")) {
+        console.log("Attempting to create profile_images bucket");
+        const { error: createError } = await supabase.storage
+          .createBucket('profile_images', {
+            public: true,
+            fileSizeLimit: 5242880 // 5MB
+          });
+          
+        if (createError) {
+          console.error("Failed to create bucket:", createError);
+          toast.error(`Chyba pri vytváraní úložiska: ${createError.message}`);
+          return null;
+        }
+        console.log("Successfully created profile_images bucket");
+      } else {
+        toast.error(`Chyba pri kontrole úložiska: ${bucketError.message}`);
+        return null;
+      }
+    } else {
+      console.log("Bucket exists:", bucketData);
+    }
+    
+    // Now upload the file
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('profile_images')
       .upload(filePath, file, {
@@ -81,12 +109,14 @@ export const uploadProfileImage = async (file: File | Blob, userId: string, user
       
     if (checkError) {
       console.error("Error checking if profile exists:", checkError);
-      // If the profile doesn't exist, we might want to create it
-      if (checkError.code === 'PGRST116') {
-        console.error("Profile does not exist for this user");
-        toast.error("Profil neexistuje. Vytvorte najprv profil.");
-        return null;
-      }
+      toast.error(`Chyba pri kontrole profilu: ${checkError.message}`);
+      return null;
+    }
+    
+    if (!existingData) {
+      console.error(`Profile does not exist in ${tableToUpdate} for user ${userId}`);
+      toast.error("Profil neexistuje. Vytvorte najprv profil.");
+      return null;
     }
     
     // Update the profile_image_url in the database with explicit debugging
