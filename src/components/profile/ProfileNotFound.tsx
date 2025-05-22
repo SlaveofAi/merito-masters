@@ -25,6 +25,8 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
   const { user, signOut, userType, updateUserType } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [autoCreationAttempted, setAutoCreationAttempted] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
 
   // Automatically try to create a profile when this component loads for current user
   useEffect(() => {
@@ -60,10 +62,10 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
       toast.info("Vytváram profil...");
       console.log("Attempting to create profile...");
       
-      // Check if we need to insert user_type first (to avoid RLS issues)
+      // Make sure user_type is properly set first to avoid RLS issues
       if (user && userType) {
         try {
-          // Ensure user_type is properly set in the database first
+          // First, ensure user_type is properly set in the database
           const { error: typeError } = await supabase
             .from('user_types')
             .upsert({ 
@@ -76,6 +78,11 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
           if (typeError) {
             console.warn("Warning during user_type upsert:", typeError);
             // Continue anyway as it might just be that the record already exists
+          } else {
+            console.log("Successfully inserted/updated user type");
+            
+            // Wait a moment for the RLS policies to take effect
+            await new Promise(resolve => setTimeout(resolve, 500));
           }
         } catch (typeErr) {
           console.warn("Exception during user_type upsert:", typeErr);
@@ -87,17 +94,36 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
       await onCreateProfile();
 
       // Reload page to reflect new profile
+      toast.success("Profil bol úspešne vytvorený!");
       setTimeout(() => {
         window.location.reload();
       }, 1500);
     } catch (error) {
       console.error("Error in handleCreateProfile:", error);
-      setIsCreating(false); // Only set back to false if there's an error
-      // Check for specific RLS errors
-      if (error instanceof Error && error.message.includes("row-level security")) {
-        toast.error("Chyba pri vytváraní profilu z dôvodu obmedzení prístupu. Skúste sa odhlásiť a znovu prihlásiť.");
+      
+      // Implement retry mechanism for RLS-related errors
+      if (retryCount < maxRetries && error instanceof Error && 
+          (error.message.includes("row-level security") || 
+           error.message.includes("violates row-level security policy"))) {
+        
+        setRetryCount(prevCount => prevCount + 1);
+        toast.warning(`Pokus ${retryCount + 1}/${maxRetries}: Opakujem vytvorenie profilu...`);
+        
+        // Wait longer between retries
+        setTimeout(() => {
+          setIsCreating(false);
+          handleCreateProfile();
+        }, 1000 * (retryCount + 1));
+        
       } else {
-        // Error is already handled by the createDefaultProfile function
+        setIsCreating(false);
+        
+        // Check for specific RLS errors
+        if (error instanceof Error && error.message.includes("row-level security")) {
+          toast.error("Chyba pri vytváraní profilu z dôvodu obmedzení prístupu. Skúste sa odhlásiť a znovu prihlásiť.");
+        } else {
+          toast.error("Nepodarilo sa vytvoriť profil. Skúste to neskôr.");
+        }
       }
     }
   };
@@ -106,11 +132,16 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
     if (!user) return;
     try {
       await updateUserType('customer');
+      toast.success("Typ používateľa nastavený na zákazníka");
+      setRetryCount(0); // Reset retry count when changing user type
+      
+      // Add delay before redirecting to allow userType to propagate
       setTimeout(() => {
         navigate('/profile/reviews', { replace: true });
       }, 1000);
     } catch (error) {
       console.error("Error setting user type:", error);
+      toast.error("Chyba pri nastavení typu používateľa");
     }
   };
 
@@ -118,11 +149,16 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
     if (!user) return;
     try {
       await updateUserType('craftsman');
+      toast.success("Typ používateľa nastavený na remeselníka");
+      setRetryCount(0); // Reset retry count when changing user type
+      
+      // Add delay before redirecting to allow userType to propagate
       setTimeout(() => {
         navigate('/profile', { replace: true });
       }, 1000);
     } catch (error) {
       console.error("Error setting user type:", error);
+      toast.error("Chyba pri nastavení typu používateľa");
     }
   };
 
