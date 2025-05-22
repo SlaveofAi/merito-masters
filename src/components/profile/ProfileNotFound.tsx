@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { createDefaultProfile } from "@/utils/profileCreation";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProfileNotFoundProps {
   isCurrentUser: boolean;
@@ -37,6 +38,7 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
     }
   }, [isCurrentUser, user, userType, autoCreationAttempted, onCreateProfile]);
 
+  // Enhanced createProfile function with better error handling for RLS
   const handleCreateProfile = async () => {
     if (!onCreateProfile) {
       toast.error("Funkcia pre vytvorenie profilu nie je dostupná");
@@ -57,6 +59,31 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
       setIsCreating(true);
       toast.info("Vytváram profil...");
       console.log("Attempting to create profile...");
+      
+      // Check if we need to insert user_type first (to avoid RLS issues)
+      if (user && userType) {
+        try {
+          // Ensure user_type is properly set in the database first
+          const { error: typeError } = await supabase
+            .from('user_types')
+            .upsert({ 
+              user_id: user.id, 
+              user_type: userType 
+            }, { 
+              onConflict: 'user_id'
+            });
+            
+          if (typeError) {
+            console.warn("Warning during user_type upsert:", typeError);
+            // Continue anyway as it might just be that the record already exists
+          }
+        } catch (typeErr) {
+          console.warn("Exception during user_type upsert:", typeErr);
+          // Continue anyway
+        }
+      }
+      
+      // Now try to create the profile
       await onCreateProfile();
 
       // Reload page to reflect new profile
@@ -66,7 +93,12 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
     } catch (error) {
       console.error("Error in handleCreateProfile:", error);
       setIsCreating(false); // Only set back to false if there's an error
-      // Error is already handled by the createDefaultProfile function
+      // Check for specific RLS errors
+      if (error instanceof Error && error.message.includes("row-level security")) {
+        toast.error("Chyba pri vytváraní profilu z dôvodu obmedzení prístupu. Skúste sa odhlásiť a znovu prihlásiť.");
+      } else {
+        // Error is already handled by the createDefaultProfile function
+      }
     }
   };
 
@@ -112,10 +144,11 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
     if (error?.includes("row-level security policy")) {
       return (
         <div className="space-y-2 mt-2">
-          <p>Problém je pravdepodobne spôsobený nastaveniami oprávnení v databáze (Row Level Security).</p>
+          <p>Problém je spôsobený nastaveniami oprávnení v databáze (Row Level Security).</p>
           <ol className="list-decimal list-inside space-y-1 pl-4">
             <li>Skúste sa odhlásiť a znova prihlásiť</li>
-            <li>Ak problém pretrváva, môže byť potrebné nastaviť Row Level Security v Supabase</li>
+            <li>Ak sa práve registrujete, dokončite overenie emailu kliknutím na odkaz v emaile</li>
+            <li>Po prihlásení sa profile automaticky vytvorí</li>
           </ol>
         </div>
       );
@@ -172,6 +205,7 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
             <li>Používateľ: {user ? "Prihlásený" : "Neprihlásený"}</li>
             <li>Typ používateľa: {userType || "Nenastavený"}</li>
             <li>ID používateľa: {user?.id ? `${user.id.substring(0, 8)}...` : "Nedostupné"}</li>
+            <li>Email potvrdený: {user?.email_confirmed_at ? "Áno" : "Nie"}</li>
           </ul>
         </div>
         

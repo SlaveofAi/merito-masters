@@ -1,3 +1,4 @@
+
 import { useEffect, useState, createContext, useContext, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,7 +54,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       // If not in metadata, try to get from user_types table (third priority)
-      // Don't use try-catch here since we've updated RLS policies to allow public access
       const { data, error } = await supabase
         .from('user_types')
         .select('user_type')
@@ -175,6 +175,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log("Profile does not exist, creating default profile for:", userId);
         
         try {
+          // First ensure user_type record exists to avoid RLS issues
+          const { error: typeError } = await supabase
+            .from('user_types')
+            .upsert({ 
+              user_id: userId, 
+              user_type: userType 
+            }, {
+              onConflict: 'user_id'
+            });
+            
+          if (typeError) {
+            console.warn("Warning during user_type upsert:", typeError);
+            // Continue anyway as it might just be that the record already exists
+          }
+          
           // Use setTimeout to avoid potential Supabase deadlocks
           setTimeout(async () => {
             try {
@@ -227,6 +242,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .upsert({ 
               user_id: user.id, 
               user_type: type 
+            }, {
+              onConflict: 'user_id'
             });
 
           if (error) {
