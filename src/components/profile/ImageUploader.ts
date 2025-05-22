@@ -1,6 +1,7 @@
 
 import { toast } from "sonner";
 import { uploadProfileImage, uploadPortfolioImages } from "@/utils/imageUpload";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useImageUploader = (
   userId: string, 
@@ -8,6 +9,30 @@ export const useImageUploader = (
   onProfileImageUploaded: (url: string) => void,
   onPortfolioImagesUploaded: () => void
 ) => {
+  // Verify profile exists before uploading
+  const verifyProfileExists = async (): Promise<boolean> => {
+    if (!userId || !userType) return false;
+    
+    try {
+      const table = userType === 'craftsman' ? 'craftsman_profiles' : 'customer_profiles';
+      const { data, error } = await supabase
+        .from(table)
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      if (error) {
+        console.error(`Error verifying profile existence: ${error.message}`);
+        return false;
+      }
+      
+      return !!data;
+    } catch (err) {
+      console.error('Error in verifyProfileExists:', err);
+      return false;
+    }
+  };
+  
   const handleProfileImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0 || !userId) {
       return;
@@ -16,6 +41,15 @@ export const useImageUploader = (
     const file = event.target.files[0];
     
     try {
+      // First verify that the profile exists
+      const profileExists = await verifyProfileExists();
+      
+      if (!profileExists) {
+        toast.error("Profil nebol nájdený. Skúste sa odhlásiť a znova prihlásiť.");
+        event.target.value = '';
+        return;
+      }
+      
       const imageUrl = await uploadProfileImage(file, userId, userType);
       if (imageUrl) {
         onProfileImageUploaded(imageUrl);
@@ -37,6 +71,15 @@ export const useImageUploader = (
     const files = Array.from(event.target.files);
     
     try {
+      // First verify that the profile exists
+      const profileExists = await verifyProfileExists();
+      
+      if (!profileExists) {
+        toast.error("Profil remeselníka nebol nájdený. Skúste sa odhlásiť a znova prihlásiť.");
+        event.target.value = '';
+        return;
+      }
+      
       await uploadPortfolioImages(files, userId);
       onPortfolioImagesUploaded();
       toast.success("Obrázky boli pridané do portfólia");

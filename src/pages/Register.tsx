@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { User, Mail, Lock, MapPin, Phone, Briefcase } from "lucide-react";
+import { User, Mail, Lock, MapPin, Phone, Briefcase, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -47,6 +46,7 @@ const Register = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [userType, setUserType] = useState<UserType>(null);
+  const [profileCreated, setProfileCreated] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -136,6 +136,7 @@ const Register = () => {
         userMetadata.trade_category = (data as CraftsmanFormValues).tradeCategory;
       }
 
+      // Step 1: Create the user account
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -163,10 +164,12 @@ const Register = () => {
 
       console.log("User registered successfully:", authData.user.id);
       
+      // Step 2: Persist the user type to storage first for faster access
       sessionStorage.setItem("userType", userType);
-      localStorage.setItem("userType", userType); // Ensure user type is available in localStorage
+      localStorage.setItem("userType", userType);
       
-      // Try to sign in immediately after registration
+      // Step 3: Sign in immediately to get session
+      let hasSession = false;
       try {
         const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
           email: data.email,
@@ -175,105 +178,106 @@ const Register = () => {
         
         if (signInError) {
           console.error("Error signing in after registration:", signInError);
+        } else if (signInData.session) {
+          hasSession = true;
+          console.log("Successfully signed in after registration");
         }
       } catch (signInErr) {
         console.error("Exception during sign in after registration:", signInErr);
       }
 
-      const { error: userTypeError } = await supabase
-        .from('user_types')
-        .insert({
-          user_id: authData.user.id,
-          user_type: userType
-        });
-
-      if (userTypeError) {
-        console.error("Error storing user type:", userTypeError);
-        toast.error("Nastala chyba pri ukladaní typu užívateľa", {
-          description: userTypeError.message,
-          duration: 5000,
-        });
-      } else {
-        console.log("User type stored successfully");
-      }
-
-      // Store profile data in appropriate table
-      if (userType === 'craftsman') {
-        const craftsmanData = {
-          id: authData.user.id,
-          name: data.name,
-          email: data.email,
-          phone: data.phone || null,
-          location: data.location,
-          trade_category: (data as CraftsmanFormValues).tradeCategory,
-          description: (data as CraftsmanFormValues).description || null,
-          years_experience: (data as CraftsmanFormValues).yearsExperience || null,
-          custom_specialization: (data as CraftsmanFormValues).tradeCategory // Store selected category also as custom specialization
-        };
-
-        console.log("Storing craftsman profile:", craftsmanData);
-        const { error: craftsmanError } = await supabase
-          .from('craftsman_profiles')
-          .insert(craftsmanData);
-
-        if (craftsmanError) {
-          console.error("Error storing craftsman profile:", craftsmanError);
-          toast.error("Nastala chyba pri ukladaní profilu remeselníka", {
-            duration: 5000,
-          });
-        } else {
-          console.log("Craftsman profile stored successfully");
-        }
-      } else {
-        const customerData = {
-          id: authData.user.id,
-          name: data.name,
-          email: data.email,
-          phone: data.phone || null,
-          location: data.location
-        };
-
-        console.log("Storing customer profile:", customerData);
-        const { error: customerError } = await supabase
-          .from('customer_profiles')
-          .insert(customerData);
-
-        if (customerError) {
-          console.error("Error storing customer profile:", customerError);
-          toast.error("Nastala chyba pri ukladaní profilu zákazníka", {
-            duration: 5000,
-          });
-        } else {
-          console.log("Customer profile stored successfully");
-        }
-      }
-
-      // Create default profile immediately with a slight delay
-      if (authData.user && authData.session) {
+      // Step 4: Store user type with retry logic
+      let userTypeStored = false;
+      const storeUserType = async (attempts = 3): Promise<boolean> => {
         try {
-          // Add a slight delay to ensure DB operations complete
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          await createDefaultProfile(
-            authData.user,
-            userType,
-            true,
-            () => console.log("Default profile created after registration")
-          );
-        } catch (profileError) {
-          console.error("Error creating default profile:", profileError);
+          const { error: userTypeError } = await supabase
+            .from('user_types')
+            .upsert({
+              user_id: authData.user.id,
+              user_type: userType
+            });
+
+          if (userTypeError) {
+            console.error(`Error storing user type (attempt ${4-attempts}/3):`, userTypeError);
+            if (attempts > 1) {
+              // Wait and retry
+              await new Promise(resolve => setTimeout(resolve, 800));
+              return storeUserType(attempts - 1);
+            }
+            toast.error("Nastala chyba pri ukladaní typu užívateľa", {
+              description: userTypeError.message,
+              duration: 5000,
+            });
+            return false;
+          } else {
+            console.log("User type stored successfully");
+            return true;
+          }
+        } catch (err) {
+          console.error(`Exception storing user type (attempt ${4-attempts}/3):`, err);
+          if (attempts > 1) {
+            // Wait and retry
+            await new Promise(resolve => setTimeout(resolve, 800));
+            return storeUserType(attempts - 1);
+          }
+          return false;
         }
-      }
+      };
+
+      userTypeStored = await storeUserType();
+      
+      // Step 5: Delay briefly to allow database to propagate user type
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Step 6: Create profile data with retry logic
+      const createProfile = async (): Promise<boolean> => {
+        if (authData.user && (hasSession || authData.session)) {
+          try {
+            // Wait a moment to ensure user_type is properly set in DB
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await createDefaultProfile(
+              authData.user,
+              userType,
+              true,
+              () => {
+                console.log("Default profile created after registration");
+                setProfileCreated(true);
+              }
+            );
+            return true;
+          } catch (profileError) {
+            console.error("Error creating default profile:", profileError);
+            toast.error("Nastala chyba pri vytváraní profilu");
+            return false;
+          }
+        } 
+        return false;
+      };
+
+      // Try to create profile
+      const profileSuccess = await createProfile();
 
       toast.success("Registrácia úspešná!", {
         duration: 5000,
       });
       
-      if (authData.session) {
-        // Wait briefly to ensure data is saved before redirecting
-        setTimeout(() => {
+      if (hasSession || authData.session) {
+        // Wait to ensure data is saved before redirecting
+        toast.info("Pripravujeme váš profil...");
+        
+        // Wait for profile creation to complete or timeout after 4 seconds
+        const startTime = Date.now();
+        while (!profileCreated && Date.now() - startTime < 4000) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        // Navigate based on user type
+        if (userType === 'customer') {
+          navigate("/profile/reviews", { replace: true });
+        } else {
           navigate("/profile", { replace: true });
-        }, 1000);
+        }
       } else {
         // If email confirmation is required, navigate to the login page
         toast.info("Na vašu emailovú adresu sme odoslali potvrdzovací email", {

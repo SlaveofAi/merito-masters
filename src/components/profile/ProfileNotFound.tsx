@@ -26,7 +26,7 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
   const [isCreating, setIsCreating] = useState(false);
   const [autoCreationAttempted, setAutoCreationAttempted] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = 3;
+  const maxRetries = 5; // Increased from 3 to 5 for more resilience
 
   // Automatically try to create a profile when this component loads for current user
   useEffect(() => {
@@ -35,8 +35,11 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
       setIsCreating(true);
       setAutoCreationAttempted(true);
       
-      // Attempt to create the profile automatically
-      handleCreateProfile();
+      // Attempt to create the profile automatically with a slight delay
+      // to ensure the userType is properly set in the database
+      setTimeout(() => {
+        handleCreateProfile();
+      }, 1000);
     }
   }, [isCurrentUser, user, userType, autoCreationAttempted, onCreateProfile]);
 
@@ -82,7 +85,7 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
             console.log("Successfully inserted/updated user type");
             
             // Wait a moment for the RLS policies to take effect
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 1500));
           }
         } catch (typeErr) {
           console.warn("Exception during user_type upsert:", typeErr);
@@ -101,19 +104,21 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
     } catch (error) {
       console.error("Error in handleCreateProfile:", error);
       
-      // Implement retry mechanism for RLS-related errors
+      // Implement retry mechanism for RLS-related errors with longer delays
       if (retryCount < maxRetries && error instanceof Error && 
           (error.message.includes("row-level security") || 
-           error.message.includes("violates row-level security policy"))) {
+           error.message.includes("violates row-level security policy") ||
+           error.message.includes("permission denied"))) {
         
         setRetryCount(prevCount => prevCount + 1);
         toast.warning(`Pokus ${retryCount + 1}/${maxRetries}: Opakujem vytvorenie profilu...`);
         
-        // Wait longer between retries
+        // Use exponential backoff for retries
+        const delay = 1500 * Math.pow(1.5, retryCount);
         setTimeout(() => {
           setIsCreating(false);
           handleCreateProfile();
-        }, 1000 * (retryCount + 1));
+        }, delay);
         
       } else {
         setIsCreating(false);
@@ -135,10 +140,10 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
       toast.success("Typ používateľa nastavený na zákazníka");
       setRetryCount(0); // Reset retry count when changing user type
       
-      // Add delay before redirecting to allow userType to propagate
+      // Add longer delay before redirecting to allow userType to propagate
       setTimeout(() => {
         navigate('/profile/reviews', { replace: true });
-      }, 1000);
+      }, 2000);
     } catch (error) {
       console.error("Error setting user type:", error);
       toast.error("Chyba pri nastavení typu používateľa");
@@ -152,10 +157,10 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
       toast.success("Typ používateľa nastavený na remeselníka");
       setRetryCount(0); // Reset retry count when changing user type
       
-      // Add delay before redirecting to allow userType to propagate
+      // Add longer delay before redirecting to allow userType to propagate
       setTimeout(() => {
         navigate('/profile', { replace: true });
-      }, 1000);
+      }, 2000);
     } catch (error) {
       console.error("Error setting user type:", error);
       toast.error("Chyba pri nastavení typu používateľa");

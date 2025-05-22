@@ -25,30 +25,57 @@ export const createDefaultProfile = async (
     // Get trade category from metadata if available (for craftsmen)
     const tradeCategory = user.user_metadata?.trade_category || 'Stolár';
     
-    // First ensure user type is set in the database
-    try {
-      const { error: userTypeError } = await supabase
-        .from('user_types')
-        .upsert({
-          user_id: user.id,
-          user_type: userType
-        });
-      
-      if (userTypeError) {
-        console.error("Error setting user type:", userTypeError);
-      } else {
-        console.log("User type set successfully:", userType);
+    // First ensure user type is set in the database with retry logic
+    let userTypeSet = false;
+    let typeRetries = 3;
+    
+    while (!userTypeSet && typeRetries > 0) {
+      try {
+        const { error: userTypeError } = await supabase
+          .from('user_types')
+          .upsert({
+            user_id: user.id,
+            user_type: userType
+          }, {
+            onConflict: 'user_id'
+          });
         
-        // Store user type in localStorage and sessionStorage as backup
-        try {
-          localStorage.setItem("userType", userType);
-          sessionStorage.setItem("userType", userType);
-        } catch (e) {
-          console.error("Error saving user type to storage:", e);
+        if (userTypeError) {
+          console.error(`Error setting user type (retry ${3-typeRetries+1}/3):`, userTypeError);
+          typeRetries--;
+          
+          if (typeRetries > 0) {
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        } else {
+          console.log("User type set successfully:", userType);
+          userTypeSet = true;
+          
+          // Store user type in localStorage and sessionStorage as backup
+          try {
+            localStorage.setItem("userType", userType);
+            sessionStorage.setItem("userType", userType);
+          } catch (e) {
+            console.error("Error saving user type to storage:", e);
+          }
+          
+          // Wait for the RLS policies to take effect
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (e) {
+        console.error("Error in userType setting:", e);
+        typeRetries--;
+        
+        if (typeRetries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
-    } catch (e) {
-      console.error("Error in userType setting:", e);
+    }
+    
+    if (!userTypeSet) {
+      console.warn("Could not set user type after multiple retries");
+      // Continue anyway and try to create profile
     }
     
     if (userType === 'craftsman') {
@@ -76,7 +103,7 @@ export const createDefaultProfile = async (
       console.log("With trade category:", tradeCategory);
       
       // Retry logic for creating profile
-      let retries = 3;
+      let retries = 5; // Increased number of retries
       let success = false;
       
       while (retries > 0 && !success) {
@@ -96,11 +123,12 @@ export const createDefaultProfile = async (
             });
             
           if (insertError) {
-            console.error(`Error creating craftsman profile (retry ${3-retries+1}/3):`, insertError);
+            console.error(`Error creating craftsman profile (retry ${5-retries+1}/5):`, insertError);
             
             if (retries > 1) {
-              // Wait before retrying
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              // Use exponential backoff for retries
+              const delay = 1000 * Math.pow(2, 5-retries);
+              await new Promise(resolve => setTimeout(resolve, delay));
               retries--;
             } else {
               toast.error(`Chyba pri vytváraní profilu remeselníka: ${insertError.message}`);
@@ -120,13 +148,13 @@ export const createDefaultProfile = async (
             
             setTimeout(() => {
               onSuccess();
-            }, 1000);
+            }, 500);
           }
         } catch (err) {
-          console.error("Error in profile creation try/catch block:", err);
+          console.error(`Error in profile creation try/catch block (retry ${5-retries+1}/5):`, err);
           retries--;
           if (retries === 0) throw err;
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, 5-retries)));
         }
       }
     } else { // Customer profile creation
@@ -153,7 +181,7 @@ export const createDefaultProfile = async (
       console.log("Creating new customer profile for user:", user.id);
       
       // Retry logic for creating profile
-      let retries = 3;
+      let retries = 5; // Increased number of retries
       let success = false;
       
       while (retries > 0 && !success) {
@@ -170,11 +198,12 @@ export const createDefaultProfile = async (
             });
             
           if (insertError) {
-            console.error(`Error creating customer profile (retry ${3-retries+1}/3):`, insertError);
+            console.error(`Error creating customer profile (retry ${5-retries+1}/5):`, insertError);
             
             if (retries > 1) {
-              // Wait before retrying
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              // Use exponential backoff for retries
+              const delay = 1000 * Math.pow(2, 5-retries);
+              await new Promise(resolve => setTimeout(resolve, delay));
               retries--;
             } else {
               toast.error(`Chyba pri vytváraní profilu zákazníka: ${insertError.message}`);
@@ -194,13 +223,13 @@ export const createDefaultProfile = async (
             
             setTimeout(() => {
               onSuccess();
-            }, 1000);
+            }, 500);
           }
         } catch (err) {
-          console.error("Error in profile creation try/catch block:", err);
+          console.error(`Error in profile creation try/catch block (retry ${5-retries+1}/5):`, err);
           retries--;
           if (retries === 0) throw err;
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, 5-retries)));
         }
       }
     }
