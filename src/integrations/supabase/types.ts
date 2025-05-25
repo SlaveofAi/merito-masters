@@ -474,12 +474,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      test_user_types_view: {
+        Row: {
+          user_id: string | null
+          user_type: string | null
+        }
+        Insert: {
+          user_id?: string | null
+          user_type?: string | null
+        }
+        Update: {
+          user_id?: string | null
+          user_type?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_review_reply: {
         Args: { p_review_id: string; p_craftsman_id: string; p_reply: string }
         Returns: undefined
+      }
+      current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       delete_user: {
         Args: Record<PropertyKey, never>
