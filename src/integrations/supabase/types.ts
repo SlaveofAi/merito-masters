@@ -318,6 +318,92 @@ export type Database = {
         }
         Relationships: []
       }
+      job_requests: {
+        Row: {
+          created_at: string
+          customer_email: string
+          customer_id: string
+          customer_name: string
+          customer_phone: string | null
+          description: string
+          id: string
+          image_url: string | null
+          job_category: string
+          location: string
+          preferred_date: string | null
+          status: string
+          updated_at: string
+          urgency: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email: string
+          customer_id: string
+          customer_name: string
+          customer_phone?: string | null
+          description: string
+          id?: string
+          image_url?: string | null
+          job_category: string
+          location: string
+          preferred_date?: string | null
+          status?: string
+          updated_at?: string
+          urgency?: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string
+          customer_id?: string
+          customer_name?: string
+          customer_phone?: string | null
+          description?: string
+          id?: string
+          image_url?: string | null
+          job_category?: string
+          location?: string
+          preferred_date?: string | null
+          status?: string
+          updated_at?: string
+          urgency?: string
+        }
+        Relationships: []
+      }
+      job_responses: {
+        Row: {
+          craftsman_id: string
+          craftsman_name: string
+          created_at: string
+          id: string
+          job_request_id: string
+          message: string | null
+        }
+        Insert: {
+          craftsman_id: string
+          craftsman_name: string
+          created_at?: string
+          id?: string
+          job_request_id: string
+          message?: string | null
+        }
+        Update: {
+          craftsman_id?: string
+          craftsman_name?: string
+          created_at?: string
+          id?: string
+          job_request_id?: string
+          message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_responses_job_request_id_fkey"
+            columns: ["job_request_id"]
+            isOneToOne: false
+            referencedRelation: "job_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           content: string

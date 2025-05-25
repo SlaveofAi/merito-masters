@@ -1,118 +1,98 @@
 
-import React, { useState } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import PortfolioTab from "@/components/profile/PortfolioTab";
-import ReviewsTab from "@/components/profile/ReviewsTab";
-import ContactTab from "@/components/profile/ContactTab";
-import ProfileCalendar from "@/components/profile/ProfileCalendar";
-import EditProfileForm from "@/components/EditProfileForm";
-import { useProfile } from "@/contexts/ProfileContext";
+import React from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import ContactTab from "./ContactTab";
+import ReviewsTab from "./ReviewsTab";
+import PortfolioTab from "./PortfolioTab";
+import CustomerReviewsTab from "./CustomerReviewsTab";
+import MyJobRequests from "./MyJobRequests";
+import { User, Star, Briefcase, MessageSquare, Phone } from "lucide-react";
 
 interface ProfileTabsProps {
-  userType: string | null;
-  initialTab?: string;
+  profileId: string;
+  isCurrentUser: boolean;
+  userType: 'customer' | 'craftsman' | null;
 }
 
-const ProfileTabs: React.FC<ProfileTabsProps> = ({ userType, initialTab = "portfolio" }) => {
-  const { isCurrentUser, isEditing, profileData, userType: profileUserType, handleProfileUpdate } = useProfile();
-  const { userType: authUserType } = useAuth();
-  const [activeTab, setActiveTab] = useState(initialTab);
-  
-  // Add debug logging to understand the component state
-  console.log("ProfileTabs rendering:", {
-    isEditing,
-    userType,
-    profileUserType,
-    authUserType,
-    hasProfileData: !!profileData,
-    activeTab,
-    isCurrentUser
-  });
-  
-  // Don't display tabs when editing
-  if (isEditing && profileData) {
-    console.log("Rendering EditProfileForm in ProfileTabs");
+const ProfileTabs: React.FC<ProfileTabsProps> = ({ 
+  profileId, 
+  isCurrentUser, 
+  userType 
+}) => {
+  const { user } = useAuth();
+
+  if (userType === 'craftsman') {
     return (
-      <div className="py-4">
-        <EditProfileForm 
-          profile={profileData} 
-          userType={profileUserType} 
-          onUpdate={handleProfileUpdate} 
-        />
-      </div>
+      <Tabs defaultValue="portfolio" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="portfolio" className="flex items-center gap-2">
+            <Briefcase className="h-4 w-4" />
+            Portfólio
+          </TabsTrigger>
+          <TabsTrigger value="reviews" className="flex items-center gap-2">
+            <Star className="h-4 w-4" />
+            Hodnotenia
+          </TabsTrigger>
+          <TabsTrigger value="contact" className="flex items-center gap-2">
+            <Phone className="h-4 w-4" />
+            Kontakt
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="portfolio">
+          <PortfolioTab profileId={profileId} isCurrentUser={isCurrentUser} />
+        </TabsContent>
+        
+        <TabsContent value="reviews">
+          <ReviewsTab profileId={profileId} isCurrentUser={isCurrentUser} />
+        </TabsContent>
+        
+        <TabsContent value="contact">
+          <ContactTab profileId={profileId} isCurrentUser={isCurrentUser} />
+        </TabsContent>
+      </Tabs>
     );
   }
 
-  // Display the appropriate tabs based on the user type
-  const isCraftsman = userType === 'craftsman';
-  // Check if viewing user is a customer looking at a craftsman profile
-  const isCustomerViewingCraftsman = !isCurrentUser && 
-                                    authUserType === 'customer' && 
-                                    isCraftsman;
-
-  return (
-    <Tabs 
-      defaultValue={activeTab} 
-      className="w-full mx-auto" 
-      onValueChange={setActiveTab}
-    >
-      <TabsList className="grid w-full mb-8 max-w-md mx-auto" 
-        style={{ 
-          gridTemplateColumns: isCraftsman 
-            ? (isCurrentUser ? "repeat(3, 1fr)" : "repeat(3, 1fr)") 
-            : "repeat(1, 1fr)" 
-        }}
-      >
-        {isCraftsman && (
-          <>
-            <TabsTrigger value="portfolio">Portfólio</TabsTrigger>
-            <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>
-            {!isCurrentUser && <TabsTrigger value="contact">Kontakt</TabsTrigger>}
-            {isCurrentUser && <TabsTrigger value="calendar">Kalendár</TabsTrigger>}
-          </>
-        )}
+  if (userType === 'customer') {
+    return (
+      <Tabs defaultValue={isCurrentUser ? "requests" : "reviews"} className="w-full">
+        <TabsList className={`grid w-full ${isCurrentUser ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          {isCurrentUser && (
+            <TabsTrigger value="requests" className="flex items-center gap-2">
+              <Briefcase className="h-4 w-4" />
+              Moje požiadavky
+            </TabsTrigger>
+          )}
+          <TabsTrigger value="reviews" className="flex items-center gap-2">
+            <Star className="h-4 w-4" />
+            Hodnotenia
+          </TabsTrigger>
+          <TabsTrigger value="contact" className="flex items-center gap-2">
+            <Phone className="h-4 w-4" />
+            Kontakt
+          </TabsTrigger>
+        </TabsList>
         
-        {!isCraftsman && (
-          <TabsTrigger value="reviews">Hodnotenia</TabsTrigger>
-        )}
-      </TabsList>
-
-      {/* Center tab content by adding max-width and mx-auto */}
-      <div className="max-w-3xl mx-auto">
-        {/* Tab content */}
-        {isCraftsman && (
-          <>
-            <TabsContent value="portfolio" className="mx-auto">
-              <PortfolioTab />
-            </TabsContent>
-            
-            <TabsContent value="reviews" className="mx-auto">
-              <ReviewsTab />
-            </TabsContent>
-
-            {!isCurrentUser && (
-              <TabsContent value="contact" className="mx-auto">
-                <ContactTab />
-              </TabsContent>
-            )}
-
-            {isCurrentUser && (
-              <TabsContent value="calendar" className="mx-auto">
-                <ProfileCalendar />
-              </TabsContent>
-            )}
-          </>
-        )}
-        
-        {!isCraftsman && (
-          <TabsContent value="reviews" className="mx-auto">
-            <ReviewsTab />
+        {isCurrentUser && (
+          <TabsContent value="requests">
+            <MyJobRequests />
           </TabsContent>
         )}
-      </div>
-    </Tabs>
-  );
+        
+        <TabsContent value="reviews">
+          <CustomerReviewsTab profileId={profileId} isCurrentUser={isCurrentUser} />
+        </TabsContent>
+        
+        <TabsContent value="contact">
+          <ContactTab profileId={profileId} isCurrentUser={isCurrentUser} />
+        </TabsContent>
+      </Tabs>
+    );
+  }
+
+  return null;
 };
 
 export default ProfileTabs;

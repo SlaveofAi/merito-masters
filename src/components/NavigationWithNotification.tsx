@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import NotificationIndicator from "./notifications/NotificationIndicator";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Briefcase } from "lucide-react";
 
 interface NavigationWithNotificationProps {
   className?: string;
@@ -24,6 +24,12 @@ const NavigationWithNotification: React.FC<NavigationWithNotificationProps> = ({
       {/* Navigation links based on authentication state */}
       {user ? (
         <>
+          <Link to="/requests">
+            <Button variant="ghost">
+              <Briefcase className="mr-2 h-4 w-4" />
+              Požiadavky
+            </Button>
+          </Link>
           <Link to="/messages">
             <Button variant="ghost">
               <MessageSquare className="mr-2 h-4 w-4" />
@@ -40,6 +46,12 @@ const NavigationWithNotification: React.FC<NavigationWithNotificationProps> = ({
         </>
       ) : (
         <>
+          <Link to="/requests">
+            <Button variant="ghost">
+              <Briefcase className="mr-2 h-4 w-4" />
+              Požiadavky
+            </Button>
+          </Link>
           <Link to="/login">
             <Button variant="ghost">Prihlásenie</Button>
           </Link>
