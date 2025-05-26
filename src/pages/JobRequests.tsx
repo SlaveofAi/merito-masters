@@ -10,17 +10,19 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Clock, Calendar, Plus, Eye, MessageSquare } from "lucide-react";
-import { TRADE_CATEGORIES } from "@/constants/categories";
+import { craftCategories } from "@/constants/categories";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface JobRequest {
   id: string;
+  customer_id: string;
   customer_name: string;
   customer_email: string;
   customer_phone: string | null;
   job_category: string;
+  custom_category: string | null;
   location: string;
   description: string;
   preferred_date: string | null;
@@ -31,6 +33,7 @@ interface JobRequest {
 
 const JobRequests = () => {
   const { user, userType } = useAuth();
+  const navigate = useNavigate();
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("");
   const [urgencyFilter, setUrgencyFilter] = useState<string>("all");
@@ -62,7 +65,7 @@ const JobRequests = () => {
     },
   });
 
-  const handleResponse = async (jobId: string) => {
+  const handleResponse = async (jobId: string, customerId: string) => {
     if (!user || userType !== 'craftsman') {
       toast.error("Len remeselníci môžu odpovedať na požiadavky");
       return;
@@ -80,6 +83,7 @@ const JobRequests = () => {
       return;
     }
 
+    // Create job response
     const { error } = await supabase
       .from('job_responses')
       .insert({
@@ -92,9 +96,56 @@ const JobRequests = () => {
     if (error) {
       console.error("Error creating response:", error);
       toast.error("Chyba pri odosielaní odpovede");
-    } else {
-      toast.success("Odpoveď bola úspešne odoslaná");
+      return;
     }
+
+    // Check if conversation already exists
+    const { data: existingConversation } = await supabase
+      .from('chat_conversations')
+      .select('id')
+      .eq('customer_id', customerId)
+      .eq('craftsman_id', user.id)
+      .single();
+
+    let conversationId = existingConversation?.id;
+
+    // Create conversation if it doesn't exist
+    if (!conversationId) {
+      const { data: newConversation, error: conversationError } = await supabase
+        .from('chat_conversations')
+        .insert({
+          customer_id: customerId,
+          craftsman_id: user.id
+        })
+        .select('id')
+        .single();
+
+      if (conversationError) {
+        console.error("Error creating conversation:", conversationError);
+        toast.error("Chyba pri vytváraní konverzácie");
+        return;
+      }
+
+      conversationId = newConversation.id;
+    }
+
+    toast.success("Odpoveď bola úspešne odoslaná");
+    
+    // Redirect to messages with the conversation
+    navigate("/messages", {
+      state: {
+        from: 'job-response',
+        conversationId: conversationId,
+        contactId: customerId
+      }
+    });
+  };
+
+  const getCategoryDisplay = (job: JobRequest) => {
+    if (job.custom_category && job.job_category === "Iné") {
+      return job.custom_category;
+    }
+    return job.job_category;
   };
 
   return (
@@ -126,11 +177,12 @@ const JobRequests = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Všetky kategórie</SelectItem>
-              {TRADE_CATEGORIES.map((category) => (
+              {craftCategories.map((category) => (
                 <SelectItem key={category} value={category}>
                   {category}
                 </SelectItem>
               ))}
+              <SelectItem value="Iné">Iné</SelectItem>
             </SelectContent>
           </Select>
 
@@ -187,7 +239,7 @@ const JobRequests = () => {
               <Card key={job.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{job.job_category}</CardTitle>
+                    <CardTitle className="text-lg">{getCategoryDisplay(job)}</CardTitle>
                     <Badge variant={job.urgency === 'asap' ? 'destructive' : 'secondary'}>
                       {job.urgency === 'asap' ? 'Naliehavé' : 'Flexibilné'}
                     </Badge>
@@ -198,6 +250,16 @@ const JobRequests = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {job.image_url && (
+                    <div className="mb-4">
+                      <img 
+                        src={job.image_url} 
+                        alt="Job request" 
+                        className="w-full h-32 object-cover rounded"
+                      />
+                    </div>
+                  )}
+                  
                   <p className="text-sm mb-4 line-clamp-3">{job.description}</p>
                   
                   <div className="space-y-2 text-sm text-muted-foreground">
@@ -227,7 +289,7 @@ const JobRequests = () => {
                         )}
                       </div>
                       <Button 
-                        onClick={() => handleResponse(job.id)}
+                        onClick={() => handleResponse(job.id, job.customer_id)}
                         className="w-full"
                         size="sm"
                       >

@@ -321,6 +321,7 @@ export type Database = {
       job_requests: {
         Row: {
           created_at: string
+          custom_category: string | null
           customer_email: string
           customer_id: string
           customer_name: string
@@ -337,6 +338,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custom_category?: string | null
           customer_email: string
           customer_id: string
           customer_name: string
@@ -353,6 +355,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custom_category?: string | null
           customer_email?: string
           customer_id?: string
           customer_name?: string
@@ -584,6 +587,10 @@ export type Database = {
       current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      delete_job_request: {
+        Args: { request_id: string; user_id: string }
+        Returns: boolean
       }
       delete_user: {
         Args: Record<PropertyKey, never>

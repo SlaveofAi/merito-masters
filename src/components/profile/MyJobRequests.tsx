@@ -14,11 +14,13 @@ import { Link } from "react-router-dom";
 interface JobRequest {
   id: string;
   job_category: string;
+  custom_category: string | null;
   location: string;
   description: string;
   preferred_date: string | null;
   urgency: string;
   status: string;
+  image_url: string | null;
   created_at: string;
 }
 
@@ -70,18 +72,21 @@ const MyJobRequests = () => {
 
   const handleDeleteRequest = async (requestId: string) => {
     if (!confirm("Naozaj chcete vymazať túto požiadavku?")) return;
+    if (!user) return;
 
-    const { error } = await supabase
-      .from('job_requests')
-      .delete()
-      .eq('id', requestId);
+    const { data, error } = await supabase.rpc('delete_job_request', {
+      request_id: requestId,
+      user_id: user.id
+    });
 
     if (error) {
       console.error("Error deleting request:", error);
       toast.error("Chyba pri mazaní požiadavky");
-    } else {
+    } else if (data) {
       toast.success("Požiadavka bola vymazaná");
       queryClient.invalidateQueries({ queryKey: ['my-job-requests'] });
+    } else {
+      toast.error("Nepodarilo sa vymazať požiadavku");
     }
   };
 
@@ -98,6 +103,13 @@ const MyJobRequests = () => {
       toast.success("Stav bol aktualizovaný");
       queryClient.invalidateQueries({ queryKey: ['my-job-requests'] });
     }
+  };
+
+  const getCategoryDisplay = (request: JobRequest) => {
+    if (request.custom_category && request.job_category === "Iné") {
+      return request.custom_category;
+    }
+    return request.job_category;
   };
 
   if (isLoading) {
@@ -136,7 +148,7 @@ const MyJobRequests = () => {
             <Card key={request.id}>
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{request.job_category}</CardTitle>
+                  <CardTitle className="text-lg">{getCategoryDisplay(request)}</CardTitle>
                   <div className="flex gap-2">
                     <Badge 
                       variant={
@@ -155,6 +167,16 @@ const MyJobRequests = () => {
                 <p className="text-sm text-muted-foreground">{request.location}</p>
               </CardHeader>
               <CardContent>
+                {request.image_url && (
+                  <div className="mb-4">
+                    <img 
+                      src={request.image_url} 
+                      alt="Job request" 
+                      className="w-full h-32 object-cover rounded"
+                    />
+                  </div>
+                )}
+                
                 <p className="text-sm mb-4">{request.description}</p>
                 
                 <div className="text-xs text-muted-foreground mb-4">
