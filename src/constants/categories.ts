@@ -1,4 +1,3 @@
-
 // All craft categories available in the application
 export const craftCategories = [
   'Stolár',
@@ -43,6 +42,9 @@ export const craftCategories = [
   'Tetovanie / Permanentný make-up',
   'Wellness terapeut'
 ];
+
+// Export as TRADE_CATEGORIES for compatibility
+export const TRADE_CATEGORIES = craftCategories;
 
 // Map trade categories to appropriate icons
 export const categoryIcons: Record<string, string> = {

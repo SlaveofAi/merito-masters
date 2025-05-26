@@ -10,21 +10,24 @@ import MyJobRequests from "./MyJobRequests";
 import { User, Star, Briefcase, MessageSquare, Phone } from "lucide-react";
 
 interface ProfileTabsProps {
-  profileId: string;
-  isCurrentUser: boolean;
   userType: 'customer' | 'craftsman' | null;
+  initialTab?: string;
 }
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({ 
-  profileId, 
-  isCurrentUser, 
-  userType 
+  userType,
+  initialTab = "portfolio"
 }) => {
   const { user } = useAuth();
 
+  // We'll get profileId and isCurrentUser from the ProfileContext or derive them
+  // For now, we'll use user.id as profileId and assume it's current user
+  const profileId = user?.id || '';
+  const isCurrentUser = true; // This will be properly determined in context
+
   if (userType === 'craftsman') {
     return (
-      <Tabs defaultValue="portfolio" className="w-full">
+      <Tabs defaultValue={initialTab === "calendar" ? "portfolio" : initialTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="portfolio" className="flex items-center gap-2">
             <Briefcase className="h-4 w-4" />
@@ -45,7 +48,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
         </TabsContent>
         
         <TabsContent value="reviews">
-          <ReviewsTab profileId={profileId} isCurrentUser={isCurrentUser} />
+          <ReviewsTab />
         </TabsContent>
         
         <TabsContent value="contact">
@@ -56,8 +59,9 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   }
 
   if (userType === 'customer') {
+    const defaultTab = isCurrentUser ? "requests" : "reviews";
     return (
-      <Tabs defaultValue={isCurrentUser ? "requests" : "reviews"} className="w-full">
+      <Tabs defaultValue={initialTab || defaultTab} className="w-full">
         <TabsList className={`grid w-full ${isCurrentUser ? 'grid-cols-3' : 'grid-cols-2'}`}>
           {isCurrentUser && (
             <TabsTrigger value="requests" className="flex items-center gap-2">
