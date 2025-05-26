@@ -48,7 +48,7 @@ const MyJobRequests = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as JobRequest[];
+      return data;
     },
     enabled: !!user,
   });

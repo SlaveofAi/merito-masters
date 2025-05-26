@@ -329,6 +329,7 @@ export type Database = {
           description: string
           id: string
           image_url: string | null
+          image_urls: string[] | null
           job_category: string
           location: string
           preferred_date: string | null
@@ -346,6 +347,7 @@ export type Database = {
           description: string
           id?: string
           image_url?: string | null
+          image_urls?: string[] | null
           job_category: string
           location: string
           preferred_date?: string | null
@@ -363,6 +365,7 @@ export type Database = {
           description?: string
           id?: string
           image_url?: string | null
+          image_urls?: string[] | null
           job_category?: string
           location?: string
           preferred_date?: string | null
