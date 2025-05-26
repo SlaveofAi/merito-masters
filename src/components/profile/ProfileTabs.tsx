@@ -20,11 +20,6 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
 }) => {
   const { user } = useAuth();
 
-  // We'll get profileId and isCurrentUser from the ProfileContext or derive them
-  // For now, we'll use user.id as profileId and assume it's current user
-  const profileId = user?.id || '';
-  const isCurrentUser = true; // This will be properly determined in context
-
   if (userType === 'craftsman') {
     return (
       <Tabs defaultValue={initialTab === "calendar" ? "portfolio" : initialTab} className="w-full">
@@ -44,7 +39,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
         </TabsList>
         
         <TabsContent value="portfolio">
-          <PortfolioTab profileId={profileId} isCurrentUser={isCurrentUser} />
+          <PortfolioTab />
         </TabsContent>
         
         <TabsContent value="reviews">
@@ -52,14 +47,18 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
         </TabsContent>
         
         <TabsContent value="contact">
-          <ContactTab profileId={profileId} isCurrentUser={isCurrentUser} />
+          <ContactTab />
         </TabsContent>
       </Tabs>
     );
   }
 
   if (userType === 'customer') {
+    // For customers, we need to determine if this is the current user
+    // This should come from ProfileContext, but for now we'll use a simple check
+    const isCurrentUser = true; // This will be properly determined in context
     const defaultTab = isCurrentUser ? "requests" : "reviews";
+    
     return (
       <Tabs defaultValue={initialTab || defaultTab} className="w-full">
         <TabsList className={`grid w-full ${isCurrentUser ? 'grid-cols-3' : 'grid-cols-2'}`}>
@@ -86,11 +85,11 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
         )}
         
         <TabsContent value="reviews">
-          <CustomerReviewsTab profileId={profileId} isCurrentUser={isCurrentUser} />
+          <CustomerReviewsTab />
         </TabsContent>
         
         <TabsContent value="contact">
-          <ContactTab profileId={profileId} isCurrentUser={isCurrentUser} />
+          <ContactTab />
         </TabsContent>
       </Tabs>
     );
