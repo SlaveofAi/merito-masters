@@ -277,7 +277,7 @@ const JobRequests = () => {
                         />
                       )}
                     </div>
-                  )}
+                  ) : null}
                   
                   <p className="text-sm mb-4 line-clamp-3">{job.description}</p>
                   
