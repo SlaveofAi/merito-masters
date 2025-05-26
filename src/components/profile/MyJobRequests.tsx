@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +20,7 @@ interface JobRequest {
   urgency: string;
   status: string;
   image_url: string | null;
+  image_urls: string[] | null;
   created_at: string;
 }
 
@@ -167,13 +167,26 @@ const MyJobRequests = () => {
                 <p className="text-sm text-muted-foreground">{request.location}</p>
               </CardHeader>
               <CardContent>
-                {request.image_url && (
+                {(request.image_urls && request.image_urls.length > 0) || request.image_url && (
                   <div className="mb-4">
-                    <img 
-                      src={request.image_url} 
-                      alt="Job request" 
-                      className="w-full h-32 object-cover rounded"
-                    />
+                    {request.image_urls && request.image_urls.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {request.image_urls.map((url, index) => (
+                          <img 
+                            key={index}
+                            src={url} 
+                            alt={`Job request ${index + 1}`} 
+                            className="w-full h-24 object-cover rounded"
+                          />
+                        ))}
+                      </div>
+                    ) : request.image_url && (
+                      <img 
+                        src={request.image_url} 
+                        alt="Job request" 
+                        className="w-full h-32 object-cover rounded"
+                      />
+                    )}
                   </div>
                 )}
                 

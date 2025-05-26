@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,14 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { craftCategories } from "@/constants/categories";
-import { ArrowLeft, Send, Upload, X } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
+import ImageGalleryUploader from "@/components/ImageGalleryUploader";
 
 const PostJob = () => {
   const { user, userType } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
   const [formData, setFormData] = useState({
     jobCategory: "",
@@ -52,50 +51,45 @@ const PostJob = () => {
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast.error("Obrázok je príliš veľký (max 5MB)");
+    const files = e.target.files;
+    if (files) {
+      if (files.length > 5) { // 5 images limit
+        toast.error("Obrázky sú príliš veľké (max 5)");
         return;
       }
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      setSelectedImages(files);
     }
   };
 
-  const removeImage = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
-  };
-
-  const uploadImage = async (file: File): Promise<string | null> => {
+  const uploadImages = async (files: File[]): Promise<string[]> => {
+    const uploadedUrls: string[] = [];
+    
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `job-requests/${fileName}`;
+      for (const file of files) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('job-requests')
-        .upload(filePath, file);
+        const { error: uploadError } = await supabase.storage
+          .from('job-requests')
+          .upload(filePath, file);
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        return null;
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('job-requests')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
       }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('job-requests')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
     } catch (error) {
-      console.error('Error uploading image:', error);
-      return null;
+      console.error('Error uploading images:', error);
     }
+    
+    return uploadedUrls;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,11 +111,11 @@ const PostJob = () => {
     setIsSubmitting(true);
 
     try {
-      let imageUrl = null;
-      if (selectedImage) {
-        imageUrl = await uploadImage(selectedImage);
-        if (!imageUrl) {
-          toast.error("Chyba pri nahrávaní obrázka");
+      let imageUrls: string[] = [];
+      if (selectedImages.length > 0) {
+        imageUrls = await uploadImages(selectedImages);
+        if (imageUrls.length === 0 && selectedImages.length > 0) {
+          toast.error("Chyba pri nahrávaní obrázkov");
           setIsSubmitting(false);
           return;
         }
@@ -140,7 +134,7 @@ const PostJob = () => {
           description: formData.description,
           preferred_date: formData.preferredDate || null,
           urgency: formData.urgency,
-          image_url: imageUrl
+          image_urls: imageUrls.length > 0 ? imageUrls : null
         });
 
       if (error) {
@@ -237,48 +231,12 @@ const PostJob = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Pridať obrázok</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-                  {imagePreview ? (
-                    <div className="relative">
-                      <img 
-                        src={imagePreview} 
-                        alt="Preview" 
-                        className="w-full h-48 object-cover rounded"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={removeImage}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="mt-4">
-                        <Label htmlFor="image-upload" className="cursor-pointer">
-                          <span className="mt-2 block text-sm font-medium text-gray-900">
-                            Kliknite pre nahranie obrázka
-                          </span>
-                          <span className="mt-1 block text-xs text-gray-500">
-                            PNG, JPG až 5MB
-                          </span>
-                        </Label>
-                        <Input
-                          id="image-upload"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageSelect}
-                          className="hidden"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <Label>Pridať obrázky (max 5)</Label>
+                <ImageGalleryUploader
+                  images={selectedImages}
+                  onImagesChange={setSelectedImages}
+                  maxImages={5}
+                />
               </div>
 
               <div className="space-y-2">

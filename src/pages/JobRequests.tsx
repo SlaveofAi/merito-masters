@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +27,7 @@ interface JobRequest {
   preferred_date: string | null;
   urgency: string;
   image_url: string | null;
+  image_urls: string[] | null;
   created_at: string;
 }
 
@@ -250,13 +250,31 @@ const JobRequests = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {job.image_url && (
+                  {(job.image_urls && job.image_urls.length > 0) || job.image_url ? (
                     <div className="mb-4">
-                      <img 
-                        src={job.image_url} 
-                        alt="Job request" 
-                        className="w-full h-32 object-cover rounded"
-                      />
+                      {job.image_urls && job.image_urls.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          {job.image_urls.slice(0, 4).map((url, index) => (
+                            <img 
+                              key={index}
+                              src={url} 
+                              alt={`Job request ${index + 1}`} 
+                              className="w-full h-20 object-cover rounded"
+                            />
+                          ))}
+                          {job.image_urls.length > 4 && (
+                            <div className="flex items-center justify-center bg-gray-100 rounded text-sm text-gray-600">
+                              +{job.image_urls.length - 4} ďalších
+                            </div>
+                          )}
+                        </div>
+                      ) : job.image_url && (
+                        <img 
+                          src={job.image_url} 
+                          alt="Job request" 
+                          className="w-full h-32 object-cover rounded"
+                        />
+                      )}
                     </div>
                   )}
                   
