@@ -57,7 +57,8 @@ const PostJob = () => {
         toast.error("Obrázky sú príliš veľké (max 5)");
         return;
       }
-      setSelectedImages(files);
+      // Convert FileList to File[]
+      setSelectedImages(Array.from(files));
     }
   };
 
