@@ -12,11 +12,13 @@ import { User, Star, Briefcase, MessageSquare, Phone } from "lucide-react";
 interface ProfileTabsProps {
   userType: 'customer' | 'craftsman' | null;
   initialTab?: string;
+  isCurrentUser?: boolean;
 }
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({ 
   userType,
-  initialTab = "portfolio"
+  initialTab = "portfolio",
+  isCurrentUser = false
 }) => {
   const { user } = useAuth();
 
@@ -54,14 +56,13 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   }
 
   if (userType === 'customer') {
-    // For customers, we need to determine if this is the current user
-    // This should come from ProfileContext, but for now we'll use a simple check
-    const isCurrentUser = true; // This will be properly determined in context
-    const defaultTab = isCurrentUser ? "requests" : "reviews";
+    // For customers viewing their own profile, default to requests tab
+    const defaultTab = isCurrentUser ? (initialTab || "requests") : "reviews";
+    const gridCols = isCurrentUser ? 'grid-cols-3' : 'grid-cols-2';
     
     return (
-      <Tabs defaultValue={initialTab || defaultTab} className="w-full">
-        <TabsList className={`grid w-full ${isCurrentUser ? 'grid-cols-3' : 'grid-cols-2'}`}>
+      <Tabs defaultValue={defaultTab} className="w-full">
+        <TabsList className={`grid w-full ${gridCols}`}>
           {isCurrentUser && (
             <TabsTrigger value="requests" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />

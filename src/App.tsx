@@ -65,6 +65,7 @@ const App = () => (
             <Route path="/profile/:id" element={<Profile />} />
             
             {/* Profile sub-pages - carefully ordered for proper routing */}
+            <Route path="/profile/requests" element={<Profile />} />
             <Route path="/profile/portfolio" element={<ProfilePortfolio />} />
             <Route path="/profile/reviews" element={<ProfileReviews />} />
             <Route path="/profile/calendar" element={<ProfileCalendar />} />

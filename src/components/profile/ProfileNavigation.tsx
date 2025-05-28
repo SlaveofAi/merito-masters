@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/ProfileContext";
 
-type TabType = 'portfolio' | 'reviews' | 'calendar';
+type TabType = 'portfolio' | 'reviews' | 'calendar' | 'requests';
 
 interface ProfileNavigationProps {
   activeTab: TabType;
@@ -38,6 +38,11 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
       return !isCustomer;
     }
     
+    if (tab === 'requests') {
+      // Only show requests tab for customers viewing their own profile
+      return isCustomer && isCurrentUser;
+    }
+    
     // Reviews tab is shown for all user types
     return true;
   };
@@ -45,6 +50,17 @@ const ProfileNavigation: React.FC<ProfileNavigationProps> = ({ activeTab, userTy
   return (
     <div className="border-b border-gray-200">
       <nav className="-mb-px flex space-x-8">
+        {showTab('requests') && (
+          <Link to={getTabUrl('requests')}>
+            <Button 
+              variant={activeTab === 'requests' ? 'default' : 'ghost'} 
+              className="rounded-none rounded-t-lg h-12"
+            >
+              Moje požiadavky
+            </Button>
+          </Link>
+        )}
+
         {showTab('portfolio') && (
           <Link to={getTabUrl('portfolio')}>
             <Button 

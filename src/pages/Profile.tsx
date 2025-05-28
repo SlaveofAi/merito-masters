@@ -57,8 +57,8 @@ const Profile = () => {
     
     // Only redirect if viewing own profile (no ID passed), not when viewing someone else's
     if (!id && userType === "customer" && window.location.pathname === "/profile") {
-      console.log("Customer profile detected in Profile useEffect, redirecting to reviews");
-      navigate("/profile/reviews", { replace: true });
+      console.log("Customer profile detected in Profile useEffect, redirecting to requests");
+      navigate("/profile/requests", { replace: true });
     }
   }, [id, userType, loading, navigate, user]);
   
@@ -79,8 +79,8 @@ const Profile = () => {
   // Immediate redirect for customers
   // First check: Immediate redirect if we already know this is a customer
   if (!id && userType === "customer" && window.location.pathname === "/profile") {
-    console.log("Customer profile detected in main Profile route, immediate redirect to reviews");
-    return <Navigate to="/profile/reviews" replace />;
+    console.log("Customer profile detected in main Profile route, immediate redirect to requests");
+    return <Navigate to="/profile/requests" replace />;
   }
   
   // We need to check if the user is trying to navigate to their own profile
@@ -91,9 +91,16 @@ const Profile = () => {
     return <Navigate to="/profile" replace />;
   }
 
-  // For the main Profile route, we want to show the calendar if explicitly requested
-  // Otherwise, the default tab is set to "portfolio"
-  const initialTab = window.location.pathname.endsWith('/calendar') ? "calendar" : "portfolio";
+  // For the main Profile route, we want to show the requests tab if it's a customer
+  // or the calendar if explicitly requested, otherwise default to "portfolio"
+  let initialTab = "portfolio";
+  if (window.location.pathname.endsWith('/calendar')) {
+    initialTab = "calendar";
+  } else if (window.location.pathname.endsWith('/requests')) {
+    initialTab = "requests";
+  } else if (userType === 'customer' && !id) {
+    initialTab = "requests";
+  }
   
   return (
     <ProfileProvider>
