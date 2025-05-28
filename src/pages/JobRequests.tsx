@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -151,7 +152,13 @@ const JobRequests = () => {
   };
 
   const handleImageClick = (imageUrl: string) => {
+    console.log('Image clicked in JobRequests:', imageUrl);
     setSelectedImageUrl(imageUrl);
+  };
+
+  const handleMyRequestsClick = () => {
+    // Navigate to the customer profile page which shows job requests
+    navigate("/profile");
   };
 
   return (
@@ -168,12 +175,14 @@ const JobRequests = () => {
           <div className="flex gap-2">
             {user && userType === 'customer' && (
               <>
-                <Link to="/profile">
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Moje požiadavky
-                  </Button>
-                </Link>
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                  onClick={handleMyRequestsClick}
+                >
+                  <User className="h-4 w-4" />
+                  Moje požiadavky
+                </Button>
                 <Link to="/post-job">
                   <Button className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
@@ -271,12 +280,15 @@ const JobRequests = () => {
                       {job.image_urls && job.image_urls.length > 0 ? (
                         <div className="grid grid-cols-2 gap-2">
                           {job.image_urls.slice(0, 4).map((url, index) => (
-                            <div key={index} className="relative group cursor-pointer">
+                            <div 
+                              key={index} 
+                              className="relative group cursor-pointer"
+                              onClick={() => handleImageClick(url)}
+                            >
                               <img 
                                 src={url} 
                                 alt={`Job request ${index + 1}`} 
                                 className="w-full h-20 object-cover rounded"
-                                onClick={() => handleImageClick(url)}
                               />
                               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
                                 <ZoomIn className="h-4 w-4 text-white" />
@@ -290,12 +302,14 @@ const JobRequests = () => {
                           )}
                         </div>
                       ) : job.image_url && (
-                        <div className="relative group cursor-pointer">
+                        <div 
+                          className="relative group cursor-pointer"
+                          onClick={() => handleImageClick(job.image_url!)}
+                        >
                           <img 
                             src={job.image_url} 
                             alt="Job request" 
                             className="w-full h-32 object-cover rounded"
-                            onClick={() => handleImageClick(job.image_url!)}
                           />
                           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
                             <ZoomIn className="h-6 w-6 text-white" />
@@ -383,6 +397,7 @@ const JobRequests = () => {
           <ImageModal
             imageUrl={selectedImageUrl}
             onClose={() => setSelectedImageUrl(null)}
+            alt="Job request image"
           />
         )}
       </div>
