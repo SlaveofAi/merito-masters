@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,6 +77,8 @@ const MyJobRequests = () => {
     if (!user) return;
 
     try {
+      console.log('Attempting to delete request:', requestId);
+      
       // First delete any responses to this request
       const { error: responsesError } = await supabase
         .from('job_responses')
@@ -93,7 +94,7 @@ const MyJobRequests = () => {
         .from('job_requests')
         .delete()
         .eq('id', requestId)
-        .eq('customer_id', user.id); // Ensure user can only delete their own requests
+        .eq('customer_id', user.id);
 
       if (requestError) {
         console.error("Error deleting request:", requestError);
@@ -116,7 +117,7 @@ const MyJobRequests = () => {
       .from('job_requests')
       .update({ status: newStatus })
       .eq('id', requestId)
-      .eq('customer_id', user.id); // Ensure user can only update their own requests
+      .eq('customer_id', user.id);
 
     if (error) {
       console.error("Error updating status:", error);
@@ -135,6 +136,7 @@ const MyJobRequests = () => {
   };
 
   const handleImageClick = (imageUrl: string) => {
+    console.log('Image clicked:', imageUrl);
     setSelectedImageUrl(imageUrl);
   };
 
@@ -238,7 +240,7 @@ const MyJobRequests = () => {
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-4">
                   <Button
                     variant="outline"
                     size="sm"
@@ -344,6 +346,7 @@ const MyJobRequests = () => {
         <ImageModal
           imageUrl={selectedImageUrl}
           onClose={() => setSelectedImageUrl(null)}
+          alt="Job request image"
         />
       )}
     </div>

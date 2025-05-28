@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Clock, Calendar, Plus, Eye, MessageSquare, ZoomIn } from "lucide-react";
+import { MapPin, Clock, Calendar, Plus, Eye, MessageSquare, ZoomIn, User } from "lucide-react";
 import { craftCategories } from "@/constants/categories";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -166,14 +165,24 @@ const JobRequests = () => {
             </p>
           </div>
           
-          {user && userType === 'customer' && (
-            <Link to="/post-job">
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Pridať požiadavku
-              </Button>
-            </Link>
-          )}
+          <div className="flex gap-2">
+            {user && userType === 'customer' && (
+              <>
+                <Link to="/profile">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Moje požiadavky
+                  </Button>
+                </Link>
+                <Link to="/post-job">
+                  <Button className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Pridať požiadavku
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
