@@ -2,12 +2,11 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
-import ContactTab from "./ContactTab";
 import ReviewsTab from "./ReviewsTab";
 import PortfolioTab from "./PortfolioTab";
 import CustomerReviewsTab from "./CustomerReviewsTab";
 import MyJobRequests from "./MyJobRequests";
-import { User, Star, Briefcase, MessageSquare, Phone } from "lucide-react";
+import { User, Star, Briefcase } from "lucide-react";
 
 interface ProfileTabsProps {
   userType: 'customer' | 'craftsman' | null;
@@ -25,7 +24,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   if (userType === 'craftsman') {
     return (
       <Tabs defaultValue={initialTab === "calendar" ? "portfolio" : initialTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="portfolio" className="flex items-center gap-2">
             <Briefcase className="h-4 w-4" />
             Portfólio
@@ -33,10 +32,6 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           <TabsTrigger value="reviews" className="flex items-center gap-2">
             <Star className="h-4 w-4" />
             Hodnotenia
-          </TabsTrigger>
-          <TabsTrigger value="contact" className="flex items-center gap-2">
-            <Phone className="h-4 w-4" />
-            Kontakt
           </TabsTrigger>
         </TabsList>
         
@@ -47,18 +42,15 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
         <TabsContent value="reviews">
           <ReviewsTab />
         </TabsContent>
-        
-        <TabsContent value="contact">
-          <ContactTab />
-        </TabsContent>
       </Tabs>
     );
   }
 
   if (userType === 'customer') {
-    // For customers viewing their own profile, default to requests tab
+    // For customers viewing their own profile, show requests and reviews tabs
+    // For customers viewing others' profiles, only show reviews
     const defaultTab = isCurrentUser ? (initialTab || "requests") : "reviews";
-    const gridCols = isCurrentUser ? 'grid-cols-3' : 'grid-cols-2';
+    const gridCols = isCurrentUser ? 'grid-cols-2' : 'grid-cols-1';
     
     return (
       <Tabs defaultValue={defaultTab} className="w-full">
@@ -73,10 +65,6 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
             <Star className="h-4 w-4" />
             Hodnotenia
           </TabsTrigger>
-          <TabsTrigger value="contact" className="flex items-center gap-2">
-            <Phone className="h-4 w-4" />
-            Kontakt
-          </TabsTrigger>
         </TabsList>
         
         {isCurrentUser && (
@@ -87,10 +75,6 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
         
         <TabsContent value="reviews">
           <CustomerReviewsTab />
-        </TabsContent>
-        
-        <TabsContent value="contact">
-          <ContactTab />
         </TabsContent>
       </Tabs>
     );

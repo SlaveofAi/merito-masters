@@ -5,10 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import ReviewForm from "../ReviewForm";
 import LoadingState from "./LoadingState";
 import ReviewList from "./ReviewList";
-import AddReviewButton from "./AddReviewButton";
 import EditReviewSection from "./EditReviewSection";
 import { CraftsmanReviewWithCraftsman } from "./types";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -16,7 +14,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const CustomerReviewsTab: React.FC = () => {
   const { profileData, isCurrentUser } = useProfile();
   const { user, userType } = useAuth();
-  const [showAddForm, setShowAddForm] = useState(false);
   const [editingReview, setEditingReview] = useState<CraftsmanReviewWithCraftsman | null>(null);
   const isMobile = useIsMobile();
   
@@ -55,14 +52,12 @@ const CustomerReviewsTab: React.FC = () => {
 
   const handleReviewSuccess = () => {
     refetch();
-    setShowAddForm(false);
     setEditingReview(null);
     toast.success("Hodnotenie bolo úspešne upravené");
   };
 
   const handleEditClick = (review: CraftsmanReviewWithCraftsman) => {
     setEditingReview(review);
-    setShowAddForm(false);
   };
 
   const handleCancelEdit = () => {
@@ -73,33 +68,13 @@ const CustomerReviewsTab: React.FC = () => {
     return <LoadingState />;
   }
 
-  // Determine if the user can add reviews (ensuring proper user type check)
-  const canAddReview = !!user && userType && userType.toLowerCase() === 'customer';
-
   return (
     <div className={isMobile ? "px-2" : ""}>
       <h3 className={`text-xl font-semibold mb-4 ${isMobile ? 'text-center text-lg' : ''}`}>
         Hodnotenia remeselníkov
       </h3>
       
-      {canAddReview && isCurrentUser && (
-        <div className="mb-6">
-          {!showAddForm && !editingReview ? (
-            <AddReviewButton onClick={() => setShowAddForm(true)} />
-          ) : showAddForm && !editingReview ? (
-            <ReviewForm 
-              userId={user.id} 
-              profileId="empty"
-              userName={user.user_metadata?.name || user.user_metadata?.full_name || 'Anonymný zákazník'}
-              onSuccess={handleReviewSuccess}
-              isSelectCraftsman={true}
-              onCancel={() => setShowAddForm(false)}
-            />
-          ) : null}
-        </div>
-      )}
-
-      {/* Editing form */}
+      {/* Only show editing form if there's a review being edited */}
       {editingReview && (
         <EditReviewSection 
           editingReview={editingReview}
@@ -107,6 +82,21 @@ const CustomerReviewsTab: React.FC = () => {
           onSuccess={handleReviewSuccess}
           onCancel={handleCancelEdit}
         />
+      )}
+
+      {/* Show message for customers viewing their own profile with no reviews */}
+      {isCurrentUser && (!reviews || reviews.length === 0) && (
+        <div className="text-center py-8 text-gray-500">
+          <p>Zatiaľ ste nevykonali žiadne hodnotenia.</p>
+          <p className="mt-2 text-sm">Hodnotenia môžete pridávať na profiloch remeselníkov po dokončení práce.</p>
+        </div>
+      )}
+
+      {/* Show message for non-current users with no reviews */}
+      {!isCurrentUser && (!reviews || reviews.length === 0) && (
+        <div className="text-center py-8 text-gray-500">
+          <p>Tento zákazník zatiaľ nevytvoril žiadne hodnotenia.</p>
+        </div>
       )}
 
       <ReviewList 
