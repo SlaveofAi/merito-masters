@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,11 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Clock, Calendar, Plus, Eye, MessageSquare } from "lucide-react";
+import { MapPin, Clock, Calendar, Plus, Eye, MessageSquare, ZoomIn } from "lucide-react";
 import { craftCategories } from "@/constants/categories";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
+import ImageModal from "@/components/ImageModal";
 
 interface JobRequest {
   id: string;
@@ -37,6 +39,7 @@ const JobRequests = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("");
   const [urgencyFilter, setUrgencyFilter] = useState<string>("all");
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 
   const { data: jobRequests, isLoading } = useQuery({
     queryKey: ['job-requests', categoryFilter, locationFilter, urgencyFilter],
@@ -148,6 +151,10 @@ const JobRequests = () => {
     return job.job_category;
   };
 
+  const handleImageClick = (imageUrl: string) => {
+    setSelectedImageUrl(imageUrl);
+  };
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
@@ -255,12 +262,17 @@ const JobRequests = () => {
                       {job.image_urls && job.image_urls.length > 0 ? (
                         <div className="grid grid-cols-2 gap-2">
                           {job.image_urls.slice(0, 4).map((url, index) => (
-                            <img 
-                              key={index}
-                              src={url} 
-                              alt={`Job request ${index + 1}`} 
-                              className="w-full h-20 object-cover rounded"
-                            />
+                            <div key={index} className="relative group cursor-pointer">
+                              <img 
+                                src={url} 
+                                alt={`Job request ${index + 1}`} 
+                                className="w-full h-20 object-cover rounded"
+                                onClick={() => handleImageClick(url)}
+                              />
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
+                                <ZoomIn className="h-4 w-4 text-white" />
+                              </div>
+                            </div>
                           ))}
                           {job.image_urls.length > 4 && (
                             <div className="flex items-center justify-center bg-gray-100 rounded text-sm text-gray-600">
@@ -269,11 +281,17 @@ const JobRequests = () => {
                           )}
                         </div>
                       ) : job.image_url && (
-                        <img 
-                          src={job.image_url} 
-                          alt="Job request" 
-                          className="w-full h-32 object-cover rounded"
-                        />
+                        <div className="relative group cursor-pointer">
+                          <img 
+                            src={job.image_url} 
+                            alt="Job request" 
+                            className="w-full h-32 object-cover rounded"
+                            onClick={() => handleImageClick(job.image_url!)}
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
+                            <ZoomIn className="h-6 w-6 text-white" />
+                          </div>
+                        </div>
                       )}
                     </div>
                   ) : null}
@@ -349,6 +367,14 @@ const JobRequests = () => {
               Momentálne nie sú k dispozícii žiadne otvorené požiadavky.
             </p>
           </div>
+        )}
+
+        {/* Image Modal for zooming */}
+        {selectedImageUrl && (
+          <ImageModal
+            imageUrl={selectedImageUrl}
+            onClose={() => setSelectedImageUrl(null)}
+          />
         )}
       </div>
     </Layout>

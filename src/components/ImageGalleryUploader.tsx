@@ -26,8 +26,15 @@ const ImageGalleryUploader: React.FC<ImageGalleryUploaderProps> = ({
       return true;
     });
 
-    const newImages = [...images, ...validFiles].slice(0, maxImages);
-    onImagesChange(newImages);
+    const totalImages = images.length + validFiles.length;
+    if (totalImages > maxImages) {
+      const remainingSlots = maxImages - images.length;
+      const newImages = [...images, ...validFiles.slice(0, remainingSlots)];
+      onImagesChange(newImages);
+    } else {
+      const newImages = [...images, ...validFiles];
+      onImagesChange(newImages);
+    }
     e.target.value = '';
   };
 
@@ -37,7 +44,8 @@ const ImageGalleryUploader: React.FC<ImageGalleryUploaderProps> = ({
   };
 
   const handleCropComplete = (croppedBlob: Blob, index: number) => {
-    const croppedFile = new File([croppedBlob], `cropped-${Date.now()}.jpg`, {
+    const originalFile = images[index];
+    const croppedFile = new File([croppedBlob], originalFile.name, {
       type: 'image/jpeg'
     });
     

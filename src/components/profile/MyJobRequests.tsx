@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Edit, Trash2, Eye, MessageSquare, Plus } from "lucide-react";
+import { Edit, Trash2, Eye, MessageSquare, Plus, ZoomIn } from "lucide-react";
 import { Link } from "react-router-dom";
+import ImageModal from "@/components/ImageModal";
 
 interface JobRequest {
   id: string;
@@ -35,6 +37,7 @@ const MyJobRequests = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 
   const { data: jobRequests, isLoading } = useQuery({
     queryKey: ['my-job-requests', user?.id],
@@ -74,27 +77,46 @@ const MyJobRequests = () => {
     if (!confirm("Naozaj chcete vymazať túto požiadavku?")) return;
     if (!user) return;
 
-    const { data, error } = await supabase.rpc('delete_job_request', {
-      request_id: requestId,
-      user_id: user.id
-    });
+    try {
+      // First delete any responses to this request
+      const { error: responsesError } = await supabase
+        .from('job_responses')
+        .delete()
+        .eq('job_request_id', requestId);
 
-    if (error) {
-      console.error("Error deleting request:", error);
-      toast.error("Chyba pri mazaní požiadavky");
-    } else if (data) {
+      if (responsesError) {
+        console.error("Error deleting responses:", responsesError);
+      }
+
+      // Then delete the request itself
+      const { error: requestError } = await supabase
+        .from('job_requests')
+        .delete()
+        .eq('id', requestId)
+        .eq('customer_id', user.id); // Ensure user can only delete their own requests
+
+      if (requestError) {
+        console.error("Error deleting request:", requestError);
+        toast.error("Chyba pri mazaní požiadavky");
+        return;
+      }
+
       toast.success("Požiadavka bola vymazaná");
       queryClient.invalidateQueries({ queryKey: ['my-job-requests'] });
-    } else {
-      toast.error("Nepodarilo sa vymazať požiadavku");
+    } catch (error) {
+      console.error("Error in delete operation:", error);
+      toast.error("Nastala chyba pri mazaní požiadavky");
     }
   };
 
   const handleStatusChange = async (requestId: string, newStatus: string) => {
+    if (!user) return;
+
     const { error } = await supabase
       .from('job_requests')
       .update({ status: newStatus })
-      .eq('id', requestId);
+      .eq('id', requestId)
+      .eq('customer_id', user.id); // Ensure user can only update their own requests
 
     if (error) {
       console.error("Error updating status:", error);
@@ -110,6 +132,10 @@ const MyJobRequests = () => {
       return request.custom_category;
     }
     return request.job_category;
+  };
+
+  const handleImageClick = (imageUrl: string) => {
+    setSelectedImageUrl(imageUrl);
   };
 
   if (isLoading) {
@@ -172,20 +198,31 @@ const MyJobRequests = () => {
                     {request.image_urls && request.image_urls.length > 0 ? (
                       <div className="grid grid-cols-3 gap-2">
                         {request.image_urls.map((url, index) => (
-                          <img 
-                            key={index}
-                            src={url} 
-                            alt={`Job request ${index + 1}`} 
-                            className="w-full h-24 object-cover rounded"
-                          />
+                          <div key={index} className="relative group cursor-pointer">
+                            <img 
+                              src={url} 
+                              alt={`Job request ${index + 1}`} 
+                              className="w-full h-24 object-cover rounded"
+                              onClick={() => handleImageClick(url)}
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
+                              <ZoomIn className="h-6 w-6 text-white" />
+                            </div>
+                          </div>
                         ))}
                       </div>
                     ) : request.image_url && (
-                      <img 
-                        src={request.image_url} 
-                        alt="Job request" 
-                        className="w-full h-32 object-cover rounded"
-                      />
+                      <div className="relative group cursor-pointer">
+                        <img 
+                          src={request.image_url} 
+                          alt="Job request" 
+                          className="w-full h-32 object-cover rounded"
+                          onClick={() => handleImageClick(request.image_url!)}
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
+                          <ZoomIn className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}
@@ -232,13 +269,23 @@ const MyJobRequests = () => {
                   )}
 
                   {request.status === 'closed' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleStatusChange(request.id, 'open')}
-                    >
-                      Znovu otvoriť
-                    </Button>
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(request.id, 'open')}
+                      >
+                        Znovu otvoriť
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteRequest(request.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Vymazať
+                      </Button>
+                    </>
                   )}
                 </div>
 
@@ -290,6 +337,14 @@ const MyJobRequests = () => {
             </Button>
           </Link>
         </div>
+      )}
+
+      {/* Image Modal for zooming */}
+      {selectedImageUrl && (
+        <ImageModal
+          imageUrl={selectedImageUrl}
+          onClose={() => setSelectedImageUrl(null)}
+        />
       )}
     </div>
   );

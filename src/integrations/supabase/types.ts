@@ -566,21 +566,7 @@ export type Database = {
       }
     }
     Views: {
-      test_user_types_view: {
-        Row: {
-          user_id: string | null
-          user_type: string | null
-        }
-        Insert: {
-          user_id?: string | null
-          user_type?: string | null
-        }
-        Update: {
-          user_id?: string | null
-          user_type?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       add_review_reply: {
