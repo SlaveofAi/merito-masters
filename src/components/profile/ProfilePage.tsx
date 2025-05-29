@@ -335,7 +335,11 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
           )}
 
           <div className="bg-white rounded-lg shadow-sm p-6 mx-auto">
-            <ProfileTabs userType={effectiveUserType} initialTab={initialTab} />
+            <ProfileTabs 
+              userType={effectiveUserType} 
+              initialTab={initialTab} 
+              isCurrentUser={isCurrentUser}
+            />
           </div>
         </div>
       </div>
