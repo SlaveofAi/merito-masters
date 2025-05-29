@@ -56,9 +56,9 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   }
 
   if (userType === 'customer') {
-    // For customers viewing their own profile, show requests and reviews tabs
+    // For customers viewing their own profile, show both requests and reviews tabs
     // For customers viewing others' profiles, only show reviews
-    const defaultTab = isCurrentUser ? (initialTab || "requests") : "reviews";
+    const defaultTab = isCurrentUser ? (initialTab === "reviews" ? "reviews" : "requests") : "reviews";
     const gridCols = isCurrentUser ? 'grid-cols-2' : 'grid-cols-1';
     
     return (
