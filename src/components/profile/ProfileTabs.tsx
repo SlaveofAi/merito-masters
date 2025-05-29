@@ -6,7 +6,8 @@ import ReviewsTab from "./ReviewsTab";
 import PortfolioTab from "./PortfolioTab";
 import CustomerReviewsTab from "./CustomerReviewsTab";
 import MyJobRequests from "./MyJobRequests";
-import { User, Star, Briefcase } from "lucide-react";
+import ProfileCalendar from "./ProfileCalendar";
+import { User, Star, Briefcase, Calendar } from "lucide-react";
 
 interface ProfileTabsProps {
   userType: 'customer' | 'craftsman' | null;
@@ -23,8 +24,8 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
 
   if (userType === 'craftsman') {
     return (
-      <Tabs defaultValue={initialTab === "calendar" ? "portfolio" : initialTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+      <Tabs defaultValue={initialTab === "requests" ? "portfolio" : initialTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="portfolio" className="flex items-center gap-2">
             <Briefcase className="h-4 w-4" />
             Portfólio
@@ -32,6 +33,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           <TabsTrigger value="reviews" className="flex items-center gap-2">
             <Star className="h-4 w-4" />
             Hodnotenia
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Kalendár
           </TabsTrigger>
         </TabsList>
         
@@ -41,6 +46,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
         
         <TabsContent value="reviews">
           <ReviewsTab />
+        </TabsContent>
+        
+        <TabsContent value="calendar">
+          <ProfileCalendar />
         </TabsContent>
       </Tabs>
     );
