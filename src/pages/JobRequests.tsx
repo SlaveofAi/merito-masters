@@ -13,6 +13,7 @@ import { MapPin, Clock, Calendar, Plus, Eye, MessageSquare, ZoomIn, User } from 
 import { craftCategories } from "@/constants/categories";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { sk } from "date-fns/locale";
 import { Link, useNavigate } from "react-router-dom";
 import ImageModal from "@/components/ImageModal";
 
@@ -68,80 +69,114 @@ const JobRequests = () => {
     },
   });
 
-  const handleResponse = async (jobId: string, customerId: string) => {
+  const handleResponse = async (jobId: string, customerId: string, jobRequest: JobRequest) => {
     if (!user || userType !== 'craftsman') {
       toast.error("Len remeselníci môžu odpovedať na požiadavky");
       return;
     }
 
-    // Get craftsman profile for name
-    const { data: profile } = await supabase
-      .from('craftsman_profiles')
-      .select('name')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile) {
-      toast.error("Profil remeselníka nebol nájdený");
-      return;
-    }
-
-    // Create job response
-    const { error } = await supabase
-      .from('job_responses')
-      .insert({
-        job_request_id: jobId,
-        craftsman_id: user.id,
-        craftsman_name: profile.name,
-        message: "Mám záujem o túto prácu. Kontaktujte ma pre viac informácií."
-      });
-
-    if (error) {
-      console.error("Error creating response:", error);
-      toast.error("Chyba pri odosielaní odpovede");
-      return;
-    }
-
-    // Check if conversation already exists
-    const { data: existingConversation } = await supabase
-      .from('chat_conversations')
-      .select('id')
-      .eq('customer_id', customerId)
-      .eq('craftsman_id', user.id)
-      .single();
-
-    let conversationId = existingConversation?.id;
-
-    // Create conversation if it doesn't exist
-    if (!conversationId) {
-      const { data: newConversation, error: conversationError } = await supabase
-        .from('chat_conversations')
-        .insert({
-          customer_id: customerId,
-          craftsman_id: user.id
-        })
-        .select('id')
+    try {
+      // Get craftsman profile for name
+      const { data: profile } = await supabase
+        .from('craftsman_profiles')
+        .select('name')
+        .eq('id', user.id)
         .single();
 
-      if (conversationError) {
-        console.error("Error creating conversation:", conversationError);
-        toast.error("Chyba pri vytváraní konverzácie");
+      if (!profile) {
+        toast.error("Profil remeselníka nebol nájdený");
         return;
       }
 
-      conversationId = newConversation.id;
-    }
+      // Create job response
+      const { error } = await supabase
+        .from('job_responses')
+        .insert({
+          job_request_id: jobId,
+          craftsman_id: user.id,
+          craftsman_name: profile.name,
+          message: "Mám záujem o túto prácu. Kontaktujte ma pre viac informácií."
+        });
 
-    toast.success("Odpoveď bola úspešne odoslaná");
-    
-    // Redirect to messages with the conversation
-    navigate("/messages", {
-      state: {
-        from: 'job-response',
-        conversationId: conversationId,
-        contactId: customerId
+      if (error) {
+        console.error("Error creating response:", error);
+        toast.error("Chyba pri odosielaní odpovede");
+        return;
       }
-    });
+
+      // Check if conversation already exists
+      const { data: existingConversation } = await supabase
+        .from('chat_conversations')
+        .select('id')
+        .eq('customer_id', customerId)
+        .eq('craftsman_id', user.id)
+        .single();
+
+      let conversationId = existingConversation?.id;
+
+      // Create conversation if it doesn't exist
+      if (!conversationId) {
+        const { data: newConversation, error: conversationError } = await supabase
+          .from('chat_conversations')
+          .insert({
+            customer_id: customerId,
+            craftsman_id: user.id
+          })
+          .select('id')
+          .single();
+
+        if (conversationError) {
+          console.error("Error creating conversation:", conversationError);
+          toast.error("Chyba pri vytváraní konverzácie");
+          return;
+        }
+
+        conversationId = newConversation.id;
+      }
+
+      // Send an initial message with job request context
+      const jobCategory = getCategoryDisplay(jobRequest);
+      const contextMessage = `Mám záujem o vašu požiadavku: "${jobCategory}" v lokalite ${jobRequest.location}. ${jobRequest.description.substring(0, 100)}${jobRequest.description.length > 100 ? '...' : ''}`;
+
+      const { error: messageError } = await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          receiver_id: customerId,
+          content: contextMessage,
+          metadata: {
+            type: 'job_response',
+            job_request_id: jobId,
+            job_category: jobCategory,
+            job_location: jobRequest.location
+          }
+        });
+
+      if (messageError) {
+        console.error("Error sending initial message:", messageError);
+      }
+
+      toast.success("Odpoveď bola úspešne odoslaná");
+      
+      // Redirect to messages with the conversation
+      navigate("/messages", {
+        state: {
+          from: 'job-response',
+          conversationId: conversationId,
+          contactId: customerId,
+          jobRequestContext: {
+            id: jobId,
+            category: jobCategory,
+            location: jobRequest.location,
+            description: jobRequest.description
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      toast.error("Nastala neočakávaná chyba");
+    }
   };
 
   const getCategoryDisplay = (job: JobRequest) => {
@@ -325,12 +360,12 @@ const JobRequests = () => {
                     {job.preferred_date && (
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        Preferovaný dátum: {format(new Date(job.preferred_date), 'dd.MM.yyyy')}
+                        Preferovaný dátum: {format(new Date(job.preferred_date), 'dd.MM.yyyy', { locale: sk })}
                       </div>
                     )}
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4" />
-                      Pridané: {format(new Date(job.created_at), 'dd.MM.yyyy')}
+                      Pridané: {format(new Date(job.created_at), 'dd.MM.yyyy', { locale: sk })}
                     </div>
                   </div>
 
@@ -348,7 +383,7 @@ const JobRequests = () => {
                         )}
                       </div>
                       <Button 
-                        onClick={() => handleResponse(job.id, job.customer_id)}
+                        onClick={() => handleResponse(job.id, job.customer_id, job)}
                         className="w-full"
                         size="sm"
                       >
