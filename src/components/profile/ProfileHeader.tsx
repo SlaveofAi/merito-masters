@@ -31,14 +31,14 @@ const ProfileHeader = ({
 
   const imageUrl = profileData.profile_image_url || ('image_url' in profileData ? profileData.image_url : null);
   const specializations = ('specializations' in profileData) 
-    ? profileData.specializations 
+    ? (profileData.specializations as string[]) 
     : ('trade_category' in profileData && profileData.trade_category) 
       ? [profileData.trade_category] 
       : [];
   
   // For ratings, check if this is a craftsman profile with rating data
-  const rating = ('rating' in profileData) ? profileData.rating : null;
-  const reviewCount = ('review_count' in profileData) ? profileData.review_count : null;
+  const rating = ('rating' in profileData) ? (profileData.rating as number | null) : null;
+  const reviewCount = ('review_count' in profileData) ? (profileData.review_count as number | null) : null;
   const averageRating = calculateAverageRating(rating, reviewCount);
 
   return (
@@ -50,7 +50,7 @@ const ProfileHeader = ({
             <div className="flex items-center">
               <Avatar className="h-24 w-24 lg:h-32 lg:w-32 rounded-full border">
                 {imageUrl ? (
-                  <AvatarImage src={imageUrl} alt={profileData.name} />
+                  <AvatarImage src={imageUrl as string} alt={profileData.name} />
                 ) : (
                   <AvatarFallback>{profileData.name.charAt(0)}</AvatarFallback>
                 )}
