@@ -28,13 +28,9 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
   const [hasError, setHasError] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   
-  // For simulation purposes, we'll force these values
-  const [simulatedTopped, setSimulatedTopped] = useState(false);
-  const [simulatedToppedUntil, setSimulatedToppedUntil] = useState<Date | null>(null);
-  
   // Actual values from profileData
-  const isTopped = simulatedTopped || profileData?.is_topped || false;
-  const toppedUntil = simulatedToppedUntil || (profileData?.topped_until ? new Date(profileData.topped_until) : null);
+  const isTopped = profileData?.is_topped || false;
+  const toppedUntil = profileData?.topped_until ? new Date(profileData.topped_until) : null;
   const isActive = isTopped && toppedUntil && new Date() < toppedUntil;
 
   // Function to check if topped status has expired
@@ -56,10 +52,6 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           console.error("Error updating topped status:", error);
           return;
         }
-        
-        // Reset simulated values
-        setSimulatedTopped(false);
-        setSimulatedToppedUntil(null);
         
         // Create notification about expiration
         await createNotification(
@@ -119,27 +111,41 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
       setErrorDetails(null);
       setErrorCode(null);
       
-      // For simulation, just redirect immediately to success page
-      const simulatePayment = () => {
-        // Store session ID in both sessionStorage and localStorage for redundancy
-        const mockSessionId = 'sim_' + Date.now();
-        sessionStorage.setItem('topped_session_id', mockSessionId);
-        localStorage.setItem('topped_session_id', mockSessionId);
-        
-        // Redirect with success parameter
-        window.location.href = `${window.location.pathname}?topped=success`;
-      };
+      console.log("Creating Stripe checkout session...");
       
-      // Simulate a short delay before "redirecting to Stripe"
-      setTimeout(() => {
-        simulatePayment();
-      }, 1000);
+      // Call the Supabase Edge Function to create checkout session
+      const { data, error } = await supabase.functions.invoke('create-topped-session', {
+        body: {
+          days: 7,
+          amount: 999 // 9.99 EUR in cents
+        }
+      });
+      
+      if (error) {
+        console.error("Error from create-topped-session:", error);
+        throw new Error(error.message || "Failed to create checkout session");
+      }
+      
+      if (!data?.url) {
+        throw new Error("No checkout URL received");
+      }
+      
+      console.log("Checkout session created, redirecting to:", data.url);
+      
+      // Store session ID for verification
+      if (data.sessionId) {
+        sessionStorage.setItem('topped_session_id', data.sessionId);
+        localStorage.setItem('topped_session_id', data.sessionId);
+      }
+      
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
       
     } catch (error: any) {
       console.error("Error creating topped session:", error);
       setHasError(true);
       setErrorDetails(error.message || "Unknown error");
-      setErrorCode("client_error");
+      setErrorCode(error.errorCode || "client_error");
       toast.error("Nepodarilo sa vytvoriť platbu", { 
         description: "Skúste to prosím neskôr. Ak problém pretrváva, kontaktujte podporu." 
       });
@@ -153,7 +159,6 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
     const checkPaymentStatus = async () => {
       const url = new URL(window.location.href);
       const toppedStatus = url.searchParams.get('topped');
-      // Try to get session ID from sessionStorage first, then fallback to localStorage
       const sessionId = sessionStorage.getItem('topped_session_id') || localStorage.getItem('topped_session_id');
       
       if (toppedStatus === 'success' && sessionId) {
@@ -162,42 +167,25 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           setHasError(false);
           setErrorCode(null);
           
-          console.log("Verifying simulated payment for session:", sessionId);
+          console.log("Verifying payment for session:", sessionId);
           
-          // Simulate successful payment verification
-          setTimeout(async () => {
-            // Set the simulated topped status
-            const now = new Date();
-            const toppedUntilDate = new Date();
-            toppedUntilDate.setDate(now.getDate() + 7); // 7 days from now
-            
-            setSimulatedTopped(true);
-            setSimulatedToppedUntil(toppedUntilDate);
-            
-            // Update the craftsman profile to be topped
-            if (profileData && user) {
-              const { error } = await supabase
-                .from('craftsman_profiles')
-                .update({ 
-                  is_topped: true,
-                  topped_until: toppedUntilDate.toISOString() 
-                })
-                .eq('id', profileData.id);
-                
-              if (error) {
-                console.error("Error updating craftsman profile:", error);
-                setHasError(true);
-                setErrorDetails(error.message);
-                return;
-              }
-              
-              // Create notification
-              await createNotification(
-                profileData.id, 
-                "Premium profil aktivovaný", 
-                "Váš profil je teraz zvýraznený na vrchole výsledkov vyhľadávania počas nasledujúcich 7 dní."
-              );
-            }
+          // Call the verification function
+          const { data, error } = await supabase.functions.invoke('verify-topped-payment', {
+            body: { sessionId }
+          });
+          
+          if (error) {
+            console.error("Error verifying payment:", error);
+            throw new Error(error.message || "Payment verification failed");
+          }
+          
+          if (data?.success) {
+            // Create notification
+            await createNotification(
+              profileData.id, 
+              "Premium profil aktivovaný", 
+              "Váš profil je teraz zvýraznený na vrchole výsledkov vyhľadávania počas nasledujúcich 7 dní."
+            );
             
             // Clear the session ID from storage
             sessionStorage.removeItem('topped_session_id');
@@ -206,7 +194,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
             // Remove the query parameter from the URL
             window.history.replaceState({}, document.title, window.location.pathname);
             
-            // Call the update function to refresh the profile if available
+            // Call the update function to refresh the profile
             if (onProfileUpdate) {
               onProfileUpdate();
             }
@@ -215,9 +203,9 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
             toast.success("Premium profil aktivovaný", {
               description: "Váš profil je teraz zvýraznený na vrchole výsledkov vyhľadávania."
             });
-            
-            setIsLoading(false);
-          }, 1500);
+          } else {
+            throw new Error(`Payment not completed. Status: ${data?.status || 'unknown'}`);
+          }
           
         } catch (error: any) {
           console.error("Error verifying payment:", error);
@@ -227,6 +215,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           toast.error("Chyba pri overovaní platby", {
             description: "Skúste to prosím neskôr. Ak problém pretrváva, kontaktujte podporu."
           });
+        } finally {
           setIsLoading(false);
         }
       } else if (toppedStatus === 'canceled') {
@@ -269,8 +258,7 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
     return null;
   }
   
-  // NEW CONDITION: If it's topped but not the current user, don't show the card
-  // This hides the banner for customers viewing a topped craftsman's profile
+  // If it's topped but not the current user, don't show the card
   if (!isCurrentUser && isActive) {
     return null;
   }
