@@ -1,125 +1,170 @@
 
 import React from "react";
 import Layout from "@/components/Layout";
-import { 
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
-import { EuroIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Check, Star } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
 
-const Pricing: React.FC = () => {
+const Pricing = () => {
+  const { user } = useAuth();
+  const { subscriptionData, createCheckout, openCustomerPortal } = useSubscription();
+
+  const plans = [
+    {
+      name: "Basic",
+      price: "€9.99",
+      period: "/mesiac",
+      description: "Perfektné pre začiatočníkov",
+      features: [
+        "Až 5 požiadaviek mesačne",
+        "Základná podpora",
+        "Email notifikácie",
+        "Prístup k remeselnikom"
+      ],
+      planId: "basic",
+      popular: false
+    },
+    {
+      name: "Premium",
+      price: "€19.99",
+      period: "/mesiac",
+      description: "Pre aktívnych používateľov",
+      features: [
+        "Neobmedzené požiadavky",
+        "Prioritná podpora",
+        "SMS notifikácie",
+        "Prístup k všetkým remeselnikom",
+        "Pokročilé filtrovanie",
+        "Detailné štatistiky"
+      ],
+      planId: "premium",
+      popular: true
+    },
+    {
+      name: "Enterprise",
+      price: "€49.99",
+      period: "/mesiac",
+      description: "Pre firmy a profesionálov",
+      features: [
+        "Všetky Premium funkcie",
+        "Dedikovaný account manager",
+        "API prístup",
+        "Vlastné branding",
+        "Bulk operácie",
+        "24/7 telefonická podpora",
+        "SLA garancia"
+      ],
+      planId: "enterprise",
+      popular: false
+    }
+  ];
+
+  const handlePlanSelect = (planId: string) => {
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+
+    if (subscriptionData.subscribed) {
+      openCustomerPortal();
+    } else {
+      createCheckout(planId);
+    }
+  };
+
+  const isCurrentPlan = (planId: string) => {
+    return subscriptionData.subscribed && 
+           subscriptionData.subscription_tier?.toLowerCase() === planId;
+  };
+
   return (
     <Layout>
-      <div className="min-h-screen bg-gray-50 pt-8 pb-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Cenník služieb
-            </h1>
-            <p className="mt-4 text-lg text-gray-600">
-              Informácie o cenotvorbe a odporúčania pre majstrov
-            </p>
-          </div>
-
-          <Card className="mb-12 bg-white shadow-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center mb-2">
-                <div className="bg-primary/5 rounded-full p-2 mr-3">
-                  <EuroIcon className="text-primary h-6 w-6" />
-                </div>
-                <CardTitle className="text-2xl">Cenová politika platformy</CardTitle>
-              </div>
-              <CardDescription className="text-lg text-gray-700">
-                Naša platforma <strong>nezasahuje do vašich cien</strong>. Každý majster si určuje <strong>svoju vlastnú cenotvorbu</strong> podľa svojich skúseností, náročnosti práce a lokality.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <div className="bg-white rounded-lg shadow-sm p-8 mb-8 border border-gray-100">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-              Ako si nastaviť efektívny cenník?
-            </h2>
-            <p className="text-gray-600 mb-8">
-              Tu je niekoľko odporúčaní:
-            </p>
-
-            <div className="space-y-8">
-              <div className="flex">
-                <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full text-primary mr-4">
-                  <span className="font-bold">1</span>
-                </div>
-                <div>
-                  <h3 className="font-medium text-lg text-gray-900">Zohľadni svoje náklady</h3>
-                  <p className="mt-1 text-gray-600">
-                    Nezabudni na materiál, cestovné náklady, čas na prípravu, administratívu a ďalšie výdavky.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex">
-                <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full text-primary mr-4">
-                  <span className="font-bold">2</span>
-                </div>
-                <div>
-                  <h3 className="font-medium text-lg text-gray-900">Analyzuj konkurenciu</h3>
-                  <p className="mt-1 text-gray-600">
-                    Prezri si profily iných majstrov vo svojej kategórii a lokalite – buď konkurencieschopný, ale nepredávaj sa pod cenu.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex">
-                <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full text-primary mr-4">
-                  <span className="font-bold">3</span>
-                </div>
-                <div>
-                  <h3 className="font-medium text-lg text-gray-900">Buď transparentný</h3>
-                  <p className="mt-1 text-gray-600">
-                    Zákazníci ocenia jasne stanovené ceny. Pokús sa dopredu odhadnúť cenu práce alebo aspoň uviesť orientačný rozsah (napr. 50–80 €/hod).
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex">
-                <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full text-primary mr-4">
-                  <span className="font-bold">4</span>
-                </div>
-                <div>
-                  <h3 className="font-medium text-lg text-gray-900">Uveď, čo cena zahŕňa</h3>
-                  <p className="mt-1 text-gray-600">
-                    Čím viac informácií dáš, tým menej nedorozumení. Napíš, či cena zahŕňa materiál, dopravu, alebo len samotnú prácu.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex">
-                <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full text-primary mr-4">
-                  <span className="font-bold">5</span>
-                </div>
-                <div>
-                  <h3 className="font-medium text-lg text-gray-900">Možnosť zľavy pre stálu klientelu</h3>
-                  <p className="mt-1 text-gray-600">
-                    Mnohí majstri si budujú stabilnú klientelu aj tým, že ponúkajú zľavu pri opakovanej spolupráci.
-                  </p>
-                </div>
-              </div>
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl font-bold mb-4">Cenové plány</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Vyberte si plán, ktorý najlepšie vyhovuje vašim potrebám
+          </p>
+          {subscriptionData.subscribed && (
+            <div className="mt-6">
+              <Badge variant="outline" className="text-green-600 border-green-600">
+                Aktívne predplatné: {subscriptionData.subscription_tier}
+              </Badge>
             </div>
-          </div>
+          )}
+        </div>
 
-          <div className="mt-10 text-center">
-            <p className="text-gray-600 mb-6">
-              Máte ďalšie otázky ohľadom cenotvorby? Neváhajte nás kontaktovať.
-            </p>
-            <a 
-              href="/contact" 
-              className="inline-flex items-center px-6 py-3 bg-primary text-white font-medium rounded-md hover:bg-primary/90 transition-colors"
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {plans.map((plan) => (
+            <Card 
+              key={plan.planId} 
+              className={`relative ${plan.popular ? 'ring-2 ring-primary shadow-lg' : ''} ${isCurrentPlan(plan.planId) ? 'ring-2 ring-green-500' : ''}`}
             >
-              Kontaktujte nás
-            </a>
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <Badge className="bg-primary text-primary-foreground px-4 py-1">
+                    <Star className="h-3 w-3 mr-1" />
+                    Najpopulárnejší
+                  </Badge>
+                </div>
+              )}
+              
+              {isCurrentPlan(plan.planId) && (
+                <div className="absolute -top-3 right-4">
+                  <Badge className="bg-green-500 text-white px-3 py-1">
+                    Váš plán
+                  </Badge>
+                </div>
+              )}
+
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold">{plan.price}</span>
+                  <span className="text-muted-foreground">{plan.period}</span>
+                </div>
+                <p className="text-muted-foreground mt-2">{plan.description}</p>
+              </CardHeader>
+
+              <CardContent>
+                <ul className="space-y-3 mb-8">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-center">
+                      <Check className="h-4 w-4 text-green-500 mr-3 flex-shrink-0" />
+                      <span className="text-sm">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Button 
+                  onClick={() => handlePlanSelect(plan.planId)}
+                  className="w-full"
+                  variant={isCurrentPlan(plan.planId) ? "outline" : plan.popular ? "default" : "outline"}
+                  disabled={isCurrentPlan(plan.planId)}
+                >
+                  {!user ? "Prihlásiť sa" : 
+                   isCurrentPlan(plan.planId) ? "Aktívny plán" :
+                   subscriptionData.subscribed ? "Zmeniť plán" : 
+                   "Vybrať plán"}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {subscriptionData.subscribed && (
+          <div className="text-center mt-12">
+            <Button onClick={openCustomerPortal} variant="outline">
+              Spravovať predplatné
+            </Button>
           </div>
+        )}
+
+        <div className="text-center mt-16 text-sm text-muted-foreground">
+          <p>Všetky plány môžete kedykoľvek zrušiť. Bez dlhodobých záväzkov.</p>
         </div>
       </div>
     </Layout>
