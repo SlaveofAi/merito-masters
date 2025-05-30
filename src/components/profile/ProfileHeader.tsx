@@ -15,20 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { calculateAverageRating } from "@/lib/utils";
 import ToppedCraftsmanFeature from "@/components/profile/ToppedCraftsmanFeature";
-
-interface ProfileData {
-  id: string;
-  name: string;
-  email: string;
-  location: string;
-  specializations?: string[];
-  description: string;
-  profile_image_url?: string | null;
-  image_url?: string | null;
-  rating?: number | null;
-  review_count?: number | null;
-  trade_category?: string;
-}
+import { ProfileData } from "@/types/profile";
 
 const ProfileHeader = ({ 
   isCurrentUser, 
@@ -42,9 +29,17 @@ const ProfileHeader = ({
   const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  const imageUrl = profileData.profile_image_url || profileData.image_url;
-  const specializations = profileData.specializations || (profileData.trade_category ? [profileData.trade_category] : []);
-  const averageRating = calculateAverageRating(profileData.rating, profileData.review_count);
+  const imageUrl = profileData.profile_image_url || ('image_url' in profileData ? profileData.image_url : null);
+  const specializations = ('specializations' in profileData) 
+    ? profileData.specializations 
+    : ('trade_category' in profileData && profileData.trade_category) 
+      ? [profileData.trade_category] 
+      : [];
+  
+  // For ratings, check if this is a craftsman profile with rating data
+  const rating = ('rating' in profileData) ? profileData.rating : null;
+  const reviewCount = ('review_count' in profileData) ? profileData.review_count : null;
+  const averageRating = calculateAverageRating(rating, reviewCount);
 
   return (
     <div className="bg-white shadow-sm border-b">
@@ -75,7 +70,7 @@ const ProfileHeader = ({
                     <Star className="h-4 w-4 mr-1 text-yellow-500" />
                     <span className="text-sm font-medium text-gray-700">{averageRating}</span>
                     <span className="text-gray-500 text-sm ml-1">
-                      ({profileData.review_count || 0} reviews)
+                      ({reviewCount || 0} reviews)
                     </span>
                   </div>
                 </div>
@@ -90,24 +85,28 @@ const ProfileHeader = ({
                 )}
               </div>
 
-              {/* Specializations */}
-              <div className="mt-4">
-                <h2 className="text-sm font-semibold text-gray-500">Špecializácie</h2>
-                <div className="mt-1 flex flex-wrap gap-2">
-                  {specializations.map((spec, index) => (
-                    <Badge key={index} variant="secondary">{spec}</Badge>
-                  ))}
+              {/* Specializations - only show for craftsman profiles */}
+              {specializations.length > 0 && (
+                <div className="mt-4">
+                  <h2 className="text-sm font-semibold text-gray-500">Špecializácie</h2>
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    {specializations.map((spec, index) => (
+                      <Badge key={index} variant="secondary">{spec}</Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Description */}
-              <div className="mt-4">
-                <h2 className="text-sm font-semibold text-gray-500">Popis</h2>
-                <p className="mt-1 text-gray-700">{profileData.description}</p>
-              </div>
+              {/* Description - only show if it exists */}
+              {'description' in profileData && profileData.description && (
+                <div className="mt-4">
+                  <h2 className="text-sm font-semibold text-gray-500">Popis</h2>
+                  <p className="mt-1 text-gray-700">{profileData.description}</p>
+                </div>
+              )}
 
-              {/* Topped Feature for Current User */}
-              {isCurrentUser && (
+              {/* Topped Feature for Current User - only for craftsman profiles */}
+              {isCurrentUser && 'trade_category' in profileData && (
                 <div className="mt-6">
                   <ToppedCraftsmanFeature />
                 </div>
