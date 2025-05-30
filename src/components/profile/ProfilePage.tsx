@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -8,6 +9,7 @@ import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import UserTypeSelector from "@/components/profile/UserTypeSelector";
 import ErrorMessage from "@/components/profile/ErrorMessage";
 import ProfileTabs from "@/components/profile/ProfileTabs";
+import EditProfileForm from "@/components/EditProfileForm";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -28,7 +30,9 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     profileImageUrl,
     fetchProfileData,
     handleProfileImageUpload,
-    setIsEditing
+    setIsEditing,
+    isEditing,
+    handleProfileUpdate
   } = useProfile();
 
   // Check for topped status if query param is present
@@ -71,9 +75,10 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
       userLoggedIn: !!user,
       error: error || "none",
       profileDataUserType: profileData?.user_type || "not available",
-      initialTab
+      initialTab,
+      isEditing
     });
-  }, [loading, authUserType, profileUserType, profileData, isCurrentUser, profileNotFound, user, error, initialTab]);
+  }, [loading, authUserType, profileUserType, profileData, isCurrentUser, profileNotFound, user, error, initialTab, isEditing]);
 
   // Use a more reliable determination of user type, with explicit precedence
   const getEffectiveUserType = () => {
@@ -196,6 +201,14 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     }
   };
 
+  // Handler for edit profile button
+  const handleEditProfile = () => {
+    console.log("Edit profile button clicked");
+    if (setIsEditing) {
+      setIsEditing(true);
+    }
+  };
+
   // For current user but no user type detected
   if (user && !authUserType && isCurrentUser) {
     return (
@@ -292,6 +305,34 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                                     authUserType === 'customer' && 
                                     isCraftsmanProfile;
 
+  // If editing, show the edit form
+  if (isEditing && profileData) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gray-50">
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <ProfileHeader 
+              profileData={profileData} 
+              isCurrentUser={isCurrentUser} 
+              userType={profileUserType}
+              profileImageUrl={profileImageUrl}
+              uploadProfileImage={safeHandleProfileImageUpload}
+              fetchProfileData={fetchProfileData}
+            />
+            
+            <div className="bg-white rounded-lg shadow-sm p-6 mx-auto">
+              <EditProfileForm 
+                profile={profileData} 
+                userType={effectiveUserType} 
+                onUpdate={handleProfileUpdate} 
+              />
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
@@ -322,7 +363,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                 
                 {isCurrentUser && (
                   <Button 
-                    onClick={() => setIsEditing(true)}
+                    onClick={handleEditProfile}
                     variant="outline" 
                     className="flex items-center gap-2 ml-auto"
                   >
