@@ -17,19 +17,31 @@ import { calculateAverageRating } from "@/lib/utils";
 import ToppedCraftsmanFeature from "@/components/profile/ToppedCraftsmanFeature";
 import { ProfileData } from "@/types/profile";
 
+interface ProfileHeaderProps {
+  isCurrentUser: boolean;
+  profileData: ProfileData;
+  onProfileUpdate?: () => void;
+  userType?: 'customer' | 'craftsman';
+  profileImageUrl?: string;
+  uploadProfileImage?: (file: File) => Promise<void>;
+  fetchProfileData?: () => void;
+  refreshProfileImage?: () => void;
+}
+
 const ProfileHeader = ({ 
   isCurrentUser, 
   profileData, 
-  onProfileUpdate 
-}: { 
-  isCurrentUser: boolean; 
-  profileData: ProfileData; 
-  onProfileUpdate: () => void; 
-}) => {
+  onProfileUpdate,
+  userType,
+  profileImageUrl,
+  uploadProfileImage,
+  fetchProfileData,
+  refreshProfileImage
+}: ProfileHeaderProps) => {
   const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  const imageUrl = profileData.profile_image_url || ('image_url' in profileData ? profileData.image_url : null);
+  const imageUrl = profileData.profile_image_url || profileImageUrl || ('image_url' in profileData ? profileData.image_url : null);
   const specializations = ('specializations' in profileData) 
     ? (profileData.specializations as string[]) 
     : ('trade_category' in profileData && profileData.trade_category) 
@@ -40,6 +52,16 @@ const ProfileHeader = ({
   const rating = ('rating' in profileData) ? (profileData.rating as number | null) : null;
   const reviewCount = ('review_count' in profileData) ? (profileData.review_count as number | null) : null;
   const averageRating = calculateAverageRating(rating, reviewCount);
+
+  const handleProfileUpdate = () => {
+    if (onProfileUpdate) {
+      onProfileUpdate();
+    }
+    if (fetchProfileData) {
+      fetchProfileData();
+    }
+    setIsEditModalOpen(false);
+  };
 
   return (
     <div className="bg-white shadow-sm border-b">
@@ -86,7 +108,7 @@ const ProfileHeader = ({
               </div>
 
               {/* Specializations - only show for craftsman profiles */}
-              {specializations.length > 0 && (
+              {specializations && Array.isArray(specializations) && specializations.length > 0 && (
                 <div className="mt-4">
                   <h2 className="text-sm font-semibold text-gray-500">Špecializácie</h2>
                   <div className="mt-1 flex flex-wrap gap-2">
@@ -101,7 +123,7 @@ const ProfileHeader = ({
               {'description' in profileData && profileData.description && (
                 <div className="mt-4">
                   <h2 className="text-sm font-semibold text-gray-500">Popis</h2>
-                  <p className="mt-1 text-gray-700">{profileData.description}</p>
+                  <p className="mt-1 text-gray-700">{profileData.description as string}</p>
                 </div>
               )}
 
@@ -127,10 +149,7 @@ const ProfileHeader = ({
           </DialogHeader>
           <ProfileEditForm 
             profileData={profileData} 
-            onProfileUpdate={() => {
-              onProfileUpdate();
-              setIsEditModalOpen(false);
-            }} 
+            onProfileUpdate={handleProfileUpdate}
             onCancel={() => setIsEditModalOpen(false)}
           />
         </DialogContent>
