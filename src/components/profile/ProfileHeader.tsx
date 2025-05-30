@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import ProfileEditForm from "@/components/profile/ProfileEditForm";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,11 +21,13 @@ interface ProfileData {
   name: string;
   email: string;
   location: string;
-  specializations: string[];
+  specializations?: string[];
   description: string;
-  image_url: string | null;
-  rating: number | null;
-  review_count: number | null;
+  profile_image_url?: string | null;
+  image_url?: string | null;
+  rating?: number | null;
+  review_count?: number | null;
+  trade_category?: string;
 }
 
 const ProfileHeader = ({ 
@@ -40,6 +42,8 @@ const ProfileHeader = ({
   const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  const imageUrl = profileData.profile_image_url || profileData.image_url;
+  const specializations = profileData.specializations || (profileData.trade_category ? [profileData.trade_category] : []);
   const averageRating = calculateAverageRating(profileData.rating, profileData.review_count);
 
   return (
@@ -50,8 +54,8 @@ const ProfileHeader = ({
             {/* Profile Image */}
             <div className="flex items-center">
               <Avatar className="h-24 w-24 lg:h-32 lg:w-32 rounded-full border">
-                {profileData.image_url ? (
-                  <AvatarImage src={profileData.image_url} alt={profileData.name} />
+                {imageUrl ? (
+                  <AvatarImage src={imageUrl} alt={profileData.name} />
                 ) : (
                   <AvatarFallback>{profileData.name.charAt(0)}</AvatarFallback>
                 )}
@@ -90,7 +94,7 @@ const ProfileHeader = ({
               <div className="mt-4">
                 <h2 className="text-sm font-semibold text-gray-500">Špecializácie</h2>
                 <div className="mt-1 flex flex-wrap gap-2">
-                  {profileData.specializations.map((spec, index) => (
+                  {specializations.map((spec, index) => (
                     <Badge key={index} variant="secondary">{spec}</Badge>
                   ))}
                 </div>
