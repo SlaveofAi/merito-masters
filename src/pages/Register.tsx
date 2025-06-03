@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,13 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { createDefaultProfile } from "@/utils/profileCreation";
-
-const craftCategories = [
-  'Stolár', 'Elektrikár', 'Murár', 'Inštalatér', 'Maliar', 'Podlahár',
-  'Klampiar', 'Zámočník', 'Tesár', 'Záhradník', 'Kúrenár', 'Sklenár',
-  'Mechanik', 'Pokrývač', 'Zváračka/Zvárač', 'Automechanik', 'Obkladač',
-  'Kominár', 'Čalúnnik', 'Studniar', 'Kamenár'
-];
+import { craftCategories } from "@/constants/categories";
 
 type UserType = 'customer' | 'craftsman' | null;
 
@@ -29,6 +24,8 @@ const Register = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [userType, setUserType] = useState<UserType>(null);
+  const [customCategory, setCustomCategory] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -59,7 +56,7 @@ const Register = () => {
 
   const craftsmanSchema = z.object({
     ...baseSchemaObject,
-    tradeCategory: z.string().min(1, { message: "Vyberte kategóriu remesla" }),
+    tradeCategory: z.string().min(1, { message: "Vyberte kategóriu remesla alebo zadajte vlastnú" }),
     description: z.string().optional(),
     yearsExperience: z.string().optional()
       .transform(val => val ? parseInt(val, 10) : null)
@@ -91,6 +88,22 @@ const Register = () => {
       ...(userType === 'craftsman' ? { tradeCategory: "", description: "", yearsExperience: "" } : {})
     } as any,
   });
+
+  const handleCategoryChange = (value: string) => {
+    if (value === "custom") {
+      setShowCustomInput(true);
+      form.setValue("tradeCategory", customCategory);
+    } else {
+      setShowCustomInput(false);
+      setCustomCategory("");
+      form.setValue("tradeCategory", value);
+    }
+  };
+
+  const handleCustomCategoryChange = (value: string) => {
+    setCustomCategory(value);
+    form.setValue("tradeCategory", value);
+  };
 
   const onSubmit = async (data: any) => {
     if (!userType) {
@@ -350,11 +363,11 @@ const Register = () => {
                             <Briefcase className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground z-10" />
                             <FormControl>
                               <Select
-                                onValueChange={field.onChange}
+                                onValueChange={handleCategoryChange}
                                 defaultValue={field.value as string}
                               >
                                 <SelectTrigger className="pl-10">
-                                  <SelectValue placeholder="Vyberte kategóriu" />
+                                  <SelectValue placeholder="Vyberte kategóriu alebo napíšte vlastnú" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[300px] overflow-y-auto">
                                   {craftCategories.map((category) => (
@@ -362,6 +375,9 @@ const Register = () => {
                                       {category}
                                     </SelectItem>
                                   ))}
+                                  <SelectItem value="custom">
+                                    Vlastná kategória...
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -370,6 +386,23 @@ const Register = () => {
                         </FormItem>
                       )}
                     />
+
+                    {showCustomInput && (
+                      <FormItem className="space-y-2">
+                        <FormLabel>Vlastná kategória remesla</FormLabel>
+                        <div className="relative">
+                          <Briefcase className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                          <FormControl>
+                            <Input
+                              placeholder="Zadajte svoju kategóriu remesla"
+                              className="pl-10"
+                              value={customCategory}
+                              onChange={(e) => handleCustomCategoryChange(e.target.value)}
+                            />
+                          </FormControl>
+                        </div>
+                      </FormItem>
+                    )}
 
                     <FormField
                       control={form.control}
