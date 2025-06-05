@@ -9,6 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_announcements: {
+        Row: {
+          admin_id: string
+          call_to_action: Json | null
+          content: string
+          created_at: string
+          delivered_count: number | null
+          id: string
+          read_count: number | null
+          recipient_type: string
+          sent_at: string | null
+          status: string
+          title: string
+          total_recipients: number | null
+        }
+        Insert: {
+          admin_id: string
+          call_to_action?: Json | null
+          content: string
+          created_at?: string
+          delivered_count?: number | null
+          id?: string
+          read_count?: number | null
+          recipient_type: string
+          sent_at?: string | null
+          status?: string
+          title: string
+          total_recipients?: number | null
+        }
+        Update: {
+          admin_id?: string
+          call_to_action?: Json | null
+          content?: string
+          created_at?: string
+          delivered_count?: number | null
+          id?: string
+          read_count?: number | null
+          recipient_type?: string
+          sent_at?: string | null
+          status?: string
+          title?: string
+          total_recipients?: number | null
+        }
+        Relationships: []
+      }
       admin_audit_log: {
         Row: {
           action: string
@@ -65,6 +110,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      announcement_recipients: {
+        Row: {
+          announcement_id: string
+          clicked_at: string | null
+          delivered_at: string | null
+          id: string
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          clicked_at?: string | null
+          delivered_at?: string | null
+          id?: string
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          clicked_at?: string | null
+          delivered_at?: string | null
+          id?: string
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_recipients_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "admin_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       booking_requests: {
         Row: {
