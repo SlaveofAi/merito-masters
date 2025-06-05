@@ -8,10 +8,17 @@ import { ThemeProvider } from "@/components/theme-provider";
 import PrivateRoute from "@/components/PrivateRoute";
 import Layout from "@/components/Layout";
 import Landing from "@/pages/Landing";
+import Index from "@/pages/Index";
 import Home from "@/pages/Home";
 import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import Messages from "@/pages/Messages";
+import JobRequests from "@/pages/JobRequests";
+import PostJob from "@/pages/PostJob";
+import Notifications from "@/pages/Notifications";
+import Categories from "@/pages/Categories";
+import ApprovedBookings from "@/pages/ApprovedBookings";
 import NotFound from "@/pages/NotFound";
 import { supabase } from "@/integrations/supabase/client";
 import AdminRoute from "@/components/admin/AdminRoute";
@@ -19,7 +26,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import UserManagement from "@/pages/admin/UserManagement";
 import ContentModeration from "@/pages/admin/ContentModeration";
-import JobRequests from "@/pages/admin/JobRequests";
+import AdminJobRequests from "@/pages/admin/JobRequests";
 import Reviews from "@/pages/admin/Reviews";
 import Analytics from "@/pages/admin/Analytics";
 import Settings from "@/pages/admin/Settings";
@@ -58,7 +65,8 @@ function App() {
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<Landing />} />
-              <Route path="/home" element={<Layout><Home /></Layout>} />
+              <Route path="/home" element={<Index />} />
+              <Route path="/categories" element={<Categories />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               
@@ -73,6 +81,31 @@ function App() {
                   <Layout><Profile /></Layout>
                 </PrivateRoute>
               } />
+              <Route path="/messages" element={
+                <PrivateRoute>
+                  <Messages />
+                </PrivateRoute>
+              } />
+              <Route path="/job-requests" element={
+                <PrivateRoute>
+                  <JobRequests />
+                </PrivateRoute>
+              } />
+              <Route path="/post-job" element={
+                <PrivateRoute>
+                  <PostJob />
+                </PrivateRoute>
+              } />
+              <Route path="/notifications" element={
+                <PrivateRoute>
+                  <Notifications />
+                </PrivateRoute>
+              } />
+              <Route path="/approved-bookings" element={
+                <PrivateRoute>
+                  <ApprovedBookings />
+                </PrivateRoute>
+              } />
               
               {/* Admin Routes */}
               <Route path="/admin" element={
@@ -83,7 +116,7 @@ function App() {
                 <Route index element={<AdminDashboard />} />
                 <Route path="users" element={<UserManagement />} />
                 <Route path="content" element={<ContentModeration />} />
-                <Route path="jobs" element={<JobRequests />} />
+                <Route path="jobs" element={<AdminJobRequests />} />
                 <Route path="reviews" element={<Reviews />} />
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="settings" element={<Settings />} />
