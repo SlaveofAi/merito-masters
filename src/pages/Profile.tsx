@@ -43,7 +43,7 @@ const Profile = () => {
     });
   }, [id, userType, loading, user]);
   
-  // Use this effect for customer redirects
+  // Use this effect for customer redirects - only for own profile
   useEffect(() => {
     if (loading) {
       return; // Wait for loading to complete
@@ -76,29 +76,28 @@ const Profile = () => {
     return <ProfileSkeleton />;
   }
   
-  // Immediate redirect for customers
-  // First check: Immediate redirect if we already know this is a customer
+  // Immediate redirect for customers viewing own profile
   if (!id && userType === "customer" && window.location.pathname === "/profile") {
     console.log("Customer profile detected in main Profile route, immediate redirect to requests");
     return <Navigate to="/profile/requests" replace />;
   }
   
-  // We need to check if the user is trying to navigate to their own profile
-  // by using an ID that matches their own ID
+  // Check if the user is trying to navigate to their own profile by using an ID that matches their own ID
+  // Only redirect if they're viewing their own profile by ID
   const isViewingOwnProfileById = id && user && id === user.id;
   if (isViewingOwnProfileById) {
     console.log("User is viewing their own profile by ID, redirecting to /profile");
     return <Navigate to="/profile" replace />;
   }
 
-  // For the main Profile route, we want to show the requests tab if it's a customer
-  // or the calendar if explicitly requested, otherwise default to "portfolio"
+  // For the main Profile route, determine the initial tab
   let initialTab = "portfolio";
   if (window.location.pathname.endsWith('/calendar')) {
     initialTab = "calendar";
   } else if (window.location.pathname.endsWith('/requests')) {
     initialTab = "requests";
   } else if (userType === 'customer' && !id) {
+    // Only redirect to requests if it's the user's own profile (no id)
     initialTab = "requests";
   }
   
