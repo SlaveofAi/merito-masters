@@ -1,6 +1,7 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
-import { Star, MapPin, Phone, ArrowRight, Crown, Verified } from "lucide-react";
+import { Star, MapPin, ArrowRight, Crown, Verified } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -103,25 +104,16 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
           </div>
         </div>
 
-        {/* Hover overlay with quick actions */}
+        {/* Hover overlay with profile button only */}
         <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500">
-          <div className="flex gap-3">
+          <Link to={`/profile/${id}`}>
             <Button
               size="sm"
-              variant="secondary"
-              className="bg-white/90 backdrop-blur-sm hover:bg-white transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100"
+              className="btn-primary transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-200"
             >
-              <Phone className="w-4 h-4" />
+              Profil
             </Button>
-            <Link to={`/profile/${id}`}>
-              <Button
-                size="sm"
-                className="btn-primary transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-200"
-              >
-                Profil
-              </Button>
-            </Link>
-          </div>
+          </Link>
         </div>
       </div>
       
@@ -154,18 +146,9 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
           <span className="text-sm font-medium">{location}</span>
         </div>
         
-        {/* Enhanced action buttons with better mobile experience */}
-        <div className="flex gap-3 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all duration-300 rounded-lg hover:scale-105 active:scale-95 touch-manipulation"
-          >
-            <Phone className="w-4 h-4 mr-2" />
-            Kontakt
-          </Button>
-          
-          <Link to={`/profile/${id}`} className="flex-1">
+        {/* Profile button only */}
+        <div className="pt-2">
+          <Link to={`/profile/${id}`} className="w-full block">
             <Button
               size="sm"
               className="w-full btn-primary rounded-lg group/btn hover:scale-105 active:scale-95 transition-all duration-300 touch-manipulation"

@@ -1,61 +1,33 @@
 
-import React from 'react';
-import { Shield, Users, Award, Star, CheckCircle, Clock } from 'lucide-react';
+import React from "react";
+import { Shield, Heart, Eye, Sparkles } from "lucide-react";
 
-export function TrustIndicators() {
-  const stats = [
-    {
-      icon: Users,
-      value: '500+',
-      label: 'Overených remeselníkov',
-      color: 'text-primary',
-    },
-    {
-      icon: Star,
-      value: '4.8',
-      label: 'Priemerné hodnotenie',
-      color: 'text-yellow-500',
-    },
-    {
-      icon: CheckCircle,
-      value: '2000+',
-      label: 'Úspešných projektov',
-      color: 'text-success-500',
-    },
-    {
-      icon: Clock,
-      value: '24h',
-      label: 'Priemerná odozva',
-      color: 'text-accent-500',
-    },
-  ];
-
+export const TrustIndicators = () => {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-8">
-      {stats.map((stat, index) => (
-        <div 
-          key={index} 
-          className="text-center group hover:scale-105 transition-transform duration-300"
-          style={{ animationDelay: `${index * 100}ms` }}
-        >
-          <div className={cn(
-            'w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center',
-            'bg-gradient-to-br from-white to-gray-50 shadow-soft group-hover:shadow-medium transition-shadow'
-          )}>
-            <stat.icon className={cn('h-6 w-6', stat.color)} />
-          </div>
-          <div className="text-2xl font-bold font-heading text-foreground mb-1">
-            {stat.value}
-          </div>
-          <div className="text-sm text-muted-foreground font-medium">
-            {stat.label}
-          </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 animate-slide-up" style={{animationDelay: "300ms"}}>
+      <div className="flex flex-col items-center p-6 glass rounded-xl hover-lift">
+        <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center mb-4 shadow-soft">
+          <Heart className="h-8 w-8 text-white" />
         </div>
-      ))}
+        <div className="text-2xl font-bold font-heading text-primary mb-1">100%</div>
+        <div className="text-muted-foreground font-medium text-center">Úplne zadarmo</div>
+      </div>
+      
+      <div className="flex flex-col items-center p-6 glass rounded-xl hover-lift">
+        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center mb-4 shadow-soft">
+          <Eye className="h-8 w-8 text-white" />
+        </div>
+        <div className="text-2xl font-bold font-heading text-primary mb-1">100%</div>
+        <div className="text-muted-foreground font-medium text-center">Transparentné</div>
+      </div>
+      
+      <div className="flex flex-col items-center p-6 glass rounded-xl hover-lift">
+        <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center mb-4 shadow-soft">
+          <Sparkles className="h-8 w-8 text-white" />
+        </div>
+        <div className="text-2xl font-bold font-heading text-primary mb-1">Nová</div>
+        <div className="text-muted-foreground font-medium text-center">Vízia pre budúcnosť</div>
+      </div>
     </div>
   );
-}
-
-function cn(...classes: (string | undefined)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
+};
