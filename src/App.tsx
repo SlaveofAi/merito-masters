@@ -1,95 +1,148 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import React, { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "sonner";
 import { AuthProvider } from "@/hooks/useAuth";
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Profile from "./pages/Profile";
-import ProfilePortfolio from "./pages/ProfilePages/ProfilePortfolio";
-import ProfileReviews from "./pages/ProfilePages/ProfileReviews";
-import ProfileCalendar from "./pages/ProfilePages/ProfileCalendar";
-import Messages from "./pages/Messages";
-import ApprovedBookings from "./pages/ApprovedBookings";
-import Notifications from "./pages/Notifications";
-import NotFound from "./pages/NotFound";
-import Index from "./pages/Index";
-import Categories from "./pages/Categories";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import About from "./pages/About";
-import HowItWorks from "./pages/HowItWorks";
-import Pricing from "./pages/Pricing";
-import Reviews from "./pages/Reviews";
-import Contact from "./pages/Contact";
-import Benefits from "./pages/Benefits";
-import JobRequests from "./pages/JobRequests";
-import PostJob from "./pages/PostJob";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import Home from "@/pages/Home";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import Profile from "@/pages/Profile";
+import JobRequests from "@/pages/JobRequests";
+import JobRequestDetail from "@/pages/JobRequestDetail";
+import CreateJobRequest from "@/pages/CreateJobRequest";
+import CraftsmanProfile from "@/pages/CraftsmanProfile";
+import CraftsmanSearch from "@/pages/CraftsmanSearch";
+import PrivateRoute from "@/components/PrivateRoute";
+import Chat from "@/pages/Chat";
+import ChatConversation from "@/pages/ChatConversation";
+import BookingRequests from "@/pages/BookingRequests";
+import NotFound from "@/pages/NotFound";
+import { supabase } from "@/integrations/supabase/client";
+import AdminRoute from "@/components/admin/AdminRoute";
+import AdminLayout from "@/components/admin/AdminLayout";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import UserManagement from "@/pages/admin/UserManagement";
 
-const queryClient = new QueryClient();
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+function App() {
+  useEffect(() => {
+    // Check connection on app start
+    const checkSupabaseConnection = async () => {
+      try {
+        const isConnected = await supabase.from('profiles').select('id').limit(1).single();
+        console.log("Supabase connection check:", isConnected.error ? "Failed" : "Success");
+      } catch (error) {
+        console.error("Supabase connection error:", error);
+      }
+    };
+    
+    checkSupabaseConnection();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/home" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/categories" element={<Categories />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/reviews" element={<Reviews />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/benefits" element={<Benefits />} />
-            
-            {/* Job Requests routes */}
-            <Route path="/requests" element={<JobRequests />} />
-            <Route path="/post-job" element={<PostJob />} />
-            
-            {/* Search route - redirect to home page */}
-            <Route path="/search" element={<Navigate to="/home" replace />} />
-            
-            {/* Profile routes */}
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/profile/:id" element={<Profile />} />
-            
-            {/* Profile sub-pages - carefully ordered for proper routing */}
-            <Route path="/profile/requests" element={<Profile />} />
-            <Route path="/profile/portfolio" element={<ProfilePortfolio />} />
-            <Route path="/profile/reviews" element={<ProfileReviews />} />
-            <Route path="/profile/calendar" element={<ProfileCalendar />} />
-            <Route path="/profile/:id/portfolio" element={<ProfilePortfolio />} />
-            <Route path="/profile/:id/reviews" element={<ProfileReviews />} />
-            <Route path="/profile/:id/calendar" element={<ProfileCalendar />} />
-            
-            {/* Notifications route */}
-            <Route path="/notifications" element={<Notifications />} />
-            
-            <Route path="/messages" element={<Messages />} />
-            {/* Bookings route */}
-            <Route path="/bookings" element={<ApprovedBookings />} />
-            
-            {/* Legacy route redirection */}
-            <Route path="/jobs" element={<Navigate to="/bookings" replace />} />
-            
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <Router>
+          <ThemeProvider defaultTheme="light" storageKey="lovable-theme">
+            <Toaster position="top-center" richColors closeButton />
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<><Navbar /><Home /><Footer /></>} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/craftsmen" element={<><Navbar /><CraftsmanSearch /><Footer /></>} />
+              <Route path="/craftsmen/:id" element={<><Navbar /><CraftsmanProfile /><Footer /></>} />
+              
+              {/* Protected routes */}
+              <Route path="/profile" element={
+                <PrivateRoute>
+                  <Navbar />
+                  <Profile />
+                  <Footer />
+                </PrivateRoute>
+              } />
+              <Route path="/profile/:tab" element={
+                <PrivateRoute>
+                  <Navbar />
+                  <Profile />
+                  <Footer />
+                </PrivateRoute>
+              } />
+              <Route path="/job-requests" element={
+                <PrivateRoute>
+                  <Navbar />
+                  <JobRequests />
+                  <Footer />
+                </PrivateRoute>
+              } />
+              <Route path="/job-requests/:id" element={
+                <PrivateRoute>
+                  <Navbar />
+                  <JobRequestDetail />
+                  <Footer />
+                </PrivateRoute>
+              } />
+              <Route path="/create-job-request" element={
+                <PrivateRoute>
+                  <Navbar />
+                  <CreateJobRequest />
+                  <Footer />
+                </PrivateRoute>
+              } />
+              <Route path="/chat" element={
+                <PrivateRoute>
+                  <Navbar />
+                  <Chat />
+                  <Footer />
+                </PrivateRoute>
+              } />
+              <Route path="/chat/:id" element={
+                <PrivateRoute>
+                  <Navbar />
+                  <ChatConversation />
+                  <Footer />
+                </PrivateRoute>
+              } />
+              <Route path="/booking-requests" element={
+                <PrivateRoute>
+                  <Navbar />
+                  <BookingRequests />
+                  <Footer />
+                </PrivateRoute>
+              } />
+              
+              {/* Admin Routes */}
+              <Route path="/admin" element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }>
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<UserManagement />} />
+                {/* More admin routes will be added */}
+              </Route>
+              
+              {/* Fallback routes */}
+              <Route path="/404" element={<NotFound />} />
+              <Route path="*" element={<Navigate to="/404" replace />} />
+            </Routes>
+          </ThemeProvider>
+        </Router>
       </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+}
 
 export default App;

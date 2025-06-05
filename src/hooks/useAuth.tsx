@@ -11,16 +11,16 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   userType: UserType;
+  isAdmin: boolean;
   signOut: () => Promise<void>;
   updateUserType: (type: 'customer' | 'craftsman') => Promise<void>;
 }
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [userType, setUserType] = useState<UserType>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchUserType = async (userId: string, currentSession: Session | null = null) => {
@@ -76,6 +76,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserType(retrievedUserType);
         localStorage.setItem("userType", retrievedUserType);
         return retrievedUserType;
+      }
+
+      // Check if user is admin
+      if (retrievedUserType === 'admin') {
+        console.log("User is admin");
+        setIsAdmin(true);
+        setUserType(null); // Admins don't have customer/craftsman type
+        return null;
       }
 
       setUserType(null);
@@ -160,6 +168,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (event === 'SIGNED_OUT') {
           setUserType(null);
+          setIsAdmin(false);
           localStorage.removeItem("userType");
         }
         
@@ -198,6 +207,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await supabase.auth.signOut();
       setUserType(null);
+      setIsAdmin(false);
       localStorage.removeItem("userType");
     } catch (error) {
       console.error("Error signing out:", error);
@@ -210,6 +220,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     loading,
     userType,
+    isAdmin,
     signOut,
     updateUserType
   };
@@ -217,6 +228,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   console.log("Auth context state:", { 
     userId: user?.id, 
     userType, 
+    isAdmin,
     loading,
     hasSession: !!session
   });

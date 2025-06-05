@@ -9,6 +9,63 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          target_id: string | null
+          target_type: string
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string
+        }
+        Relationships: []
+      }
+      admin_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       booking_requests: {
         Row: {
           amount: string | null
@@ -172,6 +229,7 @@ export type Database = {
           email: string
           id: string
           is_topped: boolean
+          is_verified: boolean
           location: string
           name: string
           phone: string | null
@@ -179,6 +237,9 @@ export type Database = {
           topped_until: string | null
           trade_category: string
           updated_at: string
+          verification_notes: string | null
+          verified_at: string | null
+          verified_by: string | null
           years_experience: number | null
         }
         Insert: {
@@ -188,6 +249,7 @@ export type Database = {
           email: string
           id: string
           is_topped?: boolean
+          is_verified?: boolean
           location: string
           name: string
           phone?: string | null
@@ -195,6 +257,9 @@ export type Database = {
           topped_until?: string | null
           trade_category: string
           updated_at?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
           years_experience?: number | null
         }
         Update: {
@@ -204,6 +269,7 @@ export type Database = {
           email?: string
           id?: string
           is_topped?: boolean
+          is_verified?: boolean
           location?: string
           name?: string
           phone?: string | null
@@ -211,6 +277,9 @@ export type Database = {
           topped_until?: string | null
           trade_category?: string
           updated_at?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
           years_experience?: number | null
         }
         Relationships: []
@@ -499,6 +568,45 @@ export type Database = {
         }
         Relationships: []
       }
+      reported_content: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       topped_payments: {
         Row: {
           amount: number
@@ -594,6 +702,19 @@ export type Database = {
           reply: string
           created_at: string
         }[]
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      log_admin_action: {
+        Args: {
+          p_action: string
+          p_target_type: string
+          p_target_id?: string
+          p_details?: Json
+        }
+        Returns: undefined
       }
     }
     Enums: {
