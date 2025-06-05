@@ -20,7 +20,7 @@ const Pricing: React.FC = () => {
               Cenník služieb
             </h1>
             <p className="mt-4 text-lg text-gray-600">
-              Informácie o cenotvorbe a odporúčania pre majstrov
+              Pre remeselníkov
             </p>
           </div>
 
