@@ -1,19 +1,14 @@
-
 import React from "react";
 import Layout from "@/components/Layout";
-
 const Terms = () => {
-  return (
-    <Layout>
+  return <Layout>
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Podmienky používania webovej stránky Majstri.com</h1>
           <div className="bg-white rounded-lg shadow-sm p-8 space-y-6">
             <section>
               <h2 className="text-xl font-semibold mb-3">1. Základné informácie</h2>
-              <p className="text-gray-600">
-                Tieto podmienky používania upravujú práva a povinnosti medzi prevádzkovateľom webovej stránky Majstri.com (dálej len "Platforma") a jej užívateľmi. Prevádzkovateľom Platformy je fyzická osoba, ktorá je dostupná na e-mailovej adrese: infomaj-stri.com
-              </p>
+              <p className="text-gray-600">Tieto podmienky používania upravujú práva a povinnosti medzi prevádzkovateľom webovej stránky Majstri.com (dálej len "Platforma") a jej užívateľmi. Prevádzkovateľom Platformy je fyzická osoba, ktorá je dostupná na e-mailovej adrese: info@maj-stri.com</p>
             </section>
             
             <section>
@@ -104,8 +99,6 @@ const Terms = () => {
           </div>
         </div>
       </div>
-    </Layout>
-  );
+    </Layout>;
 };
-
 export default Terms;
