@@ -10,11 +10,11 @@ const About = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-8">O nás</h1>
           <div className="bg-white rounded-lg shadow-sm p-8 space-y-6">
             <p className="text-lg text-gray-700 mb-6">
-              Majstri.sk je moderná online platforma, ktorá prepája šikovných remeselníkov a profesionálov so zákazníkmi po celom Slovensku. Naším cieľom je zjednodušiť vyhľadávanie spoľahlivých majstrov a umožniť im budovať si dôveru cez reálne hodnotenia, fotografie projektov a priamu komunikáciu so zákazníkmi.
+              Majstri.com je moderná online platforma, ktorá prepája šikovných remeselníkov a profesionálov so zákazníkmi po celom Slovensku. Naším cieľom je zjednodušiť vyhľadávanie spoľahlivých majstrov a umožniť im budovať si dôveru cez reálne hodnotenia, fotografie projektov a priamu komunikáciu so zákazníkmi.
             </p>
             
             <section>
-              <h2 className="text-xl font-semibold mb-3">Prečo vznikla platforma Majstri.sk?</h2>
+              <h2 className="text-xl font-semibold mb-3">Prečo vznikla platforma Majstri.com?</h2>
               <p className="text-gray-600 mb-4">
                 Zháňať kvalitného remeselníka býva často stresujúce. Na druhej strane, mnoho skúsených odborníkov má problém získať nových klientov len na základe odporúčaní. Majstri.sk vzniklo ako jednoduché riešenie – transparentné, dôveryhodné a spravodlivé pre obe strany.
               </p>
