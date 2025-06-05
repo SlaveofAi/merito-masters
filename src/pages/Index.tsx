@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -5,7 +6,7 @@ import Hero from "@/components/Hero";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Search, MapPin, Filter, TrendingUp } from "lucide-react";
+import { Loader2, Search, MapPin, Filter, TrendingUp, Crown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import CraftsmanCard from "@/components/CraftsmanCard";
