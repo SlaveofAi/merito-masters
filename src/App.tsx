@@ -18,6 +18,11 @@ import AdminRoute from "@/components/admin/AdminRoute";
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import UserManagement from "@/pages/admin/UserManagement";
+import ContentModeration from "@/pages/admin/ContentModeration";
+import JobRequests from "@/pages/admin/JobRequests";
+import Reviews from "@/pages/admin/Reviews";
+import Analytics from "@/pages/admin/Analytics";
+import Settings from "@/pages/admin/Settings";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -77,6 +82,11 @@ function App() {
               }>
                 <Route index element={<AdminDashboard />} />
                 <Route path="users" element={<UserManagement />} />
+                <Route path="content" element={<ContentModeration />} />
+                <Route path="jobs" element={<JobRequests />} />
+                <Route path="reviews" element={<Reviews />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="settings" element={<Settings />} />
               </Route>
               
               {/* Fallback routes */}

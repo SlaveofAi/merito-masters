@@ -41,7 +41,7 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -105,10 +105,10 @@ const AdminLayout = () => {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="flex-1 flex flex-col lg:pl-0">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 lg:mx-auto lg:max-w-7xl lg:px-8">
-          <div className="relative flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
+          <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
             <Button
               variant="ghost"
               className="lg:hidden"
@@ -125,7 +125,7 @@ const AdminLayout = () => {
         </div>
 
         {/* Page content */}
-        <main className="py-8">
+        <main className="flex-1 py-8">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <Outlet />
           </div>
