@@ -27,6 +27,12 @@ export interface MessageMetadata {
   type?: string;
   booking_id?: string;
   status?: string;
+  announcement_id?: string;
+  title?: string;
+  call_to_action?: {
+    text: string;
+    url: string;
+  };
   details?: {
     date?: string;
     time?: string;

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,7 +6,6 @@ import { Send, Plus, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { useChatActions } from "@/hooks/useChatActions";
-import { useBookingActions } from "@/hooks/useBookingActions";
 import { ChatContact, Message } from "@/types/chat";
 import { toast } from "sonner";
 import AdminAnnouncementMessage from "./AdminAnnouncementMessage";
@@ -19,10 +19,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   const [input, setInput] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { messages, loading, error } = useChatMessages(contact.conversation_id || '');
+  
+  // Get current user from localStorage
+  const currentUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null;
+  const currentUserId = currentUser?.id || '';
+
+  const { data: messages = [], isLoading, error, refetch } = useChatMessages(contact, currentUser, () => {});
   const { sendMessage } = useChatActions();
-  const { createBookingRequest } = useBookingActions();
-  const currentUserId = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).id : '';
+  
   const [showBookingOptions, setShowBookingOptions] = useState(false);
   const [bookingDetails, setBookingDetails] = useState({
     date: '',
@@ -38,8 +42,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
 
   const handleSendMessage = async () => {
     if (input.trim() !== "") {
-      await sendMessage(contact.conversation_id || '', currentUserId, contact.contactId || contact.id, input);
+      await sendMessage(input);
       setInput("");
+      // Refetch messages after sending
+      setTimeout(() => refetch(), 500);
     } else if (attachment) {
       // Handle attachment sending (implementation needed)
       toast.info("Sending attachments is not yet implemented.");
@@ -64,15 +70,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
     }
 
     try {
-      await createBookingRequest(
-        contact.conversation_id || '',
-        currentUserId,
-        contact.contactId || contact.id,
-        bookingDetails
-      );
+      const bookingMessage = `Booking Request:\nDate: ${bookingDetails.date}\nTime: ${bookingDetails.time}${bookingDetails.amount ? `\nAmount: ${bookingDetails.amount}` : ''}${bookingDetails.message ? `\nMessage: ${bookingDetails.message}` : ''}`;
+      
+      await sendMessage(bookingMessage);
       toast.success("Booking request sent!");
       setShowBookingOptions(false);
       setBookingDetails({ date: '', time: '', message: '', amount: '' });
+      setTimeout(() => refetch(), 500);
     } catch (err) {
       console.error("Error creating booking request:", err);
       toast.error("Failed to send booking request.");
@@ -123,6 +127,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
       </div>
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center">
+          <p>Loading messages...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">

@@ -12,11 +12,13 @@ import { MessageSquare, Send, Users, Eye, Clock, CheckCircle } from "lucide-reac
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MassMessage, MassMessageForm } from "@/types/massMessage";
+import { useAuth } from "@/hooks/useAuth";
 
 const MassMessaging = () => {
   const [messages, setMessages] = useState<MassMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const { user } = useAuth();
   const [form, setForm] = useState<MassMessageForm>({
     title: '',
     content: '',
@@ -38,7 +40,27 @@ const MassMessaging = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMessages(data || []);
+      
+      // Map the database data to our MassMessage type
+      const mappedMessages: MassMessage[] = (data || []).map(item => ({
+        id: item.id,
+        admin_id: item.admin_id,
+        title: item.title,
+        content: item.content,
+        recipient_type: item.recipient_type as 'all' | 'craftsmen' | 'customers',
+        call_to_action: item.call_to_action ? {
+          text: item.call_to_action.text,
+          url: item.call_to_action.url
+        } : undefined,
+        created_at: item.created_at,
+        sent_at: item.sent_at,
+        total_recipients: item.total_recipients || 0,
+        delivered_count: item.delivered_count || 0,
+        read_count: item.read_count || 0,
+        status: item.status as 'draft' | 'sending' | 'sent' | 'failed'
+      }));
+      
+      setMessages(mappedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast.error('Failed to fetch mass messages');
@@ -48,7 +70,7 @@ const MassMessaging = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!form.title.trim() || !form.content.trim()) {
+    if (!form.title.trim() || !form.content.trim() || !user?.id) {
       toast.error('Please fill in both title and content');
       return;
     }
@@ -60,6 +82,7 @@ const MassMessaging = () => {
       const { data: announcement, error: createError } = await supabase
         .from('admin_announcements')
         .insert({
+          admin_id: user.id,
           title: form.title,
           content: form.content,
           recipient_type: form.recipient_type,
