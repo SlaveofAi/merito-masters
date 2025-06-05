@@ -28,14 +28,12 @@ const UserTypeSelector: React.FC<UserTypeSelectorProps> = ({
       
       toast.success(`Vybrali ste si typ účtu: ${type === 'craftsman' ? 'remeselník' : 'zákazník'}. Váš profil sa vytvára.`);
       
-      // Reload the page after a short delay to ensure state is updated
-      setTimeout(() => {
-        if (type === 'craftsman') {
-          navigate("/profile", { replace: true });
-        } else {
-          navigate("/profile/reviews", { replace: true });
-        }
-      }, 1500);
+      // Navigate immediately without reload
+      if (type === 'craftsman') {
+        navigate("/profile", { replace: true });
+      } else {
+        navigate("/profile/reviews", { replace: true });
+      }
     } catch (error) {
       console.error(`Error setting user type to ${type}:`, error);
       toast.error("Nastala chyba pri nastavení typu používateľa");

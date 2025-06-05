@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -70,12 +69,10 @@ const Register = () => {
 
   type CustomerFormValues = z.infer<typeof customerSchema>;
   type CraftsmanFormValues = z.infer<typeof craftsmanSchema>;
-  
-  type FormValues = UserType extends 'craftsman' ? CraftsmanFormValues : CustomerFormValues;
 
   const schema = userType === 'craftsman' ? craftsmanSchema : customerSchema;
 
-  const form = useForm<FormValues>({
+  const form = useForm<CustomerFormValues | CraftsmanFormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: "",
@@ -92,17 +89,17 @@ const Register = () => {
   const handleCategoryChange = (value: string) => {
     if (value === "custom") {
       setShowCustomInput(true);
-      form.setValue("tradeCategory", customCategory);
+      form.setValue("tradeCategory" as any, customCategory);
     } else {
       setShowCustomInput(false);
       setCustomCategory("");
-      form.setValue("tradeCategory", value);
+      form.setValue("tradeCategory" as any, value);
     }
   };
 
   const handleCustomCategoryChange = (value: string) => {
     setCustomCategory(value);
-    form.setValue("tradeCategory", value);
+    form.setValue("tradeCategory" as any, value);
   };
 
   const onSubmit = async (data: any) => {
@@ -185,7 +182,7 @@ const Register = () => {
           toast.warning("Registrácia úspešná, ale profil sa vytvorí neskôr");
         }
         
-        // Navigate based on user type
+        // Navigate directly to profile without showing UserTypeSelector
         setTimeout(() => {
           if (userType === 'customer') {
             navigate("/profile/reviews", { replace: true });
@@ -355,7 +352,7 @@ const Register = () => {
                   <>
                     <FormField
                       control={form.control}
-                      name={"tradeCategory" as keyof FormValues}
+                      name="tradeCategory"
                       render={({ field }) => (
                         <FormItem className="space-y-2">
                           <FormLabel>Kategória remesla</FormLabel>
@@ -406,7 +403,7 @@ const Register = () => {
 
                     <FormField
                       control={form.control}
-                      name={"yearsExperience" as keyof FormValues}
+                      name="yearsExperience"
                       render={({ field }) => (
                         <FormItem className="space-y-2">
                           <FormLabel>Roky skúseností (voliteľné)</FormLabel>
@@ -425,7 +422,7 @@ const Register = () => {
 
                     <FormField
                       control={form.control}
-                      name={"description" as keyof FormValues}
+                      name="description"
                       render={({ field }) => (
                         <FormItem className="space-y-2">
                           <FormLabel>Popis služieb (voliteľné)</FormLabel>
