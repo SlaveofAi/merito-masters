@@ -4,7 +4,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/hooks/useAuth";
-import Navbar from "@/components/Navbar";
+import { ThemeProvider } from "@/components/theme-provider";
+import PrivateRoute from "@/components/PrivateRoute";
+import Layout from "@/components/Layout";
+import Landing from "@/pages/Landing";
+import Home from "@/pages/Home";
 import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -42,35 +46,46 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <Toaster position="top-center" richColors closeButton />
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<><Navbar /><div className="pt-16"><h1>Welcome to Majstri.com</h1></div></>} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            
-            {/* Protected routes */}
-            <Route path="/profile" element={<><Navbar /><Profile /></>} />
-            <Route path="/profile/:tab" element={<><Navbar /><Profile /></>} />
-            
-            {/* Admin Routes */}
-            <Route path="/admin" element={
-              <AdminRoute>
-                <AdminLayout />
-              </AdminRoute>
-            }>
-              <Route index element={<AdminDashboard />} />
-              <Route path="users" element={<UserManagement />} />
-            </Route>
-            
-            {/* Fallback routes */}
-            <Route path="/404" element={<NotFound />} />
-            <Route path="*" element={<Navigate to="/404" replace />} />
-          </Routes>
-        </Router>
-      </AuthProvider>
+      <ThemeProvider defaultTheme="light" storageKey="majstri-ui-theme">
+        <AuthProvider>
+          <Router>
+            <Toaster position="top-center" richColors closeButton />
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Landing />} />
+              <Route path="/home" element={<Layout><Home /></Layout>} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              
+              {/* Protected routes */}
+              <Route path="/profile" element={
+                <PrivateRoute>
+                  <Layout><Profile /></Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/profile/:tab" element={
+                <PrivateRoute>
+                  <Layout><Profile /></Layout>
+                </PrivateRoute>
+              } />
+              
+              {/* Admin Routes */}
+              <Route path="/admin" element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }>
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<UserManagement />} />
+              </Route>
+              
+              {/* Fallback routes */}
+              <Route path="/404" element={<NotFound />} />
+              <Route path="*" element={<Navigate to="/404" replace />} />
+            </Routes>
+          </Router>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
