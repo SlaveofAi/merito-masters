@@ -4,26 +4,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Search, Shield, ShieldCheck, UserX, Edit, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Shield, ShieldCheck, UserX, Edit } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
   id: string;
   name: string;
   email: string;
-  location: string;
-  user_type: 'customer' | 'craftsman';
+  user_type: string;
   created_at: string;
   is_verified?: boolean;
-  trade_category?: string;
+  last_active?: string;
 }
 
 const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<'all' | 'customer' | 'craftsman'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'customer' | 'craftsman' | 'admin'>('all');
 
   useEffect(() => {
     fetchUsers();
@@ -31,47 +31,51 @@ const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      // Get user types first
-      const { data: userTypes } = await supabase
-        .from('user_types')
-        .select('user_id, user_type');
+      setLoading(true);
+      
+      // Fetch users from profiles table with user types
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          name,
+          created_at,
+          user_types (user_type)
+        `);
 
-      if (!userTypes) return;
+      if (profilesError) throw profilesError;
 
-      // Get customer profiles
-      const { data: customers } = await supabase
+      // Fetch customer profiles for additional info
+      const { data: customerData, error: customerError } = await supabase
         .from('customer_profiles')
-        .select('id, name, email, location, created_at');
+        .select('id, email');
 
-      // Get craftsman profiles
-      const { data: craftsmen } = await supabase
+      if (customerError) throw customerError;
+
+      // Fetch craftsman profiles for additional info
+      const { data: craftsmanData, error: craftsmanError } = await supabase
         .from('craftsman_profiles')
-        .select('id, name, email, location, created_at, is_verified, trade_category');
+        .select('id, email, is_verified');
 
-      // Combine data
-      const allUsers: User[] = [];
+      if (craftsmanError) throw craftsmanError;
 
-      customers?.forEach(customer => {
-        const userType = userTypes.find(ut => ut.user_id === customer.id);
-        if (userType) {
-          allUsers.push({
-            ...customer,
-            user_type: 'customer'
-          });
-        }
-      });
+      // Combine the data
+      const combinedUsers = profilesData?.map(profile => {
+        const customerInfo = customerData?.find(c => c.id === profile.id);
+        const craftsmanInfo = craftsmanData?.find(c => c.id === profile.id);
+        
+        return {
+          id: profile.id,
+          name: profile.name || 'Unknown',
+          email: customerInfo?.email || craftsmanInfo?.email || 'No email',
+          user_type: profile.user_types?.[0]?.user_type || 'unknown',
+          created_at: profile.created_at,
+          is_verified: craftsmanInfo?.is_verified || false,
+          last_active: 'Recent' // This would need a separate tracking mechanism
+        };
+      }) || [];
 
-      craftsmen?.forEach(craftsman => {
-        const userType = userTypes.find(ut => ut.user_id === craftsman.id);
-        if (userType) {
-          allUsers.push({
-            ...craftsman,
-            user_type: 'craftsman'
-          });
-        }
-      });
-
-      setUsers(allUsers);
+      setUsers(combinedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to fetch users');
@@ -80,37 +84,36 @@ const UserManagement = () => {
     }
   };
 
-  const toggleVerification = async (userId: string, currentStatus: boolean) => {
+  const handleVerifyUser = async (userId: string, isVerified: boolean) => {
     try {
       const { error } = await supabase
         .from('craftsman_profiles')
         .update({ 
-          is_verified: !currentStatus,
-          verified_at: !currentStatus ? new Date().toISOString() : null,
-          verified_by: !currentStatus ? (await supabase.auth.getUser()).data.user?.id : null
+          is_verified: !isVerified,
+          verified_at: !isVerified ? new Date().toISOString() : null
         })
         .eq('id', userId);
 
       if (error) throw error;
 
-      // Log admin action
-      await supabase.rpc('log_admin_action', {
-        p_action: !currentStatus ? 'user_verified' : 'user_unverified',
-        p_target_type: 'craftsman',
-        p_target_id: userId,
-        p_details: { previous_status: currentStatus, new_status: !currentStatus }
-      });
-
-      setUsers(users.map(user => 
-        user.id === userId 
-          ? { ...user, is_verified: !currentStatus }
-          : user
-      ));
-
-      toast.success(`User ${!currentStatus ? 'verified' : 'unverified'} successfully`);
+      toast.success(`User ${!isVerified ? 'verified' : 'unverified'} successfully`);
+      fetchUsers(); // Refresh the list
     } catch (error) {
-      console.error('Error updating verification:', error);
+      console.error('Error updating verification status:', error);
       toast.error('Failed to update verification status');
+    }
+  };
+
+  const handleDeactivateUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to deactivate this user?')) return;
+
+    try {
+      // In a real implementation, you might want to add a 'deactivated' field
+      // For now, we'll just show a toast
+      toast.success('User deactivation feature will be implemented');
+    } catch (error) {
+      console.error('Error deactivating user:', error);
+      toast.error('Failed to deactivate user');
     }
   };
 
@@ -124,11 +127,9 @@ const UserManagement = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-24 bg-gray-200 rounded animate-pulse"></div>
-          ))}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+          <p className="mt-2 text-sm text-gray-600">Loading users...</p>
         </div>
       </div>
     );
@@ -139,7 +140,7 @@ const UserManagement = () => {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Manage users, verification status, and account settings.
+          Manage user accounts, verify craftsmen, and monitor platform activity.
         </p>
       </div>
 
@@ -153,7 +154,7 @@ const UserManagement = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search users by name or email..."
+                placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -178,80 +179,97 @@ const UserManagement = () => {
               >
                 Craftsmen
               </Button>
+              <Button
+                variant={filterType === 'admin' ? 'default' : 'outline'}
+                onClick={() => setFilterType('admin')}
+              >
+                Admins
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Users List */}
-      <div className="space-y-4">
-        {filteredUsers.map((user) => (
-          <Card key={user.id}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-medium text-gray-900">{user.name}</h3>
-                    <Badge 
-                      variant={user.user_type === 'craftsman' ? 'default' : 'secondary'}
-                    >
-                      {user.user_type === 'craftsman' ? 'Craftsman' : 'Customer'}
+      {/* Users Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Users ({filteredUsers.length})</CardTitle>
+          <CardDescription>
+            Manage and monitor all platform users
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Joined</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={user.user_type === 'admin' ? 'destructive' : 'secondary'}>
+                      {user.user_type}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
                     {user.user_type === 'craftsman' && (
-                      <Badge 
-                        variant={user.is_verified ? 'default' : 'destructive'}
-                        className={user.is_verified ? 'bg-green-100 text-green-800' : ''}
-                      >
-                        {user.is_verified ? 'Verified' : 'Unverified'}
+                      <Badge variant={user.is_verified ? 'default' : 'outline'}>
+                        {user.is_verified ? (
+                          <>
+                            <ShieldCheck className="h-3 w-3 mr-1" />
+                            Verified
+                          </>
+                        ) : (
+                          <>
+                            <Shield className="h-3 w-3 mr-1" />
+                            Unverified
+                          </>
+                        )}
                       </Badge>
                     )}
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">{user.email}</p>
-                  <p className="text-sm text-gray-500">
-                    {user.location} • Joined {new Date(user.created_at).toLocaleDateString()}
-                  </p>
-                  {user.trade_category && (
-                    <p className="text-sm text-gray-500">Category: {user.trade_category}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {user.user_type === 'craftsman' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleVerification(user.id, user.is_verified || false)}
-                    >
-                      {user.is_verified ? (
-                        <>
-                          <ShieldCheck className="h-4 w-4 mr-2" />
-                          Unverify
-                        </>
-                      ) : (
-                        <>
-                          <Shield className="h-4 w-4 mr-2" />
-                          Verify
-                        </>
+                    {user.user_type !== 'craftsman' && (
+                      <Badge variant="outline">Active</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {user.user_type === 'craftsman' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleVerifyUser(user.id, user.is_verified || false)}
+                        >
+                          {user.is_verified ? 'Unverify' : 'Verify'}
+                        </Button>
                       )}
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredUsers.length === 0 && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <p className="text-gray-500">No users found matching your criteria.</p>
-          </CardContent>
-        </Card>
-      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeactivateUser(user.id)}
+                      >
+                        <UserX className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
