@@ -25,16 +25,6 @@ serve(async (req) => {
     // Log headers for debugging
     console.log("Request headers:", Object.fromEntries(req.headers.entries()));
     
-    // Get the authorization header from the request
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error("Missing Authorization header");
-      return new Response(
-        JSON.stringify({ error: "Not authorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     // Log that we're parsing the request body
     console.log("Parsing request body...");
     
