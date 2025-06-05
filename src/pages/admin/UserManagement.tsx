@@ -32,30 +32,30 @@ const UserManagement = () => {
     try {
       setLoading(true);
       
-      // Fetch customer profiles with user types
+      // Fetch user types first
+      const { data: userTypesData, error: userTypesError } = await supabase
+        .from('user_types')
+        .select('user_id, user_type');
+
+      if (userTypesError) throw userTypesError;
+
+      // Create a map of user_id to user_type
+      const userTypesMap = new Map();
+      userTypesData?.forEach(ut => {
+        userTypesMap.set(ut.user_id, ut.user_type);
+      });
+
+      // Fetch customer profiles
       const { data: customerData, error: customerError } = await supabase
         .from('customer_profiles')
-        .select(`
-          id,
-          name,
-          email,
-          created_at,
-          user_types!inner(user_type)
-        `);
+        .select('id, name, email, created_at');
 
       if (customerError) throw customerError;
 
-      // Fetch craftsman profiles with user types
+      // Fetch craftsman profiles
       const { data: craftsmanData, error: craftsmanError } = await supabase
         .from('craftsman_profiles')
-        .select(`
-          id,
-          name,
-          email,
-          created_at,
-          is_verified,
-          user_types!inner(user_type)
-        `);
+        .select('id, name, email, created_at, is_verified');
 
       if (craftsmanError) throw craftsmanError;
 
@@ -64,7 +64,7 @@ const UserManagement = () => {
         id: profile.id,
         name: profile.name || 'Unknown',
         email: profile.email || 'No email',
-        user_type: 'customer',
+        user_type: userTypesMap.get(profile.id) || 'customer',
         created_at: profile.created_at,
         is_verified: false,
         last_active: 'Recent'
@@ -74,13 +74,18 @@ const UserManagement = () => {
         id: profile.id,
         name: profile.name || 'Unknown',
         email: profile.email || 'No email',
-        user_type: 'craftsman',
+        user_type: userTypesMap.get(profile.id) || 'craftsman',
         created_at: profile.created_at,
         is_verified: profile.is_verified || false,
         last_active: 'Recent'
       })) || [];
 
-      setUsers([...customers, ...craftsmen]);
+      // Filter out users that don't have a user_type entry
+      const allUsers = [...customers, ...craftsmen].filter(user => 
+        userTypesMap.has(user.id)
+      );
+
+      setUsers(allUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to fetch users');
