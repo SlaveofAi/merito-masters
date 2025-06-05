@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,24 +40,35 @@ const MassMessaging = () => {
 
       if (error) throw error;
       
-      // Map the database data to our MassMessage type
-      const mappedMessages: MassMessage[] = (data || []).map(item => ({
-        id: item.id,
-        admin_id: item.admin_id,
-        title: item.title,
-        content: item.content,
-        recipient_type: item.recipient_type as 'all' | 'craftsmen' | 'customers',
-        call_to_action: item.call_to_action ? {
-          text: item.call_to_action.text,
-          url: item.call_to_action.url
-        } : undefined,
-        created_at: item.created_at,
-        sent_at: item.sent_at,
-        total_recipients: item.total_recipients || 0,
-        delivered_count: item.delivered_count || 0,
-        read_count: item.read_count || 0,
-        status: item.status as 'draft' | 'sending' | 'sent' | 'failed'
-      }));
+      // Map the database data to our MassMessage type with proper type checking
+      const mappedMessages: MassMessage[] = (data || []).map(item => {
+        // Type guard for call_to_action
+        const callToAction = item.call_to_action && 
+          typeof item.call_to_action === 'object' && 
+          !Array.isArray(item.call_to_action) &&
+          'text' in item.call_to_action && 
+          'url' in item.call_to_action
+          ? {
+              text: String(item.call_to_action.text),
+              url: String(item.call_to_action.url)
+            }
+          : undefined;
+
+        return {
+          id: item.id,
+          admin_id: item.admin_id,
+          title: item.title,
+          content: item.content,
+          recipient_type: item.recipient_type as 'all' | 'craftsmen' | 'customers',
+          call_to_action: callToAction,
+          created_at: item.created_at,
+          sent_at: item.sent_at,
+          total_recipients: item.total_recipients || 0,
+          delivered_count: item.delivered_count || 0,
+          read_count: item.read_count || 0,
+          status: item.status as 'draft' | 'sending' | 'sent' | 'failed'
+        };
+      });
       
       setMessages(mappedMessages);
     } catch (error) {

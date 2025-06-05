@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import AdminAnnouncementMessage from "./AdminAnnouncementMessage";
 
 interface ChatWindowProps {
-  contact: ChatContact;
+  contact: ChatContact | null;
   onBack?: () => void;
 }
 
@@ -127,6 +127,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
       </div>
     );
   };
+
+  if (!contact) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center text-gray-500">
+        <p>Select a conversation to start messaging</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

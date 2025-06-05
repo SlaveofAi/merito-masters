@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
@@ -320,14 +319,7 @@ const Chat: React.FC = () => {
               <div className="flex-1 overflow-hidden">
                 <ChatWindow 
                   contact={selectedContact} 
-                  messages={showCustomerEmptyChat ? [] : messages}
-                  onSendMessage={handleSendMessage}
-                  onArchive={archiveConversation}
-                  onDelete={deleteConversation}
-                  contactDetails={contactDetails}
-                  customerReviews={customerReviews}
-                  isMobile={true}
-                  onContactNameClick={handleNavigateToProfile}
+                  onBack={handleCloseChat}
                 />
               </div>
             </div>
@@ -363,13 +355,6 @@ const Chat: React.FC = () => {
         <div className="hidden sm:block sm:w-2/3">
           <ChatWindow 
             contact={selectedContact} 
-            messages={showCustomerEmptyChat ? [] : messages}
-            onSendMessage={handleSendMessage}
-            onArchive={archiveConversation}
-            onDelete={deleteConversation}
-            contactDetails={contactDetails}
-            customerReviews={customerReviews}
-            onContactNameClick={handleNavigateToProfile}
           />
         </div>
       </div>
