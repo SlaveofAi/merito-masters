@@ -4,11 +4,19 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { renderAuthEmail } from "./email-templates.ts";
 
 interface WebhookPayload {
-  type: "signup" | "magiclink" | "recovery" | "invite";
-  email: string;
-  new_email?: string;
-  data: {
-    [key: string]: any;
+  user: {
+    id: string;
+    email: string;
+    user_metadata: {
+      [key: string]: any;
+    };
+  };
+  email_data: {
+    email_action_type: string;
+    token: string;
+    token_hash: string;
+    redirect_to: string;
+    site_url: string;
   };
 }
 
@@ -32,12 +40,22 @@ serve(async (req) => {
     const payload: WebhookPayload = await req.json();
     console.log("Received webhook payload:", JSON.stringify(payload, null, 2));
 
-    // Different email templates based on type
-    const { type, email } = payload;
+    // Get email type and email from the correct webhook structure
+    const type = payload.email_data?.email_action_type;
+    const email = payload.user?.email;
+    
     console.log(`Processing ${type} email template for ${email}`);
     
-    // Generate email content
-    const emailContent = await renderAuthEmail(type, email, payload.data);
+    if (!type || !email) {
+      console.error("Missing required fields - type:", type, "email:", email);
+      return new Response(
+        JSON.stringify({ error: "Missing required email data" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Generate email content with the email_data
+    const emailContent = await renderAuthEmail(type, email, payload.email_data);
     
     // Log the generated content for debugging
     console.log("Email content generated successfully");
