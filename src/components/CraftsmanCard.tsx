@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Star, MapPin, Phone, ArrowRight, Crown, Verified } from "lucide-react";
@@ -64,10 +63,10 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
 
   return (
     <Card 
-      className={`group overflow-hidden transition-all duration-500 hover-lift
+      className={`group overflow-hidden transition-all duration-500 hover-lift cursor-pointer
         ${isTopped 
-          ? 'border-2 border-yellow-400/60 shadow-strong shadow-yellow-100/50 ring-1 ring-yellow-400/20' 
-          : 'card-enhanced'
+          ? 'border-2 border-yellow-400/60 shadow-strong shadow-yellow-100/50 ring-1 ring-yellow-400/20 hover:ring-2 hover:ring-yellow-400/40' 
+          : 'card-enhanced hover:border-primary/30'
         }
       `}
     >
@@ -77,29 +76,51 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
           src={imageUrl}
           alt={name}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          loading="lazy"
         />
         
-        {/* Category badge */}
+        {/* Category badge with enhanced animations */}
         <div className="absolute top-4 left-4 z-20">
-          <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-primary border-0 shadow-soft font-medium">
+          <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-primary border-0 shadow-soft font-medium transition-all duration-300 group-hover:bg-white group-hover:scale-105">
             {customSpecialization ? customSpecialization : profession}
           </Badge>
         </div>
         
-        {/* Premium badge */}
+        {/* Premium badge with enhanced styling */}
         {isTopped && (
           <div className="absolute top-4 right-4 z-20">
-            <Badge className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-soft px-3 py-1 flex items-center gap-1.5">
+            <Badge className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-soft px-3 py-1 flex items-center gap-1.5 animate-float">
               <Crown className="h-3.5 w-3.5 fill-white" />
               <span className="text-xs font-semibold">PREMIUM</span>
             </Badge>
           </div>
         )}
         
-        {/* Verified indicator */}
+        {/* Verified indicator with pulse animation */}
         <div className="absolute bottom-4 right-4 z-20">
-          <div className="w-8 h-8 bg-success-500 rounded-full flex items-center justify-center shadow-soft">
+          <div className="w-8 h-8 bg-success-500 rounded-full flex items-center justify-center shadow-soft group-hover:scale-110 transition-transform duration-300">
             <Verified className="h-4 w-4 text-white fill-white" />
+          </div>
+        </div>
+
+        {/* Hover overlay with quick actions */}
+        <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500">
+          <div className="flex gap-3">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="bg-white/90 backdrop-blur-sm hover:bg-white transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100"
+            >
+              <Phone className="w-4 h-4" />
+            </Button>
+            <Link to={`/profile/${id}`}>
+              <Button
+                size="sm"
+                className="btn-primary transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-200"
+              >
+                Profil
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -107,17 +128,17 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
       <CardContent className="p-6 space-y-4">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-xl font-heading text-foreground group-hover:text-primary transition-colors">
+            <h3 className="font-semibold text-xl font-heading text-foreground group-hover:text-primary transition-colors duration-300">
               {name}
             </h3>
             {isTopped && (
-              <Crown className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+              <Crown className="h-4 w-4 text-yellow-500 fill-yellow-500 animate-float" />
             )}
           </div>
           
-          {/* Rating */}
-          <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
-            <Star className={`w-4 h-4 ${rating > 0 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+          {/* Enhanced rating display */}
+          <div className="flex items-center gap-1 bg-gradient-to-r from-yellow-50 to-orange-50 px-3 py-1.5 rounded-lg border border-yellow-200/50 group-hover:shadow-soft transition-all duration-300">
+            <Star className={`w-4 h-4 ${rating > 0 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'} transition-all duration-300 group-hover:scale-110`} />
             <span className="text-sm font-semibold text-yellow-700">
               {rating > 0 ? rating.toFixed(1) : '0.0'}
             </span>
@@ -127,18 +148,18 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
           </div>
         </div>
         
-        {/* Location */}
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <MapPin className="w-4 h-4 text-primary" />
+        {/* Enhanced location with better mobile touch */}
+        <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors duration-300">
+          <MapPin className="w-4 h-4 text-primary group-hover:scale-110 transition-transform duration-300" />
           <span className="text-sm font-medium">{location}</span>
         </div>
         
-        {/* Action buttons */}
+        {/* Enhanced action buttons with better mobile experience */}
         <div className="flex gap-3 pt-2">
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all duration-300 rounded-lg"
+            className="flex-1 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all duration-300 rounded-lg hover:scale-105 active:scale-95 touch-manipulation"
           >
             <Phone className="w-4 h-4 mr-2" />
             Kontakt
@@ -147,10 +168,10 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
           <Link to={`/profile/${id}`} className="flex-1">
             <Button
               size="sm"
-              className="w-full btn-primary rounded-lg group/btn"
+              className="w-full btn-primary rounded-lg group/btn hover:scale-105 active:scale-95 transition-all duration-300 touch-manipulation"
             >
               <span>Profil</span>
-              <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-0.5 transition-transform" />
+              <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform duration-300" />
             </Button>
           </Link>
         </div>
