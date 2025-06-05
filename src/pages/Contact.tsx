@@ -8,35 +8,24 @@ const Contact = () => {
     <Layout>
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Kontakt</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">Kontaktujte nás</h1>
           <div className="bg-white rounded-lg shadow-sm p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Kontaktné údaje</h2>
-                <div className="space-y-4">
-                  <div className="flex items-center">
-                    <Mail className="h-5 w-5 text-primary mr-3" />
-                    <span>info@majstri.com</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Phone className="h-5 w-5 text-primary mr-3" />
-                    <span>+421 900 123 456</span>
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin className="h-5 w-5 text-primary mr-3" />
-                    <span>Bratislava, Slovensko</span>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Pracovné hodiny</h2>
-                <div className="space-y-2 text-gray-600">
-                  <p>Pondelok - Piatok: 9:00 - 17:00</p>
-                  <p>Sobota: 9:00 - 12:00</p>
-                  <p>Nedeľa: Zatvorené</p>
-                </div>
+            <p className="text-lg text-gray-700 mb-6">
+              Máte otázku, návrh na zlepšenie alebo ste narazili na problém pri používaní platformy?
+            </p>
+            <p className="text-gray-600 mb-6">
+              Sme otvorení spätnej väzbe, technickým pripomienkam aj podnetom na nové funkcie.
+            </p>
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-3">Napíšte nám na e-mail:</h2>
+              <div className="flex items-center">
+                <Mail className="h-5 w-5 text-primary mr-3" />
+                <span className="text-lg">infomaj-stri.com</span>
               </div>
             </div>
+            <p className="text-gray-600">
+              Budeme sa snažiť odpovedať čo najskôr.
+            </p>
           </div>
         </div>
       </div>
