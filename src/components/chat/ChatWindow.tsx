@@ -25,7 +25,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   const currentUserId = currentUser?.id || '';
 
   const { data: messages = [], isLoading, error, refetch } = useChatMessages(contact, currentUser, () => {});
-  const { sendMessage } = useChatActions();
+  
+  // Fix the useChatActions hook call with proper arguments
+  const { sendMessage } = useChatActions(contact, () => {}, refetch);
   
   const [showBookingOptions, setShowBookingOptions] = useState(false);
   const [bookingDetails, setBookingDetails] = useState({
