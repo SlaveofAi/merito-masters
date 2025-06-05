@@ -58,7 +58,6 @@ const Register = () => {
     tradeCategory: z.string().min(1, { message: "Vyberte kategóriu remesla alebo zadajte vlastnú" }),
     description: z.string().optional(),
     yearsExperience: z.string().optional()
-      .transform(val => val ? parseInt(val, 10) : null)
   }).refine(
     (data) => data.password === data.confirmPassword,
     {
@@ -412,7 +411,7 @@ const Register = () => {
                               type="number"
                               placeholder="5"
                               {...field}
-                              value={field.value as string}
+                              value={field.value as string || ""}
                             />
                           </FormControl>
                           <FormMessage />
@@ -431,7 +430,7 @@ const Register = () => {
                               placeholder="Popis vašich služieb a skúseností..."
                               className="min-h-[100px]"
                               {...field}
-                              value={field.value as string}
+                              value={field.value as string || ""}
                             />
                           </FormControl>
                           <FormMessage />
