@@ -24,7 +24,7 @@ const NavigationWithNotification: React.FC<NavigationWithNotificationProps> = ({
       {/* Navigation links based on authentication state */}
       {user ? (
         <>
-          <Link to="/requests">
+          <Link to="/job-requests">
             <Button variant="ghost">
               <Briefcase className="mr-2 h-4 w-4" />
               Požiadavky
@@ -40,13 +40,13 @@ const NavigationWithNotification: React.FC<NavigationWithNotificationProps> = ({
             <Button variant="ghost">Profil</Button>
           </Link>
           {/* Show bookings button for all users, not just craftsmen */}
-          <Link to="/bookings">
+          <Link to="/approved-bookings">
             <Button variant="ghost">Zákazky</Button>
           </Link>
         </>
       ) : (
         <>
-          <Link to="/requests">
+          <Link to="/job-requests">
             <Button variant="ghost">
               <Briefcase className="mr-2 h-4 w-4" />
               Požiadavky

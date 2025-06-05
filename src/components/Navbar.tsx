@@ -82,7 +82,7 @@ const Navbar = () => {
                       <Link to="/profile">
                         <Button variant="ghost" className="w-full justify-start">Profil</Button>
                       </Link>
-                      <Link to="/bookings">
+                      <Link to="/approved-bookings">
                         <Button variant="ghost" className="w-full justify-start">Zákazky</Button>
                       </Link>
                       <Button 
