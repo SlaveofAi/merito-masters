@@ -14,7 +14,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
-import { createDefaultProfile } from "@/utils/profileCreation";
 import { craftCategories } from "@/constants/categories";
 
 type UserType = 'customer' | 'craftsman' | null;
@@ -110,21 +109,30 @@ const Register = () => {
     setIsLoading(true);
 
     try {
+      // Prepare user metadata for signup
       const userMetadata: Record<string, any> = {
         name: data.name,
-        user_type: userType
+        user_type: userType,
+        phone: data.phone || '',
+        location: data.location
       };
       
+      // Add craftsman-specific metadata
       if (userType === 'craftsman' && 'tradeCategory' in data) {
         userMetadata.trade_category = data.tradeCategory;
+        userMetadata.description = data.description || '';
+        userMetadata.years_experience = data.yearsExperience || '';
       }
 
-      // Step 1: Create the user account
+      console.log("Starting registration process for:", data.email, "as:", userType);
+
+      // Step 1: Create the user account with metadata
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          data: userMetadata
+          data: userMetadata,
+          emailRedirectTo: `${window.location.origin}/login?email_confirmed=true`
         }
       });
 
@@ -143,45 +151,38 @@ const Register = () => {
 
       console.log("User registered successfully:", authData.user.id);
       
-      // Step 2: Store the user type immediately
+      // Store user type in localStorage for later use
       localStorage.setItem("userType", userType);
-      
-      // Step 3: Set user type in database
-      const { error: userTypeError } = await supabase
-        .from('user_types')
-        .upsert({
-          user_id: authData.user.id,
-          user_type: userType
-        });
+      localStorage.setItem("registrationData", JSON.stringify({
+        userType,
+        userData: userMetadata
+      }));
 
-      if (userTypeError) {
-        console.error("Error storing user type:", userTypeError);
-        toast.error("Chyba pri ukladaní typu užívateľa");
-      } else {
-        console.log("User type stored successfully");
-      }
-
-      // Step 4: If we have a session, create the profile immediately
+      // Check if we have a session (instant confirmation)
       if (authData.session) {
-        console.log("Session available, creating profile");
+        console.log("Instant confirmation - session available");
         
+        // Try to store user type in database
         try {
-          await createDefaultProfile(
-            authData.user,
-            userType,
-            true,
-            () => {
-              console.log("Profile created during registration");
-              toast.success("Registrácia a profil vytvorený úspešne!");
-            }
-          );
-        } catch (profileError) {
-          console.error("Error creating profile during registration:", profileError);
-          // Don't fail registration if profile creation fails
-          toast.warning("Registrácia úspešná, ale profil sa vytvorí neskôr");
+          const { error: userTypeError } = await supabase
+            .from('user_types')
+            .upsert({
+              user_id: authData.user.id,
+              user_type: userType
+            });
+
+          if (userTypeError) {
+            console.error("Error storing user type:", userTypeError);
+          } else {
+            console.log("User type stored successfully");
+          }
+        } catch (err) {
+          console.error("Error in user type storage:", err);
         }
         
-        // Navigate directly to profile without showing UserTypeSelector
+        toast.success("Registrácia úspešná!");
+        
+        // Navigate based on user type
         setTimeout(() => {
           if (userType === 'customer') {
             navigate("/profile/reviews", { replace: true });
@@ -191,8 +192,15 @@ const Register = () => {
         }, 1500);
       } else {
         // Email confirmation required
-        toast.success("Registrácia úspešná!");
-        toast.info("Na vašu emailovú adresu sme odoslali potvrdzovací email");
+        console.log("Email confirmation required");
+        toast.success("Registrácia úspešná!", {
+          description: "Na vašu emailovú adresu sme odoslali potvrdzovací email"
+        });
+        toast.info("Prosím, kliknite na odkaz v emaili pre potvrdenie registrácie", {
+          duration: 8000
+        });
+        
+        // Navigate to login with confirmation state
         navigate("/login", { state: { emailConfirmationRequired: true } });
       }
       

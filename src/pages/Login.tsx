@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
+import { createDefaultProfile } from "@/utils/profileCreation";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -49,6 +51,70 @@ const Login = () => {
       toast.success("E-mailová adresa bola úspešne overená", {
         duration: 5000,
       });
+      
+      // Handle post-confirmation setup
+      setTimeout(async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session?.user) {
+            console.log("Email confirmed, user session available");
+            
+            // Get stored registration data
+            const storedData = localStorage.getItem("registrationData");
+            if (storedData) {
+              const { userType, userData } = JSON.parse(storedData);
+              console.log("Setting up user after email confirmation:", userType);
+              
+              // Store user type in database
+              try {
+                const { error: userTypeError } = await supabase
+                  .from('user_types')
+                  .upsert({
+                    user_id: session.user.id,
+                    user_type: userType
+                  });
+                
+                if (userTypeError) {
+                  console.error("Error storing user type:", userTypeError);
+                } else {
+                  console.log("User type stored successfully");
+                  localStorage.setItem("userType", userType);
+                }
+                
+                // Create profile
+                await createDefaultProfile(
+                  session.user,
+                  userType,
+                  true,
+                  () => {
+                    console.log("Profile created after email confirmation");
+                    toast.success("Váš profil bol vytvorený!");
+                    
+                    // Clean up stored data
+                    localStorage.removeItem("registrationData");
+                    
+                    // Navigate to appropriate page
+                    if (userType === 'customer') {
+                      navigate("/profile/reviews", { replace: true });
+                    } else {
+                      navigate("/profile", { replace: true });
+                    }
+                  }
+                );
+              } catch (error) {
+                console.error("Error in post-confirmation setup:", error);
+                navigate("/home");
+              }
+            } else {
+              // No stored data, just redirect to home
+              navigate("/home");
+            }
+          }
+        } catch (error) {
+          console.error("Error handling email confirmation:", error);
+        }
+      }, 1000);
     }
     
     // Handle user type from query params (for Google Auth redirect)
@@ -230,7 +296,10 @@ const Login = () => {
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: email
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login?email_confirmed=true`
+        }
       });
       
       if (error) {
