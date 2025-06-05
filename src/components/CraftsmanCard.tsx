@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Star, MapPin, Phone, ArrowRight, TrendingUp, Crown } from "lucide-react";
+import { Star, MapPin, Phone, ArrowRight, Crown, Verified } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -64,69 +64,93 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
 
   return (
     <Card 
-      className={`overflow-hidden transition-all duration-300 group hover:shadow-md 
+      className={`group overflow-hidden transition-all duration-500 hover-lift
         ${isTopped 
-          ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-100' 
-          : 'border-border/50 shadow-sm'
+          ? 'border-2 border-yellow-400/60 shadow-strong shadow-yellow-100/50 ring-1 ring-yellow-400/20' 
+          : 'card-enhanced'
         }
       `}
     >
-      <div className="relative h-60 overflow-hidden">
-        <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors z-10"></div>
+      <div className="relative h-64 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 z-10"></div>
         <img
           src={imageUrl}
           alt={name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
-        <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white text-xs py-1 px-2 rounded-full z-20">
-          {customSpecialization ? customSpecialization : profession}
+        
+        {/* Category badge */}
+        <div className="absolute top-4 left-4 z-20">
+          <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-primary border-0 shadow-soft font-medium">
+            {customSpecialization ? customSpecialization : profession}
+          </Badge>
         </div>
+        
+        {/* Premium badge */}
         {isTopped && (
           <div className="absolute top-4 right-4 z-20">
-            <Badge variant="outline" className="bg-yellow-500/90 backdrop-blur-sm text-white border-yellow-400 px-2 py-0.5 flex items-center gap-1">
-              <Crown className="h-3 w-3 fill-white" />
-              <span className="text-xs">PREMIUM</span>
+            <Badge className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-soft px-3 py-1 flex items-center gap-1.5">
+              <Crown className="h-3.5 w-3.5 fill-white" />
+              <span className="text-xs font-semibold">PREMIUM</span>
             </Badge>
           </div>
         )}
+        
+        {/* Verified indicator */}
+        <div className="absolute bottom-4 right-4 z-20">
+          <div className="w-8 h-8 bg-success-500 rounded-full flex items-center justify-center shadow-soft">
+            <Verified className="h-4 w-4 text-white fill-white" />
+          </div>
+        </div>
       </div>
-      <CardContent className="p-5">
-        <div className="flex justify-between items-start mb-3">
+      
+      <CardContent className="p-6 space-y-4">
+        <div className="flex justify-between items-start">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-lg">{name}</h3>
+            <h3 className="font-semibold text-xl font-heading text-foreground group-hover:text-primary transition-colors">
+              {name}
+            </h3>
             {isTopped && (
               <Crown className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             )}
           </div>
-          <div className="flex items-center">
-            <Star className={`w-4 h-4 ${rating > 0 ? 'fill-current text-yellow-500' : 'text-gray-300'} mr-1`} />
-            <span className="text-sm font-medium">{rating > 0 ? rating.toFixed(1) : '0.0'}</span>
-            <span className="text-xs text-muted-foreground ml-1">
+          
+          {/* Rating */}
+          <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
+            <Star className={`w-4 h-4 ${rating > 0 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+            <span className="text-sm font-semibold text-yellow-700">
+              {rating > 0 ? rating.toFixed(1) : '0.0'}
+            </span>
+            <span className="text-xs text-yellow-600">
               ({reviewCount})
             </span>
           </div>
         </div>
-        <div className="flex items-center text-sm text-muted-foreground mb-4">
-          <MapPin className="w-3.5 h-3.5 mr-1" />
-          <span>{location}</span>
+        
+        {/* Location */}
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <MapPin className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium">{location}</span>
         </div>
-        <div className="flex justify-between items-center">
+        
+        {/* Action buttons */}
+        <div className="flex gap-3 pt-2">
           <Button
             variant="outline"
             size="sm"
-            className="text-xs rounded-full px-3"
+            className="flex-1 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all duration-300 rounded-lg"
           >
-            <Phone className="w-3.5 h-3.5 mr-1.5" />
+            <Phone className="w-4 h-4 mr-2" />
             Kontakt
           </Button>
-          <Link to={`/profile/${id}`} className="group/link">
+          
+          <Link to={`/profile/${id}`} className="flex-1">
             <Button
-              variant="ghost"
               size="sm"
-              className="text-xs rounded-full px-3 group-hover/link:translate-x-1 transition-transform"
+              className="w-full btn-primary rounded-lg group/btn"
             >
               <span>Profil</span>
-              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-0.5 transition-transform" />
             </Button>
           </Link>
         </div>
