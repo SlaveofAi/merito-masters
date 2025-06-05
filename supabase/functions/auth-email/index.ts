@@ -30,12 +30,16 @@ serve(async (req) => {
   }
 
   try {
-    // Log headers for debugging
-    console.log("Request headers:", Object.fromEntries(req.headers.entries()));
-    
-    // Log that we're parsing the request body
-    console.log("Parsing request body...");
-    
+    // Check if we have the RESEND_API_KEY
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY not found in environment variables");
+      return new Response(
+        JSON.stringify({ error: "Email service not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Extract the payload
     const payload: WebhookPayload = await req.json();
     console.log("Received webhook payload:", JSON.stringify(payload, null, 2));
@@ -56,21 +60,65 @@ serve(async (req) => {
     
     // Generate email content with the email_data
     const emailContent = await renderAuthEmail(type, email, payload.email_data);
+    const emailSubject = getEmailSubject(type);
     
-    // Log the generated content for debugging
-    console.log("Email content generated successfully");
-    console.log("Email template length:", emailContent.length);
-    console.log("Email template preview:", emailContent.substring(0, 100) + "...");
+    console.log("Email content generated successfully, now sending email...");
     
-    // Return the completed email with proper subject
-    return new Response(
-      JSON.stringify({ 
-        html: emailContent,
-        subject: getEmailSubject(type),
-        success: true 
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // Send email using Resend
+    try {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "Merito <onboarding@resend.dev>",
+          to: [email],
+          subject: emailSubject,
+          html: emailContent,
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error("Failed to send email via Resend:", result);
+        return new Response(
+          JSON.stringify({ error: "Failed to send email", details: result }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      console.log("Email sent successfully via Resend:", result);
+      
+      // Return the completed email with proper subject
+      return new Response(
+        JSON.stringify({ 
+          html: emailContent,
+          subject: emailSubject,
+          success: true,
+          sent: true,
+          resend_result: result
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (sendError) {
+      console.error("Error sending email via Resend:", sendError);
+      
+      // Still return the template even if sending fails
+      return new Response(
+        JSON.stringify({ 
+          html: emailContent,
+          subject: emailSubject,
+          success: true,
+          sent: false,
+          error: sendError.message
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
   } catch (error) {
     console.error("Error processing auth webhook:", error);
     

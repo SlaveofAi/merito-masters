@@ -1,4 +1,3 @@
-
 // Email templates for authentication emails
 
 /**
@@ -45,12 +44,12 @@ export async function renderAuthEmail(
 function renderSignupEmail(email: string, data: any): string {
   console.log("Rendering signup email with data:", JSON.stringify(data, null, 2));
   
-  const confirmationUrl = data.confirmation_url;
+  // Build confirmation URL using token_hash and redirect_to
+  const confirmationUrl = `${data.site_url}/auth/v1/verify?token=${data.token_hash}&type=signup&redirect_to=${encodeURIComponent(data.redirect_to || 'http://localhost:3000/login?email_confirmed=true')}`;
   const appName = "Merito";
-  const logo = "https://ivssecjzxhabahdapfko.supabase.co/storage/v1/object/public/app_assets/logo.png";
   
   // Extract user name from the metadata if available
-  const userName = data.user_metadata?.name || email.split('@')[0];
+  const userName = email.split('@')[0];
   
   return `
 <!DOCTYPE html>
@@ -89,11 +88,6 @@ function renderSignupEmail(email: string, data: any): string {
       background-color: #f1f5f9;
       padding: 24px;
       text-align: center;
-    }
-    
-    .logo {
-      max-height: 50px;
-      margin-bottom: 16px;
     }
     
     .email-body {
@@ -165,7 +159,7 @@ function renderSignupEmail(email: string, data: any): string {
   <div class="container">
     <div class="email-wrapper">
       <div class="email-header">
-        <img src="${logo}" alt="${appName}" class="logo">
+        <h2 style="color: #0891b2; margin: 0;">${appName}</h2>
       </div>
       <div class="email-body">
         <h1>Potvrdenie registrácie</h1>
@@ -197,9 +191,8 @@ function renderSignupEmail(email: string, data: any): string {
  * Renders a styled magic link email
  */
 function renderMagicLinkEmail(email: string, data: any): string {
-  const magicLink = data.magic_link;
+  const magicLink = `${data.site_url}/auth/v1/verify?token=${data.token_hash}&type=magiclink&redirect_to=${encodeURIComponent(data.redirect_to || 'http://localhost:3000')}`;
   const appName = "Merito";
-  const logo = "https://ivssecjzxhabahdapfko.supabase.co/storage/v1/object/public/app_assets/logo.png";
   
   // Extract user name from the email if metadata not available
   const userName = email.split('@')[0];
@@ -243,11 +236,6 @@ function renderMagicLinkEmail(email: string, data: any): string {
       text-align: center;
     }
     
-    .logo {
-      max-height: 50px;
-      margin-bottom: 16px;
-    }
-    
     .email-body {
       padding: 32px 24px;
     }
@@ -317,7 +305,7 @@ function renderMagicLinkEmail(email: string, data: any): string {
   <div class="container">
     <div class="email-wrapper">
       <div class="email-header">
-        <img src="${logo}" alt="${appName}" class="logo">
+        <h2 style="color: #0891b2; margin: 0;">${appName}</h2>
       </div>
       <div class="email-body">
         <h1>Prihlásenie jedným kliknutím</h1>
@@ -349,9 +337,8 @@ function renderMagicLinkEmail(email: string, data: any): string {
  * Renders a styled password recovery email
  */
 function renderRecoveryEmail(email: string, data: any): string {
-  const recoveryLink = data.recovery_url;
+  const recoveryLink = `${data.site_url}/auth/v1/verify?token=${data.token_hash}&type=recovery&redirect_to=${encodeURIComponent(data.redirect_to || 'http://localhost:3000')}`;
   const appName = "Merito";
-  const logo = "https://ivssecjzxhabahdapfko.supabase.co/storage/v1/object/public/app_assets/logo.png";
   
   // Extract user name from the email if metadata not available
   const userName = email.split('@')[0];
@@ -395,11 +382,6 @@ function renderRecoveryEmail(email: string, data: any): string {
       text-align: center;
     }
     
-    .logo {
-      max-height: 50px;
-      margin-bottom: 16px;
-    }
-    
     .email-body {
       padding: 32px 24px;
     }
@@ -469,7 +451,7 @@ function renderRecoveryEmail(email: string, data: any): string {
   <div class="container">
     <div class="email-wrapper">
       <div class="email-header">
-        <img src="${logo}" alt="${appName}" class="logo">
+        <h2 style="color: #0891b2; margin: 0;">${appName}</h2>
       </div>
       <div class="email-body">
         <h1>Obnovenie hesla</h1>
@@ -501,9 +483,8 @@ function renderRecoveryEmail(email: string, data: any): string {
  * Renders a styled invite email
  */
 function renderInviteEmail(email: string, data: any): string {
-  const inviteLink = data.invite_url;
+  const inviteLink = `${data.site_url}/auth/v1/verify?token=${data.token_hash}&type=invite&redirect_to=${encodeURIComponent(data.redirect_to || 'http://localhost:3000')}`;
   const appName = "Merito";
-  const logo = "https://ivssecjzxhabahdapfko.supabase.co/storage/v1/object/public/app_assets/logo.png";
   
   return `
 <!DOCTYPE html>
@@ -544,11 +525,6 @@ function renderInviteEmail(email: string, data: any): string {
       text-align: center;
     }
     
-    .logo {
-      max-height: 50px;
-      margin-bottom: 16px;
-    }
-    
     .email-body {
       padding: 32px 24px;
     }
@@ -618,7 +594,7 @@ function renderInviteEmail(email: string, data: any): string {
   <div class="container">
     <div class="email-wrapper">
       <div class="email-header">
-        <img src="${logo}" alt="${appName}" class="logo">
+        <h2 style="color: #0891b2; margin: 0;">${appName}</h2>
       </div>
       <div class="email-body">
         <h1>Pozvánka do aplikácie ${appName}</h1>
