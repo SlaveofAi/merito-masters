@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,49 +32,55 @@ const UserManagement = () => {
     try {
       setLoading(true);
       
-      // Fetch users from profiles table with user types
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
+      // Fetch customer profiles with user types
+      const { data: customerData, error: customerError } = await supabase
+        .from('customer_profiles')
         .select(`
           id,
           name,
+          email,
           created_at,
-          user_types (user_type)
+          user_types!inner(user_type)
         `);
-
-      if (profilesError) throw profilesError;
-
-      // Fetch customer profiles for additional info
-      const { data: customerData, error: customerError } = await supabase
-        .from('customer_profiles')
-        .select('id, email');
 
       if (customerError) throw customerError;
 
-      // Fetch craftsman profiles for additional info
+      // Fetch craftsman profiles with user types
       const { data: craftsmanData, error: craftsmanError } = await supabase
         .from('craftsman_profiles')
-        .select('id, email, is_verified');
+        .select(`
+          id,
+          name,
+          email,
+          created_at,
+          is_verified,
+          user_types!inner(user_type)
+        `);
 
       if (craftsmanError) throw craftsmanError;
 
-      // Combine the data
-      const combinedUsers = profilesData?.map(profile => {
-        const customerInfo = customerData?.find(c => c.id === profile.id);
-        const craftsmanInfo = craftsmanData?.find(c => c.id === profile.id);
-        
-        return {
-          id: profile.id,
-          name: profile.name || 'Unknown',
-          email: customerInfo?.email || craftsmanInfo?.email || 'No email',
-          user_type: profile.user_types?.[0]?.user_type || 'unknown',
-          created_at: profile.created_at,
-          is_verified: craftsmanInfo?.is_verified || false,
-          last_active: 'Recent' // This would need a separate tracking mechanism
-        };
-      }) || [];
+      // Combine and format the data
+      const customers = customerData?.map(profile => ({
+        id: profile.id,
+        name: profile.name || 'Unknown',
+        email: profile.email || 'No email',
+        user_type: 'customer',
+        created_at: profile.created_at,
+        is_verified: false,
+        last_active: 'Recent'
+      })) || [];
 
-      setUsers(combinedUsers);
+      const craftsmen = craftsmanData?.map(profile => ({
+        id: profile.id,
+        name: profile.name || 'Unknown',
+        email: profile.email || 'No email',
+        user_type: 'craftsman',
+        created_at: profile.created_at,
+        is_verified: profile.is_verified || false,
+        last_active: 'Recent'
+      })) || [];
+
+      setUsers([...customers, ...craftsmen]);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to fetch users');
@@ -97,7 +102,7 @@ const UserManagement = () => {
       if (error) throw error;
 
       toast.success(`User ${!isVerified ? 'verified' : 'unverified'} successfully`);
-      fetchUsers(); // Refresh the list
+      fetchUsers();
     } catch (error) {
       console.error('Error updating verification status:', error);
       toast.error('Failed to update verification status');
@@ -108,8 +113,6 @@ const UserManagement = () => {
     if (!confirm('Are you sure you want to deactivate this user?')) return;
 
     try {
-      // In a real implementation, you might want to add a 'deactivated' field
-      // For now, we'll just show a toast
       toast.success('User deactivation feature will be implemented');
     } catch (error) {
       console.error('Error deactivating user:', error);
