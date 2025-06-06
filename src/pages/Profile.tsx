@@ -7,14 +7,16 @@ import { useAuth } from "@/hooks/useAuth";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { toast } from "sonner";
 import AuthRequiredMessage from "@/components/profile/AuthRequiredMessage";
+import Layout from "@/components/Layout";
 
 const Profile = () => {
-  const { id } = useParams();
+  const { id, tab } = useParams();
   const { userType, loading, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
-  // IMPORTANT: All hooks must be called before any conditional returns
+  // Check if this is a craftsman profile view (route: /craftsman/:id)
+  const isCraftsmanProfileRoute = location.pathname.startsWith('/craftsman/');
   
   // Get userType from query parameter if available (for Google OAuth redirect)
   useEffect(() => {
@@ -36,17 +38,24 @@ const Profile = () => {
   useEffect(() => {
     console.log("Profile route rendering with:", {
       id,
+      tab,
       userType,
       loading,
       userLoggedIn: !!user,
-      path: window.location.pathname
+      path: window.location.pathname,
+      isCraftsmanProfileRoute
     });
-  }, [id, userType, loading, user]);
+  }, [id, tab, userType, loading, user, isCraftsmanProfileRoute]);
   
   // Use this effect for customer redirects
   useEffect(() => {
     if (loading) {
       return; // Wait for loading to complete
+    }
+    
+    // Skip redirects for craftsman profile routes
+    if (isCraftsmanProfileRoute) {
+      return;
     }
     
     // If user type is not set and user is logged in, show user type selector
@@ -60,12 +69,20 @@ const Profile = () => {
       console.log("Customer profile detected in Profile useEffect, redirecting to requests");
       navigate("/profile/requests", { replace: true });
     }
-  }, [id, userType, loading, navigate, user]);
+  }, [id, userType, loading, navigate, user, isCraftsmanProfileRoute]);
   
-  // After all hooks are defined, we can have conditional returns
-  // This fixes the "Rendered fewer hooks than expected" error
+  // For craftsman profile routes, show content without authentication requirement
+  if (isCraftsmanProfileRoute) {
+    return (
+      <Layout>
+        <ProfileProvider>
+          <ProfilePage initialTab="portfolio" />
+        </ProfileProvider>
+      </Layout>
+    );
+  }
   
-  // If not authenticated, show auth required message
+  // If not authenticated and not viewing craftsman profile, show auth required message
   if (!loading && !user) {
     console.log("User not authenticated, showing auth required message");
     return <AuthRequiredMessage />;
@@ -77,7 +94,6 @@ const Profile = () => {
   }
   
   // Immediate redirect for customers
-  // First check: Immediate redirect if we already know this is a customer
   if (!id && userType === "customer" && window.location.pathname === "/profile") {
     console.log("Customer profile detected in main Profile route, immediate redirect to requests");
     return <Navigate to="/profile/requests" replace />;
@@ -94,10 +110,8 @@ const Profile = () => {
   // For the main Profile route, we want to show the requests tab if it's a customer
   // or the calendar if explicitly requested, otherwise default to "portfolio"
   let initialTab = "portfolio";
-  if (window.location.pathname.endsWith('/calendar')) {
-    initialTab = "calendar";
-  } else if (window.location.pathname.endsWith('/requests')) {
-    initialTab = "requests";
+  if (tab) {
+    initialTab = tab;
   } else if (userType === 'customer' && !id) {
     initialTab = "requests";
   }

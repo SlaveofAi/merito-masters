@@ -86,6 +86,9 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               
+              {/* Craftsman profile route - public access for viewing */}
+              <Route path="/craftsman/:id" element={<Profile />} />
+              
               {/* Protected routes */}
               <Route path="/profile" element={
                 <PrivateRoute>

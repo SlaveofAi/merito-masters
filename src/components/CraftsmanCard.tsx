@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Star, MapPin, Phone, ArrowRight, TrendingUp, Crown } from "lucide-react";
+import { Star, MapPin, ArrowRight, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -110,16 +110,8 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
           <MapPin className="w-3.5 h-3.5 mr-1" />
           <span>{location}</span>
         </div>
-        <div className="flex justify-between items-center">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs rounded-full px-3"
-          >
-            <Phone className="w-3.5 h-3.5 mr-1.5" />
-            Kontakt
-          </Button>
-          <Link to={`/profile/${id}`} className="group/link">
+        <div className="flex justify-end items-center">
+          <Link to={`/craftsman/${id}`} className="group/link">
             <Button
               variant="ghost"
               size="sm"
