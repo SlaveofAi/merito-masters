@@ -9,6 +9,7 @@ import { useChatActions } from "@/hooks/useChatActions";
 import { ChatContact, Message } from "@/types/chat";
 import { toast } from "sonner";
 import AdminAnnouncementMessage from "./AdminAnnouncementMessage";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 interface ChatWindowProps {
   contact: ChatContact | null;
@@ -23,6 +24,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   // Get current user from localStorage
   const currentUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null;
   const currentUserId = currentUser?.id || '';
+
+  // Check if current user is admin
+  const { isAdmin } = useAdminAuth();
 
   const { data: messages = [], isLoading, error, refetch } = useChatMessages(contact, currentUser, () => {});
   
@@ -164,16 +168,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
           </Avatar>
           <div>
             <h3 className="font-semibold">{contact.name}</h3>
-            <p className="text-sm text-gray-500 capitalize">{contact.user_type}</p>
+            {!isAdmin && (
+              <p className="text-sm text-gray-500 capitalize">{contact.user_type}</p>
+            )}
           </div>
         </div>
 
-        <div>
-          <Button variant="outline" size="sm" onClick={() => setShowBookingOptions(!showBookingOptions)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Booking
-          </Button>
-        </div>
+        {/* Only show Create Booking button if current user is not an admin */}
+        {!isAdmin && (
+          <div>
+            <Button variant="outline" size="sm" onClick={() => setShowBookingOptions(!showBookingOptions)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Booking
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Messages */}
@@ -182,8 +191,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Booking Options */}
-      {showBookingOptions && (
+      {/* Booking Options - Only show if not admin */}
+      {!isAdmin && showBookingOptions && (
         <div className="p-4 border-t">
           <h4 className="text-sm font-semibold mb-2">Enter Booking Details:</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
