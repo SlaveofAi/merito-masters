@@ -10,6 +10,7 @@ import { ChatContact, Message } from "@/types/chat";
 import { toast } from "sonner";
 import AdminAnnouncementMessage from "./AdminAnnouncementMessage";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatWindowProps {
   contact: ChatContact | null;
@@ -19,6 +20,7 @@ interface ChatWindowProps {
 const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   const [input, setInput] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [isContactAdmin, setIsContactAdmin] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Get current user from localStorage
@@ -27,6 +29,39 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
 
   // Check if current user is admin
   const { isAdmin } = useAdminAuth();
+
+  // Check if contact is admin
+  useEffect(() => {
+    const checkContactAdminStatus = async () => {
+      if (!contact?.id && !contact?.contactId) {
+        setIsContactAdmin(false);
+        return;
+      }
+
+      const contactId = contact.contactId || contact.id;
+      
+      try {
+        const { data, error } = await supabase
+          .from('user_types')
+          .select('user_type')
+          .eq('user_id', contactId)
+          .eq('user_type', 'admin')
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error checking contact admin status:', error);
+          setIsContactAdmin(false);
+        } else {
+          setIsContactAdmin(!!data);
+        }
+      } catch (error) {
+        console.error('Error checking contact admin status:', error);
+        setIsContactAdmin(false);
+      }
+    };
+
+    checkContactAdminStatus();
+  }, [contact]);
 
   const { data: messages = [], isLoading, error, refetch } = useChatMessages(contact, currentUser, () => {});
   
@@ -47,6 +82,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   }, [messages]);
 
   const handleSendMessage = async () => {
+    // If contact is admin and current user is not admin, prevent sending
+    if (isContactAdmin && !isAdmin) {
+      toast.error("Only admins can write in this chat.");
+      return;
+    }
+
     if (input.trim() !== "") {
       await sendMessage(input);
       setInput("");
@@ -152,6 +193,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
     );
   }
 
+  // Determine if we should show booking options and user type
+  // Hide them if current user is admin OR if contact is admin
+  const shouldHideBookingAndUserType = isAdmin || isContactAdmin;
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -168,14 +213,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
           </Avatar>
           <div>
             <h3 className="font-semibold">{contact.name}</h3>
-            {!isAdmin && (
+            {!shouldHideBookingAndUserType && (
               <p className="text-sm text-gray-500 capitalize">{contact.user_type}</p>
+            )}
+            {isContactAdmin && (
+              <p className="text-sm text-blue-600 font-medium">Admin</p>
             )}
           </div>
         </div>
 
-        {/* Only show Create Booking button if current user is not an admin */}
-        {!isAdmin && (
+        {/* Only show Create Booking button if neither user is admin */}
+        {!shouldHideBookingAndUserType && (
           <div>
             <Button variant="outline" size="sm" onClick={() => setShowBookingOptions(!showBookingOptions)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -191,8 +239,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Booking Options - Only show if not admin */}
-      {!isAdmin && showBookingOptions && (
+      {/* Booking Options - Only show if neither user is admin */}
+      {!shouldHideBookingAndUserType && showBookingOptions && (
         <div className="p-4 border-t">
           <h4 className="text-sm font-semibold mb-2">Enter Booking Details:</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -230,33 +278,39 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
 
       {/* Input Area */}
       <div className="p-4 border-t">
-        <div className="flex items-center space-x-2">
-          <Input
-            type="text"
-            placeholder="Type your message..."
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSendMessage();
-              }
-            }}
-          />
-          <input
-            type="file"
-            id="attachment"
-            className="hidden"
-            onChange={handleAttachmentChange}
-          />
-          <label htmlFor="attachment">
-            <Button variant="ghost" size="sm">
-              <Plus className="h-4 w-4" />
+        {isContactAdmin && !isAdmin ? (
+          <div className="text-center text-gray-500 py-4">
+            <p>Only admins can write in this chat.</p>
+          </div>
+        ) : (
+          <div className="flex items-center space-x-2">
+            <Input
+              type="text"
+              placeholder="Type your message..."
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSendMessage();
+                }
+              }}
+            />
+            <input
+              type="file"
+              id="attachment"
+              className="hidden"
+              onChange={handleAttachmentChange}
+            />
+            <label htmlFor="attachment">
+              <Button variant="ghost" size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </label>
+            <Button onClick={handleSendMessage}>
+              <Send className="h-4 w-4" />
             </Button>
-          </label>
-          <Button onClick={handleSendMessage}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
