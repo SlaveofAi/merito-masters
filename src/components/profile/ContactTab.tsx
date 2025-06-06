@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -481,15 +482,15 @@ const ContactTab = () => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
+    <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 max-w-2xl mx-auto">
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6 grid w-full grid-cols-2">
-          <TabsTrigger value="booking">Rezervácia termínu</TabsTrigger>
-          <TabsTrigger value="message">Poslať správu</TabsTrigger>
+          <TabsTrigger value="booking" className="text-xs sm:text-sm">Rezervácia termínu</TabsTrigger>
+          <TabsTrigger value="message" className="text-xs sm:text-sm">Poslať správu</TabsTrigger>
         </TabsList>
         
         <TabsContent value="booking">
-          <h3 className="text-xl font-semibold mb-6">Rezervácia termínu s {profileData.name}</h3>
+          <h3 className="text-lg sm:text-xl font-semibold mb-6">Rezervácia termínu s {profileData.name}</h3>
           
           <form onSubmit={handleSubmitBookingRequest}>
             <div className="space-y-6">
@@ -501,13 +502,13 @@ const ContactTab = () => {
                     <p className="ml-2 text-sm text-gray-500">Načítavam dostupné termíny...</p>
                   </div>
                 ) : (
-                  <div className="bg-gray-50 p-4 rounded-md border">
+                  <div className="bg-gray-50 p-2 sm:p-4 rounded-md border">
                     <Calendar
                       mode="single"
                       selected={selectedDate}
                       onSelect={handleDateSelect}
                       locale={sk}
-                      className="pointer-events-auto"
+                      className="pointer-events-auto w-full"
                       modifiers={{
                         available: availableDates
                       }}
@@ -532,7 +533,7 @@ const ContactTab = () => {
               
               <div>
                 <h4 className="font-medium mb-2">2. Vyberte čas</h4>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {availableTimeSlots.length > 0 ? (
                     availableTimeSlots.map((slot) => (
                       <Button
@@ -546,7 +547,7 @@ const ContactTab = () => {
                       </Button>
                     ))
                   ) : (
-                    <p className="text-gray-500 col-span-4">Žiadne dostupné termíny</p>
+                    <p className="text-gray-500 col-span-2 sm:col-span-4">Žiadne dostupné termíny</p>
                   )}
                 </div>
               </div>
@@ -602,10 +603,11 @@ const ContactTab = () => {
                       <div className="flex items-center gap-2">
                         <Label
                           htmlFor="image-upload"
-                          className="flex items-center justify-center gap-2 cursor-pointer px-4 py-2 bg-gray-100 hover:bg-gray-200 border rounded-md text-sm font-medium"
+                          className="flex items-center justify-center gap-2 cursor-pointer px-3 sm:px-4 py-2 bg-gray-100 hover:bg-gray-200 border rounded-md text-xs sm:text-sm font-medium"
                         >
                           <Image className="h-4 w-4" />
-                          Nahrať obrázok
+                          <span className="hidden sm:inline">Nahrať obrázok</span>
+                          <span className="sm:hidden">Nahrať</span>
                         </Label>
                         <Input
                           id="image-upload"
@@ -615,7 +617,7 @@ const ContactTab = () => {
                           className="hidden"
                         />
                         {imageFile && (
-                          <span className="text-sm text-gray-600 truncate max-w-[200px]">
+                          <span className="text-xs sm:text-sm text-gray-600 truncate max-w-[120px] sm:max-w-[200px]">
                             {imageFile.name}
                           </span>
                         )}
@@ -677,8 +679,8 @@ const ContactTab = () => {
         
         <TabsContent value="message">
           <div className="text-center py-8">
-            <h3 className="text-xl font-semibold mb-4">Poslať správu remeselníkovi</h3>
-            <p className="mb-6 text-gray-600">
+            <h3 className="text-lg sm:text-xl font-semibold mb-4">Poslať správu remeselníkovi</h3>
+            <p className="mb-6 text-gray-600 text-sm sm:text-base">
               Kliknite na tlačidlo nižšie pre kontaktovanie remeselníka {profileData.name} priamo cez správy.
             </p>
             <Button onClick={handleSendMessage} className="flex items-center">
