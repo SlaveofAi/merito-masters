@@ -84,24 +84,9 @@ const Hero = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </Button>
         </div>
-        
-        <div className="mt-10 flex items-center justify-center gap-8 text-sm text-muted-foreground animate-slide-up" style={{animationDelay: "300ms"}}>
-          <div className="flex items-center group cursor-default hover:text-foreground transition-colors duration-300">
-            <div className="w-2 h-2 rounded-full bg-primary mr-2 group-hover:scale-125 group-hover:bg-primary/80 transition-all duration-300"></div>
-            <span>500+ Remeselníkov</span>
-          </div>
-          <div className="flex items-center group cursor-default hover:text-foreground transition-colors duration-300">
-            <div className="w-2 h-2 rounded-full bg-primary mr-2 group-hover:scale-125 group-hover:bg-primary/80 transition-all duration-300"></div>
-            <span>100+ Miest</span>
-          </div>
-          <div className="flex items-center group cursor-default hover:text-foreground transition-colors duration-300">
-            <div className="w-2 h-2 rounded-full bg-primary mr-2 group-hover:scale-125 group-hover:bg-primary/80 transition-all duration-300"></div>
-            <span>20+ Kategórií</span>
-          </div>
-        </div>
 
         {/* Additional trust indicators */}
-        <div className="mt-12 text-xs text-muted-foreground/80 animate-fade-in" style={{animationDelay: "400ms"}}>
+        <div className="mt-12 text-xs text-muted-foreground/80 animate-fade-in" style={{animationDelay: "300ms"}}>
           <p className="hover:text-muted-foreground transition-colors duration-300 cursor-default">
             ✓ Žiadne skryté poplatky • ✓ Rýchla registrácia • ✓ Spoľahlivé hodnotenia
           </p>
