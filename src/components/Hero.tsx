@@ -31,7 +31,7 @@ const Hero = () => {
           </Badge>
           <Badge variant="outline" className="bg-white/80 backdrop-blur-sm border-primary/20 text-primary hover:bg-primary/5 transition-all duration-300 hover:scale-105 hover:shadow-sm">
             <Zap className="h-3 w-3 mr-1" />
-            Rápide & Jednoducho
+            Jednoducho
           </Badge>
         </div>
         
