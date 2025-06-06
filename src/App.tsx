@@ -89,15 +89,15 @@ function App() {
               {/* Craftsman profile route - public access for viewing */}
               <Route path="/craftsman/:id" element={<Profile />} />
               
-              {/* Protected routes */}
+              {/* Protected routes - Profile routes should NOT be wrapped in Layout since ProfilePage already includes it */}
               <Route path="/profile" element={
                 <PrivateRoute>
-                  <Layout><Profile /></Layout>
+                  <Profile />
                 </PrivateRoute>
               } />
               <Route path="/profile/:tab" element={
                 <PrivateRoute>
-                  <Layout><Profile /></Layout>
+                  <Profile />
                 </PrivateRoute>
               } />
               <Route path="/messages" element={
