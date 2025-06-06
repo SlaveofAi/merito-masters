@@ -20,14 +20,6 @@ import Notifications from "@/pages/Notifications";
 import Categories from "@/pages/Categories";
 import ApprovedBookings from "@/pages/ApprovedBookings";
 import NotFound from "@/pages/NotFound";
-import About from "@/pages/About";
-import Contact from "@/pages/Contact";
-import HowItWorks from "@/pages/HowItWorks";
-import Benefits from "@/pages/Benefits";
-import Privacy from "@/pages/Privacy";
-import Terms from "@/pages/Terms";
-import Pricing from "@/pages/Pricing";
-import Reviews from "@/pages/Reviews";
 import { supabase } from "@/integrations/supabase/client";
 import AdminRoute from "@/components/admin/AdminRoute";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -35,7 +27,7 @@ import AdminDashboard from "@/pages/admin/AdminDashboard";
 import UserManagement from "@/pages/admin/UserManagement";
 import ContentModeration from "@/pages/admin/ContentModeration";
 import AdminJobRequests from "@/pages/admin/JobRequests";
-import AdminReviews from "@/pages/admin/Reviews";
+import Reviews from "@/pages/admin/Reviews";
 import Analytics from "@/pages/admin/Analytics";
 import Settings from "@/pages/admin/Settings";
 
@@ -77,14 +69,6 @@ function App() {
               <Route path="/categories" element={<Categories />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/how-it-works" element={<HowItWorks />} />
-              <Route path="/benefits" element={<Benefits />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/reviews" element={<Reviews />} />
               
               {/* Protected routes */}
               <Route path="/profile" element={
@@ -133,7 +117,7 @@ function App() {
                 <Route path="users" element={<UserManagement />} />
                 <Route path="content" element={<ContentModeration />} />
                 <Route path="jobs" element={<AdminJobRequests />} />
-                <Route path="reviews" element={<AdminReviews />} />
+                <Route path="reviews" element={<Reviews />} />
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
