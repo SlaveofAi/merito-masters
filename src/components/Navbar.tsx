@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import NavigationWithNotification from "./NavigationWithNotification";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, LogOut, Briefcase } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -77,8 +76,7 @@ const Navbar = () => {
                         <Button variant="ghost" className="w-full justify-start">Notifikácie</Button>
                       </Link>
                       <Link to="/job-requests">
-                        <Button variant="ghost" className="w-full justify-start flex items-center">
-                          <Briefcase className="h-4 w-4 mr-2" />
+                        <Button variant="ghost" className="w-full justify-start">
                           Požiadavky
                         </Button>
                       </Link>
@@ -103,8 +101,7 @@ const Navbar = () => {
                   ) : (
                     <>
                       <Link to="/job-requests">
-                        <Button variant="ghost" className="w-full justify-start flex items-center">
-                          <Briefcase className="h-4 w-4 mr-2" />
+                        <Button variant="ghost" className="w-full justify-start">
                           Požiadavky
                         </Button>
                       </Link>
