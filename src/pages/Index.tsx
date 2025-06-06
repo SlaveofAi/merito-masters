@@ -27,6 +27,8 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [locationFilter, setLocationFilter] = useState(initialLocationFilter);
   const [categoryFilter, setCategoryFilter] = useState(initialCategoryFilter);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isLocationFocused, setIsLocationFocused] = useState(false);
 
   // Update search term and category when location state changes
   useEffect(() => {
@@ -138,27 +140,39 @@ const Index = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
         <div className="mb-12">
-          <h2 className="text-3xl font-bold mb-6">Nájdite najlepších remeselníkov</h2>
+          <h2 className="text-3xl font-bold mb-6 hover:text-primary/80 transition-colors duration-300 cursor-default">Nájdite najlepších remeselníkov</h2>
           
           {/* Search and filter section */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            <div className="md:col-span-5 relative">
-              <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+            <div className="md:col-span-5 relative group">
+              <Search className={`absolute left-3 top-3 h-5 w-5 transition-all duration-300 z-10 ${
+                isSearchFocused ? 'text-primary scale-110' : 'text-muted-foreground'
+              }`} />
               <Input
                 placeholder="Hľadajte podľa mena alebo remesla..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                className={`pl-10 transition-all duration-300 hover:shadow-md focus:shadow-lg focus:scale-[1.02] ${
+                  isSearchFocused ? 'border-primary/30' : ''
+                }`}
               />
             </div>
             
-            <div className="md:col-span-3 relative">
-              <MapPin className="absolute left-3 top-3 h-5 w-5 text-muted-foreground z-10" />
+            <div className="md:col-span-3 relative group">
+              <MapPin className={`absolute left-3 top-3 h-5 w-5 transition-all duration-300 z-10 ${
+                isLocationFocused ? 'text-primary scale-110' : 'text-muted-foreground'
+              }`} />
               <Input
                 placeholder="Zadajte lokalitu..."
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
-                className="pl-10"
+                onFocus={() => setIsLocationFocused(true)}
+                onBlur={() => setIsLocationFocused(false)}
+                className={`pl-10 transition-all duration-300 hover:shadow-md focus:shadow-lg focus:scale-[1.02] ${
+                  isLocationFocused ? 'border-primary/30' : ''
+                }`}
               />
             </div>
             
@@ -167,13 +181,13 @@ const Index = () => {
                 value={categoryFilter}
                 onValueChange={setCategoryFilter}
               >
-                <SelectTrigger>
+                <SelectTrigger className="transition-all duration-300 hover:shadow-md focus:shadow-lg focus:scale-[1.02] hover:border-primary/30">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Filter podľa kategórie" />
                 </SelectTrigger>
                 <SelectContent>
                   {getAllCategories().map((category) => (
-                    <SelectItem key={category} value={category}>
+                    <SelectItem key={category} value={category} className="hover:bg-primary/5 transition-colors duration-200">
                       {category}
                     </SelectItem>
                   ))}
@@ -182,7 +196,7 @@ const Index = () => {
             </div>
             
             <Button
-              className="md:col-span-1"
+              className="md:col-span-1 group relative overflow-hidden hover:shadow-lg active:scale-[0.98] transition-all duration-300"
               onClick={() => {
                 setSearchTerm("");
                 setLocationFilter("");
@@ -190,7 +204,7 @@ const Index = () => {
               }}
               variant="outline"
             >
-              Reset
+              <span className="relative z-10 group-hover:scale-105 transition-transform duration-300">Reset</span>
             </Button>
           </div>
           
@@ -199,7 +213,7 @@ const Index = () => {
             <Button 
               variant="link" 
               onClick={() => navigate('/categories')}
-              className="text-primary"
+              className="text-primary hover:text-primary/80 hover:translate-x-1 transition-all duration-300"
             >
               Zobraziť všetky kategórie
             </Button>
@@ -208,21 +222,24 @@ const Index = () => {
         
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <Card>
+          <Card className="hover:shadow-md transition-shadow duration-300">
             <CardContent className="flex flex-col items-center justify-center py-10">
               <p className="text-center text-muted-foreground mb-4">
                 Nastala chyba pri načítaní remeselníkov. Skúste to prosím neskôr.
               </p>
-              <Button onClick={() => window.location.reload()}>
+              <Button 
+                onClick={() => window.location.reload()}
+                className="hover:shadow-md active:scale-[0.98] transition-all duration-300"
+              >
                 Skúsiť znova
               </Button>
             </CardContent>
           </Card>
         ) : sortedCraftsmen?.length === 0 ? (
-          <Card>
+          <Card className="hover:shadow-md transition-shadow duration-300">
             <CardContent className="flex flex-col items-center justify-center py-10">
               <p className="text-center text-muted-foreground mb-4">
                 Nenašli sa žiadni remeselníci podľa vašich kritérií. Skúste upraviť vyhľadávanie.
@@ -233,6 +250,7 @@ const Index = () => {
                   setLocationFilter("");
                   setCategoryFilter("Všetky kategórie");
                 }}
+                className="hover:shadow-md active:scale-[0.98] transition-all duration-300"
               >
                 Zobraziť všetkých remeselníkov
               </Button>
@@ -241,25 +259,30 @@ const Index = () => {
         ) : (
           <>
             {/* Legend for topped craftsmen */}
-            <div className="flex items-center gap-2 mb-4 text-sm">
-              <TrendingUp className="h-4 w-4 text-yellow-500" />
-              <span className="text-muted-foreground">Zvýraznené profily sú zobrazené na vrchu</span>
+            <div className="flex items-center gap-2 mb-4 text-sm group">
+              <TrendingUp className="h-4 w-4 text-yellow-500 group-hover:scale-110 transition-transform duration-300" />
+              <span className="text-muted-foreground group-hover:text-foreground transition-colors duration-300">Zvýraznené profily sú zobrazené na vrchu</span>
             </div>
           
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sortedCraftsmen?.map((craftsman) => {
+              {sortedCraftsmen?.map((craftsman, index) => {
                 const isTopped = craftsman.is_topped && new Date(craftsman.topped_until) > new Date();
                 return (
-                  <CraftsmanCard
+                  <div 
                     key={craftsman.id}
-                    id={craftsman.id}
-                    name={craftsman.name}
-                    profession={craftsman.custom_specialization || craftsman.trade_category}
-                    location={craftsman.location}
-                    imageUrl={craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category)}
-                    customSpecialization={craftsman.custom_specialization}
-                    isTopped={isTopped}
-                  />
+                    className="animate-fade-in hover:scale-[1.02] transition-all duration-300"
+                    style={{animationDelay: `${index * 100}ms`}}
+                  >
+                    <CraftsmanCard
+                      id={craftsman.id}
+                      name={craftsman.name}
+                      profession={craftsman.custom_specialization || craftsman.trade_category}
+                      location={craftsman.location}
+                      imageUrl={craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category)}
+                      customSpecialization={craftsman.custom_specialization}
+                      isTopped={isTopped}
+                    />
+                  </div>
                 );
               })}
             </div>

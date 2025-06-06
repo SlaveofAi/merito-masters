@@ -64,50 +64,53 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
 
   return (
     <Card 
-      className={`overflow-hidden transition-all duration-300 group hover:shadow-md 
+      className={`overflow-hidden transition-all duration-500 group hover:shadow-xl hover:-translate-y-2 cursor-pointer
         ${isTopped 
-          ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-100' 
-          : 'border-border/50 shadow-sm'
+          ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-100/50 hover:shadow-yellow-200/50' 
+          : 'border-border/50 shadow-sm hover:shadow-lg'
         }
       `}
     >
       <div className="relative h-60 overflow-hidden">
-        <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent group-hover:from-black/10 transition-all duration-500 z-10"></div>
         <img
           src={imageUrl}
           alt={name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
         />
-        <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white text-xs py-1 px-2 rounded-full z-20">
+        <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white text-xs py-1 px-2 rounded-full z-20 group-hover:bg-black/80 group-hover:scale-105 transition-all duration-300">
           {customSpecialization ? customSpecialization : profession}
         </div>
         {isTopped && (
           <div className="absolute top-4 right-4 z-20">
-            <Badge variant="outline" className="bg-yellow-500/90 backdrop-blur-sm text-white border-yellow-400 px-2 py-0.5 flex items-center gap-1">
-              <Crown className="h-3 w-3 fill-white" />
+            <Badge variant="outline" className="bg-yellow-500/90 backdrop-blur-sm text-white border-yellow-400 px-2 py-0.5 flex items-center gap-1 group-hover:scale-110 group-hover:bg-yellow-400/90 transition-all duration-300">
+              <Crown className="h-3 w-3 fill-white group-hover:rotate-12 transition-transform duration-300" />
               <span className="text-xs">PREMIUM</span>
             </Badge>
           </div>
         )}
+        
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-15"></div>
       </div>
-      <CardContent className="p-5">
+      <CardContent className="p-5 group-hover:bg-white/50 transition-colors duration-300">
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-lg">{name}</h3>
+            <h3 className="font-semibold text-lg group-hover:text-primary transition-colors duration-300">{name}</h3>
             {isTopped && (
-              <Crown className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+              <Crown className="h-4 w-4 text-yellow-500 fill-yellow-500 group-hover:rotate-12 group-hover:scale-110 transition-all duration-300" />
             )}
           </div>
-          <div className="flex items-center">
-            <Star className={`w-4 h-4 ${rating > 0 ? 'fill-current text-yellow-500' : 'text-gray-300'} mr-1`} />
+          <div className="flex items-center group-hover:scale-105 transition-transform duration-300">
+            <Star className={`w-4 h-4 ${rating > 0 ? 'fill-current text-yellow-500' : 'text-gray-300'} mr-1 group-hover:scale-110 transition-transform duration-300`} />
             <span className="text-sm font-medium">{rating > 0 ? rating.toFixed(1) : '0.0'}</span>
-            <span className="text-xs text-muted-foreground ml-1">
+            <span className="text-xs text-muted-foreground ml-1 group-hover:text-foreground transition-colors duration-300">
               ({reviewCount})
             </span>
           </div>
         </div>
-        <div className="flex items-center text-sm text-muted-foreground mb-4">
-          <MapPin className="w-3.5 h-3.5 mr-1" />
+        <div className="flex items-center text-sm text-muted-foreground mb-4 group-hover:text-foreground transition-colors duration-300">
+          <MapPin className="w-3.5 h-3.5 mr-1 group-hover:scale-110 group-hover:text-primary transition-all duration-300" />
           <span>{location}</span>
         </div>
         <div className="flex justify-end items-center">
@@ -115,10 +118,10 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs rounded-full px-3 group-hover/link:translate-x-1 transition-transform"
+              className="text-xs rounded-full px-3 group-hover/link:translate-x-1 group-hover/link:bg-primary/10 group-hover/link:text-primary group-hover/link:shadow-md transition-all duration-300"
             >
               <span>Profil</span>
-              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover/link:translate-x-0.5 transition-transform duration-300" />
             </Button>
           </Link>
         </div>
