@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,7 +42,7 @@ const PostJob = () => {
     }
     if (userType && userType !== 'customer') {
       toast.error("Len zákazníci môžu pridávať požiadavky");
-      navigate("/requests");
+      navigate("/job-requests");
       return;
     }
   }, [user, userType, navigate]);
@@ -143,7 +144,7 @@ const PostJob = () => {
         toast.error("Chyba pri vytváraní požiadavky");
       } else {
         toast.success("Požiadavka bola úspešne vytvorená!");
-        navigate("/requests");
+        navigate("/job-requests");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -163,7 +164,7 @@ const PostJob = () => {
         <div className="mb-6">
           <Button 
             variant="ghost" 
-            onClick={() => navigate("/requests")}
+            onClick={() => navigate("/job-requests")}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
