@@ -4,7 +4,6 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import NotificationIndicator from "./notifications/NotificationIndicator";
-import { MessageSquare, Briefcase } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface NavigationWithNotificationProps {
@@ -27,53 +26,45 @@ const NavigationWithNotification: React.FC<NavigationWithNotificationProps> = ({
       {user ? (
         <>
           <Link to="/job-requests">
-            <Button variant="ghost" size={isMobile ? "sm" : "default"} className="flex items-center gap-1 sm:gap-2">
-              <Briefcase className="h-4 w-4" />
-              <span className="hidden xs:inline">Požiadavky</span>
+            <Button variant="ghost" size={isMobile ? "sm" : "default"}>
+              Požiadavky
             </Button>
           </Link>
           <Link to="/messages">
-            <Button variant="ghost" size={isMobile ? "sm" : "default"} className="flex items-center gap-1 sm:gap-2">
-              <MessageSquare className="h-4 w-4" />
-              <span className="hidden xs:inline">Správy</span>
+            <Button variant="ghost" size={isMobile ? "sm" : "default"}>
+              Správy
             </Button>
           </Link>
           <Link to="/profile">
             <Button variant="ghost" size={isMobile ? "sm" : "default"}>
-              <span className="hidden xs:inline">Profil</span>
-              <span className="xs:hidden">👤</span>
+              Profil
             </Button>
           </Link>
-          {/* Show bookings button for all users, not just craftsmen */}
           <Link to="/approved-bookings">
-            <Button variant="ghost" size={isMobile ? "sm" : "default"} className="flex items-center gap-1 sm:gap-2">
-              <span className="hidden xs:inline">Zákazky</span>
-              <span className="xs:hidden">📋</span>
+            <Button variant="ghost" size={isMobile ? "sm" : "default"}>
+              Zákazky
             </Button>
           </Link>
         </>
       ) : (
         <>
           <Link to="/job-requests">
-            <Button variant="ghost" size={isMobile ? "sm" : "default"} className="flex items-center gap-1 sm:gap-2">
-              <Briefcase className="h-4 w-4" />
-              <span className="hidden xs:inline">Požiadavky</span>
+            <Button variant="ghost" size={isMobile ? "sm" : "default"}>
+              Požiadavky
             </Button>
           </Link>
           <Link to="/login">
             <Button variant="ghost" size={isMobile ? "sm" : "default"}>
-              <span className="hidden xs:inline">Prihlásenie</span>
-              <span className="xs:hidden">🔑</span>
+              Prihlásenie
             </Button>
           </Link>
           <Link to="/register">
             <Button 
               variant="default" 
               size={isMobile ? "sm" : "default"}
-              className="bg-primary text-white hover:bg-primary-dark transition-colors duration-200"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-200"
             >
-              <span className="hidden xs:inline">Registrácia</span>
-              <span className="xs:hidden">📝</span>
+              Registrácia
             </Button>
           </Link>
         </>
