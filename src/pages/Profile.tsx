@@ -74,11 +74,9 @@ const Profile = () => {
   // For craftsman profile routes, show content without authentication requirement
   if (isCraftsmanProfileRoute) {
     return (
-      <Layout>
-        <ProfileProvider>
-          <ProfilePage initialTab="portfolio" />
-        </ProfileProvider>
-      </Layout>
+      <ProfileProvider>
+        <ProfilePage initialTab="portfolio" />
+      </ProfileProvider>
     );
   }
   
