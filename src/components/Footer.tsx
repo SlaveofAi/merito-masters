@@ -1,16 +1,13 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Facebook, Instagram } from "lucide-react";
-
 const Footer = () => {
-  return (
-    <footer className="bg-secondary py-12 border-t border-border/50">
+  return <footer className="bg-secondary py-12 border-t border-border/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="space-y-4">
             <Link to="/" className="text-2xl font-semibold tracking-tight">
-              Majstri<span className="text-muted-foreground">.com</span>
+              Majstri<span className="text-gray-950">.com</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs">
               Prepájame profesionálnych remeselníkov a zákazníkov po celom Slovensku.
@@ -101,29 +98,15 @@ const Footer = () => {
             &copy; {new Date().getFullYear()} Majstri.com. Všetky práva vyhradené.
           </p>
           <div className="flex items-center space-x-6 mt-4 md:mt-0">
-            <a 
-              href="https://www.facebook.com/share/1CDQNNz1iE/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Facebook"
-            >
+            <a href="https://www.facebook.com/share/1CDQNNz1iE/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors" aria-label="Facebook">
               <Facebook size={22} />
             </a>
-            <a 
-              href="https://www.instagram.com/majstri2025?igsh=dzJjN29rMjR5YmJ3" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Instagram"
-            >
+            <a href="https://www.instagram.com/majstri2025?igsh=dzJjN29rMjR5YmJ3" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors" aria-label="Instagram">
               <Instagram size={22} />
             </a>
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
