@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -202,7 +203,7 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
   
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
-      <h3 className="text-lg font-medium mb-4">Vytvorenie rezervácie termínu</h3>
+      <h3 className="text-lg font-medium mb-4">Vytvorenie požiadavky na rezerváciu</h3>
       
       {error && (
         <Alert variant="destructive" className="mb-4">
@@ -299,14 +300,14 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
           
           <div>
             <Label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
-              Odmena (voliteľné)
+              Cena (voliteľné)
             </Label>
             <div className="relative">
               <DollarSign className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
               <Input
                 id="amount"
                 type="text"
-                placeholder="Odmena za vykonanú prácu..."
+                placeholder="Cena za vykonanú prácu..."
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="pl-9"
@@ -316,7 +317,7 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
           
           <div>
             <Label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
-              Fotka (voliteľné)
+              Obrázok (voliteľné)
             </Label>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -346,7 +347,7 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
                   <div className="relative w-full max-w-xs">
                     <img 
                       src={imagePreview} 
-                      alt="Preview" 
+                      alt="Náhľad" 
                       className="w-full h-auto rounded-md object-cover"
                       style={{ maxHeight: '150px' }} 
                     />
@@ -391,7 +392,7 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
               onClick={handleSubmit}
               disabled={!date || !timeSlot || isUploading}
             >
-              {isUploading ? "Odosielanie..." : "Odoslať rezerváciu"}
+              {isUploading ? "Odosielanie..." : "Odoslať požiadavku"}
             </Button>
           </div>
         </div>

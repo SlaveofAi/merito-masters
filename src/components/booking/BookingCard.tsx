@@ -52,6 +52,39 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking }) => {
     });
   };
 
+  // Get Slovak status label
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Čaká na schválenie';
+      case 'approved':
+      case 'accepted':
+        return 'Schválená';
+      case 'declined':
+      case 'rejected':
+        return 'Zamietnutá';
+      case 'completed':
+        return 'Dokončená';
+      default:
+        return status;
+    }
+  };
+
+  // Get badge variant based on status
+  const getBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'approved':
+      case 'accepted':
+      case 'completed':
+        return 'default';
+      case 'declined':
+      case 'rejected':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+
   return (
     <Card className="w-full cursor-pointer hover:shadow-md transition-shadow" onClick={handleCardClick}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -67,12 +100,8 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking }) => {
             )}
           </div>
         </div>
-        <Badge variant={booking.status === 'approved' ? 'default' : 'outline'}>
-          {booking.status === 'approved' ? 'Schválená' : 
-           booking.status === 'pending' ? 'Čaká na schválenie' : 
-           booking.status === 'rejected' ? 'Zamietnutá' : 
-           booking.status === 'completed' ? 'Dokončená' : 
-           booking.status === 'accepted' ? 'Schválená' : booking.status}
+        <Badge variant={getBadgeVariant(booking.status)}>
+          {getStatusLabel(booking.status)}
         </Badge>
       </CardHeader>
       <CardContent>

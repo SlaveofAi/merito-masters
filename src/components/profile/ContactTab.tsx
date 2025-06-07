@@ -302,20 +302,21 @@ const ContactTab = () => {
         throw new Error("Nepodarilo sa vytvoriť konverzáciu");
       }
       
-      // Create booking request - Fixed property names to match database schema
+      // Create booking request - This will appear in "Čakajúce" section
       const { error: bookingError } = await supabase
         .from('booking_requests')
         .insert({
           conversation_id: conversationId,
           customer_id: user.id,
           craftsman_id: profileData.id,
-          customer_name: user.user_metadata?.name || "Customer",
+          customer_name: user.user_metadata?.name || "Zákazník",
           date: formattedDate,
           start_time: selectedTimeSlot,
           end_time: (parseInt(selectedTimeSlot.split(':')[0]) + 1) + ":" + selectedTimeSlot.split(':')[1],
           message: bookingDescription,
           amount: bookingPrice ? bookingPrice : null,
-          image_url: imageUrl
+          image_url: imageUrl,
+          status: 'pending' // This ensures it appears in "Čakajúce"
         });
         
       if (bookingError) {
@@ -329,7 +330,7 @@ const ContactTab = () => {
           conversation_id: conversationId,
           sender_id: user.id,
           receiver_id: profileData.id,
-          content: `Rezervácia: ${formattedDate} ${selectedTimeSlot}`,
+          content: `Požiadavka na rezerváciu: ${formattedDate} ${selectedTimeSlot}`,
           metadata: { 
             type: 'booking_request',
             details: {
@@ -356,10 +357,10 @@ const ContactTab = () => {
         }
       });
       
-      toast.success("Požiadavka na rezerváciu odoslaná");
+      toast.success("Požiadavka na rezerváciu bola odoslaná a zobrazí sa v sekcii 'Čakajúce zákazky'");
     } catch (error) {
       console.error("Error submitting booking request:", error);
-      toast.error("Nastala chyba pri odoslaní požiadavky");
+      toast.error("Nastala chyba pri odosielaní požiadavky");
     } finally {
       setIsSubmitting(false);
     }
@@ -628,7 +629,7 @@ const ContactTab = () => {
                           <div className="relative w-full max-w-xs">
                             <img 
                               src={imagePreview} 
-                              alt="Preview" 
+                              alt="Náhľad" 
                               className="w-full h-auto rounded-md object-cover"
                               style={{ maxHeight: '150px' }} 
                             />
