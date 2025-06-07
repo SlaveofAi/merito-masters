@@ -158,6 +158,7 @@ export const useChatActions = (
           bookingId: metadata.booking_id,
           date: metadata.details?.date,
           time: metadata.details?.time,
+          endTime: metadata.details?.end_time,
           message: metadata.details?.message,
           amount: metadata.details?.amount,
           image_url: metadata.details?.image_url
@@ -174,12 +175,11 @@ export const useChatActions = (
             customer_name: user.user_metadata?.name || "Customer",
             date: metadata.details?.date || new Date().toISOString().split('T')[0],
             start_time: metadata.details?.time || "00:00",
-            end_time: metadata.details?.time ? 
-              (parseInt(metadata.details.time.split(':')[0]) + 1) + ":" + metadata.details.time.split(':')[1] : 
-              "01:00",
+            end_time: metadata.details?.end_time || "01:00",
             message: metadata.details?.message || null,
             amount: metadata.details?.amount || null,
-            image_url: metadata.details?.image_url || null
+            image_url: metadata.details?.image_url || null,
+            status: 'pending'
           };
           
           console.log("Inserting booking request with data:", bookingData);
@@ -254,6 +254,7 @@ export const useChatActions = (
       // Refresh data
       refetchMessages();
       queryClient.invalidateQueries({ queryKey: ['chat-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
     },
     onError: (error: any) => {
       console.error("Error in sendMessageMutation:", error);

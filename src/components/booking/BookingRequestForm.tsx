@@ -142,13 +142,22 @@ const BookingRequestForm: React.FC<BookingRequestFormProps> = ({
       setIsUploading(false);
     }
   };
+
+  // Calculate end time (1 hour after start time)
+  const calculateEndTime = (startTime: string): string => {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const endHour = hours + 1;
+    return `${endHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  };
   
   const handleSubmit = async () => {
     if (!date || !timeSlot) {
+      toast.error("Prosím, vyberte dátum a čas");
       return;
     }
 
     const formattedDate = format(date, 'yyyy-MM-dd');
+    const endTime = calculateEndTime(timeSlot);
     const bookingId = uuidv4();
     
     try {
@@ -164,10 +173,10 @@ const BookingRequestForm: React.FC<BookingRequestFormProps> = ({
         }
       }
       
-      const content = `🗓️ **Požiadavka na termín**
-Dátum: ${format(date, 'dd.MM.yyyy')}
-Čas: ${timeSlot}
-${amount ? `Odmena: ${amount} €` : ''}
+      const content = `🗓️ **Žiadosť o rezerváciu**
+Dátum: ${format(date, 'dd.MM.yyyy', { locale: sk })}
+Čas: ${timeSlot} - ${endTime}
+${amount ? `Cena: ${amount} €` : ''}
 ${message ? `Správa: ${message}` : ''}
 ${imageUrl ? `[Priložený obrázok]` : ''}`;
       
@@ -178,6 +187,7 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
         details: {
           date: formattedDate,
           time: timeSlot,
+          end_time: endTime,
           message: message || null,
           amount: amount || null,
           image_url: imageUrl
@@ -203,7 +213,7 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
   
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
-      <h3 className="text-lg font-medium mb-4">Vytvorenie požiadavky na rezerváciu</h3>
+      <h3 className="text-lg font-medium mb-4">Vytvorenie žiadosti o rezerváciu</h3>
       
       {error && (
         <Alert variant="destructive" className="mb-4">
@@ -392,7 +402,7 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
               onClick={handleSubmit}
               disabled={!date || !timeSlot || isUploading}
             >
-              {isUploading ? "Odosielanie..." : "Odoslať požiadavku"}
+              {isUploading ? "Odosielanie..." : "Odoslať žiadosť"}
             </Button>
           </div>
         </div>

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import AdminAnnouncementMessage from "./AdminAnnouncementMessage";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
+import BookingRequestForm from "@/components/booking/BookingRequestForm";
 
 interface ChatWindowProps {
   contact: ChatContact | null;
@@ -21,6 +22,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   const [input, setInput] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isContactAdmin, setIsContactAdmin] = useState(false);
+  const [showBookingForm, setShowBookingForm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Get current user from localStorage
@@ -67,14 +69,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   
   // Fix the useChatActions hook call with proper arguments
   const { sendMessage } = useChatActions(contact, () => {}, refetch);
-  
-  const [showBookingOptions, setShowBookingOptions] = useState(false);
-  const [bookingDetails, setBookingDetails] = useState({
-    date: '',
-    time: '',
-    message: '',
-    amount: ''
-  });
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -110,23 +104,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
     }
   };
 
-  const handleBookingRequest = async () => {
-    if (!bookingDetails.date || !bookingDetails.time) {
-      toast.error("Please provide both date and time for the booking.");
-      return;
-    }
-
+  const handleBookingRequestSubmit = async (content: string, metadata: any) => {
     try {
-      const bookingMessage = `Booking Request:\nDate: ${bookingDetails.date}\nTime: ${bookingDetails.time}${bookingDetails.amount ? `\nAmount: ${bookingDetails.amount}` : ''}${bookingDetails.message ? `\nMessage: ${bookingDetails.message}` : ''}`;
-      
-      await sendMessage(bookingMessage);
-      toast.success("Booking request sent!");
-      setShowBookingOptions(false);
-      setBookingDetails({ date: '', time: '', message: '', amount: '' });
+      await sendMessage(content, metadata);
+      setShowBookingForm(false);
+      toast.success("Žiadosť o rezerváciu bola odoslaná!");
       setTimeout(() => refetch(), 500);
-    } catch (err) {
-      console.error("Error creating booking request:", err);
-      toast.error("Failed to send booking request.");
+    } catch (error) {
+      console.error("Error sending booking request:", error);
+      toast.error("Nastala chyba pri odosielaní žiadosti o rezerváciu");
     }
   };
 
@@ -147,7 +133,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
     }
 
     const isOwnMessage = message.sender_id === currentUserId;
-    const isBookingMessage = message.metadata?.type === 'booking';
+    const isBookingMessage = message.metadata?.type === 'booking_request';
 
     return (
       <div key={message.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -158,11 +144,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
         }`}>
           {isBookingMessage && message.metadata?.details && (
             <div className="mb-2 p-2 border rounded bg-white/10">
-              <p className="text-xs font-semibold">Booking Request</p>
-              <p className="text-xs">Date: {message.metadata.details.date}</p>
-              <p className="text-xs">Time: {message.metadata.details.time}</p>
+              <p className="text-xs font-semibold">Žiadosť o rezerváciu</p>
+              <p className="text-xs">Dátum: {message.metadata.details.date}</p>
+              <p className="text-xs">Čas: {message.metadata.details.time}</p>
               {message.metadata.details.amount && (
-                <p className="text-xs">Amount: {message.metadata.details.amount}</p>
+                <p className="text-xs">Cena: {message.metadata.details.amount} €</p>
               )}
             </div>
           )}
@@ -178,7 +164,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   if (!contact) {
     return (
       <div className="flex flex-col h-full items-center justify-center text-gray-500">
-        <p>Select a conversation to start messaging</p>
+        <p>Vyberte konverzáciu na začatie chatu</p>
       </div>
     );
   }
@@ -187,7 +173,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
     return (
       <div className="flex flex-col h-full">
         <div className="flex-1 flex items-center justify-center">
-          <p>Loading messages...</p>
+          <p>Načítavam správy...</p>
         </div>
       </div>
     );
@@ -196,6 +182,40 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   // Determine if we should show booking options and user type
   // Hide them if current user is admin OR if contact is admin
   const shouldHideBookingAndUserType = isAdmin || isContactAdmin;
+
+  // Show booking form if requested
+  if (showBookingForm && !shouldHideBookingAndUserType) {
+    const contactId = contact.contactId || contact.id;
+    return (
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center space-x-3">
+            <Button variant="ghost" size="sm" onClick={() => setShowBookingForm(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={contact.avatar_url} alt={contact.name} />
+              <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <h3 className="font-semibold">{contact.name}</h3>
+              <p className="text-sm text-gray-500">Žiadosť o rezerváciu</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Booking Form */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <BookingRequestForm
+            onSubmit={handleBookingRequestSubmit}
+            onCancel={() => setShowBookingForm(false)}
+            craftsmanId={contactId}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -222,12 +242,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
           </div>
         </div>
 
-        {/* Only show Create Booking button if neither user is admin */}
-        {!shouldHideBookingAndUserType && (
+        {/* Only show Create Booking button if neither user is admin and contact is craftsman */}
+        {!shouldHideBookingAndUserType && contact.user_type === 'craftsman' && (
           <div>
-            <Button variant="outline" size="sm" onClick={() => setShowBookingOptions(!showBookingOptions)}>
+            <Button variant="outline" size="sm" onClick={() => setShowBookingForm(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Create Booking
+              Vytvoriť rezerváciu
             </Button>
           </div>
         )}
@@ -239,54 +259,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Booking Options - Only show if neither user is admin */}
-      {!shouldHideBookingAndUserType && showBookingOptions && (
-        <div className="p-4 border-t">
-          <h4 className="text-sm font-semibold mb-2">Enter Booking Details:</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <Input
-              type="date"
-              placeholder="Date"
-              value={bookingDetails.date}
-              onChange={(e) => setBookingDetails({ ...bookingDetails, date: e.target.value })}
-            />
-            <Input
-              type="time"
-              placeholder="Time"
-              value={bookingDetails.time}
-              onChange={(e) => setBookingDetails({ ...bookingDetails, time: e.target.value })}
-            />
-            <Input
-              type="text"
-              placeholder="Amount (optional)"
-              value={bookingDetails.amount}
-              onChange={(e) => setBookingDetails({ ...bookingDetails, amount: e.target.value })}
-            />
-          </div>
-          <Input
-            type="text"
-            placeholder="Additional Message"
-            value={bookingDetails.message}
-            onChange={(e) => setBookingDetails({ ...bookingDetails, message: e.target.value })}
-            className="mb-4"
-          />
-          <Button onClick={handleBookingRequest} className="w-full">
-            Send Booking Request
-          </Button>
-        </div>
-      )}
-
       {/* Input Area */}
       <div className="p-4 border-t">
         {isContactAdmin && !isAdmin ? (
           <div className="text-center text-gray-500 py-4">
-            <p>Only admins can write in this chat.</p>
+            <p>Iba administrátori môžu písať v tomto chate.</p>
           </div>
         ) : (
           <div className="flex items-center space-x-2">
             <Input
               type="text"
-              placeholder="Type your message..."
+              placeholder="Napíšte svoju správu..."
               value={input}
               onChange={handleInputChange}
               onKeyDown={(e) => {
