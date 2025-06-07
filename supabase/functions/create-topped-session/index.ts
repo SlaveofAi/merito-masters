@@ -127,12 +127,13 @@ serve(async (req) => {
         throw new Error("Failed to create Stripe checkout session");
       }
   
-      // Save topped payment record in database with pending status
+      // Save topped payment record in database with pending status - INCLUDING CURRENCY
       const { error: paymentError } = await supabaseClient
         .from("topped_payments")
         .insert({
           craftsman_id: user.id,
           amount: amount,
+          currency: "eur", // FIX: Added the missing currency field
           payment_status: "pending",
           stripe_session_id: session.id,
           topped_start: currentDate.toISOString(),
@@ -141,7 +142,9 @@ serve(async (req) => {
   
       if (paymentError) {
         console.error("Error saving payment record:", paymentError);
-        // Continue despite this error, as the session was created successfully
+        // Log the detailed error but continue with the session creation
+        console.error("Payment record error details:", JSON.stringify(paymentError));
+        throw new Error(`Failed to save payment record: ${paymentError.message}`);
       }
   
       console.log("Checkout session created successfully:", session.id);
@@ -203,12 +206,15 @@ serve(async (req) => {
       errorCode = "user_not_authenticated";
     } else if (error.message?.includes("profile not found")) {
       errorCode = "craftsman_profile_not_found";
+    } else if (error.message?.includes("payment record")) {
+      errorCode = "payment_record_error";
     }
     
     return new Response(
       JSON.stringify({ 
         error: error.message || "Unknown error",
-        errorCode: errorCode
+        errorCode: errorCode,
+        details: error.stack // Add stack trace for debugging
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
