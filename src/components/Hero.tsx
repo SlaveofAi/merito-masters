@@ -13,6 +13,14 @@ const Hero = () => {
   const handleSearch = () => {
     navigate('/home', { state: { searchTerm } });
   };
+
+  const handleRemeselnikovClick = () => {
+    // Focus on the search input when "remeselníkov" is clicked
+    const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.focus();
+    }
+  };
   
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-white to-secondary/30">
@@ -42,7 +50,12 @@ const Hero = () => {
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 animate-slide-up group">
           Nájdite najlepších <br className="hidden sm:block" /> 
           <span className="relative inline-block group-hover:scale-105 transition-transform duration-500">
-            remeselníkov
+            <span 
+              className="cursor-pointer hover:text-primary transition-colors duration-300"
+              onClick={handleRemeselnikovClick}
+            >
+              remeselníkov
+            </span>
             <span className="absolute bottom-1 left-0 w-full h-[2px] bg-primary/30 group-hover:bg-primary/50 transition-colors duration-300"></span>
           </span>
         </h1>

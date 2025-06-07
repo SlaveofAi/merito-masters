@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -56,8 +57,8 @@ const Register = () => {
   const craftsmanSchema = z.object({
     ...baseSchemaObject,
     tradeCategory: z.string().min(1, { message: "Vyberte kategóriu remesla alebo zadajte vlastnú" }),
-    description: z.string().optional(),
-    yearsExperience: z.string().optional()
+    description: z.string().min(10, { message: "Popis musí mať aspoň 10 znakov" }),
+    yearsExperience: z.string().min(1, { message: "Roky skúseností sú povinné" })
   }).refine(
     (data) => data.password === data.confirmPassword,
     {
@@ -405,7 +406,7 @@ const Register = () => {
                       name="yearsExperience"
                       render={({ field }) => (
                         <FormItem className="space-y-2">
-                          <FormLabel>Roky skúseností (voliteľné)</FormLabel>
+                          <FormLabel>Roky skúseností</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -424,7 +425,7 @@ const Register = () => {
                       name="description"
                       render={({ field }) => (
                         <FormItem className="space-y-2">
-                          <FormLabel>Popis služieb (voliteľné)</FormLabel>
+                          <FormLabel>Popis služieb</FormLabel>
                           <FormControl>
                             <Textarea 
                               placeholder="Popis vašich služieb a skúseností..."
