@@ -215,13 +215,15 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
             {isEditing && canEdit && (
               <div className="border-t pt-4">
                 <ReviewForm
-                  craftsman_id={review.craftsman_id}
-                  initialRating={review.rating}
-                  initialComment={review.comment || ""}
+                  userId={review.customer_id}
+                  profileId={review.craftsman_id}
                   onSuccess={handleEditSuccess}
                   onCancel={() => setIsEditing(false)}
-                  isEditing={true}
-                  reviewId={review.id}
+                  existingReview={{
+                    id: review.id,
+                    rating: review.rating,
+                    comment: review.comment || ""
+                  }}
                 />
               </div>
             )}
