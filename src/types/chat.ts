@@ -12,10 +12,11 @@ export interface ChatContact {
 }
 
 export interface MessageMetadata {
-  type?: 'booking_request' | 'admin_announcement';
+  type?: 'booking_request' | 'admin_announcement' | 'image';
   status?: string;
   booking_id?: string;
   title?: string; // Add back the title property for admin announcements
+  image_url?: string; // For image messages
   details?: {
     date?: string;
     time?: string;
