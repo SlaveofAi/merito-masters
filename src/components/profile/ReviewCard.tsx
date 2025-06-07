@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,10 +21,8 @@ interface ReviewCardProps {
 }
 
 const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, canEdit, onReplyUpdated }) => {
-  const [customerName, setCustomerName] = useState<string | null>(null);
-  const [customerImageUrl, setCustomerImageUrl] = useState<string | null>(null);
-  const [craftsmanName, setCraftsmanName] = useState<string | null>(null);
-  const [craftsmanImageUrl, setCraftsmanImageUrl] = useState<string | null>(null);
+  const [customerData, setCustomerData] = useState<{ name: string | null; imageUrl: string | null }>({ name: null, imageUrl: null });
+  const [craftsmanData, setCraftsmanData] = useState<{ name: string | null; imageUrl: string | null }>({ name: null, imageUrl: null });
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
@@ -44,25 +43,24 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
       to={`/craftsman/${review.craftsman_id}`}
       className="font-medium hover:text-primary hover:underline transition-colors"
     >
-      {craftsmanName || 'Remeselník'}
+      {craftsmanData.name || 'Remeselník'}
     </Link>
   );
 
   useEffect(() => {
-    // Fetch customer name and image
+    // Fetch customer data from profiles table
     const fetchCustomerData = async () => {
       try {
         const { data: customer, error } = await supabase
           .from('profiles')
-          .select('name, profile_image_url')
+          .select('name')
           .eq('id', review.customer_id)
           .single();
 
         if (error) {
           console.error("Error fetching customer data:", error);
         } else if (customer) {
-          setCustomerName(customer.name);
-          setCustomerImageUrl(customer.profile_image_url);
+          setCustomerData({ name: customer.name, imageUrl: null });
         }
       } catch (error) {
         console.error("Error fetching customer data:", error);
@@ -73,11 +71,11 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
   }, [review.customer_id]);
 
   useEffect(() => {
-    // Fetch craftsman name and image
+    // Fetch craftsman data from craftsman_profiles table
     const fetchCraftsmanData = async () => {
       try {
         const { data: craftsman, error } = await supabase
-          .from('profiles')
+          .from('craftsman_profiles')
           .select('name, profile_image_url')
           .eq('id', review.craftsman_id)
           .single();
@@ -85,8 +83,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
         if (error) {
           console.error("Error fetching craftsman data:", error);
         } else if (craftsman) {
-          setCraftsmanName(craftsman.name);
-          setCraftsmanImageUrl(craftsman.profile_image_url);
+          setCraftsmanData({ name: craftsman.name, imageUrl: craftsman.profile_image_url });
         }
       } catch (error) {
         console.error("Error fetching craftsman data:", error);
@@ -101,7 +98,11 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
     try {
       const { data, error } = await supabase
         .from('craftsman_review_replies')
-        .insert([{ review_id: review.id, reply_text: replyText }]);
+        .insert([{ 
+          review_id: review.id, 
+          reply: replyText,
+          craftsman_id: review.craftsman_id 
+        }]);
 
       if (error) {
         console.error("Error submitting reply:", error);
@@ -125,9 +126,6 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
     onReplyUpdated();
   };
 
-  const craftsmanName = craftsmanName;
-  const craftsmanImageUrl = craftsmanImageUrl;
-
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4 sm:p-6">
@@ -136,8 +134,8 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
           <div className="flex items-start space-x-3">
             <CustomerProfileLink>
               <Avatar className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
-                {customerImageUrl ? (
-                  <AvatarImage src={customerImageUrl} alt={customerName || 'Customer'} />
+                {customerData.imageUrl ? (
+                  <AvatarImage src={customerData.imageUrl} alt={customerData.name || 'Customer'} />
                 ) : (
                   <AvatarFallback className="bg-gray-200">
                     <User className="text-gray-500" />
@@ -148,7 +146,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
             <div className="flex-1">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1">
                 <CustomerProfileLink>
-                  <h4 className="text-sm font-medium">{customerName || 'Zákazník'}</h4>
+                  <h4 className="text-sm font-medium">{customerData.name || 'Zákazník'}</h4>
                 </CustomerProfileLink>
                 <div className="flex items-center">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -176,15 +174,15 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
             </p>
 
             {/* Craftsman info if this is from customer reviews tab */}
-            {craftsmanName && (
+            {craftsmanData.name && (
               <div className="bg-gray-50 p-3 rounded-md">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-sm text-gray-600">Remeselník:</span>
                   <div className="flex items-center gap-2">
                     <Link to={`/craftsman/${review.craftsman_id}`}>
                       <Avatar className="flex-shrink-0 w-6 h-6 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
-                        {craftsmanImageUrl ? (
-                          <AvatarImage src={craftsmanImageUrl} alt={craftsmanName} />
+                        {craftsmanData.imageUrl ? (
+                          <AvatarImage src={craftsmanData.imageUrl} alt={craftsmanData.name} />
                         ) : (
                           <AvatarFallback className="bg-gray-200">
                             <User className="text-gray-500 w-3 h-3" />
@@ -217,7 +215,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
             {isEditing && canEdit && (
               <div className="border-t pt-4">
                 <ReviewForm
-                  craftsmanId={review.craftsman_id}
+                  craftsman_id={review.craftsman_id}
                   initialRating={review.rating}
                   initialComment={review.comment || ""}
                   onSuccess={handleEditSuccess}
@@ -238,7 +236,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
                     {format(new Date(reply.created_at), 'dd.MM.yyyy HH:mm', { locale: sk })}
                   </span>
                 </div>
-                <p className="text-gray-700 text-sm">{reply.reply_text}</p>
+                <p className="text-gray-700 text-sm">{reply.reply}</p>
               </div>
             )}
 
