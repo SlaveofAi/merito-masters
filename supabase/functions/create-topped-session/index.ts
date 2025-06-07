@@ -29,16 +29,19 @@ serve(async (req) => {
       throw new Error("Invalid Stripe API key format. Keys should start with sk_test_ or sk_live_");
     }
 
-    // Create Supabase client
+    // Create Supabase client with anon key for authentication
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
       console.error("Supabase environment variables are not set");
       throw new Error("Missing Supabase configuration");
     }
     
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    // Create service role client for database operations (bypasses RLS)
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get authorization header
     const authHeader = req.headers.get("Authorization");
@@ -127,13 +130,13 @@ serve(async (req) => {
         throw new Error("Failed to create Stripe checkout session");
       }
   
-      // Save topped payment record in database with pending status - INCLUDING CURRENCY
-      const { error: paymentError } = await supabaseClient
+      // Save topped payment record in database with pending status using service role
+      const { error: paymentError } = await supabaseService
         .from("topped_payments")
         .insert({
           craftsman_id: user.id,
           amount: amount,
-          currency: "eur", // FIX: Added the missing currency field
+          currency: "eur",
           payment_status: "pending",
           stripe_session_id: session.id,
           topped_start: currentDate.toISOString(),
@@ -142,7 +145,6 @@ serve(async (req) => {
   
       if (paymentError) {
         console.error("Error saving payment record:", paymentError);
-        // Log the detailed error but continue with the session creation
         console.error("Payment record error details:", JSON.stringify(paymentError));
         throw new Error(`Failed to save payment record: ${paymentError.message}`);
       }
@@ -214,7 +216,7 @@ serve(async (req) => {
       JSON.stringify({ 
         error: error.message || "Unknown error",
         errorCode: errorCode,
-        details: error.stack // Add stack trace for debugging
+        details: error.stack
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
