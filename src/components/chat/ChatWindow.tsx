@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +11,7 @@ import AdminAnnouncementMessage from "./AdminAnnouncementMessage";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
 import BookingRequestForm from "@/components/booking/BookingRequestForm";
+import ImageModal from "@/components/ImageModal";
 
 interface ChatWindowProps {
   contact: ChatContact | null;
@@ -23,6 +23,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isContactAdmin, setIsContactAdmin] = useState(false);
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Get current user from localStorage
@@ -147,8 +148,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
               <p className="text-xs font-semibold">Žiadosť o rezerváciu</p>
               <p className="text-xs">Dátum: {message.metadata.details.date}</p>
               <p className="text-xs">Čas: {message.metadata.details.time}</p>
+              {message.metadata.details.end_time && (
+                <p className="text-xs">Koniec: {message.metadata.details.end_time}</p>
+              )}
               {message.metadata.details.amount && (
                 <p className="text-xs">Cena: {message.metadata.details.amount} €</p>
+              )}
+              {message.metadata.details.image_url && (
+                <div className="mt-2">
+                  <img 
+                    src={message.metadata.details.image_url} 
+                    alt="Priložený obrázok" 
+                    className="max-w-full h-auto rounded cursor-pointer hover:opacity-80 transition-opacity"
+                    style={{ maxHeight: '150px' }}
+                    onClick={() => setSelectedImage(message.metadata.details.image_url)}
+                  />
+                </div>
               )}
             </div>
           )}
