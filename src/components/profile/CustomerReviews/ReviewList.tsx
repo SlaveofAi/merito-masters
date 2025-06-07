@@ -43,7 +43,7 @@ const ReviewList: React.FC<ReviewListProps> = ({
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
               <div className="flex items-start space-x-3">
-                <Link to={`/profile/${review.craftsman?.id}/portfolio`}>
+                <Link to={`/craftsman/${review.craftsman?.id}`}>
                   <Avatar className="w-12 h-12 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
                     {review.craftsman?.profile_image_url ? (
                       <AvatarImage 
@@ -60,7 +60,7 @@ const ReviewList: React.FC<ReviewListProps> = ({
                 </Link>
                 <div>
                   <Link 
-                    to={`/profile/${review.craftsman?.id}/portfolio`}
+                    to={`/craftsman/${review.craftsman?.id}`}
                     className="font-medium hover:text-primary hover:underline transition-colors"
                   >
                     {review.craftsman?.name || 'Neznámy remeselník'}

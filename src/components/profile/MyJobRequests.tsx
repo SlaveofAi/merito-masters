@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +26,7 @@ interface JobRequest {
   created_at: string;
 }
 
-const MyJobRequests = () => {
+const MyJobRequests: React.FC = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
@@ -138,14 +137,8 @@ const MyJobRequests = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Moje požiadavky</h2>
-        <Link to="/post-job">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Pridať požiadavku
-          </Button>
-        </Link>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h3 className="text-xl font-semibold">Moje požiadavky</h3>
       </div>
 
       {jobRequests && jobRequests.length > 0 ? (

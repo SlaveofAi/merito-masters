@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -340,7 +339,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 
   const CraftsmanProfileLink = () => (
     <Link 
-      to={`/profile/${review.craftsman_id}/portfolio`}
+      to={`/craftsman/${review.craftsman_id}`}
       className="hover:underline hover:text-primary transition-colors"
     >
       <h4 className="text-sm font-medium">{craftsmanName || 'Remeselník'}</h4>
@@ -466,7 +465,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1">
                       {craftsmanName ? (
                         <div className="flex items-center gap-2">
-                          <Link to={`/profile/${review.craftsman_id}/portfolio`}>
+                          <Link to={`/craftsman/${review.craftsman_id}`}>
                             <Avatar className="flex-shrink-0 w-6 h-6 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
                               {craftsmanImageUrl ? (
                                 <AvatarImage src={craftsmanImageUrl} alt={craftsmanName} />
