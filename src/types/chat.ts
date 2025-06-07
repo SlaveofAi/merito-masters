@@ -15,10 +15,11 @@ export interface MessageMetadata {
   type?: 'booking_request' | 'admin_announcement';
   status?: string;
   booking_id?: string;
+  title?: string; // Add back the title property for admin announcements
   details?: {
     date?: string;
     time?: string;
-    end_time?: string; // Add this property
+    end_time?: string;
     message?: string;
     amount?: string;
     image_url?: string;
