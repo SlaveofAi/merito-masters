@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,9 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
 import BookingRequestForm from "@/components/booking/BookingRequestForm";
 import ImageModal from "@/components/ImageModal";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Clock, Euro, Image as ImageIcon } from "lucide-react";
+import { formatDate } from "@/utils/formatters";
 
 interface ChatWindowProps {
   contact: ChatContact | null;
@@ -138,39 +142,86 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
 
     return (
       <div key={message.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}>
-        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+        <div className={`max-w-xs lg:max-w-md ${
           isOwnMessage 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-800'
-        }`}>
+            ? 'bg-primary text-primary-foreground' 
+            : 'bg-muted'
+        } rounded-2xl shadow-sm border`}>
+          
           {isBookingMessage && message.metadata?.details && (
-            <div className="mb-2 p-2 border rounded bg-white/10">
-              <p className="text-xs font-semibold">Žiadosť o rezerváciu</p>
-              <p className="text-xs">Dátum: {message.metadata.details.date}</p>
-              <p className="text-xs">Čas: {message.metadata.details.time}</p>
-              {message.metadata.details.end_time && (
-                <p className="text-xs">Koniec: {message.metadata.details.end_time}</p>
-              )}
-              {message.metadata.details.amount && (
-                <p className="text-xs">Cena: {message.metadata.details.amount} €</p>
-              )}
-              {message.metadata.details.image_url && (
-                <div className="mt-2">
-                  <img 
-                    src={message.metadata.details.image_url} 
-                    alt="Priložený obrázok" 
-                    className="max-w-full h-auto rounded cursor-pointer hover:opacity-80 transition-opacity"
-                    style={{ maxHeight: '150px' }}
-                    onClick={() => setSelectedImage(message.metadata.details.image_url)}
-                  />
+            <div className="p-4 border-b bg-card rounded-t-2xl">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span className="text-sm font-semibold text-foreground">Žiadosť o rezerváciu</span>
                 </div>
-              )}
+                <Badge variant="outline" className="text-xs">
+                  Čaká na odpoveď
+                </Badge>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span className="font-medium">
+                      {formatDate(message.metadata.details.date || '')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      {message.metadata.details.time}
+                      {message.metadata.details.end_time && ` - ${message.metadata.details.end_time}`}
+                    </span>
+                  </div>
+                </div>
+                
+                {message.metadata.details.amount && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Euro className="h-4 w-4 text-green-600" />
+                    <span className="font-semibold text-green-700">
+                      {message.metadata.details.amount} €
+                    </span>
+                  </div>
+                )}
+                
+                {message.metadata.details.image_url && (
+                  <div className="relative">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                      <ImageIcon className="h-4 w-4" />
+                      <span>Priložený obrázok</span>
+                    </div>
+                    <div className="relative group">
+                      <img 
+                        src={message.metadata.details.image_url} 
+                        alt="Booking image" 
+                        className="w-full max-w-[200px] h-auto rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity border"
+                        style={{ maxHeight: '120px' }}
+                        onClick={() => setSelectedImage(message.metadata.details.image_url)}
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-lg transition-colors flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="bg-white/90 rounded-full p-2">
+                            <ImageIcon className="h-4 w-4 text-gray-700" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-          <p className="break-words">{message.content}</p>
-          <p className="text-xs mt-1 opacity-70">
-            {new Date(message.created_at).toLocaleTimeString()}
-          </p>
+          
+          <div className="p-4">
+            <p className="break-words leading-relaxed">
+              {isBookingMessage ? message.metadata?.details?.message || "Žiadosť o rezerváciu" : message.content}
+            </p>
+            <p className="text-xs mt-2 opacity-70">
+              {new Date(message.created_at).toLocaleTimeString()}
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -310,6 +361,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
           </div>
         )}
       </div>
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <ImageModal
+          imageUrl={selectedImage}
+          onClose={() => setSelectedImage(null)}
+          alt="Booking image"
+        />
+      )}
     </div>
   );
 };
