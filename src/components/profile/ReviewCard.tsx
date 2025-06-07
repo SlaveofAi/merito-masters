@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -330,7 +331,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
 
   const CustomerProfileLink = () => (
     <Link 
-      to={`/profile/${review.customer_id}/reviews`}
+      to={`/profile/${review.customer_id}`}
       className="hover:underline hover:text-primary transition-colors"
     >
       <h3 className="font-medium">{customerDisplayName}</h3>
@@ -373,7 +374,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
     <Card className="mb-4">
       <CardContent className="pt-6">
         <div className="flex items-start gap-3">
-          <Link to={`/profile/${review.customer_id}/reviews`}>
+          <Link to={`/profile/${review.customer_id}`}>
             <Avatar className="flex-shrink-0 w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
               {profileImageUrl ? (
                 <AvatarImage src={profileImageUrl} alt={customerDisplayName} />
