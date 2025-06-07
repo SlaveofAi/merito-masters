@@ -241,7 +241,7 @@ const ProfileCalendar: React.FC = () => {
   if (!isCurrentUser && !canEditCalendar && isCraftsmanProfile) {
     console.log("Rendering customer view of craftsman calendar");
     return (
-      <Card className="shadow-sm">
+      <Card className="shadow-sm w-full max-w-4xl mx-auto">
         <CardHeader className={isMobile ? "px-3 py-2" : ""}>
           <CardTitle className="flex items-center justify-center">
             <CalendarIcon className="mr-2 h-5 w-5" />
@@ -277,7 +277,7 @@ const ProfileCalendar: React.FC = () => {
               onSelect={() => {}} // Customers can't select dates
               month={month}
               onMonthChange={setMonth}
-              className={`p-3 h-auto pointer-events-auto ${isMobile ? 'text-sm' : ''}`}
+              className={`p-3 h-auto pointer-events-auto w-full ${isMobile ? 'text-sm' : ''}`}
               modifiers={{
                 available: selectedDates
               }}
@@ -334,7 +334,7 @@ const ProfileCalendar: React.FC = () => {
   }
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm w-full max-w-4xl mx-auto">
       <CardHeader className={isMobile ? "px-3 py-2" : ""}>
         <CardTitle className="flex items-center justify-center">
           <CalendarIcon className="mr-2 h-5 w-5" />
@@ -374,7 +374,7 @@ const ProfileCalendar: React.FC = () => {
             }}
             month={month}
             onMonthChange={setMonth}
-            className={`p-3 h-auto pointer-events-auto ${isMobile ? 'text-sm' : ''}`}
+            className={`p-3 h-auto pointer-events-auto w-full ${isMobile ? 'text-sm' : ''}`}
             disabled={!canEditCalendar}
           />
           
