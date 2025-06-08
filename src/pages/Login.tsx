@@ -64,6 +64,8 @@ const Login = () => {
     const refreshToken = params.get('refresh_token');
     const type = params.get('type');
     
+    console.log("URL params:", { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+    
     // Check if this is a password reset flow
     if (type === 'recovery' && accessToken && refreshToken) {
       console.log("Password reset mode detected");
@@ -78,6 +80,10 @@ const Login = () => {
           console.error("Error setting session:", error);
           toast.error("Neplatný alebo expirovaný odkaz na obnovenie hesla");
           setIsPasswordResetMode(false);
+          // Clean up URL
+          window.history.replaceState({}, document.title, '/login');
+        } else {
+          console.log("Session set successfully for password reset");
         }
       });
       
@@ -264,11 +270,14 @@ const Login = () => {
     setIsLoading(true);
     
     try {
+      console.log("Attempting to update password");
+      
       const { error } = await supabase.auth.updateUser({
         password: data.password
       });
 
       if (error) {
+        console.error("Password update error:", error);
         toast.error(`Chyba pri zmene hesla: ${error.message}`, {
           duration: 5000,
         });
@@ -276,6 +285,7 @@ const Login = () => {
         return;
       }
 
+      console.log("Password updated successfully");
       toast.success("Heslo bolo úspešne zmenené!", {
         duration: 5000,
       });
@@ -341,7 +351,7 @@ const Login = () => {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/login?reset=true`,
+        redirectTo: `${window.location.origin}/login`,
       });
 
       if (error) {
