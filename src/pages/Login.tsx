@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Mail, Lock, CheckCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema, type LoginFormValues } from "@/lib/schemas";
+import { loginSchema, resetPasswordSchema, type LoginFormValues, type ResetPasswordFormValues } from "@/lib/schemas";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,7 @@ const Login = () => {
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [isResetLoading, setIsResetLoading] = useState(false);
+  const [isPasswordResetMode, setIsPasswordResetMode] = useState(false);
   const { user } = useAuth();
 
   // Redirect if already logged in
@@ -40,7 +41,7 @@ const Login = () => {
     }
   }, [user, navigate]);
 
-  const form = useForm<LoginFormValues>({
+  const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
@@ -48,15 +49,47 @@ const Login = () => {
     },
   });
 
-  // Check for email confirmation required status
+  const resetPasswordForm = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  // Check for password reset tokens and other URL parameters
   useEffect(() => {
-    // Check if coming from registration with email confirmation required
+    const params = new URLSearchParams(location.search);
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    const type = params.get('type');
+    
+    // Check if this is a password reset flow
+    if (type === 'recovery' && accessToken && refreshToken) {
+      console.log("Password reset mode detected");
+      setIsPasswordResetMode(true);
+      
+      // Set the session with the tokens from URL
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      }).then(({ error }) => {
+        if (error) {
+          console.error("Error setting session:", error);
+          toast.error("Neplatný alebo expirovaný odkaz na obnovenie hesla");
+          setIsPasswordResetMode(false);
+        }
+      });
+      
+      return;
+    }
+
+    // Check for email confirmation required status
     if (location.state?.emailConfirmationRequired) {
       setShowEmailConfirmation(true);
     }
     
     // Check for email confirmation in URL parameter
-    const params = new URLSearchParams(location.search);
     if (params.get('email_confirmed') === 'true') {
       toast.success("E-mailová adresa bola úspešne overená", {
         duration: 5000,
@@ -227,8 +260,41 @@ const Login = () => {
     }
   };
 
+  const onResetPassword = async (data: ResetPasswordFormValues) => {
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: data.password
+      });
+
+      if (error) {
+        toast.error(`Chyba pri zmene hesla: ${error.message}`, {
+          duration: 5000,
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      toast.success("Heslo bolo úspešne zmenené!", {
+        duration: 5000,
+      });
+
+      // Clean up URL and redirect to home
+      window.history.replaceState({}, document.title, '/login');
+      setIsPasswordResetMode(false);
+      navigate("/home");
+    } catch (error) {
+      console.error("Password reset error:", error);
+      toast.error("Pri zmene hesla nastala chyba", {
+        duration: 3000,
+      });
+      setIsLoading(false);
+    }
+  };
+
   const handleResendConfirmationEmail = async () => {
-    const email = form.getValues("email");
+    const email = loginForm.getValues("email");
     
     if (!email) {
       toast.error("Prosím zadajte e-mailovú adresu", { 
@@ -305,14 +371,17 @@ const Login = () => {
           <Card className="border-border/50 shadow-md animate-scale-in">
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl font-semibold text-center">
-                Prihlásenie
+                {isPasswordResetMode ? "Nastaviť nové heslo" : "Prihlásenie"}
               </CardTitle>
               <CardDescription className="text-center">
-                Prihláste sa do svojho účtu
+                {isPasswordResetMode 
+                  ? "Zadajte svoje nové heslo" 
+                  : "Prihláste sa do svojho účtu"
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {showEmailConfirmation && (
+              {showEmailConfirmation && !isPasswordResetMode && (
                 <Alert className="bg-amber-50 border-amber-200 mb-4">
                   <CheckCircle className="h-5 w-5 text-amber-500" />
                   <AlertTitle className="text-amber-800">Overte svoj e-mail</AlertTitle>
@@ -330,119 +399,175 @@ const Login = () => {
                 </Alert>
               )}
               
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel>Email</FormLabel>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                          <FormControl>
-                            <Input
-                              type="email"
-                              placeholder="meno@example.sk"
-                              className="pl-10"
-                              {...field}
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              {isPasswordResetMode ? (
+                <Form {...resetPasswordForm}>
+                  <form onSubmit={resetPasswordForm.handleSubmit(onResetPassword)} className="space-y-4">
+                    <FormField
+                      control={resetPasswordForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel>Nové heslo</FormLabel>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                            <FormControl>
+                              <Input
+                                type="password"
+                                placeholder="••••••••"
+                                className="pl-10"
+                                {...field}
+                              />
+                            </FormControl>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <FormLabel>Heslo</FormLabel>
-                          <Dialog open={isResetModalOpen} onOpenChange={setIsResetModalOpen}>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="link"
-                                className="text-xs text-muted-foreground hover:text-foreground transition-colors p-0 h-auto"
-                                type="button"
-                              >
-                                Zabudnuté heslo?
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-md">
-                              <DialogHeader>
-                                <DialogTitle>Obnovenie hesla</DialogTitle>
-                                <DialogDescription>
-                                  Zadajte svoju e-mailovú adresu a pošleme vám odkaz na obnovenie hesla.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div className="relative">
-                                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                  <Input
-                                    type="email"
-                                    placeholder="meno@example.sk"
-                                    className="pl-10"
-                                    value={resetEmail}
-                                    onChange={(e) => setResetEmail(e.target.value)}
-                                  />
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="outline"
-                                    onClick={() => setIsResetModalOpen(false)}
-                                    className="flex-1"
-                                    disabled={isResetLoading}
-                                  >
-                                    Zrušiť
-                                  </Button>
-                                  <Button
-                                    onClick={handleForgotPassword}
-                                    className="flex-1"
-                                    disabled={isResetLoading}
-                                  >
-                                    {isResetLoading ? "Odosielam..." : "Odoslať"}
-                                  </Button>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                          <FormControl>
-                            <Input
-                              type="password"
-                              placeholder="••••••••"
-                              className="pl-10"
-                              {...field}
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={resetPasswordForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel>Potvrdiť nové heslo</FormLabel>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                            <FormControl>
+                              <Input
+                                type="password"
+                                placeholder="••••••••"
+                                className="pl-10"
+                                {...field}
+                              />
+                            </FormControl>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Prihlasujem..." : "Prihlásiť sa"}
-                  </Button>
-                </form>
-              </Form>
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? "Nastavujem heslo..." : "Nastaviť nové heslo"}
+                    </Button>
+                  </form>
+                </Form>
+              ) : (
+                <Form {...loginForm}>
+                  <form onSubmit={loginForm.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={loginForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel>Email</FormLabel>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                            <FormControl>
+                              <Input
+                                type="email"
+                                placeholder="meno@example.sk"
+                                className="pl-10"
+                                {...field}
+                              />
+                            </FormControl>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Heslo</FormLabel>
+                            <Dialog open={isResetModalOpen} onOpenChange={setIsResetModalOpen}>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="link"
+                                  className="text-xs text-muted-foreground hover:text-foreground transition-colors p-0 h-auto"
+                                  type="button"
+                                >
+                                  Zabudnuté heslo?
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                  <DialogTitle>Obnovenie hesla</DialogTitle>
+                                  <DialogDescription>
+                                    Zadajte svoju e-mailovú adresu a pošleme vám odkaz na obnovenie hesla.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="relative">
+                                    <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                    <Input
+                                      type="email"
+                                      placeholder="meno@example.sk"
+                                      className="pl-10"
+                                      value={resetEmail}
+                                      onChange={(e) => setResetEmail(e.target.value)}
+                                    />
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => setIsResetModalOpen(false)}
+                                      className="flex-1"
+                                      disabled={isResetLoading}
+                                    >
+                                      Zrušiť
+                                    </Button>
+                                    <Button
+                                      onClick={handleForgotPassword}
+                                      className="flex-1"
+                                      disabled={isResetLoading}
+                                    >
+                                      {isResetLoading ? "Odosielam..." : "Odoslať"}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                            <FormControl>
+                              <Input
+                                type="password"
+                                placeholder="••••••••"
+                                className="pl-10"
+                                {...field}
+                              />
+                            </FormControl>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? "Prihlasujem..." : "Prihlásiť sa"}
+                    </Button>
+                  </form>
+                </Form>
+              )}
             </CardContent>
-            <CardFooter className="flex flex-col items-center justify-between p-6 bg-secondary rounded-b-lg">
-              <div className="text-sm text-muted-foreground text-center">
-                Nemáte ešte účet?{" "}
-                <Link
-                  to="/register"
-                  className="font-medium hover:text-foreground transition-colors"
-                >
-                  Zaregistrujte sa
-                </Link>
-              </div>
-            </CardFooter>
+            {!isPasswordResetMode && (
+              <CardFooter className="flex flex-col items-center justify-between p-6 bg-secondary rounded-b-lg">
+                <div className="text-sm text-muted-foreground text-center">
+                  Nemáte ešte účet?{" "}
+                  <Link
+                    to="/register"
+                    className="font-medium hover:text-foreground transition-colors"
+                  >
+                    Zaregistrujte sa
+                  </Link>
+                </div>
+              </CardFooter>
+            )}
           </Card>
         </div>
       </div>

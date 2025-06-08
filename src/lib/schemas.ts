@@ -22,3 +22,13 @@ export const loginSchema = z.object({
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
+
+export const resetPasswordSchema = z.object({
+  password: z.string().min(6, { message: "Heslo musí mať aspoň 6 znakov" }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Heslá sa nezhodujú",
+  path: ["confirmPassword"],
+});
+
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
