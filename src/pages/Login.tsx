@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -13,12 +14,23 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = React.useState(false);
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isResetLoading, setIsResetLoading] = useState(false);
   const { user } = useAuth();
 
   // Redirect if already logged in
@@ -251,6 +263,41 @@ const Login = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!resetEmail) {
+      toast.error("Prosím zadajte e-mailovú adresu", { 
+        duration: 3000 
+      });
+      return;
+    }
+
+    setIsResetLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/login?reset=true`,
+      });
+
+      if (error) {
+        toast.error(error.message, { duration: 3000 });
+      } else {
+        toast.success("E-mail na obnovenie hesla bol odoslaný", { 
+          description: "Skontrolujte svoju e-mailovú schránku",
+          duration: 5000 
+        });
+        setIsResetModalOpen(false);
+        setResetEmail("");
+      }
+    } catch (error) {
+      console.error("Error sending reset email:", error);
+      toast.error("Nastala chyba pri odosielaní e-mailu na obnovenie hesla", { 
+        duration: 3000 
+      });
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="min-h-[80vh] flex items-center justify-center p-4 bg-gradient-to-b from-white to-secondary/30">
@@ -314,12 +361,54 @@ const Login = () => {
                       <FormItem className="space-y-2">
                         <div className="flex items-center justify-between">
                           <FormLabel>Heslo</FormLabel>
-                          <Link
-                            to="/forgot-password"
-                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            Zabudnuté heslo?
-                          </Link>
+                          <Dialog open={isResetModalOpen} onOpenChange={setIsResetModalOpen}>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="link"
+                                className="text-xs text-muted-foreground hover:text-foreground transition-colors p-0 h-auto"
+                                type="button"
+                              >
+                                Zabudnuté heslo?
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>Obnovenie hesla</DialogTitle>
+                                <DialogDescription>
+                                  Zadajte svoju e-mailovú adresu a pošleme vám odkaz na obnovenie hesla.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="relative">
+                                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                  <Input
+                                    type="email"
+                                    placeholder="meno@example.sk"
+                                    className="pl-10"
+                                    value={resetEmail}
+                                    onChange={(e) => setResetEmail(e.target.value)}
+                                  />
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => setIsResetModalOpen(false)}
+                                    className="flex-1"
+                                    disabled={isResetLoading}
+                                  >
+                                    Zrušiť
+                                  </Button>
+                                  <Button
+                                    onClick={handleForgotPassword}
+                                    className="flex-1"
+                                    disabled={isResetLoading}
+                                  >
+                                    {isResetLoading ? "Odosielam..." : "Odoslať"}
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                         <div className="relative">
                           <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
