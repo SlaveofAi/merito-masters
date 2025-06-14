@@ -299,27 +299,24 @@ export const useBlogTags = () => {
 export const useIncrementPostView = () => {
   return useMutation({
     mutationFn: async (postId: string) => {
-      const { error } = await supabase.rpc('increment', {
-        table_name: 'blog_posts',
-        row_id: postId,
-        column_name: 'view_count'
-      });
+      // Get current view count and increment it
+      const { data: post, error: fetchError } = await supabase
+        .from('blog_posts')
+        .select('view_count')
+        .eq('id', postId)
+        .single();
       
-      if (error) {
-        // Fallback method if RPC doesn't work
-        const { data: post } = await supabase
-          .from('blog_posts')
-          .select('view_count')
-          .eq('id', postId)
-          .single();
-        
-        if (post) {
-          await supabase
-            .from('blog_posts')
-            .update({ view_count: post.view_count + 1 })
-            .eq('id', postId);
-        }
+      if (fetchError || !post) {
+        throw fetchError || new Error('Post not found');
       }
+      
+      // Update with incremented view count
+      const { error: updateError } = await supabase
+        .from('blog_posts')
+        .update({ view_count: post.view_count + 1 })
+        .eq('id', postId);
+      
+      if (updateError) throw updateError;
     },
   });
 };
