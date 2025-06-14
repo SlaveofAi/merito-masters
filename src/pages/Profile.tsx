@@ -15,6 +15,17 @@ const Profile = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
+  console.log("=== PROFILE PAGE DEBUG ===");
+  console.log("Profile page rendering with:", {
+    id,
+    tab,
+    userType,
+    loading,
+    userLoggedIn: !!user,
+    path: window.location.pathname,
+    userId: user?.id
+  });
+  
   // Check if this is a craftsman profile view (route: /craftsman/:id)
   const isCraftsmanProfileRoute = location.pathname.startsWith('/craftsman/');
   
@@ -34,27 +45,16 @@ const Profile = () => {
     }
   }, [location]);
   
-  // Debug log
-  useEffect(() => {
-    console.log("Profile route rendering with:", {
-      id,
-      tab,
-      userType,
-      loading,
-      userLoggedIn: !!user,
-      path: window.location.pathname,
-      isCraftsmanProfileRoute
-    });
-  }, [id, tab, userType, loading, user, isCraftsmanProfileRoute]);
-  
   // Use this effect for customer redirects
   useEffect(() => {
     if (loading) {
+      console.log("Still loading auth, waiting...");
       return; // Wait for loading to complete
     }
     
     // Skip redirects for craftsman profile routes
     if (isCraftsmanProfileRoute) {
+      console.log("Craftsman profile route, skipping redirects");
       return;
     }
     
@@ -66,13 +66,14 @@ const Profile = () => {
     
     // Only redirect customers from their own profile to requests tab
     if (!id && userType === "customer" && window.location.pathname === "/profile") {
-      console.log("Customer profile detected in Profile useEffect, redirecting to requests");
-      navigate("/profile/requests", { replace: true });
+      console.log("Customer profile detected in Profile useEffect, redirecting to reviews");
+      navigate("/profile/reviews", { replace: true });
     }
   }, [id, userType, loading, navigate, user, isCraftsmanProfileRoute]);
   
   // For craftsman profile routes, show content without authentication requirement
   if (isCraftsmanProfileRoute) {
+    console.log("Rendering craftsman profile route");
     return (
       <ProfileProvider>
         <ProfilePage initialTab="portfolio" />
@@ -88,13 +89,14 @@ const Profile = () => {
   
   // While auth is loading, show loading state
   if (loading) {
+    console.log("Auth still loading, showing skeleton");
     return <ProfileSkeleton />;
   }
   
   // Immediate redirect for customers viewing their own profile
   if (!id && userType === "customer" && window.location.pathname === "/profile") {
-    console.log("Customer profile detected in main Profile route, immediate redirect to requests");
-    return <Navigate to="/profile/requests" replace />;
+    console.log("Customer profile detected in main Profile route, immediate redirect to reviews");
+    return <Navigate to="/profile/reviews" replace />;
   }
   
   // We need to check if the user is trying to navigate to their own profile
@@ -105,14 +107,16 @@ const Profile = () => {
     return <Navigate to="/profile" replace />;
   }
 
-  // For the main Profile route, we want to show the requests tab if it's a customer
+  // For the main Profile route, we want to show the reviews tab if it's a customer
   // or the calendar if explicitly requested, otherwise default to "portfolio"
   let initialTab = "portfolio";
   if (tab) {
     initialTab = tab;
   } else if (userType === 'customer' && !id) {
-    initialTab = "requests";
+    initialTab = "reviews";
   }
+  
+  console.log("Rendering profile page with initialTab:", initialTab);
   
   return (
     <ProfileProvider>

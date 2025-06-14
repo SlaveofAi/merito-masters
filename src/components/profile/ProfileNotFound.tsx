@@ -24,9 +24,13 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
   const { user, signOut, userType, updateUserType } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
 
+  console.log("=== PROFILE NOT FOUND DEBUG ===");
+  console.log("ProfileNotFound props:", { isCurrentUser, error });
+  console.log("Auth state:", { user: !!user, userType });
+
   // Automatically try to create a profile when component loads for current user
   useEffect(() => {
-    if (isCurrentUser && user && userType && onCreateProfile) {
+    if (isCurrentUser && user && userType && onCreateProfile && !isCreating) {
       console.log("Auto-creating profile for current user:", user.id, "with type:", userType);
       handleCreateProfile();
     }
@@ -34,6 +38,7 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
 
   const handleCreateProfile = async () => {
     if (!user || !userType) {
+      console.log("Cannot create profile: missing user or userType", { user: !!user, userType });
       toast.error("Chýbajúce údaje pre vytvorenie profilu");
       return;
     }
@@ -41,7 +46,7 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
     setIsCreating(true);
     
     try {
-      console.log("Creating profile with user:", user, "userType:", userType);
+      console.log("Creating profile with user:", user.id, "userType:", userType);
       
       await createDefaultProfile(
         user,
@@ -68,6 +73,7 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
   const handleSetCustomer = async () => {
     if (!user) return;
     try {
+      console.log("Setting user type to customer");
       await updateUserType('customer');
       toast.success("Typ používateľa nastavený na zákazníka");
       setTimeout(() => {
@@ -82,6 +88,7 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
   const handleSetCraftsman = async () => {
     if (!user) return;
     try {
+      console.log("Setting user type to craftsman");
       await updateUserType('craftsman');
       toast.success("Typ používateľa nastavený na remeselníka");
       setTimeout(() => {

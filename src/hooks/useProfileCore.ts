@@ -14,6 +14,7 @@ export const useProfileCore = (id?: string) => {
   const { user, userType: authUserType, loading: authLoading } = useAuth();
 
   const fetchProfileData = useCallback(async () => {
+    console.log("=== FETCH PROFILE DATA DEBUG ===");
     setLoading(true);
     setProfileNotFound(false);
     setError(null);
@@ -25,7 +26,7 @@ export const useProfileCore = (id?: string) => {
       // If no ID provided or ID is the literal string ":id" or empty, use current user's ID
       if (!userId || userId === ":id" || userId === "") {
         userId = user?.id;
-        console.log("Using current user ID:", userId);
+        console.log("No ID provided, using current user ID:", userId);
       }
       
       // Exit early if we still don't have a userId to query
@@ -39,6 +40,13 @@ export const useProfileCore = (id?: string) => {
       // Use the userType from Auth context if it's for the current user
       let fetchedUserType = null;
       const isOwner = user?.id === userId;
+      
+      console.log("Profile fetch details:", {
+        userId,
+        isOwner,
+        authUserType,
+        authLoading
+      });
       
       if (isOwner && authUserType) {
         console.log("Using userType from auth context:", authUserType);
@@ -75,7 +83,7 @@ export const useProfileCore = (id?: string) => {
           setProfileData(enrichedProfileData as ProfileData);
           setProfileNotFound(false);
         } else {
-          console.log("No profile data found for:", userId);
+          console.log("No profile data found for current user, profile may need to be created");
           setProfileNotFound(true);
         }
         
@@ -99,12 +107,12 @@ export const useProfileCore = (id?: string) => {
         return;
       }
 
-      console.log("User type data:", userTypeData);
+      console.log("User type data from database:", userTypeData);
       
       if (!userTypeData) {
         console.log("No user type found for:", userId);
         
-        // Last effort - check cached user type in localStorage
+        // Last effort - check cached user type in localStorage if this is the current user
         if (isOwner) {
           const cachedUserType = localStorage.getItem("userType");
           if (cachedUserType === 'customer' || cachedUserType === 'craftsman') {
@@ -112,6 +120,7 @@ export const useProfileCore = (id?: string) => {
             setUserType(cachedUserType as 'customer' | 'craftsman');
             fetchedUserType = cachedUserType;
           } else {
+            console.log("No cached user type available, profile setup needed");
             setUserType(null);
             setProfileNotFound(true);
             setLoading(false);
@@ -184,8 +193,11 @@ export const useProfileCore = (id?: string) => {
       // Determine if the profile being viewed belongs to the current user
       if (!id || id === ":id" || id === "") {
         setIsCurrentUser(true);
+        console.log("Viewing current user's profile");
       } else {
-        setIsCurrentUser(user.id === id);
+        const isOwner = user.id === id;
+        setIsCurrentUser(isOwner);
+        console.log("Is current user viewing own profile:", isOwner);
       }
     } else {
       setIsCurrentUser(false);
@@ -196,7 +208,10 @@ export const useProfileCore = (id?: string) => {
     // Only fetch profile data when auth is no longer loading
     // This prevents premature fetches without user type info
     if (!authLoading) {
+      console.log("Auth loading complete, fetching profile data");
       fetchProfileData();
+    } else {
+      console.log("Still loading auth state, waiting...");
     }
   }, [fetchProfileData, authLoading]);
 
