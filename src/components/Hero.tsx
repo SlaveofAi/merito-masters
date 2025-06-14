@@ -11,7 +11,7 @@ const Hero = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   
   const handleSearch = () => {
-    navigate('/home', { state: { searchTerm } });
+    navigate('/', { state: { searchTerm } });
   };
 
   const handleRemeselnikovClick = () => {
