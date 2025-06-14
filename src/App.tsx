@@ -77,11 +77,15 @@ function App() {
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
 
-              {/* Protected routes */}
+              {/* Profile routes - add the missing /profile route */}
+              <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
               <Route path="/profile/:id" element={<Profile />} />
               <Route path="/profile/:id/portfolio" element={<ProfilePortfolio />} />
               <Route path="/profile/:id/reviews" element={<ProfileReviews />} />
               <Route path="/profile/:id/calendar" element={<ProfileCalendar />} />
+              
+              {/* Craftsman profile routes for public viewing */}
+              <Route path="/craftsman/:id" element={<Profile />} />
               
               <Route path="/job-requests" element={<PrivateRoute><JobRequests /></PrivateRoute>} />
               <Route path="/post-job" element={<PrivateRoute><PostJob /></PrivateRoute>} />

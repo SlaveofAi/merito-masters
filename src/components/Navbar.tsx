@@ -67,7 +67,7 @@ const Navbar = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuItem asChild>
-                      <Link to={`/profile/${user.id}`} className="flex items-center">
+                      <Link to="/profile" className="flex items-center">
                         <User className="mr-2 h-4 w-4" />
                         <span>Môj profil</span>
                       </Link>

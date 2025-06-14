@@ -64,7 +64,7 @@ const Profile = () => {
       return;
     }
     
-    // Only redirect if viewing own profile (no ID passed), not when viewing someone else's
+    // Only redirect customers from their own profile to requests tab
     if (!id && userType === "customer" && window.location.pathname === "/profile") {
       console.log("Customer profile detected in Profile useEffect, redirecting to requests");
       navigate("/profile/requests", { replace: true });
@@ -91,7 +91,7 @@ const Profile = () => {
     return <ProfileSkeleton />;
   }
   
-  // Immediate redirect for customers
+  // Immediate redirect for customers viewing their own profile
   if (!id && userType === "customer" && window.location.pathname === "/profile") {
     console.log("Customer profile detected in main Profile route, immediate redirect to requests");
     return <Navigate to="/profile/requests" replace />;
