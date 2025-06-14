@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,8 +23,8 @@ interface ReviewCardProps {
 const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, canEdit, onReplyUpdated }) => {
   const [customerName, setCustomerName] = useState<string | null>(null);
   const [customerImageUrl, setCustomerImageUrl] = useState<string | null>(null);
-  const [craftsmanName, setCraftsmanName] = useState<string | null>(null);
-  const [craftsmanImageUrl, setCraftsmanImageUrl] = useState<string | null>(null);
+  const [craftsmanDisplayName, setCraftsmanDisplayName] = useState<string | null>(null);
+  const [craftsmanDisplayImageUrl, setCraftsmanDisplayImageUrl] = useState<string | null>(null);
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
@@ -44,7 +45,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
       to={`/craftsman/${review.craftsman_id}`}
       className="font-medium hover:text-primary hover:underline transition-colors"
     >
-      {craftsmanName || 'Remeselník'}
+      {craftsmanDisplayName || 'Remeselník'}
     </Link>
   );
 
@@ -54,7 +55,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
       try {
         const { data: customer, error } = await supabase
           .from('profiles')
-          .select('name, profile_image_url')
+          .select('name')
           .eq('id', review.customer_id)
           .single();
 
@@ -62,7 +63,6 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
           console.error("Error fetching customer data:", error);
         } else if (customer) {
           setCustomerName(customer.name);
-          setCustomerImageUrl(customer.profile_image_url);
         }
       } catch (error) {
         console.error("Error fetching customer data:", error);
@@ -78,15 +78,14 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
       try {
         const { data: craftsman, error } = await supabase
           .from('profiles')
-          .select('name, profile_image_url')
+          .select('name')
           .eq('id', review.craftsman_id)
           .single();
 
         if (error) {
           console.error("Error fetching craftsman data:", error);
         } else if (craftsman) {
-          setCraftsmanName(craftsman.name);
-          setCraftsmanImageUrl(craftsman.profile_image_url);
+          setCraftsmanDisplayName(craftsman.name);
         }
       } catch (error) {
         console.error("Error fetching craftsman data:", error);
@@ -101,7 +100,11 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
     try {
       const { data, error } = await supabase
         .from('craftsman_review_replies')
-        .insert([{ review_id: review.id, reply_text: replyText }]);
+        .insert([{ 
+          review_id: review.id, 
+          reply: replyText,
+          craftsman_id: review.craftsman_id 
+        }]);
 
       if (error) {
         console.error("Error submitting reply:", error);
@@ -124,9 +127,6 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
     setIsEditing(false);
     onReplyUpdated();
   };
-
-  const craftsmanName = craftsmanName;
-  const craftsmanImageUrl = craftsmanImageUrl;
 
   return (
     <Card className="overflow-hidden">
@@ -176,15 +176,15 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
             </p>
 
             {/* Craftsman info if this is from customer reviews tab */}
-            {craftsmanName && (
+            {craftsmanDisplayName && (
               <div className="bg-gray-50 p-3 rounded-md">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-sm text-gray-600">Remeselník:</span>
                   <div className="flex items-center gap-2">
                     <Link to={`/craftsman/${review.craftsman_id}`}>
                       <Avatar className="flex-shrink-0 w-6 h-6 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
-                        {craftsmanImageUrl ? (
-                          <AvatarImage src={craftsmanImageUrl} alt={craftsmanName} />
+                        {craftsmanDisplayImageUrl ? (
+                          <AvatarImage src={craftsmanDisplayImageUrl} alt={craftsmanDisplayName} />
                         ) : (
                           <AvatarFallback className="bg-gray-200">
                             <User className="text-gray-500 w-3 h-3" />
@@ -217,13 +217,15 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
             {isEditing && canEdit && (
               <div className="border-t pt-4">
                 <ReviewForm
-                  craftsmanId={review.craftsman_id}
-                  initialRating={review.rating}
-                  initialComment={review.comment || ""}
+                  userId={review.customer_id}
+                  profileId={review.craftsman_id}
                   onSuccess={handleEditSuccess}
                   onCancel={() => setIsEditing(false)}
-                  isEditing={true}
-                  reviewId={review.id}
+                  existingReview={{
+                    id: review.id,
+                    rating: review.rating,
+                    comment: review.comment || ""
+                  }}
                 />
               </div>
             )}
@@ -238,7 +240,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, reply, isCraftsman, can
                     {format(new Date(reply.created_at), 'dd.MM.yyyy HH:mm', { locale: sk })}
                   </span>
                 </div>
-                <p className="text-gray-700 text-sm">{reply.reply_text}</p>
+                <p className="text-gray-700 text-sm">{reply.reply}</p>
               </div>
             )}
 

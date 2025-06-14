@@ -13,7 +13,8 @@ import {
   X,
   Home,
   Shield,
-  LogOut
+  LogOut,
+  PenTool
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -28,6 +29,7 @@ const AdminLayout = () => {
     { name: 'Content Moderation', href: '/admin/content', icon: Shield },
     { name: 'Job Requests', href: '/admin/jobs', icon: FileText },
     { name: 'Reviews', href: '/admin/reviews', icon: MessageSquare },
+    { name: 'Blog Management', href: '/admin/blog', icon: PenTool },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];

@@ -1,127 +1,57 @@
-import React, { useState, useEffect } from "react";
+
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import NavigationWithNotification from "./NavigationWithNotification";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, LogOut } from "lucide-react";
+import NavigationWithNotification from "./NavigationWithNotification";
 
 const Navbar = () => {
-  const [scrolled, setScrolled] = useState(false);
-  const { user, signOut } = useAuth();
   const location = useLocation();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
-  const handleSignOut = async () => {
-    await signOut();
-    // Force page reload after signout to clear any cached state
-    window.location.href = '/';
-  };
-
-  // Check if we're on authentication pages to avoid showing certain elements
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const navItems = [
+    { label: "Domov", href: "/" },
+    { label: "Kategórie", href: "/categories" },
+    { label: "Blog", href: "/blog" },
+    { label: "Ako to funguje", href: "/how-it-works" },
+    { label: "Výhody", href: "/benefits" },
+    { label: "Ceny", href: "/pricing" },
+    { label: "O nás", href: "/about" },
+    { label: "Kontakt", href: "/contact" },
+  ];
 
   return (
-    <div
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-white shadow-md" : "bg-transparent"
-      }`}
-    >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Link to either home page or landing page based on user authentication */}
-          <Link to={user ? "/home" : "/"} className="flex items-center">
-            <span className="text-xl font-bold text-black">Majstri.com</span>
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">M</span>
+            </div>
+            <span className="font-bold text-xl text-gray-900">Majstri.com</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4">
-            {!isAuthPage && <NavigationWithNotification />}
-            
-            {user && (
-              <Button onClick={handleSignOut} variant="ghost" className="flex items-center">
-                <LogOut className="h-4 w-4 mr-2" />
-                Odhlásiť sa
-              </Button>
-            )}
+          <div className="hidden lg:flex items-center space-x-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  location.pathname === item.href
+                    ? "bg-primary/10 text-primary"
+                    : "text-gray-700 hover:text-primary hover:bg-gray-50"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
 
-          {/* Mobile Navigation */}
-          <div className="md:hidden">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right">
-                <div className="flex flex-col space-y-4 mt-8">
-                  {user ? (
-                    <>
-                      <Link to="/notifications">
-                        <Button variant="ghost" className="w-full justify-start">Notifikácie</Button>
-                      </Link>
-                      <Link to="/job-requests">
-                        <Button variant="ghost" className="w-full justify-start">
-                          Požiadavky
-                        </Button>
-                      </Link>
-                      <Link to="/messages">
-                        <Button variant="ghost" className="w-full justify-start">Správy</Button>
-                      </Link>
-                      <Link to="/profile">
-                        <Button variant="ghost" className="w-full justify-start">Profil</Button>
-                      </Link>
-                      <Link to="/approved-bookings">
-                        <Button variant="ghost" className="w-full justify-start">Zákazky</Button>
-                      </Link>
-                      <Button 
-                        onClick={handleSignOut} 
-                        variant="ghost" 
-                        className="w-full justify-start flex items-center text-red-600"
-                      >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Odhlásiť sa
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Link to="/job-requests">
-                        <Button variant="ghost" className="w-full justify-start">
-                          Požiadavky
-                        </Button>
-                      </Link>
-                      <Link to="/login">
-                        <Button variant="ghost" className="w-full justify-start">Prihlásenie</Button>
-                      </Link>
-                      <Link to="/register">
-                        <Button variant="default" className="w-full bg-primary text-white">
-                          Registrácia
-                        </Button>
-                      </Link>
-                    </>
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
+          {/* Right side navigation */}
+          <NavigationWithNotification />
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
 
