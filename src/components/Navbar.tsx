@@ -1,8 +1,8 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import NavigationWithNotification from "./NavigationWithNotification";
+import MobileNavbar from "./MobileNavbar";
 
 const Navbar = () => {
   const location = useLocation();
@@ -48,7 +48,15 @@ const Navbar = () => {
           </div>
 
           {/* Right side navigation */}
-          <NavigationWithNotification />
+          <div className="flex items-center gap-2">
+            {/* Desktop navigation */}
+            <div className="hidden lg:block">
+              <NavigationWithNotification />
+            </div>
+            
+            {/* Mobile navigation */}
+            <MobileNavbar />
+          </div>
         </div>
       </div>
     </nav>

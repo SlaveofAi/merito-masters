@@ -63,6 +63,10 @@ function App() {
               
               {/* Protected Routes */}
               <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+              <Route path="/profile/requests" element={<PrivateRoute><Profile /></PrivateRoute>} />
+              <Route path="/profile/reviews" element={<PrivateRoute><Profile /></PrivateRoute>} />
+              <Route path="/profile/portfolio" element={<PrivateRoute><Profile /></PrivateRoute>} />
+              <Route path="/profile/calendar" element={<PrivateRoute><Profile /></PrivateRoute>} />
               <Route path="/profile/:id" element={<Profile />} />
               <Route path="/profile/:id/:tab" element={<Profile />} />
               <Route path="/craftsman/:id" element={<Profile />} />

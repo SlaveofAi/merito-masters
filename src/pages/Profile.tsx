@@ -18,6 +18,9 @@ const Profile = () => {
   // Check if this is a craftsman profile view (route: /craftsman/:id)
   const isCraftsmanProfileRoute = location.pathname.startsWith('/craftsman/');
   
+  // Check if this is a tab-only route like /profile/requests, /profile/reviews, etc.
+  const isTabOnlyRoute = !id && tab && ['requests', 'reviews', 'portfolio', 'calendar'].includes(tab);
+  
   // Get userType from query parameter if available (for Google OAuth redirect)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -43,33 +46,10 @@ const Profile = () => {
       loading,
       userLoggedIn: !!user,
       path: window.location.pathname,
-      isCraftsmanProfileRoute
+      isCraftsmanProfileRoute,
+      isTabOnlyRoute
     });
-  }, [id, tab, userType, loading, user, isCraftsmanProfileRoute]);
-  
-  // Use this effect for customer redirects
-  useEffect(() => {
-    if (loading) {
-      return; // Wait for loading to complete
-    }
-    
-    // Skip redirects for craftsman profile routes
-    if (isCraftsmanProfileRoute) {
-      return;
-    }
-    
-    // If user type is not set and user is logged in, show user type selector
-    if (!userType && user) {
-      console.log("User type not set, will show UserTypeSelector in ProfilePage");
-      return;
-    }
-    
-    // Only redirect if viewing own profile (no ID passed), not when viewing someone else's
-    if (!id && userType === "customer" && window.location.pathname === "/profile") {
-      console.log("Customer profile detected in Profile useEffect, redirecting to requests");
-      navigate("/profile/requests", { replace: true });
-    }
-  }, [id, userType, loading, navigate, user, isCraftsmanProfileRoute]);
+  }, [id, tab, userType, loading, user, isCraftsmanProfileRoute, isTabOnlyRoute]);
   
   // For craftsman profile routes, show content without authentication requirement
   if (isCraftsmanProfileRoute) {
@@ -91,10 +71,10 @@ const Profile = () => {
     return <ProfileSkeleton />;
   }
   
-  // Immediate redirect for customers
-  if (!id && userType === "customer" && window.location.pathname === "/profile") {
-    console.log("Customer profile detected in main Profile route, immediate redirect to requests");
-    return <Navigate to="/profile/requests" replace />;
+  // Handle customer trying to access portfolio tab - redirect to reviews
+  if (userType === "customer" && tab === "portfolio") {
+    console.log("Customer trying to access portfolio, redirecting to reviews");
+    return <Navigate to="/profile/reviews" replace />;
   }
   
   // We need to check if the user is trying to navigate to their own profile
@@ -105,12 +85,14 @@ const Profile = () => {
     return <Navigate to="/profile" replace />;
   }
 
-  // For the main Profile route, we want to show the requests tab if it's a customer
-  // or the calendar if explicitly requested, otherwise default to "portfolio"
+  // For tab-only routes (like /profile/requests), use the tab directly
   let initialTab = "portfolio";
-  if (tab) {
+  if (isTabOnlyRoute) {
+    initialTab = tab!;
+  } else if (tab) {
     initialTab = tab;
   } else if (userType === 'customer' && !id) {
+    // Default tab for customers viewing their own profile
     initialTab = "requests";
   }
   
