@@ -34,20 +34,20 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
+    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-14 sm:h-16">
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold text-blue-600">Majstri</span>
+              <span className="text-xl sm:text-2xl font-bold text-blue-600">Majstri</span>
             </Link>
             
-            <div className="hidden md:ml-6 md:flex md:space-x-8">
+            <div className="hidden lg:ml-6 lg:flex lg:space-x-6 xl:space-x-8">
               {navigationItems.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                  className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap"
                 >
                   {item.name}
                 </Link>
@@ -55,7 +55,7 @@ const Navbar = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {user ? (
               <>
                 <NotificationIndicator />
@@ -109,22 +109,23 @@ const Navbar = () => {
                 </DropdownMenu>
               </>
             ) : (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <Link to="/login">
-                  <Button variant="ghost">Prihlásiť sa</Button>
+                  <Button variant="ghost" size="sm" className="text-sm">Prihlásiť sa</Button>
                 </Link>
                 <Link to="/register">
-                  <Button>Registrovať sa</Button>
+                  <Button size="sm" className="text-sm">Registrovať sa</Button>
                 </Link>
               </div>
             )}
 
             {/* Mobile menu button */}
-            <div className="md:hidden">
+            <div className="lg:hidden">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsOpen(!isOpen)}
+                className="p-2"
               >
                 {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
@@ -135,13 +136,13 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       {isOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
+        <div className="lg:hidden border-t border-gray-200">
+          <div className="px-4 pt-2 pb-3 space-y-1 bg-white">
             {navigationItems.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md transition-colors"
                 onClick={() => setIsOpen(false)}
               >
                 {item.name}
