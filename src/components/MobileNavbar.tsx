@@ -3,14 +3,20 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, Bell, BellDot } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import NotificationIndicator from "./notifications/NotificationIndicator";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useNotificationSubscription } from "@/hooks/useNotificationSubscription";
+import { Badge } from "@/components/ui/badge";
 
 const MobileNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
+  const { unreadCount, refetchNotifications } = useNotifications();
+  
+  // Set up real-time subscription
+  useNotificationSubscription(refetchNotifications);
 
   const navItems = [
     { label: "Domov", href: "/" },
@@ -70,10 +76,29 @@ const MobileNavbar = () => {
             <div className="space-y-2">
               {user ? (
                 <>
-                  <div className="flex items-center gap-2 mb-4">
-                    <NotificationIndicator />
-                    <span className="text-sm text-gray-600">Oznámenia</span>
-                  </div>
+                  <Link
+                    to="/notifications"
+                    onClick={closeSheet}
+                    className={`flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      location.pathname === "/notifications"
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-700 hover:text-primary hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {unreadCount > 0 ? (
+                        <BellDot className="h-4 w-4" />
+                      ) : (
+                        <Bell className="h-4 w-4" />
+                      )}
+                      <span>Oznámenia</span>
+                    </div>
+                    {unreadCount > 0 && (
+                      <Badge className="h-5 min-w-5 bg-primary text-white text-xs flex items-center justify-center rounded-full p-0 px-1">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </Badge>
+                    )}
+                  </Link>
                   
                   <Link to="/job-requests" onClick={closeSheet}>
                     <Button variant="ghost" className="w-full justify-start text-sm">
