@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Plus, X, Image as ImageIcon, Paperclip } from "lucide-react";
+import { Send, Plus, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { useChatActions } from "@/hooks/useChatActions";
@@ -11,12 +11,6 @@ import { toast } from "sonner";
 import AdminAnnouncementMessage from "./AdminAnnouncementMessage";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
-import BookingRequestForm from "@/components/booking/BookingRequestForm";
-import ImageModal from "@/components/ImageModal";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Euro } from "lucide-react";
-import { formatDate } from "@/utils/formatters";
-import { uploadChatImage } from "@/utils/chatImageUpload";
 
 interface ChatWindowProps {
   contact: ChatContact | null;
@@ -25,13 +19,9 @@ interface ChatWindowProps {
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   const [input, setInput] = useState("");
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [isContactAdmin, setIsContactAdmin] = useState(false);
-  const [showBookingForm, setShowBookingForm] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Get current user from localStorage
   const currentUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null;
@@ -77,30 +67,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   
   // Fix the useChatActions hook call with proper arguments
   const { sendMessage } = useChatActions(contact, () => {}, refetch);
+  
+  const [showBookingOptions, setShowBookingOptions] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState({
+    date: '',
+    time: '',
+    message: '',
+    amount: ''
+  });
 
   useEffect(() => {
     // Scroll to bottom when messages change
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const imageFiles = Array.from(files).filter(file => 
-        file.type.startsWith('image/')
-      );
-      
-      if (imageFiles.length !== files.length) {
-        toast.error("Iba obrázky sú povolené");
-      }
-      
-      setSelectedImages(prev => [...prev, ...imageFiles]);
-    }
-  };
-
-  const removeSelectedImage = (index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-  };
 
   const handleSendMessage = async () => {
     // If contact is admin and current user is not admin, prevent sending
@@ -109,43 +88,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
       return;
     }
 
-    const hasText = input.trim() !== "";
-    const hasImages = selectedImages.length > 0;
-
-    if (!hasText && !hasImages) {
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      if (hasImages) {
-        // Upload images first
-        for (const imageFile of selectedImages) {
-          const imageUrl = await uploadChatImage(imageFile, currentUserId);
-          if (imageUrl) {
-            // Send image as a message
-            await sendMessage(`📷 Obrázok`, {
-              type: 'image',
-              image_url: imageUrl
-            });
-          }
-        }
-        setSelectedImages([]);
-      }
-
-      if (hasText) {
-        await sendMessage(input);
-        setInput("");
-      }
-
+    if (input.trim() !== "") {
+      await sendMessage(input);
+      setInput("");
       // Refetch messages after sending
       setTimeout(() => refetch(), 500);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      toast.error("Nastala chyba pri odosielaní správy");
-    } finally {
-      setIsUploading(false);
+    } else if (attachment) {
+      // Handle attachment sending (implementation needed)
+      toast.info("Sending attachments is not yet implemented.");
+      setAttachment(null);
     }
   };
 
@@ -153,15 +104,29 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
     setInput(e.target.value);
   };
 
-  const handleBookingRequestSubmit = async (content: string, metadata: any) => {
+  const handleAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setAttachment(e.target.files[0]);
+    }
+  };
+
+  const handleBookingRequest = async () => {
+    if (!bookingDetails.date || !bookingDetails.time) {
+      toast.error("Please provide both date and time for the booking.");
+      return;
+    }
+
     try {
-      await sendMessage(content, metadata);
-      setShowBookingForm(false);
-      toast.success("Žiadosť o rezerváciu bola odoslaná!");
+      const bookingMessage = `Booking Request:\nDate: ${bookingDetails.date}\nTime: ${bookingDetails.time}${bookingDetails.amount ? `\nAmount: ${bookingDetails.amount}` : ''}${bookingDetails.message ? `\nMessage: ${bookingDetails.message}` : ''}`;
+      
+      await sendMessage(bookingMessage);
+      toast.success("Booking request sent!");
+      setShowBookingOptions(false);
+      setBookingDetails({ date: '', time: '', message: '', amount: '' });
       setTimeout(() => refetch(), 500);
-    } catch (error) {
-      console.error("Error sending booking request:", error);
-      toast.error("Nastala chyba pri odosielaní žiadosti o rezerváciu");
+    } catch (err) {
+      console.error("Error creating booking request:", err);
+      toast.error("Failed to send booking request.");
     }
   };
 
@@ -182,112 +147,29 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
     }
 
     const isOwnMessage = message.sender_id === currentUserId;
-    const isBookingMessage = message.metadata?.type === 'booking_request';
-    const isImageMessage = message.metadata?.type === 'image';
+    const isBookingMessage = message.metadata?.type === 'booking';
 
     return (
       <div key={message.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}>
-        <div className={`max-w-xs lg:max-w-md ${
+        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
           isOwnMessage 
-            ? 'bg-primary text-primary-foreground' 
-            : 'bg-muted'
-        } rounded-2xl shadow-sm border overflow-hidden`}>
-          
+            ? 'bg-blue-500 text-white' 
+            : 'bg-gray-200 text-gray-800'
+        }`}>
           {isBookingMessage && message.metadata?.details && (
-            <div className="p-4 border-b bg-card rounded-t-2xl">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span className="text-sm font-semibold text-foreground">Žiadosť o rezerváciu</span>
-                </div>
-                <Badge variant="outline" className="text-xs">
-                  Čaká na odpoveď
-                </Badge>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span className="font-medium">
-                      {formatDate(message.metadata.details.date || '')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      {message.metadata.details.time}
-                      {message.metadata.details.end_time && ` - ${message.metadata.details.end_time}`}
-                    </span>
-                  </div>
-                </div>
-                
-                {message.metadata.details.amount && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Euro className="h-4 w-4 text-green-600" />
-                    <span className="font-semibold text-green-700">
-                      {message.metadata.details.amount} €
-                    </span>
-                  </div>
-                )}
-                
-                {message.metadata.details.image_url && (
-                  <div className="relative">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <ImageIcon className="h-4 w-4" />
-                      <span>Priložený obrázok</span>
-                    </div>
-                    <div className="relative group">
-                      <img 
-                        src={message.metadata.details.image_url} 
-                        alt="Booking image" 
-                        className="w-full max-w-[200px] h-auto rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity border"
-                        style={{ maxHeight: '120px' }}
-                        onClick={() => setSelectedImage(message.metadata.details.image_url)}
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-lg transition-colors flex items-center justify-center">
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="bg-white/90 rounded-full p-2">
-                            <ImageIcon className="h-4 w-4 text-gray-700" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {isImageMessage && message.metadata?.image_url ? (
-            <div className="p-0">
-              <img 
-                src={message.metadata.image_url} 
-                alt="Shared image" 
-                className="w-full h-auto max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => setSelectedImage(message.metadata.image_url)}
-              />
-              {message.content && message.content !== '📷 Obrázok' && (
-                <div className="p-4">
-                  <p className="break-words leading-relaxed text-sm">
-                    {message.content}
-                  </p>
-                </div>
+            <div className="mb-2 p-2 border rounded bg-white/10">
+              <p className="text-xs font-semibold">Booking Request</p>
+              <p className="text-xs">Date: {message.metadata.details.date}</p>
+              <p className="text-xs">Time: {message.metadata.details.time}</p>
+              {message.metadata.details.amount && (
+                <p className="text-xs">Amount: {message.metadata.details.amount}</p>
               )}
             </div>
-          ) : !isBookingMessage && (
-            <div className="p-4">
-              <p className="break-words leading-relaxed">
-                {message.content}
-              </p>
-            </div>
           )}
-          
-          <div className="px-4 pb-2">
-            <p className="text-xs opacity-70">
-              {new Date(message.created_at).toLocaleTimeString()}
-            </p>
-          </div>
+          <p className="break-words">{message.content}</p>
+          <p className="text-xs mt-1 opacity-70">
+            {new Date(message.created_at).toLocaleTimeString()}
+          </p>
         </div>
       </div>
     );
@@ -296,7 +178,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   if (!contact) {
     return (
       <div className="flex flex-col h-full items-center justify-center text-gray-500">
-        <p>Vyberte konverzáciu na začatie chatu</p>
+        <p>Select a conversation to start messaging</p>
       </div>
     );
   }
@@ -305,7 +187,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
     return (
       <div className="flex flex-col h-full">
         <div className="flex-1 flex items-center justify-center">
-          <p>Načítavam správy...</p>
+          <p>Loading messages...</p>
         </div>
       </div>
     );
@@ -314,40 +196,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
   // Determine if we should show booking options and user type
   // Hide them if current user is admin OR if contact is admin
   const shouldHideBookingAndUserType = isAdmin || isContactAdmin;
-
-  // Show booking form if requested
-  if (showBookingForm && !shouldHideBookingAndUserType) {
-    const contactId = contact.contactId || contact.id;
-    return (
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm" onClick={() => setShowBookingForm(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={contact.avatar_url} alt={contact.name} />
-              <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="font-semibold">{contact.name}</h3>
-              <p className="text-sm text-gray-500">Žiadosť o rezerváciu</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Booking Form */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <BookingRequestForm
-            onSubmit={handleBookingRequestSubmit}
-            onCancel={() => setShowBookingForm(false)}
-            craftsmanId={contactId}
-          />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col h-full">
@@ -374,12 +222,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
           </div>
         </div>
 
-        {/* Only show Create Booking button if neither user is admin and contact is craftsman */}
-        {!shouldHideBookingAndUserType && contact.user_type === 'craftsman' && (
+        {/* Only show Create Booking button if neither user is admin */}
+        {!shouldHideBookingAndUserType && (
           <div>
-            <Button variant="outline" size="sm" onClick={() => setShowBookingForm(true)}>
+            <Button variant="outline" size="sm" onClick={() => setShowBookingOptions(!showBookingOptions)}>
               <Plus className="h-4 w-4 mr-2" />
-              Vytvoriť rezerváciu
+              Create Booking
             </Button>
           </div>
         )}
@@ -391,92 +239,79 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, onBack }) => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Booking Options - Only show if neither user is admin */}
+      {!shouldHideBookingAndUserType && showBookingOptions && (
+        <div className="p-4 border-t">
+          <h4 className="text-sm font-semibold mb-2">Enter Booking Details:</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <Input
+              type="date"
+              placeholder="Date"
+              value={bookingDetails.date}
+              onChange={(e) => setBookingDetails({ ...bookingDetails, date: e.target.value })}
+            />
+            <Input
+              type="time"
+              placeholder="Time"
+              value={bookingDetails.time}
+              onChange={(e) => setBookingDetails({ ...bookingDetails, time: e.target.value })}
+            />
+            <Input
+              type="text"
+              placeholder="Amount (optional)"
+              value={bookingDetails.amount}
+              onChange={(e) => setBookingDetails({ ...bookingDetails, amount: e.target.value })}
+            />
+          </div>
+          <Input
+            type="text"
+            placeholder="Additional Message"
+            value={bookingDetails.message}
+            onChange={(e) => setBookingDetails({ ...bookingDetails, message: e.target.value })}
+            className="mb-4"
+          />
+          <Button onClick={handleBookingRequest} className="w-full">
+            Send Booking Request
+          </Button>
+        </div>
+      )}
+
       {/* Input Area */}
       <div className="p-4 border-t">
         {isContactAdmin && !isAdmin ? (
           <div className="text-center text-gray-500 py-4">
-            <p>Iba administrátori môžu písať v tomto chate.</p>
+            <p>Only admins can write in this chat.</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {/* Selected Images Preview */}
-            {selectedImages.length > 0 && (
-              <div className="flex flex-wrap gap-2 p-2 bg-muted rounded-lg">
-                {selectedImages.map((file, index) => (
-                  <div key={index} className="relative">
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt={`Selected ${index + 1}`}
-                      className="w-16 h-16 object-cover rounded border"
-                    />
-                    <button
-                      onClick={() => removeSelectedImage(index)}
-                      className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {/* Input Row */}
-            <div className="flex items-center space-x-2">
-              <Input
-                type="text"
-                placeholder="Napíšte svoju správu..."
-                value={input}
-                onChange={handleInputChange}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                disabled={isUploading}
-              />
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleImageSelect}
-              />
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-              >
-                <ImageIcon className="h-4 w-4" />
+          <div className="flex items-center space-x-2">
+            <Input
+              type="text"
+              placeholder="Type your message..."
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSendMessage();
+                }
+              }}
+            />
+            <input
+              type="file"
+              id="attachment"
+              className="hidden"
+              onChange={handleAttachmentChange}
+            />
+            <label htmlFor="attachment">
+              <Button variant="ghost" size="sm">
+                <Plus className="h-4 w-4" />
               </Button>
-              
-              <Button 
-                onClick={handleSendMessage} 
-                disabled={isUploading || (!input.trim() && selectedImages.length === 0)}
-              >
-                {isUploading ? (
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
+            </label>
+            <Button onClick={handleSendMessage}>
+              <Send className="h-4 w-4" />
+            </Button>
           </div>
         )}
       </div>
-
-      {/* Image Modal */}
-      {selectedImage && (
-        <ImageModal
-          imageUrl={selectedImage}
-          onClose={() => setSelectedImage(null)}
-          alt="Shared image"
-        />
-      )}
     </div>
   );
 };

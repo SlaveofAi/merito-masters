@@ -35,19 +35,16 @@ serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     });
       
-    // Create Supabase clients
+    // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
-    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       console.error("Supabase environment variables are not set");
       throw new Error("Missing Supabase configuration");
     }
     
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-    // Create service role client for database operations (bypasses RLS)
-    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get authorization header
     const authHeader = req.headers.get("Authorization");
@@ -85,41 +82,11 @@ serve(async (req) => {
     // Retrieve the checkout session to check its status
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     
-    console.log("Stripe session retrieved:", {
-      id: session.id,
-      payment_status: session.payment_status,
-      client_reference_id: session.client_reference_id,
-      metadata: session.metadata
-    });
-    
     if (session.payment_status === "paid") {
       console.log("Payment verified as paid for session:", sessionId);
       
-      // Extract topped_until from metadata with better error handling
-      let toppedUntil = null;
-      if (session.metadata?.topped_until) {
-        try {
-          toppedUntil = new Date(session.metadata.topped_until).toISOString();
-          console.log("Topped until date extracted:", toppedUntil);
-        } catch (error) {
-          console.error("Error parsing topped_until date:", error);
-          // Fallback: create date 7 days from now
-          const fallbackDate = new Date();
-          fallbackDate.setDate(fallbackDate.getDate() + 7);
-          toppedUntil = fallbackDate.toISOString();
-          console.log("Using fallback topped_until date:", toppedUntil);
-        }
-      } else {
-        console.log("No topped_until in metadata, creating fallback date");
-        // Fallback: create date 7 days from now
-        const fallbackDate = new Date();
-        fallbackDate.setDate(fallbackDate.getDate() + 7);
-        toppedUntil = fallbackDate.toISOString();
-        console.log("Fallback topped_until date:", toppedUntil);
-      }
-      
-      // Update the payment record using service role
-      const { error: updatePaymentError } = await supabaseService
+      // Update the payment record
+      const { error: updatePaymentError } = await supabaseClient
         .from("topped_payments")
         .update({
           payment_status: "completed",
@@ -129,32 +96,27 @@ serve(async (req) => {
 
       if (updatePaymentError) {
         console.error("Error updating payment record:", updatePaymentError);
-        throw new Error(`Error updating payment record: ${updatePaymentError.message}`);
+        throw new Error("Error updating payment record");
       }
 
-      console.log("Payment record updated successfully");
-
-      // Update the craftsman profile to be topped using service role
-      const { error: updateProfileError } = await supabaseService
+      // Update the craftsman profile to be topped
+      const { error: updateProfileError } = await supabaseClient
         .from("craftsman_profiles")
         .update({
           is_topped: true,
-          topped_until: toppedUntil
+          topped_until: new Date(session.metadata?.topped_until || "").toISOString()
         })
         .eq("id", user.id);
 
       if (updateProfileError) {
         console.error("Error updating craftsman profile:", updateProfileError);
-        throw new Error(`Error updating craftsman profile: ${updateProfileError.message}`);
+        throw new Error("Error updating craftsman profile");
       }
-
-      console.log("Craftsman profile updated successfully with topped status");
 
       return new Response(
         JSON.stringify({ 
           success: true, 
-          toppedUntil: toppedUntil,
-          message: "Payment verified and topped status activated"
+          toppedUntil: session.metadata?.topped_until 
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -166,8 +128,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          status: session.payment_status,
-          message: `Payment not completed. Current status: ${session.payment_status}`
+          status: session.payment_status 
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -175,35 +136,30 @@ serve(async (req) => {
         }
       );
     }
-  } catch (error) {
-    console.error("Error in verify-topped-payment function:", error);
+  } catch (stripeError) {
+    console.error("Stripe API error:", stripeError);
     
-    // Extract meaningful error message
-    let errorMessage = "Unknown error occurred";
-    let errorCode = "verification_error";
+    // Extract meaningful error message from Stripe
+    let errorMessage = "Unknown Stripe error";
+    let errorCode = "stripe_unknown_error";
     
-    if (error.message) {
-      errorMessage = error.message;
+    if (stripeError.message) {
+      errorMessage = stripeError.message;
+    } else if (stripeError.raw && stripeError.raw.message) {
+      errorMessage = stripeError.raw.message;
     }
     
     if (errorMessage.includes("Invalid API Key")) {
       errorCode = "invalid_api_key";
     } else if (errorMessage.includes("No such session")) {
       errorCode = "session_not_found";
-    } else if (errorMessage.includes("not authenticated")) {
-      errorCode = "user_not_authenticated";
-    } else if (errorMessage.includes("payment record")) {
-      errorCode = "payment_record_error";
-    } else if (errorMessage.includes("craftsman profile")) {
-      errorCode = "profile_update_error";
     }
     
     // Return a clear error response
     return new Response(
       JSON.stringify({ 
-        error: errorMessage,
-        errorCode: errorCode,
-        details: error.stack
+        error: `Stripe API error: ${errorMessage}`,
+        errorCode: errorCode
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

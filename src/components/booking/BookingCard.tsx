@@ -1,10 +1,10 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Clock, MessageSquare, Euro } from "lucide-react";
+import { Calendar, MessageSquare } from "lucide-react";
 import { formatDate } from "@/utils/formatters";
 import { BookingRequest } from "./BookingsList";
 import { useAuth } from "@/hooks/useAuth";
@@ -52,109 +52,56 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking }) => {
     });
   };
 
-  // Get Slovak status label
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'Čaká na schválenie';
-      case 'approved':
-      case 'accepted':
-        return 'Schválená';
-      case 'declined':
-      case 'rejected':
-        return 'Zamietnutá';
-      case 'completed':
-        return 'Dokončená';
-      default:
-        return status;
-    }
-  };
-
-  // Get badge variant based on status
-  const getBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'approved':
-      case 'accepted':
-      case 'completed':
-        return 'default';
-      case 'declined':
-      case 'rejected':
-        return 'destructive';
-      default:
-        return 'outline';
-    }
-  };
-
   return (
-    <Card className="w-full cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary/60" onClick={handleCardClick}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-12 w-12 ring-2 ring-primary/10">
-              <AvatarImage src={profileImage || ''} alt={displayName || ''} />
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                {getAvatarFallback()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-base text-foreground truncate">
-                {displayName || 'Neznáme meno'}
-              </h3>
-              {isCustomer && booking.craftsman_trade && (
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {booking.craftsman_trade}
-                </p>
-              )}
-            </div>
+    <Card className="w-full cursor-pointer hover:shadow-md transition-shadow" onClick={handleCardClick}>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div className="flex items-center space-x-4">
+          <Avatar className="h-12 w-12 border">
+            <AvatarImage src={profileImage || ''} alt={displayName || ''} />
+            <AvatarFallback>{getAvatarFallback()}</AvatarFallback>
+          </Avatar>
+          <div>
+            <CardTitle className="text-lg">{displayName || 'Neznáme meno'}</CardTitle>
+            {isCustomer && booking.craftsman_trade && (
+              <p className="text-sm text-muted-foreground">{booking.craftsman_trade}</p>
+            )}
           </div>
-          <Badge variant={getBadgeVariant(booking.status)} className="shrink-0 text-xs">
-            {getStatusLabel(booking.status)}
-          </Badge>
         </div>
+        <Badge variant={booking.status === 'approved' ? 'default' : 'outline'}>
+          {booking.status === 'approved' ? 'Schválená' : 
+           booking.status === 'pending' ? 'Čaká na schválenie' : 
+           booking.status === 'rejected' ? 'Zamietnutá' : 
+           booking.status === 'completed' ? 'Dokončená' : 
+           booking.status === 'accepted' ? 'Schválená' : booking.status}
+        </Badge>
       </CardHeader>
-      
-      <CardContent className="pt-0 space-y-3">
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center text-muted-foreground">
-            <Calendar className="mr-1.5 h-4 w-4" />
-            <span className="font-medium">{formattedDate}</span>
-          </div>
-          <div className="flex items-center text-muted-foreground">
-            <Clock className="mr-1.5 h-4 w-4" />
-            <span>{timeRange}</span>
-          </div>
-        </div>
-        
-        {booking.amount && (
+      <CardContent>
+        <div className="space-y-2">
           <div className="flex items-center text-sm">
-            <Euro className="mr-1.5 h-4 w-4 text-green-600" />
-            <span className="font-semibold text-green-700">{booking.amount} €</span>
+            <Calendar className="mr-2 h-4 w-4" />
+            <span>{formattedDate}, {timeRange}</span>
           </div>
-        )}
-        
-        {booking.message && (
-          <div className="bg-muted/30 rounded-md p-3 border-l-2 border-l-muted">
-            <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+          {booking.message && (
+            <p className="text-sm text-muted-foreground line-clamp-2">
               {booking.message}
             </p>
-          </div>
-        )}
-        
-        <div className="pt-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full hover:bg-primary hover:text-primary-foreground transition-colors" 
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCardClick();
-            }}
-          >
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Zobraziť konverzáciu
-          </Button>
+          )}
+          {booking.amount && (
+            <p className="text-sm font-medium">
+              Cena: {booking.amount} €
+            </p>
+          )}
         </div>
       </CardContent>
+      <CardFooter>
+        <Button variant="outline" size="sm" className="w-full" onClick={(e) => {
+          e.stopPropagation(); // Prevent card click
+          handleCardClick();
+        }}>
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Zobraziť konverzáciu
+        </Button>
+      </CardFooter>
     </Card>
   );
 };

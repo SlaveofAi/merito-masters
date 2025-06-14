@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -142,22 +141,13 @@ const BookingRequestForm: React.FC<BookingRequestFormProps> = ({
       setIsUploading(false);
     }
   };
-
-  // Calculate end time (1 hour after start time)
-  const calculateEndTime = (startTime: string): string => {
-    const [hours, minutes] = startTime.split(':').map(Number);
-    const endHour = hours + 1;
-    return `${endHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-  };
   
   const handleSubmit = async () => {
     if (!date || !timeSlot) {
-      toast.error("Prosím, vyberte dátum a čas");
       return;
     }
 
     const formattedDate = format(date, 'yyyy-MM-dd');
-    const endTime = calculateEndTime(timeSlot);
     const bookingId = uuidv4();
     
     try {
@@ -173,10 +163,10 @@ const BookingRequestForm: React.FC<BookingRequestFormProps> = ({
         }
       }
       
-      const content = `🗓️ **Žiadosť o rezerváciu**
-Dátum: ${format(date, 'dd.MM.yyyy', { locale: sk })}
-Čas: ${timeSlot} - ${endTime}
-${amount ? `Cena: ${amount} €` : ''}
+      const content = `🗓️ **Požiadavka na termín**
+Dátum: ${format(date, 'dd.MM.yyyy')}
+Čas: ${timeSlot}
+${amount ? `Odmena: ${amount} €` : ''}
 ${message ? `Správa: ${message}` : ''}
 ${imageUrl ? `[Priložený obrázok]` : ''}`;
       
@@ -187,7 +177,6 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
         details: {
           date: formattedDate,
           time: timeSlot,
-          end_time: endTime,
           message: message || null,
           amount: amount || null,
           image_url: imageUrl
@@ -213,7 +202,7 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
   
   return (
     <div className="bg-white rounded-lg shadow-md p-4">
-      <h3 className="text-lg font-medium mb-4">Vytvorenie žiadosti o rezerváciu</h3>
+      <h3 className="text-lg font-medium mb-4">Vytvorenie rezervácie termínu</h3>
       
       {error && (
         <Alert variant="destructive" className="mb-4">
@@ -310,14 +299,14 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
           
           <div>
             <Label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
-              Cena (voliteľné)
+              Odmena (voliteľné)
             </Label>
             <div className="relative">
               <DollarSign className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
               <Input
                 id="amount"
                 type="text"
-                placeholder="Cena za vykonanú prácu..."
+                placeholder="Odmena za vykonanú prácu..."
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="pl-9"
@@ -327,7 +316,7 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
           
           <div>
             <Label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
-              Obrázok (voliteľné)
+              Fotka (voliteľné)
             </Label>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -357,7 +346,7 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
                   <div className="relative w-full max-w-xs">
                     <img 
                       src={imagePreview} 
-                      alt="Náhľad" 
+                      alt="Preview" 
                       className="w-full h-auto rounded-md object-cover"
                       style={{ maxHeight: '150px' }} 
                     />
@@ -402,7 +391,7 @@ ${imageUrl ? `[Priložený obrázok]` : ''}`;
               onClick={handleSubmit}
               disabled={!date || !timeSlot || isUploading}
             >
-              {isUploading ? "Odosielanie..." : "Odoslať žiadosť"}
+              {isUploading ? "Odosielanie..." : "Odoslať rezerváciu"}
             </Button>
           </div>
         </div>

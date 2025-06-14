@@ -1,157 +1,127 @@
-
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Menu, X, User, LogOut, MessageSquare, Bell, Calendar, FileText } from "lucide-react";
-import { cn } from "@/lib/utils";
-import NotificationIndicator from "./notifications/NotificationIndicator";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+import NavigationWithNotification from "./NavigationWithNotification";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu, LogOut } from "lucide-react";
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { user, signOut, userType } = useAuth();
-  const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+  const { user, signOut } = useAuth();
+  const location = useLocation();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
-    navigate("/");
+    // Force page reload after signout to clear any cached state
+    window.location.href = '/';
   };
 
-  const navigationItems = [
-    { name: "Domov", href: "/" },
-    { name: "Kategórie", href: "/categories" },
-    { name: "Blog", href: "/blog" },
-    { name: "O nás", href: "/about" },
-    { name: "Ako to funguje", href: "/how-it-works" },
-    { name: "Kontakt", href: "/contact" },
-  ];
+  // Check if we're on authentication pages to avoid showing certain elements
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-14 sm:h-16">
-          <div className="flex items-center">
-            <Link to="/" className="flex-shrink-0 flex items-center">
-              <span className="text-xl sm:text-2xl font-bold text-blue-600">Majstri</span>
-            </Link>
+    <div
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? "bg-white shadow-md" : "bg-transparent"
+      }`}
+    >
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Link to either home page or landing page based on user authentication */}
+          <Link to={user ? "/home" : "/"} className="flex items-center">
+            <span className="text-xl font-bold text-black">Majstri.com</span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-4">
+            {!isAuthPage && <NavigationWithNotification />}
             
-            <div className="hidden lg:ml-6 lg:flex lg:space-x-6 xl:space-x-8">
-              {navigationItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="text-gray-700 hover:text-blue-600 px-2 xl:px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap"
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
+            {user && (
+              <Button onClick={handleSignOut} variant="ghost" className="flex items-center">
+                <LogOut className="h-4 w-4 mr-2" />
+                Odhlásiť sa
+              </Button>
+            )}
           </div>
 
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            {user ? (
-              <>
-                <NotificationIndicator />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
-                      <User className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="flex items-center">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Môj profil</span>
+          {/* Mobile Navigation */}
+          <div className="md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right">
+                <div className="flex flex-col space-y-4 mt-8">
+                  {user ? (
+                    <>
+                      <Link to="/notifications">
+                        <Button variant="ghost" className="w-full justify-start">Notifikácie</Button>
                       </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/messages" className="flex items-center">
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        <span>Správy</span>
+                      <Link to="/job-requests">
+                        <Button variant="ghost" className="w-full justify-start">
+                          Požiadavky
+                        </Button>
                       </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/notifications" className="flex items-center">
-                        <Bell className="mr-2 h-4 w-4" />
-                        <span>Notifikácie</span>
+                      <Link to="/messages">
+                        <Button variant="ghost" className="w-full justify-start">Správy</Button>
                       </Link>
-                    </DropdownMenuItem>
-                    {userType === 'customer' && (
-                      <DropdownMenuItem asChild>
-                        <Link to="/job-requests" className="flex items-center">
-                          <FileText className="mr-2 h-4 w-4" />
-                          <span>Moje požiadavky</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
-                    {userType === 'craftsman' && (
-                      <DropdownMenuItem asChild>
-                        <Link to="/approved-bookings" className="flex items-center">
-                          <Calendar className="mr-2 h-4 w-4" />
-                          <span>Rezervácie</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Odhlásiť sa</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <div className="flex items-center space-x-2 sm:space-x-4">
-                <Link to="/login">
-                  <Button variant="ghost" size="sm" className="text-sm">Prihlásiť sa</Button>
-                </Link>
-                <Link to="/register">
-                  <Button size="sm" className="text-sm">Registrovať sa</Button>
-                </Link>
-              </div>
-            )}
-
-            {/* Mobile menu button */}
-            <div className="lg:hidden">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsOpen(!isOpen)}
-                className="p-2"
-              >
-                {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-            </div>
+                      <Link to="/profile">
+                        <Button variant="ghost" className="w-full justify-start">Profil</Button>
+                      </Link>
+                      <Link to="/approved-bookings">
+                        <Button variant="ghost" className="w-full justify-start">Zákazky</Button>
+                      </Link>
+                      <Button 
+                        onClick={handleSignOut} 
+                        variant="ghost" 
+                        className="w-full justify-start flex items-center text-red-600"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Odhlásiť sa
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/job-requests">
+                        <Button variant="ghost" className="w-full justify-start">
+                          Požiadavky
+                        </Button>
+                      </Link>
+                      <Link to="/login">
+                        <Button variant="ghost" className="w-full justify-start">Prihlásenie</Button>
+                      </Link>
+                      <Link to="/register">
+                        <Button variant="default" className="w-full bg-primary text-white">
+                          Registrácia
+                        </Button>
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
-
-      {/* Mobile menu */}
-      {isOpen && (
-        <div className="lg:hidden border-t border-gray-200">
-          <div className="px-4 pt-2 pb-3 space-y-1 bg-white">
-            {navigationItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-    </nav>
+    </div>
   );
 };
 

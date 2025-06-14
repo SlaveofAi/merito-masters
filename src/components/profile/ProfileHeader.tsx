@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -233,6 +234,20 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               <MapPin className="mr-2 h-4 w-4" />
               <span>{profileData.location}</span>
             </div>
+            
+            {profileData.phone && (
+              <div className="flex items-center">
+                <Phone className="mr-2 h-4 w-4" />
+                <span>{profileData.phone}</span>
+              </div>
+            )}
+            
+            {profileData.email && (
+              <div className="flex items-center">
+                <Mail className="mr-2 h-4 w-4" />
+                <span>{profileData.email}</span>
+              </div>
+            )}
             
             {userType === 'craftsman' && isCraftsmanProfile(profileData) && profileData.years_experience && (
               <div className="flex items-center">

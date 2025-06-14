@@ -27,10 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserType = async (userId: string, currentSession: Session | null = null) => {
     try {
-      console.log("=== fetchUserType DETAILED DEBUG ===");
-      console.log("Fetching user type for userId:", userId);
-      console.log("Current session exists:", !!currentSession);
-      console.log("Session user metadata:", currentSession?.user?.user_metadata);
+      console.log("Fetching user type for:", userId);
       
       // First try to get user type from user metadata
       if (currentSession?.user?.user_metadata?.user_type) {
@@ -40,42 +37,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (metadataType === 'customer' || metadataType === 'craftsman') {
           setUserType(metadataType);
           localStorage.setItem("userType", metadataType);
-          console.log("Set userType from metadata:", metadataType);
           return metadataType;
         }
       }
       
       // Try to get from localStorage as fallback
       const storedType = localStorage.getItem("userType");
-      console.log("Stored type in localStorage:", storedType);
       if (storedType === 'customer' || storedType === 'craftsman') {
         console.log("Using cached user type from localStorage:", storedType);
         setUserType(storedType);
       }
       
-      // Get from database with detailed error logging
-      console.log("Querying database for user type...");
+      // Get from database
       const { data, error } = await supabase
         .from('user_types')
         .select('user_type')
         .eq('user_id', userId)
         .maybeSingle();
 
-      console.log("Database query result:", { data, error });
-
       if (error) {
-        console.error("Error fetching user type from database:", error);
+        console.error("Error fetching user type:", error);
         if (storedType === 'customer' || storedType === 'craftsman') {
-          console.log("Falling back to cached user type:", storedType);
           return storedType as 'customer' | 'craftsman';
         }
         return null;
       }
 
       if (!data) {
-        console.log("No user type found in database for userId:", userId);
+        console.log("No user type found in database");
         if (storedType === 'customer' || storedType === 'craftsman') {
-          console.log("Using cached user type as fallback:", storedType);
           return storedType as 'customer' | 'craftsman';
         }
         setUserType(null);
@@ -83,10 +73,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const retrievedUserType = data.user_type;
-      console.log("Retrieved user type from database:", retrievedUserType);
-      
       if (retrievedUserType === 'customer' || retrievedUserType === 'craftsman') {
-        console.log("Setting user type:", retrievedUserType);
+        console.log("Found user type in database:", retrievedUserType);
         setUserType(retrievedUserType);
         localStorage.setItem("userType", retrievedUserType);
         return retrievedUserType;
@@ -96,15 +84,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (retrievedUserType === 'admin') {
         console.log("User is admin");
         setIsAdmin(true);
-        setUserType(null);
+        setUserType(null); // Admins don't have customer/craftsman type
         return null;
       }
 
-      console.log("Invalid or unrecognized user type:", retrievedUserType);
       setUserType(null);
       return null;
     } catch (error) {
-      console.error("Exception in fetchUserType:", error);
+      console.error("Error in fetchUserType:", error);
       setUserType(null);
       return null;
     }
@@ -117,8 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      console.log("=== updateUserType DETAILED DEBUG ===");
-      console.log("Updating user type to:", type, "for user:", user.id);
+      console.log("Updating user type to:", type);
       
       // Store in localStorage immediately
       localStorage.setItem("userType", type);
@@ -166,83 +152,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
     
-    console.log("=== AUTH PROVIDER INIT DETAILED ===");
-    
     // Check localStorage for faster initial render
     const storedType = localStorage.getItem("userType");
-    console.log("Initial localStorage userType:", storedType);
     if (storedType === 'customer' || storedType === 'craftsman') {
-      console.log("Setting initial userType from localStorage:", storedType);
       setUserType(storedType);
     }
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log("=== AUTH STATE CHANGE DETAILED ===");
         console.log("Auth state changed:", event);
-        console.log("New session exists:", !!newSession);
-        console.log("User ID:", newSession?.user?.id);
-        console.log("User email:", newSession?.user?.email);
-        console.log("User metadata:", newSession?.user?.user_metadata);
         
-        if (!mounted) {
-          console.log("Component unmounted, ignoring auth state change");
-          return;
-        }
+        if (!mounted) return;
         
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
         if (event === 'SIGNED_OUT') {
-          console.log("User signed out, clearing state");
           setUserType(null);
           setIsAdmin(false);
           localStorage.removeItem("userType");
         }
         
         if (newSession?.user) {
-          console.log("User signed in, fetching user type");
-          const fetchedType = await fetchUserType(newSession.user.id, newSession);
-          console.log("Fetched user type result:", fetchedType);
+          await fetchUserType(newSession.user.id, newSession);
         }
         
-        console.log("Setting loading to false");
         setLoading(false);
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) {
-        console.log("Component unmounted, ignoring initial session");
-        return;
-      }
+      if (!mounted) return;
       
-      console.log("=== INITIAL SESSION CHECK DETAILED ===");
-      console.log("Initial session exists:", !!session);
-      console.log("User ID:", session?.user?.id);
-      console.log("User email:", session?.user?.email);
-      console.log("User metadata:", session?.user?.user_metadata);
-      
+      console.log("Initial session check:", !!session);
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserType(session.user.id, session).then((fetchedType) => {
-          if (mounted) {
-            console.log("Initial user type fetch completed with result:", fetchedType);
-            setLoading(false);
-          }
+        fetchUserType(session.user.id, session).then(() => {
+          if (mounted) setLoading(false);
         });
       } else {
-        console.log("No initial session, setting loading to false");
         setLoading(false);
       }
     });
 
     return () => {
-      console.log("Auth provider cleanup");
       mounted = false;
       subscription.unsubscribe();
     };
@@ -250,13 +207,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
-      console.log("=== SIGN OUT DETAILED ===");
-      console.log("Signing out user:", user?.id);
       await supabase.auth.signOut();
       setUserType(null);
       setIsAdmin(false);
       localStorage.removeItem("userType");
-      console.log("Sign out completed");
     } catch (error) {
       console.error("Error signing out:", error);
       toast.error("Nastala chyba pri odhlásení");
@@ -273,14 +227,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     updateUserType
   };
 
-  console.log("=== AUTH CONTEXT STATE DETAILED ===", { 
+  console.log("Auth context state:", { 
     userId: user?.id, 
-    userEmail: user?.email,
     userType, 
     isAdmin,
     loading,
-    hasSession: !!session,
-    sessionAccessToken: session?.access_token ? "present" : "missing"
+    hasSession: !!session
   });
 
   return (

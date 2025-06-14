@@ -25,8 +25,8 @@ const baseSchema = z.object({
 
 const craftsmanSchema = baseSchema.extend({
   trade_category: z.string().min(1, { message: "Vyberte kategóriu remesla" }),
-  description: z.string().min(10, { message: "Popis musí mať aspoň 10 znakov" }),
-  years_experience: z.string().min(1, { message: "Roky skúseností sú povinné" })
+  description: z.string().optional(),
+  years_experience: z.string().optional()
     .transform(val => val ? parseInt(val, 10) : undefined)
 });
 
@@ -231,7 +231,7 @@ const EditProfileForm = ({ profile, userType, onUpdate }: EditProfileFormProps) 
                   name={"years_experience" as keyof FormValues}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Roky skúseností</FormLabel>
+                      <FormLabel>Roky skúseností (voliteľné)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -250,7 +250,7 @@ const EditProfileForm = ({ profile, userType, onUpdate }: EditProfileFormProps) 
                   name={"description" as keyof FormValues}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Popis služieb</FormLabel>
+                      <FormLabel>Popis služieb (voliteľné)</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Popis vašich služieb a skúseností..."

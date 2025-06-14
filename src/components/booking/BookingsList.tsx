@@ -30,7 +30,7 @@ export interface BookingRequest {
 
 const BookingsList = () => {
   const { user, userType } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>("pending");
+  const [activeTab, setActiveTab] = useState<string>("approved");
 
   const { data: bookings, isLoading, error, refetch } = useQuery({
     queryKey: ['bookings', user?.id, activeTab],
@@ -50,11 +50,11 @@ const BookingsList = () => {
           query = query.eq('craftsman_id', user.id);
         }
         
-        // Filter by status - mapping to correct Slovak sections
-        if (activeTab === 'pending') {
-          query = query.eq('status', 'pending'); // "Čakajúce"
-        } else if (activeTab === 'approved') {
-          query = query.in('status', ['approved', 'accepted']); // "Potvrdené"
+        // Filter by status
+        if (activeTab === 'approved') {
+          query = query.in('status', ['approved', 'accepted']);
+        } else if (activeTab === 'pending') {
+          query = query.eq('status', 'pending');
         }
         
         // Order by date (newest first)
@@ -98,7 +98,7 @@ const BookingsList = () => {
           }
         }
         
-        // Fetch customer profiles
+        // Fetch customer profiles - FIXED: make sure we always fetch customer profiles
         let customerProfiles = {};
         if (customerIds.length > 0) {
           const { data: customerData, error: customerError } = await supabase
@@ -147,6 +147,7 @@ const BookingsList = () => {
             craftsman_name: craftsmanProfile?.name || "Neznámy majster",
             craftsman_trade: craftsmanProfile?.trade_category,
             craftsman_image: craftsmanProfile?.profile_image_url,
+            // Make sure customer data is properly assigned
             customer_name: customerProfile?.name || booking.customer_name || "Neznámy zákazník",
             customer_image: customerProfile?.profile_image_url
           };
@@ -176,14 +177,34 @@ const BookingsList = () => {
   return (
     <div className="bg-white shadow-sm rounded-lg p-6">
       <Tabs 
-        defaultValue="pending" 
+        defaultValue="approved" 
         className="w-full" 
         onValueChange={(value) => setActiveTab(value)}
       >
         <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="approved">Schválené</TabsTrigger>
           <TabsTrigger value="pending">Čakajúce</TabsTrigger>
-          <TabsTrigger value="approved">Potvrdené</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="approved" className="mt-2">
+          {isLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="w-full h-36" />
+              ))}
+            </div>
+          ) : bookings && bookings.length > 0 ? (
+            <div className="space-y-4">
+              {bookings.map((booking: BookingRequest) => (
+                <BookingCard key={booking.id} booking={booking} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Žiadne schválené zákazky</p>
+            </div>
+          )}
+        </TabsContent>
         
         <TabsContent value="pending" className="mt-2">
           {isLoading ? (
@@ -201,26 +222,6 @@ const BookingsList = () => {
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500">Žiadne čakajúce zákazky</p>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="approved" className="mt-2">
-          {isLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="w-full h-36" />
-              ))}
-            </div>
-          ) : bookings && bookings.length > 0 ? (
-            <div className="space-y-4">
-              {bookings.map((booking: BookingRequest) => (
-                <BookingCard key={booking.id} booking={booking} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Žiadne potvrdené zákazky</p>
             </div>
           )}
         </TabsContent>

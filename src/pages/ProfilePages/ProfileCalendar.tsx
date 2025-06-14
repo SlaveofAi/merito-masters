@@ -149,7 +149,7 @@ const ProfileCalendarContent: React.FC = () => {
           <ProfileNavigation activeTab="calendar" userType={profileData?.user_type} />
           
           <div className="mt-8 flex justify-center pointer-events-auto">
-            <div className="w-full pointer-events-auto">
+            <div className="w-full max-w-md pointer-events-auto">
               <ProfileCalendar />
             </div>
           </div>

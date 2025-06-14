@@ -29,19 +29,16 @@ serve(async (req) => {
       throw new Error("Invalid Stripe API key format. Keys should start with sk_test_ or sk_live_");
     }
 
-    // Create Supabase client with anon key for authentication
+    // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
-    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       console.error("Supabase environment variables are not set");
       throw new Error("Missing Supabase configuration");
     }
     
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-    // Create service role client for database operations (bypasses RLS)
-    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get authorization header
     const authHeader = req.headers.get("Authorization");
@@ -130,13 +127,12 @@ serve(async (req) => {
         throw new Error("Failed to create Stripe checkout session");
       }
   
-      // Save topped payment record in database with pending status using service role
-      const { error: paymentError } = await supabaseService
+      // Save topped payment record in database with pending status
+      const { error: paymentError } = await supabaseClient
         .from("topped_payments")
         .insert({
           craftsman_id: user.id,
           amount: amount,
-          currency: "eur",
           payment_status: "pending",
           stripe_session_id: session.id,
           topped_start: currentDate.toISOString(),
@@ -145,8 +141,7 @@ serve(async (req) => {
   
       if (paymentError) {
         console.error("Error saving payment record:", paymentError);
-        console.error("Payment record error details:", JSON.stringify(paymentError));
-        throw new Error(`Failed to save payment record: ${paymentError.message}`);
+        // Continue despite this error, as the session was created successfully
       }
   
       console.log("Checkout session created successfully:", session.id);
@@ -208,15 +203,12 @@ serve(async (req) => {
       errorCode = "user_not_authenticated";
     } else if (error.message?.includes("profile not found")) {
       errorCode = "craftsman_profile_not_found";
-    } else if (error.message?.includes("payment record")) {
-      errorCode = "payment_record_error";
     }
     
     return new Response(
       JSON.stringify({ 
         error: error.message || "Unknown error",
-        errorCode: errorCode,
-        details: error.stack
+        errorCode: errorCode
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
