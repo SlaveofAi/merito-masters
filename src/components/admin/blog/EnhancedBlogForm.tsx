@@ -13,10 +13,13 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import RichTextEditor from "./RichTextEditor";
 import FeaturedImageUploader from "./FeaturedImageUploader";
 import BlogPostPreview from "./BlogPostPreview";
 import { Save, Eye, Send } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BlogPost {
   id?: string;
@@ -26,6 +29,7 @@ interface BlogPost {
   slug: string;
   status: string;
   featured_image_url: string;
+  categories?: string[];
 }
 
 interface EnhancedBlogFormProps {
@@ -46,11 +50,26 @@ const EnhancedBlogForm: React.FC<EnhancedBlogFormProps> = ({
     slug: post?.slug || "",
     status: post?.status || "draft",
     featured_image_url: post?.featured_image_url || "",
+    categories: post?.categories || [],
   });
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [wordCount, setWordCount] = useState(0);
+
+  // Fetch available blog categories
+  const { data: blogCategories } = useQuery({
+    queryKey: ['blog-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('blog_categories')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
   // Update word count when content changes
   React.useEffect(() => {
@@ -71,6 +90,15 @@ const EnhancedBlogForm: React.FC<EnhancedBlogFormProps> = ({
       ...prev,
       title,
       slug: prev.slug || generateSlug(title)
+    }));
+  };
+
+  const handleCategoryChange = (categoryId: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      categories: checked 
+        ? [...prev.categories, categoryId]
+        : prev.categories.filter(id => id !== categoryId)
     }));
   };
 
@@ -152,6 +180,31 @@ const EnhancedBlogForm: React.FC<EnhancedBlogFormProps> = ({
                     rows={3}
                     placeholder="Krátky popis príspevku pre náhľady a vyhľadávače..."
                   />
+                </div>
+
+                <div>
+                  <Label>Kategórie</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {blogCategories?.map((category) => (
+                      <div key={category.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={category.id}
+                          checked={formData.categories.includes(category.id)}
+                          onCheckedChange={(checked) => 
+                            handleCategoryChange(category.id, checked as boolean)
+                          }
+                        />
+                        <Label htmlFor={category.id} className="text-sm">
+                          {category.name}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  {(!blogCategories || blogCategories.length === 0) && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      Zatiaľ nie sú vytvorené žiadne kategórie.
+                    </p>
+                  )}
                 </div>
 
                 <FeaturedImageUploader

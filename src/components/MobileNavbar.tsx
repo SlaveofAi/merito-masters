@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import NotificationIndicator from "./notifications/NotificationIndicator";
 
@@ -42,9 +42,6 @@ const MobileNavbar = () => {
               </div>
               <span className="font-bold text-lg text-gray-900">Majstri.com</span>
             </Link>
-            <Button variant="ghost" size="sm" onClick={closeSheet}>
-              <X className="h-5 w-5" />
-            </Button>
           </div>
 
           {/* Navigation Items */}

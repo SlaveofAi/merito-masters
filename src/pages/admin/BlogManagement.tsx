@@ -37,6 +37,7 @@ interface BlogPost {
   created_at: string;
   updated_at: string;
   published_at: string | null;
+  categories?: string[];
 }
 
 const BlogManagement = () => {
@@ -71,10 +72,17 @@ const BlogManagement = () => {
   const handleFormSubmit = async (formData: Omit<BlogPost, 'id'>) => {
     try {
       const postData = {
-        ...formData,
+        title: formData.title,
+        content: formData.content,
+        excerpt: formData.excerpt,
+        slug: formData.slug,
+        status: formData.status,
+        featured_image_url: formData.featured_image_url,
         published_at: formData.status === 'published' ? new Date().toISOString() : null,
         author_id: (await supabase.auth.getUser()).data.user?.id || '',
       };
+
+      let postId: string;
 
       if (editingPost) {
         const { error } = await supabase
@@ -83,14 +91,42 @@ const BlogManagement = () => {
           .eq('id', editingPost.id);
         
         if (error) throw error;
+        postId = editingPost.id;
         toast.success('Príspevok bol úspešne upravený');
       } else {
-        const { error } = await supabase
+        const { data: newPost, error } = await supabase
           .from('blog_posts')
-          .insert([postData]);
+          .insert([postData])
+          .select()
+          .single();
         
         if (error) throw error;
+        postId = newPost.id;
         toast.success('Príspevok bol úspešne vytvorený');
+      }
+
+      // Handle categories
+      if (formData.categories && formData.categories.length > 0) {
+        // First, remove existing category associations
+        await supabase
+          .from('blog_post_categories')
+          .delete()
+          .eq('post_id', postId);
+
+        // Then add new category associations
+        const categoryData = formData.categories.map(categoryId => ({
+          post_id: postId,
+          category_id: categoryId
+        }));
+
+        const { error: categoryError } = await supabase
+          .from('blog_post_categories')
+          .insert(categoryData);
+
+        if (categoryError) {
+          console.error('Error saving categories:', categoryError);
+          toast.error('Chyba pri ukladaní kategórií');
+        }
       }
 
       setIsDialogOpen(false);
@@ -102,8 +138,19 @@ const BlogManagement = () => {
     }
   };
 
-  const handleEdit = (post: BlogPost) => {
-    setEditingPost(post);
+  const handleEdit = async (post: BlogPost) => {
+    // Fetch categories for this post
+    const { data: postCategories } = await supabase
+      .from('blog_post_categories')
+      .select('category_id')
+      .eq('post_id', post.id);
+
+    const categories = postCategories?.map(pc => pc.category_id) || [];
+    
+    setEditingPost({
+      ...post,
+      categories
+    });
     setIsDialogOpen(true);
   };
 
@@ -116,6 +163,12 @@ const BlogManagement = () => {
     if (!confirm('Ste si istí, že chcete vymazať tento príspevok?')) return;
 
     try {
+      // Delete category associations first
+      await supabase
+        .from('blog_post_categories')
+        .delete()
+        .eq('post_id', id);
+
       const { error } = await supabase
         .from('blog_posts')
         .delete()
