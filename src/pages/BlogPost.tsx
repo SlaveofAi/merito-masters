@@ -62,8 +62,11 @@ const BlogPost = () => {
       setPost(data);
       setLikeCount(data.like_count);
       
-      // Increment view count
-      await supabase.rpc('increment_blog_post_views', { post_id: data.id });
+      // Increment view count using direct update
+      await supabase
+        .from('blog_posts')
+        .update({ view_count: data.view_count + 1 })
+        .eq('id', data.id);
     } catch (error) {
       console.error('Error fetching post:', error);
     } finally {
@@ -96,17 +99,37 @@ const BlogPost = () => {
     }
 
     try {
-      const { data, error } = await supabase.rpc('toggle_blog_post_like', {
-        post_id: post.id,
-        user_id: user.id
-      });
+      if (liked) {
+        // Unlike the post
+        await supabase
+          .from('blog_post_likes')
+          .delete()
+          .eq('post_id', post.id)
+          .eq('user_id', user.id);
 
-      if (error) throw error;
+        await supabase
+          .from('blog_posts')
+          .update({ like_count: likeCount - 1 })
+          .eq('id', post.id);
 
-      setLiked(data);
-      setLikeCount(prev => data ? prev + 1 : prev - 1);
-      
-      toast.success(data ? 'Príspevok sa vám páči!' : 'Páčenie bolo zrušené');
+        setLiked(false);
+        setLikeCount(prev => prev - 1);
+        toast.success('Páčenie bolo zrušené');
+      } else {
+        // Like the post
+        await supabase
+          .from('blog_post_likes')
+          .insert({ post_id: post.id, user_id: user.id });
+
+        await supabase
+          .from('blog_posts')
+          .update({ like_count: likeCount + 1 })
+          .eq('id', post.id);
+
+        setLiked(true);
+        setLikeCount(prev => prev + 1);
+        toast.success('Príspevok sa vám páči!');
+      }
     } catch (error) {
       console.error('Error toggling like:', error);
       toast.error('Chyba pri páčení príspevku');
