@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import CraftsmanCard from "./CraftsmanCard";
@@ -8,6 +8,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const FeaturedCraftsmen = () => {
+  const navigate = useNavigate();
+
   // Fetch featured craftsmen from database
   const { data: featuredCraftsmen, isLoading } = useQuery({
     queryKey: ['featured-craftsmen'],
@@ -49,6 +51,17 @@ const FeaturedCraftsmen = () => {
       return toppedCraftsmen || [];
     }
   });
+
+  const handleShowAllCraftsmen = () => {
+    // Navigate to homepage and trigger search section to show all craftsmen
+    navigate('/', { 
+      state: { 
+        searchTerm: '', 
+        categoryFilter: 'Všetky kategórie',
+        scrollToResults: true 
+      } 
+    });
+  };
 
   // Use placeholder data if loading or no data available
   const placeholderCraftsmen = [
@@ -119,12 +132,10 @@ const FeaturedCraftsmen = () => {
             Vyberáme pre vás tých najlepších odborníkov a remeselníkov zo Slovenska s overenými recenziami od reálnych zákazníkov.
           </p>
         </div>
-        <Link to="/craftsmen">
-          <Button variant="ghost" className="flex items-center">
-            <span>Zobraziť všetkých</span>
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
+        <Button variant="ghost" className="flex items-center" onClick={handleShowAllCraftsmen}>
+          <span>Zobraziť všetkých</span>
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
