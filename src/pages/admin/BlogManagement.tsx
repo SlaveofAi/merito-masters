@@ -3,12 +3,10 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, Eye, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Search, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { sk } from "date-fns/locale";
 import {
@@ -23,8 +21,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import EnhancedBlogForm from "@/components/admin/blog/EnhancedBlogForm";
 
 interface BlogPost {
   id: string;
@@ -48,15 +46,6 @@ const BlogManagement = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
-  
-  const [formData, setFormData] = useState({
-    title: "",
-    content: "",
-    excerpt: "",
-    slug: "",
-    status: "draft",
-    featured_image_url: "",
-  });
 
   useEffect(() => {
     fetchPosts();
@@ -79,22 +68,10 @@ const BlogManagement = () => {
     }
   };
 
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .trim();
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleFormSubmit = async (formData: Omit<BlogPost, 'id'>) => {
     try {
-      const slug = formData.slug || generateSlug(formData.title);
       const postData = {
         ...formData,
-        slug,
         published_at: formData.status === 'published' ? new Date().toISOString() : null,
         author_id: (await supabase.auth.getUser()).data.user?.id || '',
       };
@@ -118,14 +95,6 @@ const BlogManagement = () => {
 
       setIsDialogOpen(false);
       setEditingPost(null);
-      setFormData({
-        title: "",
-        content: "",
-        excerpt: "",
-        slug: "",
-        status: "draft",
-        featured_image_url: "",
-      });
       fetchPosts();
     } catch (error) {
       console.error('Error saving post:', error);
@@ -135,14 +104,11 @@ const BlogManagement = () => {
 
   const handleEdit = (post: BlogPost) => {
     setEditingPost(post);
-    setFormData({
-      title: post.title,
-      content: post.content,
-      excerpt: post.excerpt || "",
-      slug: post.slug,
-      status: post.status,
-      featured_image_url: post.featured_image_url || "",
-    });
+    setIsDialogOpen(true);
+  };
+
+  const handleNewPost = () => {
+    setEditingPost(null);
     setIsDialogOpen(true);
   };
 
@@ -177,106 +143,62 @@ const BlogManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold">Správa blogu</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => {
-              setEditingPost(null);
-              setFormData({
-                title: "",
-                content: "",
-                excerpt: "",
-                slug: "",
-                status: "draft",
-                featured_image_url: "",
-              });
-            }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nový príspevok
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingPost ? 'Upraviť príspevok' : 'Nový príspevok'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="title">Nadpis</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="slug">URL slug</Label>
-                <Input
-                  id="slug"
-                  value={formData.slug}
-                  onChange={(e) => setFormData({...formData, slug: e.target.value})}
-                  placeholder="Automaticky vygenerované z nadpisu"
-                />
-              </div>
+        <div>
+          <h1 className="text-2xl font-bold">Správa blogu</h1>
+          <p className="text-gray-600">Vytvárajte a spravujte príspevky na blog</p>
+        </div>
+        <Button onClick={handleNewPost} className="bg-primary">
+          <Plus className="w-4 h-4 mr-2" />
+          Nový príspevok
+        </Button>
+      </div>
 
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-500" />
               <div>
-                <Label htmlFor="excerpt">Krátky popis</Label>
-                <Textarea
-                  id="excerpt"
-                  value={formData.excerpt}
-                  onChange={(e) => setFormData({...formData, excerpt: e.target.value})}
-                  rows={2}
-                />
+                <p className="text-2xl font-bold">{posts.length}</p>
+                <p className="text-sm text-gray-600">Celkom príspevkov</p>
               </div>
-
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-green-500 rounded-full" />
               <div>
-                <Label htmlFor="content">Obsah</Label>
-                <Textarea
-                  id="content"
-                  value={formData.content}
-                  onChange={(e) => setFormData({...formData, content: e.target.value})}
-                  rows={10}
-                  required
-                />
+                <p className="text-2xl font-bold">{posts.filter(p => p.status === 'published').length}</p>
+                <p className="text-sm text-gray-600">Publikované</p>
               </div>
-
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-yellow-500 rounded-full" />
               <div>
-                <Label htmlFor="featured_image">URL obrázka</Label>
-                <Input
-                  id="featured_image"
-                  value={formData.featured_image_url}
-                  onChange={(e) => setFormData({...formData, featured_image_url: e.target.value})}
-                  placeholder="https://example.com/image.jpg"
-                />
+                <p className="text-2xl font-bold">{posts.filter(p => p.status === 'draft').length}</p>
+                <p className="text-sm text-gray-600">Koncepty</p>
               </div>
-
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-purple-500" />
               <div>
-                <Label htmlFor="status">Stav</Label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Koncept</SelectItem>
-                    <SelectItem value="published">Publikovaný</SelectItem>
-                  </SelectContent>
-                </Select>
+                <p className="text-2xl font-bold">{posts.reduce((sum, p) => sum + p.view_count, 0)}</p>
+                <p className="text-sm text-gray-600">Celkom zobrazení</p>
               </div>
-
-              <div className="flex gap-2">
-                <Button type="submit">
-                  {editingPost ? 'Upraviť' : 'Vytvoriť'}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Zrušiť
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -305,21 +227,32 @@ const BlogManagement = () => {
       {/* Posts List */}
       <div className="grid gap-4">
         {filteredPosts.map((post) => (
-          <Card key={post.id}>
+          <Card key={post.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">{post.title}</h3>
-                    <Badge variant={post.status === 'published' ? 'default' : 'secondary'}>
-                      {post.status === 'published' ? 'Publikovaný' : 'Koncept'}
-                    </Badge>
-                  </div>
-                  <p className="text-gray-600 mb-2">{post.excerpt}</p>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span>Vytvorené: {format(new Date(post.created_at), 'dd.MM.yyyy', { locale: sk })}</span>
-                    <span>{post.view_count} zobrazení</span>
-                    <span>{post.like_count} páči sa mi</span>
+                  <div className="flex items-start gap-4">
+                    {post.featured_image_url && (
+                      <img
+                        src={post.featured_image_url}
+                        alt={post.title}
+                        className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold line-clamp-1">{post.title}</h3>
+                        <Badge variant={post.status === 'published' ? 'default' : 'secondary'}>
+                          {post.status === 'published' ? 'Publikovaný' : 'Koncept'}
+                        </Badge>
+                      </div>
+                      <p className="text-gray-600 mb-2 line-clamp-2">{post.excerpt}</p>
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span>Vytvorené: {format(new Date(post.created_at), 'dd.MM.yyyy', { locale: sk })}</span>
+                        <span>{post.view_count} zobrazení</span>
+                        <span>{post.like_count} páči sa mi</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -344,10 +277,35 @@ const BlogManagement = () => {
       </div>
 
       {filteredPosts.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Žiadne príspevky neboli nájdené.</p>
+        <div className="text-center py-12">
+          <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500 text-lg">
+            {searchTerm ? 'Žiadne príspevky neboli nájdené pre váš vyhľadávací výraz.' : 'Zatiaľ neboli vytvorené žiadne príspevky.'}
+          </p>
+          {!searchTerm && (
+            <Button onClick={handleNewPost} className="mt-4">
+              <Plus className="w-4 h-4 mr-2" />
+              Vytvoriť prvý príspevok
+            </Button>
+          )}
         </div>
       )}
+
+      {/* Enhanced Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">
+              {editingPost ? 'Upraviť príspevok' : 'Nový príspevok'}
+            </DialogTitle>
+          </DialogHeader>
+          <EnhancedBlogForm
+            post={editingPost}
+            onSubmit={handleFormSubmit}
+            onCancel={() => setIsDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
