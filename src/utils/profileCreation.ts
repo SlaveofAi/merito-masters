@@ -30,10 +30,11 @@ export const createDefaultProfile = async (
     console.log("Creating profile for user:", user.id, "type:", userType);
     
     const email = user.email || '';
-    const name = user.user_metadata?.name || user.user_metadata?.full_name || 'User';
+    const name = user.user_metadata?.name || user.user_metadata?.full_name || email.split('@')[0] || 'User';
     const tradeCategory = user.user_metadata?.trade_category || 'Stolár';
     
     // First ensure user type is set in the database
+    console.log("Setting user type in database:", userType);
     const { error: userTypeError } = await supabase
       .from('user_types')
       .upsert({
@@ -70,7 +71,14 @@ export const createDefaultProfile = async (
         return;
       }
       
-      console.log("Creating new craftsman profile");
+      console.log("Creating new craftsman profile with data:", {
+        id: user.id,
+        name,
+        email,
+        location: 'Bratislava',
+        trade_category: tradeCategory,
+        custom_specialization: tradeCategory
+      });
       
       const { error: insertError } = await supabase
         .from('craftsman_profiles')
@@ -114,7 +122,12 @@ export const createDefaultProfile = async (
         return;
       }
       
-      console.log("Creating new customer profile");
+      console.log("Creating new customer profile with data:", {
+        id: user.id,
+        name,
+        email,
+        location: 'Bratislava'
+      });
       
       const { error: insertError } = await supabase
         .from('customer_profiles')
@@ -140,6 +153,7 @@ export const createDefaultProfile = async (
     // Store user type in localStorage as backup
     localStorage.setItem("userType", userType);
     
+    console.log("Profile creation completed successfully");
     onSuccess();
     
   } catch (error: any) {

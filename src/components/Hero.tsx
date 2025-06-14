@@ -11,7 +11,8 @@ const Hero = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   
   const handleSearch = () => {
-    navigate('/home', { state: { searchTerm } });
+    // Navigate to the main page with search state instead of /home
+    navigate('/', { state: { searchTerm, scrollToResults: true } });
   };
   
   return (
