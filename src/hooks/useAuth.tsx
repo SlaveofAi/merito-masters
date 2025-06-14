@@ -27,8 +27,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserType = async (userId: string, currentSession: Session | null = null) => {
     try {
-      console.log("=== fetchUserType DEBUG ===");
+      console.log("=== fetchUserType DETAILED DEBUG ===");
       console.log("Fetching user type for userId:", userId);
+      console.log("Current session exists:", !!currentSession);
+      console.log("Session user metadata:", currentSession?.user?.user_metadata);
       
       // First try to get user type from user metadata
       if (currentSession?.user?.user_metadata?.user_type) {
@@ -45,18 +47,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Try to get from localStorage as fallback
       const storedType = localStorage.getItem("userType");
+      console.log("Stored type in localStorage:", storedType);
       if (storedType === 'customer' || storedType === 'craftsman') {
         console.log("Using cached user type from localStorage:", storedType);
         setUserType(storedType);
       }
       
-      // Get from database
+      // Get from database with detailed error logging
       console.log("Querying database for user type...");
       const { data, error } = await supabase
         .from('user_types')
         .select('user_type')
         .eq('user_id', userId)
         .maybeSingle();
+
+      console.log("Database query result:", { data, error });
 
       if (error) {
         console.error("Error fetching user type from database:", error);
@@ -91,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (retrievedUserType === 'admin') {
         console.log("User is admin");
         setIsAdmin(true);
-        setUserType(null); // Admins don't have customer/craftsman type
+        setUserType(null);
         return null;
       }
 
@@ -112,7 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      console.log("=== updateUserType DEBUG ===");
+      console.log("=== updateUserType DETAILED DEBUG ===");
       console.log("Updating user type to:", type, "for user:", user.id);
       
       // Store in localStorage immediately
@@ -161,10 +166,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
     
-    console.log("=== AUTH PROVIDER INIT ===");
+    console.log("=== AUTH PROVIDER INIT DETAILED ===");
     
     // Check localStorage for faster initial render
     const storedType = localStorage.getItem("userType");
+    console.log("Initial localStorage userType:", storedType);
     if (storedType === 'customer' || storedType === 'craftsman') {
       console.log("Setting initial userType from localStorage:", storedType);
       setUserType(storedType);
@@ -173,10 +179,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log("=== AUTH STATE CHANGE ===");
+        console.log("=== AUTH STATE CHANGE DETAILED ===");
         console.log("Auth state changed:", event);
         console.log("New session exists:", !!newSession);
         console.log("User ID:", newSession?.user?.id);
+        console.log("User email:", newSession?.user?.email);
+        console.log("User metadata:", newSession?.user?.user_metadata);
         
         if (!mounted) {
           console.log("Component unmounted, ignoring auth state change");
@@ -195,9 +203,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (newSession?.user) {
           console.log("User signed in, fetching user type");
-          await fetchUserType(newSession.user.id, newSession);
+          const fetchedType = await fetchUserType(newSession.user.id, newSession);
+          console.log("Fetched user type result:", fetchedType);
         }
         
+        console.log("Setting loading to false");
         setLoading(false);
       }
     );
@@ -209,21 +219,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      console.log("=== INITIAL SESSION CHECK ===");
+      console.log("=== INITIAL SESSION CHECK DETAILED ===");
       console.log("Initial session exists:", !!session);
       console.log("User ID:", session?.user?.id);
+      console.log("User email:", session?.user?.email);
+      console.log("User metadata:", session?.user?.user_metadata);
       
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserType(session.user.id, session).then(() => {
+        fetchUserType(session.user.id, session).then((fetchedType) => {
           if (mounted) {
-            console.log("Initial user type fetch completed");
+            console.log("Initial user type fetch completed with result:", fetchedType);
             setLoading(false);
           }
         });
       } else {
+        console.log("No initial session, setting loading to false");
         setLoading(false);
       }
     });
@@ -237,11 +250,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
-      console.log("Signing out user");
+      console.log("=== SIGN OUT DETAILED ===");
+      console.log("Signing out user:", user?.id);
       await supabase.auth.signOut();
       setUserType(null);
       setIsAdmin(false);
       localStorage.removeItem("userType");
+      console.log("Sign out completed");
     } catch (error) {
       console.error("Error signing out:", error);
       toast.error("Nastala chyba pri odhlásení");
@@ -258,12 +273,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     updateUserType
   };
 
-  console.log("=== AUTH CONTEXT STATE ===", { 
+  console.log("=== AUTH CONTEXT STATE DETAILED ===", { 
     userId: user?.id, 
+    userEmail: user?.email,
     userType, 
     isAdmin,
     loading,
-    hasSession: !!session
+    hasSession: !!session,
+    sessionAccessToken: session?.access_token ? "present" : "missing"
   });
 
   return (

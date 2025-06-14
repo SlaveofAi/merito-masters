@@ -24,9 +24,15 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
   const { user, signOut, userType, updateUserType } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
 
-  console.log("=== PROFILE NOT FOUND DEBUG ===");
+  console.log("=== PROFILE NOT FOUND DETAILED DEBUG ===");
   console.log("ProfileNotFound props:", { isCurrentUser, error });
-  console.log("Auth state:", { user: !!user, userType });
+  console.log("Auth state:", { 
+    user: !!user, 
+    userId: user?.id,
+    userEmail: user?.email,
+    userType,
+    userMetadata: user?.user_metadata
+  });
 
   // Automatically try to create a profile when component loads for current user
   useEffect(() => {
@@ -143,12 +149,14 @@ const ProfileNotFound: React.FC<ProfileNotFoundProps> = ({
         </p>
         
         <div className="text-sm mb-4">
-          <div className="font-medium">Aktuálne nastavenia:</div>
+          <div className="font-medium">Informácie o ladení:</div>
           <ul className="list-disc list-inside pl-4 mt-1 space-y-1">
             <li>Používateľ: {user ? "Prihlásený" : "Neprihlásený"}</li>
-            <li>Typ používateľa: {userType || "Nenastavený"}</li>
             <li>ID používateľa: {user?.id ? `${user.id.substring(0, 8)}...` : "Nedostupné"}</li>
+            <li>Email: {user?.email || "Nedostupný"}</li>
+            <li>Typ používateľa: {userType || "Nenastavený"}</li>
             <li>Email potvrdený: {user?.email_confirmed_at ? "Áno" : "Nie"}</li>
+            <li>Metadáta: {user?.user_metadata ? JSON.stringify(user.user_metadata) : "Žiadne"}</li>
           </ul>
         </div>
         

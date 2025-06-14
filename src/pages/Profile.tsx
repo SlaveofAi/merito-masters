@@ -15,7 +15,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  console.log("=== PROFILE PAGE DEBUG ===");
+  console.log("=== PROFILE PAGE DETAILED DEBUG ===");
   console.log("Profile page rendering with:", {
     id,
     tab,
@@ -23,16 +23,22 @@ const Profile = () => {
     loading,
     userLoggedIn: !!user,
     path: window.location.pathname,
-    userId: user?.id
+    userId: user?.id,
+    userEmail: user?.email,
+    locationPathname: location.pathname,
+    locationSearch: location.search
   });
   
   // Check if this is a craftsman profile view (route: /craftsman/:id)
   const isCraftsmanProfileRoute = location.pathname.startsWith('/craftsman/');
+  console.log("Is craftsman profile route:", isCraftsmanProfileRoute);
   
   // Get userType from query parameter if available (for Google OAuth redirect)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const queryUserType = params.get('userType');
+    
+    console.log("Checking for userType in URL params:", queryUserType);
     
     if (queryUserType === 'customer' || queryUserType === 'craftsman') {
       console.log("Found userType in URL params:", queryUserType);
@@ -117,6 +123,14 @@ const Profile = () => {
   }
   
   console.log("Rendering profile page with initialTab:", initialTab);
+  console.log("Final render state:", {
+    userType,
+    hasUser: !!user,
+    userId: user?.id,
+    profileId: id,
+    initialTab,
+    loading
+  });
   
   return (
     <ProfileProvider>
