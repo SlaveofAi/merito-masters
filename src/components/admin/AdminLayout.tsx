@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -13,7 +12,8 @@ import {
   X,
   Home,
   Shield,
-  LogOut
+  LogOut,
+  BookOpen
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -28,6 +28,7 @@ const AdminLayout = () => {
     { name: 'Content Moderation', href: '/admin/content', icon: Shield },
     { name: 'Job Requests', href: '/admin/jobs', icon: FileText },
     { name: 'Reviews', href: '/admin/reviews', icon: MessageSquare },
+    { name: 'Blog Management', href: '/admin/blog', icon: BookOpen },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
