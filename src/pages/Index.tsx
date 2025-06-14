@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import Hero from "@/components/Hero";
+import FeaturedCraftsmen from "@/components/FeaturedCraftsmen";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -158,12 +159,15 @@ const Index = () => {
     <Layout>
       <Hero />
       
-      {/* Search and Results Section */}
+      {/* Featured Craftsmen Section - Always visible */}
+      <FeaturedCraftsmen />
+      
+      {/* Search and Results Section - Only shown when user interacts with search */}
       {showSearchSection && (
         <div ref={resultsRef} className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
           <div className="mb-12">
             <h2 className="text-3xl font-bold mb-6 hover:text-primary/80 transition-colors duration-300 cursor-default">
-              Nájdite najlepších remeselníkov
+              Výsledky vyhľadávania
             </h2>
             
             {/* Search and filter section */}
