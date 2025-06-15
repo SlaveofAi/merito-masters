@@ -3,11 +3,13 @@ import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock, Crown, Loader2 } from "lucide-react";
+import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock, Crown, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import ToppedCraftsmanFeature from './ToppedCraftsmanFeature';
 import { ProfileData, CraftsmanProfile } from "@/types/profile";
 import ImageCropper from './ImageCropper';
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export interface ProfileHeaderProps {
   profileData: ProfileData;
@@ -32,6 +34,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const [uploading, setUploading] = React.useState(false);
   const [showImageCropper, setShowImageCropper] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   // Type guard function to check if a profile is a craftsman profile
   const isCraftsmanProfile = (profile: ProfileData): profile is CraftsmanProfile => {
@@ -235,17 +239,46 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               <span>{profileData.location}</span>
             </div>
             
-            {profileData.phone && (
-              <div className="flex items-center">
-                <Phone className="mr-2 h-4 w-4" />
-                <span>{profileData.phone}</span>
-              </div>
-            )}
-            
-            {profileData.email && (
-              <div className="flex items-center">
-                <Mail className="mr-2 h-4 w-4" />
-                <span>{profileData.email}</span>
+            {/* Show contact info only if user is logged in or viewing own profile */}
+            {user || isCurrentUser ? (
+              <>
+                {profileData.phone && (
+                  <div className="flex items-center">
+                    <Phone className="mr-2 h-4 w-4" />
+                    <span>{profileData.phone}</span>
+                  </div>
+                )}
+                
+                {profileData.email && (
+                  <div className="flex items-center">
+                    <Mail className="mr-2 h-4 w-4" />
+                    <span>{profileData.email}</span>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Show registration prompt for non-logged in users */
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-2">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <Lock className="h-4 w-4" />
+                  <span className="text-sm font-medium">Kontaktné údaje sú skryté</span>
+                </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  Pre kontaktovanie remeselníka sa musíte najprv{" "}
+                  <button
+                    onClick={() => navigate("/register")}
+                    className="underline font-medium hover:text-blue-800"
+                  >
+                    zaregistrovať
+                  </button>
+                  {" "}alebo{" "}
+                  <button
+                    onClick={() => navigate("/login")}
+                    className="underline font-medium hover:text-blue-800"
+                  >
+                    prihlásiť
+                  </button>
+                </p>
               </div>
             )}
             
