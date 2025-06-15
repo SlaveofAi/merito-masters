@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Camera, MapPin, Phone, Mail, CalendarRange, User, Clock, Crown, Loader2, Lock } from "lucide-react";
+import { Camera, MapPin, CalendarRange, User, Clock, Crown, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import ToppedCraftsmanFeature from './ToppedCraftsmanFeature';
 import { ProfileData, CraftsmanProfile } from "@/types/profile";
@@ -239,8 +239,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               <span>{profileData.location}</span>
             </div>
             
-            {/* Show contact info only if user is logged in or viewing own profile */}
-            {user || isCurrentUser ? (
+            {/* Show contact info only for current user viewing their own profile */}
+            {isCurrentUser && (
               <>
                 {profileData.phone && (
                   <div className="flex items-center">
@@ -256,28 +256,35 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   </div>
                 )}
               </>
-            ) : (
-              /* Show registration prompt for non-logged in users */
+            )}
+            
+            {/* Show contact privacy notice for other users */}
+            {!isCurrentUser && (
               <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-2">
                 <div className="flex items-center gap-2 text-blue-700">
                   <Lock className="h-4 w-4" />
-                  <span className="text-sm font-medium">Kontaktné údaje sú skryté</span>
+                  <span className="text-sm font-medium">Kontaktné údaje sú súkromné</span>
                 </div>
                 <p className="text-xs text-blue-600 mt-1">
-                  Pre kontaktovanie remeselníka sa musíte najprv{" "}
-                  <button
-                    onClick={() => navigate("/register")}
-                    className="underline font-medium hover:text-blue-800"
-                  >
-                    zaregistrovať
-                  </button>
-                  {" "}alebo{" "}
-                  <button
-                    onClick={() => navigate("/login")}
-                    className="underline font-medium hover:text-blue-800"
-                  >
-                    prihlásiť
-                  </button>
+                  Pre komunikáciu s remeselníkom použite chat funkciu.
+                  {!user && (
+                    <>
+                      {" "}Najprv sa musíte{" "}
+                      <button
+                        onClick={() => navigate("/register")}
+                        className="underline font-medium hover:text-blue-800"
+                      >
+                        zaregistrovať
+                      </button>
+                      {" "}alebo{" "}
+                      <button
+                        onClick={() => navigate("/login")}
+                        className="underline font-medium hover:text-blue-800"
+                      >
+                        prihlásiť
+                      </button>
+                    </>
+                  )}
                 </p>
               </div>
             )}
