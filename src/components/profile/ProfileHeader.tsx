@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -258,8 +257,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               </>
             )}
             
-            {/* Show contact privacy notice for other users */}
-            {!isCurrentUser && (
+            {/* Show contact privacy notice ONLY for non-logged-in users */}
+            {!isCurrentUser && !user && (
               <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-2">
                 <div className="flex items-center gap-2 text-blue-700">
                   <Lock className="h-4 w-4" />
@@ -267,24 +266,20 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 </div>
                 <p className="text-xs text-blue-600 mt-1">
                   Pre komunikáciu s remeselníkom použite chat funkciu.
-                  {!user && (
-                    <>
-                      {" "}Najprv sa musíte{" "}
-                      <button
-                        onClick={() => navigate("/register")}
-                        className="underline font-medium hover:text-blue-800"
-                      >
-                        zaregistrovať
-                      </button>
-                      {" "}alebo{" "}
-                      <button
-                        onClick={() => navigate("/login")}
-                        className="underline font-medium hover:text-blue-800"
-                      >
-                        prihlásiť
-                      </button>
-                    </>
-                  )}
+                  Najprv sa musíte{" "}
+                  <button
+                    onClick={() => navigate("/register")}
+                    className="underline font-medium hover:text-blue-800"
+                  >
+                    zaregistrovať
+                  </button>
+                  {" "}alebo{" "}
+                  <button
+                    onClick={() => navigate("/login")}
+                    className="underline font-medium hover:text-blue-800"
+                  >
+                    prihlásiť
+                  </button>
                 </p>
               </div>
             )}
