@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Bell, BellDot } from "lucide-react";
+import { Menu, Bell, BellDot, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useNotificationSubscription } from "@/hooks/useNotificationSubscription";
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 const MobileNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { unreadCount, refetchNotifications } = useNotifications();
   
   // Set up real-time subscription
@@ -30,6 +30,15 @@ const MobileNavbar = () => {
   ];
 
   const closeSheet = () => setIsOpen(false);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      closeSheet();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -100,38 +109,83 @@ const MobileNavbar = () => {
                     )}
                   </Link>
                   
-                  <Link to="/job-requests" onClick={closeSheet}>
-                    <Button variant="ghost" className="w-full justify-start text-sm">
-                      Požiadavky
-                    </Button>
+                  <Link
+                    to="/job-requests"
+                    onClick={closeSheet}
+                    className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      location.pathname === "/job-requests"
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-700 hover:text-primary hover:bg-gray-50"
+                    }`}
+                  >
+                    Požiadavky
                   </Link>
-                  <Link to="/messages" onClick={closeSheet}>
-                    <Button variant="ghost" className="w-full justify-start text-sm">
-                      Správy
-                    </Button>
+                  <Link
+                    to="/messages"
+                    onClick={closeSheet}
+                    className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      location.pathname === "/messages"
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-700 hover:text-primary hover:bg-gray-50"
+                    }`}
+                  >
+                    Správy
                   </Link>
-                  <Link to="/profile" onClick={closeSheet}>
-                    <Button variant="ghost" className="w-full justify-start text-sm">
-                      Profil
-                    </Button>
+                  <Link
+                    to="/profile"
+                    onClick={closeSheet}
+                    className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      location.pathname === "/profile"
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-700 hover:text-primary hover:bg-gray-50"
+                    }`}
+                  >
+                    Profil
                   </Link>
-                  <Link to="/approved-bookings" onClick={closeSheet}>
-                    <Button variant="ghost" className="w-full justify-start text-sm">
-                      Zákazky
-                    </Button>
+                  <Link
+                    to="/approved-bookings"
+                    onClick={closeSheet}
+                    className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      location.pathname === "/approved-bookings"
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-700 hover:text-primary hover:bg-gray-50"
+                    }`}
+                  >
+                    Zákazky
                   </Link>
+
+                  {/* Logout Button */}
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-700 hover:text-primary hover:bg-gray-50"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Odhlásiť sa</span>
+                  </button>
                 </>
               ) : (
                 <>
-                  <Link to="/job-requests" onClick={closeSheet}>
-                    <Button variant="ghost" className="w-full justify-start text-sm">
-                      Požiadavky
-                    </Button>
+                  <Link
+                    to="/job-requests"
+                    onClick={closeSheet}
+                    className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      location.pathname === "/job-requests"
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-700 hover:text-primary hover:bg-gray-50"
+                    }`}
+                  >
+                    Požiadavky
                   </Link>
-                  <Link to="/login" onClick={closeSheet}>
-                    <Button variant="ghost" className="w-full justify-start text-sm">
-                      Prihlásenie
-                    </Button>
+                  <Link
+                    to="/login"
+                    onClick={closeSheet}
+                    className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      location.pathname === "/login"
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-700 hover:text-primary hover:bg-gray-50"
+                    }`}
+                  >
+                    Prihlásenie
                   </Link>
                   <Link to="/register" onClick={closeSheet}>
                     <Button className="w-full text-sm mt-2">
