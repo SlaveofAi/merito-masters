@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -12,13 +13,11 @@ import EditProfileForm from "@/components/EditProfileForm";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Pencil, LogOut, MapPin, Phone, Mail, Calendar, Star, Award, Users, Settings } from "lucide-react";
+import { MessageSquare, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
-  const { user, userType: authUserType, updateUserType, signOut } = useAuth();
+  const { user, userType: authUserType, updateUserType } = useAuth();
   const navigate = useNavigate();
   const {
     loading,
@@ -210,18 +209,6 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
     }
   };
 
-  // Handler for logout button
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      toast.success("Úspešne ste sa odhlásili");
-      navigate("/");
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast.error("Nastala chyba pri odhlásení");
-    }
-  };
-
   // For current user but no user type detected
   if (user && !authUserType && isCurrentUser) {
     return (
@@ -349,7 +336,7 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4 py-8">
           {profileData && (
             <>
               <ProfileHeader 
@@ -374,212 +361,20 @@ const ProfilePage: React.FC<{ initialTab?: string }> = ({ initialTab }) => {
                   </Button>
                 )}
                 
-                <div className="flex items-center gap-2 ml-auto">
-                  {isCurrentUser && (
-                    <>
-                      <Button 
-                        onClick={handleEditProfile}
-                        variant="outline" 
-                        className="flex items-center gap-2"
-                      >
-                        <Pencil className="w-4 h-4" /> 
-                        Upraviť profil
-                      </Button>
-                      
-                      <Button 
-                        onClick={handleLogout}
-                        variant="destructive" 
-                        className="flex items-center gap-2"
-                      >
-                        <LogOut className="w-4 h-4" /> 
-                        Odhlásiť sa
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Enhanced Profile Information Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                {/* Contact Information Card */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Phone className="h-5 w-5" />
-                      Kontaktné údaje
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {profileData.email && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="h-4 w-4 text-gray-500" />
-                        <span>{profileData.email}</span>
-                      </div>
-                    )}
-                    {profileData.phone && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-4 w-4 text-gray-500" />
-                        <span>{profileData.phone}</span>
-                      </div>
-                    )}
-                    {profileData.location && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-gray-500" />
-                        <span>{profileData.location}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-gray-500" />
-                      <span>Člen od {new Date(profileData.created_at || '').toLocaleDateString('sk-SK')}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Stats Card for Craftsman */}
-                {isCraftsmanProfile && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Award className="h-5 w-5" />
-                        Štatistiky
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Hodnotenie</span>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="font-semibold">4.8</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Dokončené projekty</span>
-                        <span className="font-semibold">25</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Spokojní zákazníci</span>
-                        <span className="font-semibold">23</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Doba odpovede</span>
-                        <span className="font-semibold">2 hod</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Skills/Services Card for Craftsman */}
-                {isCraftsmanProfile && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Settings className="h-5 w-5" />
-                        Služby a špecializácia
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {profileData.trade_category && (
-                          <div>
-                            <span className="text-sm text-gray-600">Kategória:</span>
-                            <Badge variant="secondary" className="ml-2">
-                              {profileData.trade_category}
-                            </Badge>
-                          </div>
-                        )}
-                        {profileData.specialization && (
-                          <div>
-                            <span className="text-sm text-gray-600">Špecializácia:</span>
-                            <p className="text-sm mt-1">{profileData.specialization}</p>
-                          </div>
-                        )}
-                        {profileData.experience_years && (
-                          <div>
-                            <span className="text-sm text-gray-600">Skúsenosti:</span>
-                            <span className="ml-2 font-semibold">{profileData.experience_years} rokov</span>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Customer Stats Card */}
-                {!isCraftsmanProfile && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5" />
-                        Aktivita
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Celkové požiadavky</span>
-                        <span className="font-semibold">8</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Dokončené projekty</span>
-                        <span className="font-semibold">5</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Hodnotenia dané</span>
-                        <span className="font-semibold">4</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                {isCurrentUser && (
+                  <Button 
+                    onClick={handleEditProfile}
+                    variant="outline" 
+                    className="flex items-center gap-2 ml-auto"
+                  >
+                    <Pencil className="w-4 h-4" /> 
+                    Upraviť profil
+                  </Button>
                 )}
               </div>
-
-              {/* About Section */}
-              {profileData.bio && (
-                <Card className="mb-8">
-                  <CardHeader>
-                    <CardTitle>O mne</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-700 leading-relaxed">{profileData.bio}</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Verification Badges */}
-              <Card className="mb-8">
-                <CardHeader>
-                  <CardTitle>Overenia a odznaky</CardTitle>
-                  <CardDescription>
-                    Tieto odznaky potvrdzujú kvalitu a spoľahlivosť profilu
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-3">
-                    <Badge variant="secondary" className="flex items-center gap-2">
-                      <Award className="h-4 w-4" />
-                      Overený profil
-                    </Badge>
-                    <Badge variant="secondary" className="flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      Overený email
-                    </Badge>
-                    {profileData.phone && (
-                      <Badge variant="secondary" className="flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        Overené telefónne číslo
-                      </Badge>
-                    )}
-                    {isCraftsmanProfile && (
-                      <Badge variant="secondary" className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Profesionálny remeselník
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
             </>
           )}
 
-          {/* Main Profile Tabs */}
           <div className="bg-white rounded-lg shadow-sm p-6 mx-auto">
             <ProfileTabs 
               userType={effectiveUserType} 
