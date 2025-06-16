@@ -1,6 +1,7 @@
 
 import React from "react";
 import Hero from "@/components/Hero";
+import FeaturedCraftsmen from "@/components/FeaturedCraftsmen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -113,6 +114,9 @@ const Home = () => {
   return (
     <div className="min-h-screen">
       <Hero />
+      
+      {/* Featured Craftsmen */}
+      <FeaturedCraftsmen />
       
       {/* How It Works Section */}
       <section className="section-padding bg-gray-50">

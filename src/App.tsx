@@ -62,6 +62,9 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Index />} />
       
+      {/* Add home route that redirects to main page */}
+      <Route path="/home" element={<Navigate to="/" replace />} />
+      
       {/* Redirect authenticated users away from auth pages */}
       <Route 
         path="/login" 
