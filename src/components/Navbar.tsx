@@ -3,9 +3,13 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import NavigationWithNotification from "./NavigationWithNotification";
 import MobileNavbar from "./MobileNavbar";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 const Navbar = () => {
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   const navItems = [
     { label: "Domov", href: "/" },
@@ -17,6 +21,14 @@ const Navbar = () => {
   const handleLinkClick = () => {
     // Scroll to top when clicking navigation links
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   return (
@@ -52,8 +64,19 @@ const Navbar = () => {
           {/* Right side navigation */}
           <div className="flex items-center gap-2">
             {/* Desktop navigation */}
-            <div className="hidden lg:block">
+            <div className="hidden lg:flex items-center gap-2">
               <NavigationWithNotification />
+              {user && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 text-gray-700 hover:text-primary"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden xl:inline">Odhlásiť sa</span>
+                </Button>
+              )}
             </div>
             
             {/* Mobile navigation */}

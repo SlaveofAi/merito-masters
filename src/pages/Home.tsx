@@ -18,7 +18,11 @@ import {
   PaintBucket,
   Zap,
   Home as HomeIcon,
-  Truck
+  Truck,
+  Award,
+  TrendingUp,
+  MapPin,
+  Phone
 } from "lucide-react";
 
 const Home = () => {
@@ -64,6 +68,45 @@ const Home = () => {
       icon: Clock,
       title: "Rýchle odpovede",
       description: "Väčšina remeselníkov odpovie do 24 hodín."
+    }
+  ];
+
+  const testimonials = [
+    {
+      name: "Mária Novákova",
+      location: "Bratislava",
+      text: "Výborná služba! Našla som kvalitného elektrikára za pár hodín. Odporúčam!",
+      rating: 5
+    },
+    {
+      name: "Peter Kováč",
+      location: "Košice", 
+      text: "Konečne platforma, kde nájdem overených remeselníkov. Úžasné!",
+      rating: 5
+    },
+    {
+      name: "Jana Horváthová",
+      location: "Žilina",
+      text: "Rýchla komunikácia a profesionálny prístup. Veľmi spokojná.",
+      rating: 5
+    }
+  ];
+
+  const features = [
+    {
+      icon: Award,
+      title: "Certifikovaní odborníci",
+      description: "Všetci remeselníci prechádzajú procesom overenia kvality a odbornosti."
+    },
+    {
+      icon: MapPin,
+      title: "Pokrytie celého Slovenska",
+      description: "Nájdite remeselníkov vo všetkých krajoch a mestách Slovenska."
+    },
+    {
+      icon: Phone,
+      title: "24/7 zákaznícka podpora",
+      description: "Sme tu pre vás kedykoľvek potrebujete pomoc alebo máte otázky."
     }
   ];
 
@@ -151,6 +194,63 @@ const Home = () => {
                 <CardDescription className="text-base">
                   {benefit.description}
                 </CardDescription>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="section-padding">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Naše výhody</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Čo nás odlišuje od ostatných platforiem
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {features.map((feature, index) => (
+            <Card key={index} className="text-center border-none shadow-sm">
+              <CardHeader>
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <feature.icon className="h-8 w-8 text-primary" />
+                </div>
+                <CardTitle className="text-xl">{feature.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-base">
+                  {feature.description}
+                </CardDescription>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="section-padding bg-gray-50">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Čo hovoria naši zákazníci</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Prečítajte si skutočné skúsenosti našich spokojných zákazníkov
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {testimonials.map((testimonial, index) => (
+            <Card key={index} className="border-none shadow-sm">
+              <CardHeader>
+                <div className="flex items-center gap-1 mb-2">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <CardTitle className="text-lg">{testimonial.name}</CardTitle>
+                <CardDescription>{testimonial.location}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground italic">"{testimonial.text}"</p>
               </CardContent>
             </Card>
           ))}
