@@ -11,19 +11,20 @@ const Navbar = () => {
     { label: "Domov", href: "/" },
     { label: "Kategórie", href: "/categories" },
     { label: "Blog", href: "/blog" },
-    { label: "Ako to funguje", href: "/how-it-works" },
-    { label: "Výhody", href: "/benefits" },
-    { label: "Ceny", href: "/pricing" },
-    { label: "O nás", href: "/about" },
     { label: "Kontakt", href: "/contact" },
   ];
+
+  const handleLinkClick = () => {
+    // Scroll to top when clicking navigation links
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2" onClick={handleLinkClick}>
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">M</span>
             </div>
@@ -36,6 +37,7 @@ const Navbar = () => {
               <Link
                 key={item.href}
                 to={item.href}
+                onClick={handleLinkClick}
                 className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                   location.pathname === item.href
                     ? "bg-primary/10 text-primary"

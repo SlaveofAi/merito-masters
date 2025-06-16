@@ -4,12 +4,17 @@ import { Link } from "react-router-dom";
 import { Facebook, Instagram } from "lucide-react";
 
 const Footer = () => {
+  const handleLinkClick = () => {
+    // Scroll to top when clicking footer links
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <footer className="bg-secondary py-12 border-t border-border/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="space-y-4">
-            <Link to="/" className="text-2xl font-semibold tracking-tight">
+            <Link to="/" onClick={handleLinkClick} className="text-2xl font-semibold tracking-tight">
               Majstri<span className="text-muted-foreground">.com</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs">
@@ -21,23 +26,28 @@ const Footer = () => {
             <h4 className="font-medium mb-4">Pre remeselníkov</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link to="/register" className="hover:text-foreground transition-colors">
+                <Link to="/register" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
                   Registrácia
                 </Link>
               </li>
               <li>
-                <Link to="/login" className="hover:text-foreground transition-colors">
+                <Link to="/login" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
                   Prihlásenie
                 </Link>
               </li>
               <li>
-                <Link to="/pricing" className="hover:text-foreground transition-colors">
+                <Link to="/pricing" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
                   Cenník služieb
                 </Link>
               </li>
               <li>
-                <Link to="/benefits" className="hover:text-foreground transition-colors">
+                <Link to="/benefits" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
                   Výhody registrácie
+                </Link>
+              </li>
+              <li>
+                <Link to="/how-it-works" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
+                  Ako to funguje
                 </Link>
               </li>
             </ul>
@@ -47,22 +57,22 @@ const Footer = () => {
             <h4 className="font-medium mb-4">Pre zákazníkov</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link to="/craftsmen" className="hover:text-foreground transition-colors">
-                  Vyhľadať remeselníkov
-                </Link>
-              </li>
-              <li>
-                <Link to="/categories" className="hover:text-foreground transition-colors">
+                <Link to="/categories" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
                   Kategórie služieb
                 </Link>
               </li>
               <li>
-                <Link to="/how-it-works" className="hover:text-foreground transition-colors">
+                <Link to="/job-requests" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
+                  Vyhľadať remeselníkov
+                </Link>
+              </li>
+              <li>
+                <Link to="/how-it-works" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
                   Ako to funguje
                 </Link>
               </li>
               <li>
-                <Link to="/reviews" className="hover:text-foreground transition-colors">
+                <Link to="/reviews" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
                   Hodnotenia a recenzie
                 </Link>
               </li>
@@ -73,22 +83,27 @@ const Footer = () => {
             <h4 className="font-medium mb-4">Spoločnosť</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link to="/about" className="hover:text-foreground transition-colors">
+                <Link to="/about" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
                   O nás
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="hover:text-foreground transition-colors">
+                <Link to="/contact" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
                   Kontakt
                 </Link>
               </li>
               <li>
-                <Link to="/privacy" className="hover:text-foreground transition-colors">
+                <Link to="/blog" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacy" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
                   Ochrana súkromia
                 </Link>
               </li>
               <li>
-                <Link to="/terms" className="hover:text-foreground transition-colors">
+                <Link to="/terms" onClick={handleLinkClick} className="hover:text-foreground transition-colors">
                   Podmienky používania
                 </Link>
               </li>

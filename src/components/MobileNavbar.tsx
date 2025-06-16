@@ -22,14 +22,16 @@ const MobileNavbar = () => {
     { label: "Domov", href: "/" },
     { label: "Kategórie", href: "/categories" },
     { label: "Blog", href: "/blog" },
-    { label: "Ako to funguje", href: "/how-it-works" },
-    { label: "Výhody", href: "/benefits" },
-    { label: "Ceny", href: "/pricing" },
-    { label: "O nás", href: "/about" },
     { label: "Kontakt", href: "/contact" },
   ];
 
   const closeSheet = () => setIsOpen(false);
+
+  const handleLinkClick = () => {
+    closeSheet();
+    // Scroll to top when clicking navigation links
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleSignOut = async () => {
     try {
@@ -51,7 +53,7 @@ const MobileNavbar = () => {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
-            <Link to="/" className="flex items-center space-x-2" onClick={closeSheet}>
+            <Link to="/" className="flex items-center space-x-2" onClick={handleLinkClick}>
               <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xs">M</span>
               </div>
@@ -66,7 +68,7 @@ const MobileNavbar = () => {
                 <Link
                   key={item.href}
                   to={item.href}
-                  onClick={closeSheet}
+                  onClick={handleLinkClick}
                   className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     location.pathname === item.href
                       ? "bg-primary/10 text-primary"
@@ -87,7 +89,7 @@ const MobileNavbar = () => {
                 <>
                   <Link
                     to="/notifications"
-                    onClick={closeSheet}
+                    onClick={handleLinkClick}
                     className={`flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       location.pathname === "/notifications"
                         ? "bg-primary/10 text-primary"
@@ -111,7 +113,7 @@ const MobileNavbar = () => {
                   
                   <Link
                     to="/job-requests"
-                    onClick={closeSheet}
+                    onClick={handleLinkClick}
                     className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       location.pathname === "/job-requests"
                         ? "bg-primary/10 text-primary"
@@ -122,7 +124,7 @@ const MobileNavbar = () => {
                   </Link>
                   <Link
                     to="/messages"
-                    onClick={closeSheet}
+                    onClick={handleLinkClick}
                     className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       location.pathname === "/messages"
                         ? "bg-primary/10 text-primary"
@@ -133,7 +135,7 @@ const MobileNavbar = () => {
                   </Link>
                   <Link
                     to="/profile"
-                    onClick={closeSheet}
+                    onClick={handleLinkClick}
                     className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       location.pathname === "/profile"
                         ? "bg-primary/10 text-primary"
@@ -144,7 +146,7 @@ const MobileNavbar = () => {
                   </Link>
                   <Link
                     to="/approved-bookings"
-                    onClick={closeSheet}
+                    onClick={handleLinkClick}
                     className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       location.pathname === "/approved-bookings"
                         ? "bg-primary/10 text-primary"
@@ -167,7 +169,7 @@ const MobileNavbar = () => {
                 <>
                   <Link
                     to="/job-requests"
-                    onClick={closeSheet}
+                    onClick={handleLinkClick}
                     className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       location.pathname === "/job-requests"
                         ? "bg-primary/10 text-primary"
@@ -178,7 +180,7 @@ const MobileNavbar = () => {
                   </Link>
                   <Link
                     to="/login"
-                    onClick={closeSheet}
+                    onClick={handleLinkClick}
                     className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       location.pathname === "/login"
                         ? "bg-primary/10 text-primary"
@@ -187,7 +189,7 @@ const MobileNavbar = () => {
                   >
                     Prihlásenie
                   </Link>
-                  <Link to="/register" onClick={closeSheet}>
+                  <Link to="/register" onClick={handleLinkClick}>
                     <Button className="w-full text-sm mt-2">
                       Registrácia
                     </Button>
