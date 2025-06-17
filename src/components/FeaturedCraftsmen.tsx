@@ -63,10 +63,13 @@ const FeaturedCraftsmen = () => {
     });
   };
 
-  // Use placeholder data if loading or no data available
-  const placeholderCraftsmen = [
+  // Only use placeholder data if we have no real data AND we're not loading
+  const shouldUsePlaceholder = !isLoading && (!featuredCraftsmen || featuredCraftsmen.length === 0);
+  
+  // Use placeholder data only when necessary and with proper UUID format
+  const placeholderCraftsmen = shouldUsePlaceholder ? [
     {
-      id: "1",
+      id: "00000000-0000-0000-0000-000000000001",
       name: "Martin Kováč",
       profession: "Stolár",
       location: "Bratislava",
@@ -75,7 +78,7 @@ const FeaturedCraftsmen = () => {
       isTopped: true,
     },
     {
-      id: "2",
+      id: "00000000-0000-0000-0000-000000000002",
       name: "Jozef Novák",
       profession: "Elektrikár",
       location: "Košice",
@@ -84,7 +87,7 @@ const FeaturedCraftsmen = () => {
       isTopped: false,
     },
     {
-      id: "3",
+      id: "00000000-0000-0000-0000-000000000003",
       name: "Peter Horváth",
       profession: "Maliar",
       location: "Žilina",
@@ -92,11 +95,10 @@ const FeaturedCraftsmen = () => {
       customSpecialization: null,
       isTopped: false,
     },
-  ];
+  ] : [];
 
-  const displayCraftsmen = isLoading || !featuredCraftsmen || featuredCraftsmen.length === 0 
-    ? placeholderCraftsmen 
-    : featuredCraftsmen.map(craftsman => ({
+  const displayCraftsmen = featuredCraftsmen && featuredCraftsmen.length > 0
+    ? featuredCraftsmen.map(craftsman => ({
         id: craftsman.id,
         name: craftsman.name,
         profession: craftsman.trade_category,
@@ -104,7 +106,8 @@ const FeaturedCraftsmen = () => {
         imageUrl: craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category),
         customSpecialization: craftsman.custom_specialization,
         isTopped: craftsman.is_topped,
-      }));
+      }))
+    : placeholderCraftsmen;
 
   // Placeholder images for craftsmen without profile images
   const getPlaceholderImage = (tradeCategory: string) => {

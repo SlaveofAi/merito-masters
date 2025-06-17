@@ -31,10 +31,21 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
   customSpecialization,
   isTopped = false,
 }) => {
-  // Fetch real reviews data for this craftsman
+  // Helper function to check if ID is a valid UUID
+  const isValidUUID = (uuid: string) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  };
+
+  // Fetch real reviews data for this craftsman only if we have a valid UUID
   const { data: reviewsData } = useQuery({
     queryKey: ['reviews', id],
     queryFn: async () => {
+      if (!isValidUUID(id)) {
+        console.log(`Skipping review fetch for placeholder ID: ${id}`);
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('craftsman_reviews')
         .select('*')
@@ -42,11 +53,12 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
       
       if (error) {
         console.error("Error fetching reviews:", error);
-        return null;
+        return [];
       }
       
-      return data;
+      return data || [];
     },
+    enabled: isValidUUID(id), // Only run query if ID is valid UUID
   });
 
   // Calculate the average rating from reviews
