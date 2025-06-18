@@ -6,7 +6,7 @@ import Hero from "@/components/Hero";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Search, MapPin, Filter, TrendingUp, Check, Shield, Clock, Star } from "lucide-react";
+import { Loader2, Search, MapPin, Filter, TrendingUp, Check, Shield, Clock, Star, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import CraftsmanCard from "@/components/CraftsmanCard";
