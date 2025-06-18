@@ -6,7 +6,7 @@ import Hero from "@/components/Hero";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Search, MapPin, Filter, TrendingUp, Check, Shield, Clock, Star } from "lucide-react";
+import { Loader2, Search, MapPin, Filter, TrendingUp, Check, Clock, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import CraftsmanCard from "@/components/CraftsmanCard";
@@ -138,10 +138,6 @@ const Index = () => {
     title: "Bezplatné hľadanie",
     description: "Nájdite remeselníka bez poplatkov"
   }, {
-    icon: <Shield className="h-6 w-6" />,
-    title: "Overení majstri",
-    description: "Všetci remeselníci sú preverení"
-  }, {
     icon: <Star className="h-6 w-6" />,
     title: "Skutočné recenzie",
     description: "Hodnotenia od reálnych zákazníkov"
@@ -155,30 +151,6 @@ const Index = () => {
     <Layout>
       <Hero />
       
-      {/* Platform Benefits Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Prečo si vybrať našu platformu?
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Spojujeme vás s kvalitnými remeselníkmi rýchlo a bezpečne
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {platformBenefits.map((benefit, index) => (
-            <div key={index} className="text-center group">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                {benefit.icon}
-              </div>
-              <h3 className="text-lg font-semibold mb-2">{benefit.title}</h3>
-              <p className="text-gray-600">{benefit.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* How it works section */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -298,6 +270,30 @@ const Index = () => {
             </Button>
           </div>
         </div>
+
+        {/* Platform Benefits Section - moved here */}
+        <section className="py-8 mb-8">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Prečo si vybrať našu platformu?
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Spojujeme vás s kvalitnými remeselníkmi rýchlo a bezpečne
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {platformBenefits.map((benefit, index) => (
+              <div key={index} className="text-center group">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
+                  {benefit.icon}
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{benefit.title}</h3>
+                <p className="text-gray-600">{benefit.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
         
         {isLoading ? (
           <div className="flex justify-center items-center py-20">

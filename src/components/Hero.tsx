@@ -28,7 +28,7 @@ const Hero = () => {
             }`} />
             <input
               type="text"
-              placeholder="Hľadajte podľa profesie alebo lokality..."
+              placeholder="Hľadajte podľa profesie alebo mena..."
               className={`w-full pl-10 pr-4 py-2.5 rounded-md border bg-white shadow-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:shadow-md hover:shadow-md ${
                 isSearchFocused ? 'scale-102' : ''
               }`}
