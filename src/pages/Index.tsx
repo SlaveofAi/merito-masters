@@ -1,12 +1,12 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import Hero from "@/components/Hero";
-import FeaturedCraftsmen from "@/components/FeaturedCraftsmen";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Search, MapPin, Filter, TrendingUp, Check, Shield, Clock, Star, Users, Award, ArrowRight } from "lucide-react";
+import { Loader2, Search, MapPin, Filter, TrendingUp, Check, Shield, Clock, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import CraftsmanCard from "@/components/CraftsmanCard";
@@ -177,88 +177,36 @@ const Index = () => {
     }
   ];
 
-  const popularCategories = [
-    "Elektrikár", "Stolár", "Maliar", "Inštalatér"
-  ];
-
   return (
     <Layout>
       <Hero />
       
       {/* Platform Benefits Section */}
       <section className="py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Prečo si vybrať našu platformu?
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Spojujeme vás s kvalitnými remeselníkmi rýchlo a bezpečne
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {platformBenefits.map((benefit, index) => (
-              <div key={index} className="text-center group">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                  {benefit.icon}
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{benefit.title}</h3>
-                <p className="text-gray-600">{benefit.description}</p>
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Prečo si vybrať našu platformu?
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Spojujeme vás s kvalitnými remeselníkmi rýchlo a bezpečne
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {platformBenefits.map((benefit, index) => (
+            <div key={index} className="text-center group">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
+                {benefit.icon}
               </div>
-            ))}
-          </div>
+              <h3 className="text-lg font-semibold mb-2">{benefit.title}</h3>
+              <p className="text-gray-600">{benefit.description}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      <FeaturedCraftsmen />
-
-      {/* Popular Categories Section */}
+      {/* How it works section - Moved up as requested */}
       <section className="py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Najpopulárnejšie služby
-            </h2>
-            <p className="text-lg text-gray-600">
-              Vyberte si z najžiadanejších remesiel
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {popularCategories.map((category, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                className="h-20 text-base hover:bg-primary hover:text-white transition-all duration-300 hover:scale-105"
-                onClick={() => {
-                  setCategoryFilter(category);
-                  setShowSearchSection(true);
-                  setTimeout(() => {
-                    resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
-                  }, 100);
-                }}
-              >
-                {category}
-              </Button>
-            ))}
-          </div>
-          
-          <div className="text-center">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/categories')}
-              className="text-primary hover:text-primary/80"
-            >
-              Zobraziť všetky kategórie
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works section */}
-      <section className="py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -299,40 +247,6 @@ const Index = () => {
                 Oslovte vybraného remeselníka priamo
               </p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">
-            Začnite hľadať ešte dnes
-          </h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Tisíce spokojných zákazníkov už našli svojho ideálneho remeselníka
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="text-lg px-8 py-3"
-              onClick={() => navigate('/post-job')}
-            >
-              Zverejniť požiadavku
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="text-lg px-8 py-3"
-              onClick={() => {
-                setShowSearchSection(true);
-                setTimeout(() => {
-                  resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
-              }}
-            >
-              Prehliadať remeselníkov
-            </Button>
           </div>
         </div>
       </section>
@@ -493,6 +407,95 @@ const Index = () => {
           )}
         </div>
       )}
+
+      {/* All Craftsmen Section - Moved to bottom as requested */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-end mb-10">
+            <div>
+              <h2 className="text-3xl font-semibold tracking-tight mb-2">
+                Objavte najlepších remeselníkov
+              </h2>
+              <p className="text-muted-foreground max-w-2xl">
+                Vyberáme pre vás tých najlepších odborníkov a remeselníkov zo Slovenska s overenými recenziami od reálnych zákazníkov.
+              </p>
+            </div>
+            <Button 
+              variant="ghost" 
+              className="flex items-center" 
+              onClick={() => {
+                setShowSearchSection(true);
+                setTimeout(() => {
+                  resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+            >
+              <span>Zobraziť všetkých</span>
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+
+          {isLoading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : error ? (
+            <Card className="hover:shadow-md transition-shadow duration-300">
+              <CardContent className="flex flex-col items-center justify-center py-10">
+                <p className="text-center text-muted-foreground mb-4">
+                  Nastala chyba pri načítaní remeselníkov. Skúste to prosím neskôr.
+                </p>
+                <Button 
+                  onClick={() => window.location.reload()}
+                  className="hover:shadow-md active:scale-[0.98] transition-all duration-300"
+                >
+                  Skúsiť znova
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {(craftsmen || []).slice(0, 6).map((craftsman, index) => {
+                const isTopped = craftsman.is_topped && new Date(craftsman.topped_until) > new Date();
+                return (
+                  <div 
+                    key={craftsman.id}
+                    className="animate-fade-in hover:scale-[1.02] transition-all duration-300"
+                    style={{animationDelay: `${index * 100}ms`}}
+                  >
+                    <CraftsmanCard
+                      id={craftsman.id}
+                      name={craftsman.name}
+                      profession={craftsman.custom_specialization || craftsman.trade_category}
+                      location={craftsman.location}
+                      imageUrl={craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category)}
+                      customSpecialization={craftsman.custom_specialization}
+                      isTopped={isTopped}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Show button to view all if there are more than 6 craftsmen */}
+          {craftsmen && craftsmen.length > 6 && (
+            <div className="flex justify-center mt-8">
+              <Button
+                onClick={() => {
+                  setShowSearchSection(true);
+                  setTimeout(() => {
+                    resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                }}
+                className="px-8 group hover:shadow-lg active:scale-[0.98] transition-all duration-300"
+              >
+                <span className="group-hover:scale-105 transition-transform duration-300">Zobraziť všetkých remeselníkov</span>
+              </Button>
+            </div>
+          )}
+        </div>
+      </section>
     </Layout>
   );
 };
