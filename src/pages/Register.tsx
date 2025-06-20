@@ -124,7 +124,8 @@ const Register = () => {
         email: data.email,
         password: data.password,
         options: {
-          data: userMetadata
+          data: userMetadata,
+          emailRedirectTo: `${window.location.origin}/login`
         }
       });
 
@@ -143,29 +144,52 @@ const Register = () => {
 
       console.log("User registered successfully:", authData.user.id);
       
-      // Step 2: Store the user type immediately
+      // Step 2: Store the user type immediately in localStorage
       localStorage.setItem("userType", userType);
       
-      // Step 3: Set user type in database
-      const { error: userTypeError } = await supabase
-        .from('user_types')
-        .upsert({
-          user_id: authData.user.id,
-          user_type: userType
-        });
-
-      if (userTypeError) {
-        console.error("Error storing user type:", userTypeError);
-        toast.error("Chyba pri ukladaní typu užívateľa");
+      // Step 3: Wait for user confirmation email
+      if (!authData.session) {
+        // Email confirmation required
+        toast.success("Registrácia úspešná!");
+        toast.info("Na vašu emailovú adresu sme odoslali potvrdzovací email. Po potvrdení sa budete môcť prihlásiť.");
+        navigate("/login");
       } else {
-        console.log("User type stored successfully");
-      }
-
-      // Step 4: If we have a session, create the profile immediately
-      if (authData.session) {
-        console.log("Session available, creating profile");
-        
+        // Immediate login (no email confirmation required)
         try {
+          // Set user type in database with retry logic
+          const maxRetries = 3;
+          let retries = 0;
+          let userTypeStored = false;
+
+          while (retries < maxRetries && !userTypeStored) {
+            try {
+              const { error: userTypeError } = await supabase
+                .from('user_types')
+                .upsert({
+                  user_id: authData.user.id,
+                  user_type: userType
+                });
+
+              if (!userTypeError) {
+                console.log("User type stored successfully");
+                userTypeStored = true;
+              } else {
+                console.error("Error storing user type:", userTypeError);
+                retries++;
+                if (retries < maxRetries) {
+                  await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+                }
+              }
+            } catch (err) {
+              console.error("Exception storing user type:", err);
+              retries++;
+              if (retries < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
+            }
+          }
+
+          // Create profile
           await createDefaultProfile(
             authData.user,
             userType,
@@ -175,25 +199,21 @@ const Register = () => {
               toast.success("Registrácia a profil vytvorený úspešne!");
             }
           );
+
+          // Navigate to appropriate page
+          setTimeout(() => {
+            if (userType === 'customer') {
+              navigate("/profile/reviews", { replace: true });
+            } else {
+              navigate("/profile", { replace: true });
+            }
+          }, 1500);
+
         } catch (profileError) {
-          console.error("Error creating profile during registration:", profileError);
-          // Don't fail registration if profile creation fails
-          toast.warning("Registrácia úspešná, ale profil sa vytvorí neskôr");
+          console.error("Error during post-registration setup:", profileError);
+          toast.warning("Registrácia úspešná, ale profil sa vytvorí pri prvom prihlásení");
+          navigate("/login");
         }
-        
-        // Navigate directly to profile without showing UserTypeSelector
-        setTimeout(() => {
-          if (userType === 'customer') {
-            navigate("/profile/reviews", { replace: true });
-          } else {
-            navigate("/profile", { replace: true });
-          }
-        }, 1500);
-      } else {
-        // Email confirmation required
-        toast.success("Registrácia úspešná!");
-        toast.info("Na vašu emailovú adresu sme odoslali potvrdzovací email");
-        navigate("/login", { state: { emailConfirmationRequired: true } });
       }
       
     } catch (error) {
