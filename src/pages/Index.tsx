@@ -270,30 +270,6 @@ const Index = () => {
             </Button>
           </div>
         </div>
-
-        {/* Platform Benefits Section - moved here */}
-        <section className="py-8 mb-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Prečo si vybrať našu platformu?
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Spojujeme vás s kvalitnými remeselníkmi rýchlo a bezpečne
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {platformBenefits.map((benefit, index) => (
-              <div key={index} className="text-center group">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
-                  {benefit.icon}
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{benefit.title}</h3>
-                <p className="text-gray-600">{benefit.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
         
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
@@ -339,7 +315,7 @@ const Index = () => {
               <span className="text-muted-foreground group-hover:text-foreground transition-colors duration-300">Zvýraznené profily sú zobrazené na vrchu</span>
             </div>
           
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
               {sortedCraftsmen?.map((craftsman, index) => {
                 const isTopped = craftsman.is_topped && new Date(craftsman.topped_until) > new Date();
                 return (
@@ -363,6 +339,30 @@ const Index = () => {
                 );
               })}
             </div>
+
+            {/* Platform Benefits Section - moved here after craftsmen list */}
+            <section className="py-8">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Prečo si vybrať našu platformu?
+                </h2>
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                  Spojujeme vás s kvalitnými remeselníkmi rýchlo a bezpečne
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                {platformBenefits.map((benefit, index) => (
+                  <div key={index} className="text-center group">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
+                      {benefit.icon}
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">{benefit.title}</h3>
+                    <p className="text-gray-600">{benefit.description}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
           </>
         )}
       </div>
