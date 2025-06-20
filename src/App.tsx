@@ -89,6 +89,11 @@ function AppRoutes() {
       <Route path="/blog" element={<Blog />} />
       <Route path="/blog/:slug" element={<BlogPost />} />
       
+      {/* Password reset routes */}
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/change-password" element={<PrivateRoute><ChangePassword /></PrivateRoute>} />
+      
       {/* Job requests can be viewed by anyone */}
       <Route path="/job-requests" element={<JobRequests />} />
       
