@@ -272,6 +272,31 @@ const EditProfileForm = ({ profile, userType, onUpdate }: EditProfileFormProps) 
           </form>
         </Form>
 
+        {/* Password Change Section */}
+        <div className="mt-8 pt-6 border-t">
+          <h3 className="text-lg font-semibold mb-4">Zabezpečenie účtu</h3>
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <p className="text-sm text-gray-600 mb-2">
+                  Zmeniť heslo vášho účtu
+                </p>
+                <p className="text-xs text-gray-500">
+                  Pre zmenu hesla budete presmerovaný na bezpečnú stránku
+                </p>
+              </div>
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => window.location.href = '/change-password'}
+                className="sm:w-auto w-full"
+              >
+                Zmeniť heslo
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* Add the delete account section */}
         <DeleteAccount />
       </CardContent>
