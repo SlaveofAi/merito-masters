@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,9 +32,20 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
   const toppedUntil = profileData?.topped_until ? new Date(profileData.topped_until) : null;
   const isActive = isTopped && toppedUntil && new Date() < toppedUntil;
 
-  // Function to check if topped status has expired
-  const checkToppedExpiration = async () => {
-    if (isTopped && toppedUntil && new Date() > toppedUntil && isCurrentUser) {
+  // Function to check if topped status has expired and update it
+  const checkAndUpdateToppedExpiration = async () => {
+    if (!isCurrentUser || !isTopped || !toppedUntil) return;
+    
+    const now = new Date();
+    const expirationTime = new Date(toppedUntil);
+    
+    console.log("Checking topped expiration:", {
+      now: now.toISOString(),
+      expirationTime: expirationTime.toISOString(),
+      isExpired: now > expirationTime
+    });
+    
+    if (now > expirationTime) {
       console.log("Topped status expired, updating profile");
       
       try {
@@ -52,6 +62,8 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
           console.error("Error updating topped status:", error);
           return;
         }
+        
+        console.log("Successfully updated topped status to expired");
         
         // Create notification about expiration
         await createNotification(
@@ -228,17 +240,25 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
     checkPaymentStatus();
   }, [onProfileUpdate, profileData, user]);
   
-  // Check for topped status expiration periodically
+  // Check for topped status expiration - more frequent checks
   useEffect(() => {
-    checkToppedExpiration();
+    // Initial check
+    checkAndUpdateToppedExpiration();
     
-    // Check for expiration every hour
+    // Check every 5 minutes instead of every hour for more responsive expiration
     const interval = setInterval(() => {
-      checkToppedExpiration();
-    }, 3600000); // 1 hour
+      checkAndUpdateToppedExpiration();
+    }, 300000); // 5 minutes
     
     return () => clearInterval(interval);
-  }, [isTopped, toppedUntil, isCurrentUser]);
+  }, [isTopped, toppedUntil, isCurrentUser, profileData?.id]);
+
+  // Also check when component mounts or when toppedUntil changes
+  useEffect(() => {
+    if (isCurrentUser && toppedUntil) {
+      checkAndUpdateToppedExpiration();
+    }
+  }, [toppedUntil, isCurrentUser]);
 
   // Helper function to get user-friendly error message
   const getErrorMessage = () => {

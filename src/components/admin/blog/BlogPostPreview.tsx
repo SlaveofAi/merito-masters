@@ -22,19 +22,22 @@ const BlogPostPreview: React.FC<BlogPostPreviewProps> = ({
   status,
   onClose,
 }) => {
-  // Simple markdown to HTML conversion for preview
+  // Enhanced markdown to HTML conversion with highlighting support
   const formatContent = (text: string) => {
     return text
       .replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold mb-4">$1</h1>')
       .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-semibold mb-3">$1</h2>')
       .replace(/^### (.*$)/gm, '<h3 class="text-xl font-semibold mb-2">$1</h3>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 rounded">$1</code>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:underline">$1</a>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold">$1</strong>')
+      .replace(/__(.*?)__/g, '<strong class="font-bold">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+      .replace(/_(.*?)_/g, '<em class="italic">$1</em>')
+      .replace(/==(.*?)==/g, '<mark class="bg-yellow-200 px-1 rounded">$1</mark>')
+      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 rounded text-sm font-mono">$1</code>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
       .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto my-4 rounded-lg" />')
-      .replace(/^\- (.*$)/gm, '<li>$1</li>')
-      .replace(/^(\d+)\. (.*$)/gm, '<li>$1. $2</li>')
+      .replace(/^\- (.*$)/gm, '<li class="ml-4">• $1</li>')
+      .replace(/^(\d+)\. (.*$)/gm, '<li class="ml-4">$1. $2</li>')
       .replace(/\n/g, '<br />');
   };
 
@@ -70,7 +73,7 @@ const BlogPostPreview: React.FC<BlogPostPreviewProps> = ({
             )}
             
             <div 
-              className="prose max-w-none"
+              className="prose max-w-none leading-relaxed"
               dangerouslySetInnerHTML={{ __html: formatContent(content) }}
             />
           </article>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,6 +34,25 @@ const BlogPost = () => {
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+
+  // Function to convert Markdown to HTML with proper highlighting support
+  const formatContent = (text: string) => {
+    return text
+      .replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold mb-4">$1</h1>')
+      .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-semibold mb-3">$1</h2>')
+      .replace(/^### (.*$)/gm, '<h3 class="text-xl font-semibold mb-2">$1</h3>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold">$1</strong>')
+      .replace(/__(.*?)__/g, '<strong class="font-bold">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+      .replace(/_(.*?)_/g, '<em class="italic">$1</em>')
+      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 rounded text-sm font-mono">$1</code>')
+      .replace(/==(.*?)==/g, '<mark class="bg-yellow-200 px-1 rounded">$1</mark>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full h-auto my-4 rounded-lg" />')
+      .replace(/^\- (.*$)/gm, '<li class="ml-4">• $1</li>')
+      .replace(/^(\d+)\. (.*$)/gm, '<li class="ml-4">$1. $2</li>')
+      .replace(/\n/g, '<br />');
+  };
 
   useEffect(() => {
     if (slug) {
@@ -238,9 +256,12 @@ const BlogPost = () => {
             </div>
           </header>
 
-          {/* Content */}
+          {/* Content with proper Markdown rendering */}
           <div className="prose prose-lg max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br>') }} />
+            <div 
+              dangerouslySetInnerHTML={{ __html: formatContent(post.content) }}
+              className="leading-relaxed"
+            />
           </div>
 
           {/* Social sharing and engagement */}

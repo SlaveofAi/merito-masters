@@ -11,7 +11,8 @@ import {
   Link,
   Image as ImageIcon,
   Eye,
-  Code
+  Code,
+  Highlighter
 } from "lucide-react";
 import { uploadBlogImage } from "@/utils/blogImageUpload";
 import { toast } from "sonner";
@@ -86,6 +87,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       icon: Italic,
       label: "Kurzíva",
       action: () => insertText("_", "_", "kurzíva")
+    },
+    {
+      icon: Highlighter,
+      label: "Zvýrazniť",
+      action: () => insertText("==", "==", "zvýraznený text")
     },
     {
       icon: Code,
@@ -178,10 +184,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <span>**tučné** alebo __tučné__</span>
           <span>*kurzíva* alebo _kurzíva_</span>
+          <span>==zvýraznené==</span>
+          <span>`kód`</span>
           <span># Nadpis 1</span>
           <span>## Nadpis 2</span>
           <span>[odkaz](URL)</span>
-          <span>`kód`</span>
+          <span>![obrázok](URL)</span>
         </div>
       </div>
 
