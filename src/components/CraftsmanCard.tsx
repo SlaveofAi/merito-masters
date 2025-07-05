@@ -18,6 +18,7 @@ interface CraftsmanCardProps {
   imageUrl: string;
   customSpecialization?: string | null;
   isTopped?: boolean;
+  toppedUntil?: string | null;
 }
 
 const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
@@ -30,12 +31,33 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
   imageUrl,
   customSpecialization,
   isTopped = false,
+  toppedUntil = null,
 }) => {
   // Helper function to check if ID is a valid UUID
   const isValidUUID = (uuid: string) => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   };
+
+  // Check if topped status is actually active
+  const isActivelyTopped = () => {
+    if (!isTopped || !toppedUntil) return false;
+    const now = new Date();
+    const expirationDate = new Date(toppedUntil);
+    const isActive = now < expirationDate;
+    
+    console.log("Checking topped status for", name, {
+      isTopped,
+      toppedUntil,
+      now: now.toISOString(),
+      expirationDate: expirationDate.toISOString(),
+      isActive
+    });
+    
+    return isActive;
+  };
+
+  const actuallyTopped = isActivelyTopped();
 
   // Fetch real reviews data for this craftsman only if we have a valid UUID
   const { data: reviewsData } = useQuery({
@@ -77,7 +99,7 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
   return (
     <Card 
       className={`overflow-hidden transition-all duration-500 group hover:shadow-xl hover:-translate-y-2 cursor-pointer
-        ${isTopped 
+        ${actuallyTopped 
           ? 'border-2 border-yellow-400 shadow-lg shadow-yellow-100/50 hover:shadow-yellow-200/50' 
           : 'border-border/50 shadow-sm hover:shadow-lg'
         }
@@ -93,7 +115,7 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
         <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white text-xs py-1 px-2 rounded-full z-20 group-hover:bg-black/80 group-hover:scale-105 transition-all duration-300">
           {customSpecialization ? customSpecialization : profession}
         </div>
-        {isTopped && (
+        {actuallyTopped && (
           <div className="absolute top-4 right-4 z-20">
             <Badge variant="outline" className="bg-yellow-500/90 backdrop-blur-sm text-white border-yellow-400 px-2 py-0.5 flex items-center gap-1 group-hover:scale-110 group-hover:bg-yellow-400/90 transition-all duration-300">
               <Crown className="h-3 w-3 fill-white group-hover:rotate-12 transition-transform duration-300" />
@@ -109,7 +131,7 @@ const CraftsmanCard: React.FC<CraftsmanCardProps> = ({
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-lg group-hover:text-primary transition-colors duration-300">{name}</h3>
-            {isTopped && (
+            {actuallyTopped && (
               <Crown className="h-4 w-4 text-yellow-500 fill-yellow-500 group-hover:rotate-12 group-hover:scale-110 transition-all duration-300" />
             )}
           </div>

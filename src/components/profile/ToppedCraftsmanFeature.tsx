@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,25 +28,28 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
   const [hasError, setHasError] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   
-  // Actual values from profileData
+  // More robust status checking
   const isTopped = profileData?.is_topped || false;
   const toppedUntil = profileData?.topped_until ? new Date(profileData.topped_until) : null;
-  const isActive = isTopped && toppedUntil && new Date() < toppedUntil;
+  const now = new Date();
+  const isActive = isTopped && toppedUntil && now < toppedUntil;
 
-  // Function to check if topped status has expired and update it
+  console.log("Premium status check:", {
+    isTopped,
+    toppedUntil: toppedUntil?.toISOString(),
+    now: now.toISOString(),
+    isActive,
+    profileId: profileData?.id
+  });
+
+  // Function to check and update expired topped status
   const checkAndUpdateToppedExpiration = async () => {
-    if (!isCurrentUser || !isTopped || !toppedUntil) return;
+    if (!profileData?.id) return;
     
-    const now = new Date();
-    const expirationTime = new Date(toppedUntil);
+    console.log("Checking topped expiration for:", profileData.id);
     
-    console.log("Checking topped expiration:", {
-      now: now.toISOString(),
-      expirationTime: expirationTime.toISOString(),
-      isExpired: now > expirationTime
-    });
-    
-    if (now > expirationTime) {
+    // Always check expiration regardless of current user status
+    if (isTopped && toppedUntil && now > toppedUntil) {
       console.log("Topped status expired, updating profile");
       
       try {
@@ -65,19 +69,22 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
         
         console.log("Successfully updated topped status to expired");
         
-        // Create notification about expiration
-        await createNotification(
-          profileData.id, 
-          "Premium profil vypršal", 
-          "Váš prémiový profil vypršal. Pre pokračovanie prémiových výhod si obnovte platbu."
-        );
+        // Create notification if this is the current user
+        if (isCurrentUser) {
+          await createNotification(
+            profileData.id, 
+            "Premium profil vypršal", 
+            "Váš prémiový profil vypršal. Pre pokračovanie prémiových výhod si obnovte platbu."
+          );
+          
+          toast.info("Váš premium profil vypršal", {
+            description: "Obnovte platbu pre pokračovanie prémiových výhod"
+          });
+        }
         
         // Refresh the profile data
         onProfileUpdate();
         
-        toast.info("Váš premium profil vypršal", {
-          description: "Obnovte platbu pre pokračovanie prémiových výhod"
-        });
       } catch (error) {
         console.error("Error checking topped expiration:", error);
       }
@@ -240,25 +247,18 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
     checkPaymentStatus();
   }, [onProfileUpdate, profileData, user]);
   
-  // Check for topped status expiration - more frequent checks
+  // Check for topped status expiration on component mount and regularly
   useEffect(() => {
     // Initial check
     checkAndUpdateToppedExpiration();
     
-    // Check every 5 minutes instead of every hour for more responsive expiration
+    // Check every minute for more responsive expiration
     const interval = setInterval(() => {
       checkAndUpdateToppedExpiration();
-    }, 300000); // 5 minutes
+    }, 60000); // 1 minute
     
     return () => clearInterval(interval);
-  }, [isTopped, toppedUntil, isCurrentUser, profileData?.id]);
-
-  // Also check when component mounts or when toppedUntil changes
-  useEffect(() => {
-    if (isCurrentUser && toppedUntil) {
-      checkAndUpdateToppedExpiration();
-    }
-  }, [toppedUntil, isCurrentUser]);
+  }, [isTopped, toppedUntil, profileData?.id]);
 
   // Helper function to get user-friendly error message
   const getErrorMessage = () => {
@@ -273,13 +273,8 @@ const ToppedCraftsmanFeature: React.FC<ToppedCraftsmanFeatureProps> = ({
     }
   };
 
-  // If not current user and not topped, don't show anything
+  // Only show for current user or if actively topped
   if (!isCurrentUser && !isActive) {
-    return null;
-  }
-  
-  // If it's topped but not the current user, don't show the card
-  if (!isCurrentUser && isActive) {
     return null;
   }
 

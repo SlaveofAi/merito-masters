@@ -101,9 +101,16 @@ const Index = () => {
   const sortedCraftsmen = [...(filteredCraftsmen || [])].sort((a, b) => {
     const currentDate = new Date();
 
-    // First check topped status - topped craftsmen always come first
-    const aIsTopped = a.is_topped && new Date(a.topped_until) > currentDate;
-    const bIsTopped = b.is_topped && new Date(b.topped_until) > currentDate;
+    // First check topped status - only consider non-expired topped craftsmen
+    const aIsTopped = a.is_topped && a.topped_until && new Date(a.topped_until) > currentDate;
+    const bIsTopped = b.is_topped && b.topped_until && new Date(b.topped_until) > currentDate;
+    
+    console.log("Sorting craftsman", a.name, {
+      is_topped: a.is_topped,
+      topped_until: a.topped_until,
+      isActivelyTopped: aIsTopped
+    });
+    
     if (aIsTopped && !bIsTopped) return -1;
     if (!aIsTopped && bIsTopped) return 1;
 
@@ -317,7 +324,11 @@ const Index = () => {
           
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
               {sortedCraftsmen?.map((craftsman, index) => {
-                const isTopped = craftsman.is_topped && new Date(craftsman.topped_until) > new Date();
+                // Check if topped status is actually active
+                const isActivelyTopped = craftsman.is_topped && 
+                  craftsman.topped_until && 
+                  new Date() < new Date(craftsman.topped_until);
+                
                 return (
                   <div 
                     key={craftsman.id} 
@@ -333,7 +344,8 @@ const Index = () => {
                       location={craftsman.location} 
                       imageUrl={craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category)} 
                       customSpecialization={craftsman.custom_specialization} 
-                      isTopped={isTopped} 
+                      isTopped={isActivelyTopped}
+                      toppedUntil={craftsman.topped_until}
                     />
                   </div>
                 );

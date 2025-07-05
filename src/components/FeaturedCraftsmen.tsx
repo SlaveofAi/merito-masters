@@ -14,9 +14,11 @@ const FeaturedCraftsmen = () => {
   const { data: featuredCraftsmen, isLoading } = useQuery({
     queryKey: ['featured-craftsmen'],
     queryFn: async () => {
-      // First check for topped craftsmen
       const currentDate = new Date().toISOString();
       
+      console.log("Fetching featured craftsmen at:", currentDate);
+      
+      // First check for actively topped craftsmen (not expired)
       const { data: toppedCraftsmen, error: toppedError } = await supabase
         .from('craftsman_profiles')
         .select('*')
@@ -29,6 +31,8 @@ const FeaturedCraftsmen = () => {
         console.error("Error fetching topped craftsmen:", toppedError);
       }
       
+      console.log("Found active topped craftsmen:", toppedCraftsmen?.length || 0);
+      
       // If we don't have enough topped craftsmen, fetch regular ones to fill the slots
       const neededRegularCraftsmen = 3 - (toppedCraftsmen?.length || 0);
       
@@ -36,13 +40,15 @@ const FeaturedCraftsmen = () => {
         const { data: regularCraftsmen, error: regularError } = await supabase
           .from('craftsman_profiles')
           .select('*')
-          .or(`is_topped.eq.false, topped_until.lt.${currentDate}`)
+          .or(`is_topped.eq.false,topped_until.lt.${currentDate}`)
           .limit(neededRegularCraftsmen);
           
         if (regularError) {
           console.error("Error fetching regular craftsmen:", regularError);
           return toppedCraftsmen || [];
         }
+        
+        console.log("Found regular craftsmen:", regularCraftsmen?.length || 0);
         
         // Combine the topped and regular craftsmen
         return [...(toppedCraftsmen || []), ...(regularCraftsmen || [])];
@@ -71,43 +77,63 @@ const FeaturedCraftsmen = () => {
     {
       id: "00000000-0000-0000-0000-000000000001",
       name: "Martin Kováč",
-      profession: "Stolár",
+      trade_category: "Stolár",
       location: "Bratislava",
-      imageUrl: "https://images.unsplash.com/photo-1466096115517-bceecbfb6fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
-      customSpecialization: null,
-      isTopped: true,
+      profile_image_url: "https://images.unsplash.com/photo-1466096115517-bceecbfb6fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+      custom_specialization: null,
+      is_topped: false,
+      topped_until: null,
     },
     {
       id: "00000000-0000-0000-0000-000000000002",
       name: "Jozef Novák",
-      profession: "Elektrikár",
+      trade_category: "Elektrikár",
       location: "Košice",
-      imageUrl: "https://images.unsplash.com/photo-1609220136736-443140cffec6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
-      customSpecialization: null,
-      isTopped: false,
+      profile_image_url: "https://images.unsplash.com/photo-1609220136736-443140cffec6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+      custom_specialization: null,
+      is_topped: false,
+      topped_until: null,
     },
     {
       id: "00000000-0000-0000-0000-000000000003",
       name: "Peter Horváth",
-      profession: "Maliar",
+      trade_category: "Maliar",
       location: "Žilina",
-      imageUrl: "https://images.unsplash.com/photo-1613293967931-33854b1177a4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
-      customSpecialization: null,
-      isTopped: false,
+      profile_image_url: "https://images.unsplash.com/photo-1613293967931-33854b1177a4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+      custom_specialization: null,
+      is_topped: false,
+      topped_until: null,
     },
   ] : [];
 
   const displayCraftsmen = featuredCraftsmen && featuredCraftsmen.length > 0
-    ? featuredCraftsmen.map(craftsman => ({
+    ? featuredCraftsmen.map(craftsman => {
+        // Check if topped status is actually active
+        const isActivelyTopped = craftsman.is_topped && 
+          craftsman.topped_until && 
+          new Date() < new Date(craftsman.topped_until);
+          
+        return {
+          id: craftsman.id,
+          name: craftsman.name,
+          profession: craftsman.trade_category,
+          location: craftsman.location,
+          imageUrl: craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category),
+          customSpecialization: craftsman.custom_specialization,
+          isTopped: isActivelyTopped,
+          toppedUntil: craftsman.topped_until,
+        };
+      })
+    : placeholderCraftsmen.map(craftsman => ({
         id: craftsman.id,
         name: craftsman.name,
         profession: craftsman.trade_category,
         location: craftsman.location,
-        imageUrl: craftsman.profile_image_url || getPlaceholderImage(craftsman.trade_category),
+        imageUrl: craftsman.profile_image_url,
         customSpecialization: craftsman.custom_specialization,
-        isTopped: craftsman.is_topped,
-      }))
-    : placeholderCraftsmen;
+        isTopped: false,
+        toppedUntil: null,
+      }));
 
   // Placeholder images for craftsmen without profile images
   const getPlaceholderImage = (tradeCategory: string) => {
@@ -152,6 +178,7 @@ const FeaturedCraftsmen = () => {
             imageUrl={craftsman.imageUrl}
             customSpecialization={craftsman.customSpecialization}
             isTopped={craftsman.isTopped}
+            toppedUntil={craftsman.toppedUntil}
           />
         ))}
       </div>
